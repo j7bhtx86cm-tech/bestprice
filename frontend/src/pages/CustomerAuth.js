@@ -12,7 +12,7 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-export const SupplierAuth = () => {
+export const CustomerAuth = () => {
   const navigate = useNavigate();
   const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
@@ -38,6 +38,7 @@ export const SupplierAuth = () => {
     contactPersonName: '',
     contactPersonPosition: '',
     contactPersonPhone: '',
+    deliveryAddresses: [''],
     dataProcessingConsent: false
   });
 
