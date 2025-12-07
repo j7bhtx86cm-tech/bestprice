@@ -807,6 +807,11 @@ async def get_suppliers():
     suppliers = await db.companies.find({"type": CompanyType.supplier}, {"_id": 0}).to_list(1000)
     return suppliers
 
+@api_router.get("/suppliers/{supplier_id}/price-lists", response_model=List[PriceList])
+async def get_supplier_price_lists(supplier_id: str):
+    price_lists = await db.price_lists.find({"supplierCompanyId": supplier_id, "active": True}, {"_id": 0}).to_list(10000)
+    return price_lists
+
 # Include router
 app.include_router(api_router)
 
