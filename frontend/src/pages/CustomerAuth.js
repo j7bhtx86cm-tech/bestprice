@@ -94,8 +94,8 @@ export const CustomerAuth = () => {
     setLoading(true);
     
     try {
-      await register(registerData, 'supplier');
-      navigate('/supplier');
+      await register(registerData, 'customer');
+      navigate('/customer');
     } catch (err) {
       setError(err.response?.data?.detail || 'Ошибка регистрации');
     } finally {
