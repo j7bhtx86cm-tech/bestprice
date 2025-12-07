@@ -99,12 +99,22 @@ export const CustomerCatalog = () => {
   };
 
   const normalizeProductName = (name) => {
-    // Remove extra spaces, convert to lowercase, remove some common variations
-    return name
+    // Extract the core product name by removing brand names, weights, manufacturers
+    let normalized = name
       .toLowerCase()
       .replace(/\s+/g, ' ')
-      .replace(/[«»"]/g, '')
+      .replace(/[«»"(),]/g, ' ')
       .trim();
+    
+    // Extract first 2-3 meaningful words (the actual product)
+    const words = normalized.split(' ').filter(w => w.length > 2);
+    
+    // Take first 2-3 words as the product identifier
+    if (words.length >= 2) {
+      return words.slice(0, 2).join(' ');
+    }
+    
+    return words[0] || normalized;
   };
 
   const filterProducts = () => {
