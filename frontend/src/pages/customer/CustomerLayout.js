@@ -10,7 +10,12 @@ export const CustomerLayout = ({ children }) => {
   const { logout } = useAuth();
 
   const menuItems = [
-    { path: '/customer/profile', label: 'Профиль', icon: User },
+    { path: '/customer/profile', label: 'Профиль компании', icon: User },
+    { path: '/customer/team', label: 'Ответственные лица', icon: User },
+    { path: '/customer/documents', label: 'Документы', icon: User },
+    { path: '/customer/orders', label: 'История заказов', icon: User },
+    { path: '/customer/analytics', label: 'Аналитика', icon: User },
+    { path: '/customer/ratings', label: 'Оценка поставщиков', icon: User },
   ];
 
   const handleLogout = () => {
