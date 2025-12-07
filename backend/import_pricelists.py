@@ -84,25 +84,27 @@ def parse_price_file_1(filename):
 
 def parse_price_file_2(filename):
     """Parse second supplier's price list (ВЗ)"""
-    # Read with skiprows to get past header
-    df = pd.read_excel(filename, skiprows=3)
-    
-    # Ensure we have column names
-    if df.columns[0] == 'Unnamed: 0':
-        df.columns = ['Товар №', 'Маркетинговое наименование товара', 'Ед. изм', 'Вес нетто', 'Ед. изм ПЕИ', 'Кол-во единиц в ПЕИ', 'Кол-во ЕИ в коробке', 'цена']
+    # Read without header first
+    df = pd.read_excel(filename, header=None)
     
     products = []
-    for _, row in df.iterrows():
-        # Skip rows without product number
-        if pd.isna(row.get('Товар №')) or str(row.get('Товар №', '')).strip() == '':
+    for idx, row in df.iterrows():
+        # Skip header row (row 0 and 1)
+        if idx < 2:
             continue
-            
-        product_name = str(row.get('Маркетинговое наименование товара', '')).strip()
+        
+        # Get product number from column 0
+        product_num = row[0]
+        if pd.isna(product_num) or str(product_num).strip() == '':
+            continue
+        
+        # Get product name from column 1
+        product_name = str(row[1] if not pd.isna(row[1]) else '').strip()
         if not product_name or product_name == 'nan':
             continue
-            
-        # Get unit from Ед. изм
-        unit_text = str(row.get('Ед. изм', 'ШТ')).strip()
+        
+        # Get unit from column 2
+        unit_text = str(row[2] if not pd.isna(row[2]) else 'ШТ').strip()
         
         # Map units
         unit_map = {
@@ -119,7 +121,7 @@ def parse_price_file_2(filename):
         
         products.append({
             'productName': product_name,
-            'article': str(row.get('Товар №', '')),
+            'article': str(int(product_num)) if not pd.isna(product_num) else '',
             'price': price,
             'unit': unit
         })
