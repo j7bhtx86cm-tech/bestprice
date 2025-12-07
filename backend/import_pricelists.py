@@ -81,16 +81,21 @@ def parse_price_file_1(filename):
 
 def parse_price_file_2(filename):
     """Parse second supplier's price list (ВЗ)"""
-    df = pd.read_excel(filename)
+    # Read with skiprows to get past header
+    df = pd.read_excel(filename, skiprows=3)
+    
+    # Ensure we have column names
+    if df.columns[0] == 'Unnamed: 0':
+        df.columns = ['Товар №', 'Маркетинговое наименование товара', 'Ед. изм', 'Вес нетто', 'Ед. изм ПЕИ', 'Кол-во единиц в ПЕИ', 'Кол-во ЕИ в коробке', 'цена']
     
     products = []
     for _, row in df.iterrows():
         # Skip rows without product number
-        if pd.isna(row.get('Товар №')):
+        if pd.isna(row.get('Товар №')) or str(row.get('Товар №', '')).strip() == '':
             continue
             
         product_name = str(row.get('Маркетинговое наименование товара', '')).strip()
-        if not product_name:
+        if not product_name or product_name == 'nan':
             continue
             
         # Get unit from Ед. изм
