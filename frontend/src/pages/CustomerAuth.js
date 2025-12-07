@@ -292,6 +292,44 @@ export const CustomerAuth = () => {
               </div>
             </div>
             
+            <div>
+              <Label>Адреса доставки *</Label>
+              {registerData.deliveryAddresses.map((address, index) => (
+                <div key={index} className="flex gap-2 mt-2">
+                  <Input
+                    value={address}
+                    onChange={(e) => {
+                      const newAddresses = [...registerData.deliveryAddresses];
+                      newAddresses[index] = e.target.value;
+                      setRegisterData({ ...registerData, deliveryAddresses: newAddresses });
+                    }}
+                    placeholder="Адрес доставки"
+                    required
+                  />
+                  {index > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const newAddresses = registerData.deliveryAddresses.filter((_, i) => i !== index);
+                        setRegisterData({ ...registerData, deliveryAddresses: newAddresses });
+                      }}
+                    >
+                      Удалить
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2"
+                onClick={() => setRegisterData({ ...registerData, deliveryAddresses: [...registerData.deliveryAddresses, ''] })}
+              >
+                + Добавить адрес
+              </Button>
+            </div>
+            
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="consent"
