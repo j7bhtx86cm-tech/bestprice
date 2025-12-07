@@ -298,18 +298,27 @@ export const CustomerCatalog = () => {
               {filteredGroups.slice(0, 50).map((group, idx) => {
                 const bestPrice = getBestPrice(group);
                 
+                // Check if this is a real comparison (products from DIFFERENT suppliers)
+                const hasMultipleSuppliers = group.variants.length > 1;
+                const totalProducts = group.variants.reduce((sum, v) => sum + v.products.length, 0);
+                
                 return (
                   <Card key={idx} className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium mb-2 line-clamp-2">{group.displayName}</h4>
+                        {hasMultipleSuppliers && (
+                          <Badge className="mb-2 bg-blue-100 text-blue-800">
+                            Сравнение цен от {group.variants.length} поставщиков
+                          </Badge>
+                        )}
                         
                         {/* Price comparison table */}
                         <div className="space-y-2">
                           {group.variants.map((variant, vIdx) => (
                             <div key={vIdx}>
                               {variant.products.map((product, pIdx) => {
-                                const isBestPrice = bestPrice && product.id === bestPrice.id;
+                                const isBestPrice = bestPrice && product.id === bestPrice.id && hasMultipleSuppliers;
                                 const isAvailable = product.availability && product.active;
                                 
                                 return (
@@ -323,6 +332,11 @@ export const CustomerCatalog = () => {
                                       <span className="text-sm font-medium text-gray-700">
                                         {variant.supplier.companyName}
                                       </span>
+                                      {variant.products.length > 1 && (
+                                        <span className="text-xs text-gray-500">
+                                          (вариант {pIdx + 1})
+                                        </span>
+                                      )}
                                       {isBestPrice && (
                                         <Badge className="bg-green-600 text-white">
                                           <Award className="h-3 w-3 mr-1" />
