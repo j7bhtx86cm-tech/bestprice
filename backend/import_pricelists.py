@@ -55,8 +55,20 @@ def parse_price_file_1(filename):
         if not product_name or product_name == 'nan':
             continue
         
-        # Get unit from column 4 (index 4) - Фасовка
-        unit_text = str(row[4] if len(row) > 4 and not pd.isna(row[4]) else 'кг').strip()
+        # Get REAL price from column 3 (index 3) - Цена за 1 шт
+        price = row[3] if not pd.isna(row[3]) else 0
+        if isinstance(price, str):
+            try:
+                price = float(price.replace(',', '.'))
+            except:
+                price = 0
+        
+        # Skip if no valid price
+        if price <= 0:
+            continue
+        
+        # Get unit from column 5 (index 5) - Фасовка
+        unit_text = str(row[5] if len(row) > 5 and not pd.isna(row[5]) else 'кг').strip()
         
         # Determine unit
         if 'кг' in unit_text.lower() or 'kg' in unit_text.lower():
@@ -70,13 +82,10 @@ def parse_price_file_1(filename):
         else:
             unit = 'шт'
         
-        # Generate mock price based on product type
-        price = generate_mock_price(product_name, unit)
-        
         products.append({
             'productName': product_name,
             'article': str(product_code),
-            'price': price,
+            'price': float(price),
             'unit': unit
         })
     
