@@ -70,10 +70,10 @@ export const CustomerAuth = () => {
     
     try {
       const user = await login(loginData.email, loginData.password);
-      if (user.role === 'supplier') {
-        navigate('/supplier');
+      if (user.role === 'customer') {
+        navigate('/customer');
       } else {
-        setError('Этот аккаунт не является поставщиком');
+        setError('Этот аккаунт не является рестораном');
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Неверный email или пароль');
