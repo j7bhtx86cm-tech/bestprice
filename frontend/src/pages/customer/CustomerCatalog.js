@@ -52,17 +52,8 @@ export const CustomerCatalog = () => {
   const fetchProducts = async (supplierId) => {
     setLoading(true);
     try {
-      // Get company to fetch price lists
-      const companyResponse = await axios.get(`${API}/companies/${supplierId}`);
-      const response = await axios.get(`${API}/price-lists/my`);
-      
-      // Filter products for selected supplier - we need to get them differently
-      // Let's use a direct query
-      const allPriceLists = await axios.get(`${API}/price-lists/my`);
-      
-      // For now, let's fetch all and filter client-side
-      // TODO: Add API endpoint to get price lists by supplier
-      setProducts(allPriceLists.data.filter(p => p.supplierCompanyId === supplierId));
+      const response = await axios.get(`${API}/suppliers/${supplierId}/price-lists`);
+      setProducts(response.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
       setProducts([]);
