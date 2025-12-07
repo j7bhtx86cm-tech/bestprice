@@ -10,11 +10,12 @@ export const CustomerLayout = ({ children }) => {
   const { logout } = useAuth();
 
   const menuItems = [
+    { path: '/customer/catalog', label: 'Каталог товаров', icon: Package },
+    { path: '/customer/orders', label: 'История заказов', icon: ShoppingBag },
+    { path: '/customer/analytics', label: 'Аналитика', icon: BarChart3 },
     { path: '/customer/profile', label: 'Профиль компании', icon: User },
     { path: '/customer/team', label: 'Ответственные лица', icon: Users },
     { path: '/customer/documents', label: 'Документы', icon: FileText },
-    { path: '/customer/orders', label: 'История заказов', icon: ShoppingBag },
-    { path: '/customer/analytics', label: 'Аналитика', icon: BarChart3 },
     { path: '/customer/ratings', label: 'Оценка поставщиков', icon: Star },
   ];
 
