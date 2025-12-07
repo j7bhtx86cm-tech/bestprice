@@ -112,6 +112,18 @@ def parse_price_file_2(filename):
         if not product_name or product_name == 'nan':
             continue
         
+        # Get REAL price from column 7 - "цена"
+        price = row[7] if len(row) > 7 and not pd.isna(row[7]) else 0
+        if isinstance(price, str):
+            try:
+                price = float(price.replace(',', '.'))
+            except:
+                price = 0
+        
+        # Skip if no valid price
+        if price <= 0:
+            continue
+        
         # Get unit from column 2
         unit_text = str(row[2] if not pd.isna(row[2]) else 'ШТ').strip()
         
@@ -125,13 +137,10 @@ def parse_price_file_2(filename):
         }
         unit = unit_map.get(unit_text.upper(), 'шт')
         
-        # Generate mock price
-        price = generate_mock_price(product_name, unit)
-        
         products.append({
             'productName': product_name,
             'article': str(int(product_num)) if not pd.isna(product_num) else '',
-            'price': price,
+            'price': float(price),
             'unit': unit
         })
     
