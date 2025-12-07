@@ -173,11 +173,11 @@ export const CustomerCatalog = () => {
   };
 
   if (loading) {
-    return <div className=\"text-center py-8\">Загрузка каталога...</div>;
+    return <div className="text-center py-8">Загрузка каталога...</div>;
   }
 
   return (
-    <div data-testid=\"customer-catalog-page\">
+    <div data-testid="customer-catalog-page">
       <div className=\"flex justify-between items-center mb-6\">
         <div>
           <h2 className=\"text-2xl font-bold\">Каталог товаров</h2>
