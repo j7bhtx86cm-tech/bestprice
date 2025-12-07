@@ -36,24 +36,27 @@ def download_file(url, filename):
 
 def parse_price_file_1(filename):
     """Parse first supplier's price list (Алиди)"""
-    # Read with header row (skip first 4 rows which are empty/formatting)
-    df = pd.read_excel(filename, skiprows=4)
-    
-    # Rename columns
-    df.columns = ['Код товара', 'Наименование продукта', 'Цена за 1 шт', 'Цена за упаковку', 'Фасовка', 'Extra']
+    # Read without header first
+    df = pd.read_excel(filename, header=None)
     
     products = []
-    for _, row in df.iterrows():
-        # Skip rows without product code
-        if pd.isna(row.get('Код товара')) or row.get('Код товара') == '':
+    for idx, row in df.iterrows():
+        # Skip header rows (first 9 rows)
+        if idx < 9:
             continue
-            
-        product_name = str(row.get('Наименование продукта', '')).strip()
+        
+        # Get product code from column 1 (index 1)
+        product_code = row[1]
+        if pd.isna(product_code) or str(product_code).strip() == '':
+            continue
+        
+        # Get product name from column 2 (index 2)
+        product_name = str(row[2] if not pd.isna(row[2]) else '').strip()
         if not product_name or product_name == 'nan':
             continue
-            
-        # Extract unit from Фасовка
-        unit_text = str(row.get('Фасовка', 'кг')).strip()
+        
+        # Get unit from column 4 (index 4) - Фасовка
+        unit_text = str(row[4] if len(row) > 4 and not pd.isna(row[4]) else 'кг').strip()
         
         # Determine unit
         if 'кг' in unit_text.lower() or 'kg' in unit_text.lower():
@@ -72,7 +75,7 @@ def parse_price_file_1(filename):
         
         products.append({
             'productName': product_name,
-            'article': str(row.get('Код товара', '')),
+            'article': str(product_code),
             'price': price,
             'unit': unit
         })
