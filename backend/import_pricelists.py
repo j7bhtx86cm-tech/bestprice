@@ -36,16 +36,20 @@ def download_file(url, filename):
 
 def parse_price_file_1(filename):
     """Parse first supplier's price list (Алиди)"""
-    df = pd.read_excel(filename)
+    # Read with header row (skip first 4 rows which are empty/formatting)
+    df = pd.read_excel(filename, skiprows=4)
+    
+    # Rename columns
+    df.columns = ['Код товара', 'Наименование продукта', 'Цена за 1 шт', 'Цена за упаковку', 'Фасовка', 'Extra']
     
     products = []
     for _, row in df.iterrows():
         # Skip rows without product code
-        if pd.isna(row.get('Код товара')):
+        if pd.isna(row.get('Код товара')) or row.get('Код товара') == '':
             continue
             
         product_name = str(row.get('Наименование продукта', '')).strip()
-        if not product_name:
+        if not product_name or product_name == 'nan':
             continue
             
         # Extract unit from Фасовка
