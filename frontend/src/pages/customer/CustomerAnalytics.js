@@ -72,7 +72,7 @@ export const CustomerAnalytics = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Общая сумма</p>
+              <p className="text-sm text-gray-600 mb-1">Потрачено через BestPrice</p>
               <p className="text-3xl font-bold" data-testid="total-amount">
                 {analytics?.totalAmount?.toLocaleString('ru-RU') || 0} ₽
               </p>
@@ -90,7 +90,9 @@ export const CustomerAnalytics = () => {
               <p className="text-3xl font-bold text-green-600" data-testid="savings">
                 {analytics?.savings?.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} ₽
               </p>
-              <p className="text-xs text-green-600 mt-1">За все время</p>
+              <p className="text-xs text-green-600 mt-1">
+                {analytics?.savingsPercentage ? `${analytics.savingsPercentage.toFixed(1)}% экономии` : 'За все время'}
+              </p>
             </div>
             <div className="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
               <TrendingDown className="w-6 h-6 text-green-700" />
@@ -98,6 +100,38 @@ export const CustomerAnalytics = () => {
           </div>
         </Card>
       </div>
+
+      {/* Savings Comparison Card */}
+      {analytics && analytics.savings > 0 && (
+        <Card className="p-6 mb-6 bg-gradient-to-r from-blue-50 to-green-50">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-green-600" />
+            Анализ экономии
+          </h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Если бы вы покупали у одного поставщика:</p>
+              <p className="text-2xl font-bold text-gray-700">
+                {analytics.singleSupplierCost?.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) || 0} ₽
+              </p>
+              {analytics.bestSupplierName && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Лучший вариант: {analytics.bestSupplierName}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Покупая через BestPrice:</p>
+              <p className="text-2xl font-bold text-green-600">
+                {analytics.multiSupplierCost?.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) || 0} ₽
+              </p>
+              <p className="text-sm text-green-600 mt-1 font-medium">
+                Экономия: {analytics.savingsPercentage?.toFixed(1) || 0}%
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Orders by Status */}
       <Card className="p-6 mb-6">
