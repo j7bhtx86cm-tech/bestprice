@@ -234,6 +234,66 @@ frontend:
         agent: "testing"
         comment: "WORKING! Order details page correctly displays delivery address. Verified with order f011f205-5c40-48e1-9c62-c0378e5b739e showing full address, phone, and additional phone. Feature was already implemented in CustomerOrders.js lines 190-201."
 
+  - task: "Enhanced Search System with Multi-Word Matching"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerCatalog.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-08): Search functionality working perfectly. Searched for 'креветки 31/40' and found 12 products matching BOTH terms. Results correctly sorted by lowest price first (896.40 ₽, 896.40 ₽, 903.96 ₽...). Search message displays 'Найдено товаров: 12 • Сортировка: от дешёвых к дорогим'. Price displayed prominently in large green font (text-2xl font-bold text-green-600)."
+
+  - task: "Analytics Page with Order Statistics"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerAnalytics.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-08): Analytics page fully functional and VISIBLE (not hidden). Displays: Total orders: 5 (matches expected), Total amount: 33,793.24 ₽ (matches expected ~33,793 ₽), Savings: 0.00 ₽. 'Заказы по статусу' section with 4 colored boxes showing: Новые: 4, Подтверждены: 1, Частичные: 0, Отклонены: 0. 'Последние заказы' section displays recent orders with dates and amounts."
+
+  - task: "Clickable Order Status Filtering"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerAnalytics.js, /app/frontend/src/pages/customer/CustomerOrders.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-08): Clickable status filtering working perfectly. Clicked 'Новые' status box (showing 4) in Analytics page, correctly navigated to /customer/orders?status=new. 'Сбросить фильтр: Новый' button appears at top. Only displays 4 orders with 'Новый' status. Filtered count matches analytics number. Clicking 'Сбросить фильтр' button correctly shows all 5 orders again."
+
+  - task: "Documents Section with Proper Layout"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerDocuments.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-08): Documents page layout is CORRECT. 'Загруженные документы' section is at TOP, 'Загрузить новый документ' form is at BOTTOM. Form fields appear in correct order: 1. 'Тип документа' dropdown, 2. 'ИНН поставщика' input (pre-filled from company profile), 3. 'ОГРН поставщика' input (pre-filled from company profile), 4. 'Прикрепить документы' file upload area. File upload accepts multiple files (multiple attribute present). All requirements met."
+
+  - task: "Catalog Price-First Display"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerCatalog.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-08): Catalog price-first display working correctly. Each product card shows: Price in LARGE green text (text-2xl font-bold text-green-600) as most prominent element, Product name below price (text-base font-medium), Article number below name (text-sm text-gray-500), Compact layout. '+ X других предложений' displayed for items with multiple offers. Layout matches requirements perfectly."
+
 backend:
   - task: "Delivery Address API Validation"
     implemented: true
