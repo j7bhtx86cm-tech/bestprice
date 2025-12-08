@@ -211,12 +211,14 @@ class Order(BaseModel):
     amount: float
     status: OrderStatus = OrderStatus.new
     orderDetails: List[OrderItem] = []
+    deliveryAddress: Optional[DeliveryAddress] = None
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class OrderCreate(BaseModel):
     supplierCompanyId: str
     amount: float
     orderDetails: List[OrderItem]
+    deliveryAddress: Optional[DeliveryAddress] = None
 
 # Registration Models
 class SupplierRegistration(BaseModel):
