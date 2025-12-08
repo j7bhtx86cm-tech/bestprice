@@ -373,9 +373,6 @@ export const CustomerCatalog = () => {
                       </div>
                     </details>
                   )}
-                      </div>
-                    </details>
-                  )}
                 </div>
                 
                 {/* Add to Cart Button */}
