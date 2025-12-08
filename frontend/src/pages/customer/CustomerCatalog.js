@@ -302,16 +302,21 @@ export const CustomerCatalog = () => {
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Поиск товаров..."
+            placeholder="Поиск: название, артикул, размер (например: креветки 31/40)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
+        {searchTerm && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Найдено товаров: {filteredGroups.length} • Сортировка: от дешёвых к дорогим
+          </p>
+        )}
       </div>
 
       {/* Product Grid */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {filteredGroups.length === 0 ? (
           <Card className="p-8 text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -321,56 +326,56 @@ export const CustomerCatalog = () => {
           </Card>
         ) : (
           filteredGroups.map((group, idx) => (
-            <Card key={idx} className="p-6">
-              <h3 className="text-xl font-semibold mb-4">{group.displayName}</h3>
-              
-              {/* Show all price options */}
-              <div className="space-y-3">
-                {group.offers.slice(0, 5).map((offer, offerIdx) => (
-                  <div 
-                    key={offerIdx}
-                    className={`flex items-center justify-between p-4 rounded-lg border ${
-                      offer.isBestPrice ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-lg">
-                          {offer.price.toFixed(2)} ₽ / {offer.unit}
-                        </span>
-                        {offer.isBestPrice && (
-                          <Badge variant="default" className="bg-green-600">
-                            <Award className="h-3 w-3 mr-1" />
-                            Best Price
-                          </Badge>
-                        )}
-                        {group.offers.length === 1 && (
-                          <Badge variant="secondary">
-                            Единственное предложение
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Артикул: {offer.article}
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => addToCart(offer, group)}
-                      size="sm"
-                      variant={offer.isBestPrice ? "default" : "outline"}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      В корзину
-                    </Button>
+            <Card key={idx} className="p-4 hover:shadow-md transition-shadow">
+              {/* Price-First Display */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  {/* Price - Most Prominent */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl font-bold text-green-600">
+                      {group.lowestPrice.toFixed(2)} ₽
+                    </span>
+                    <span className="text-sm text-gray-600">/ {group.unit}</span>
+                    {group.offers.length > 1 && (
+                      <Badge variant="default" className="bg-green-600">
+                        <Award className="h-3 w-3 mr-1" />
+                        Best Price
+                      </Badge>
+                    )}
                   </div>
-                ))}
+                  
+                  {/* Product Name */}
+                  <h3 className="text-base font-medium mb-1">{group.displayName}</h3>
+                  <p className="text-sm text-gray-500">Артикул: {group.article}</p>
+                  
+                  {/* Alternative Prices */}
+                  {group.offers.length > 1 && (
+                    <details className="mt-2">
+                      <summary className="text-sm text-blue-600 cursor-pointer hover:text-blue-700">
+                        + {group.offers.length - 1} других предложений
+                      </summary>
+                      <div className="mt-2 space-y-1 pl-4">
+                        {group.offers.slice(1, 5).map((offer, offerIdx) => (
+                          <div key={offerIdx} className="text-sm text-gray-600 flex items-center gap-2">
+                            <span className="font-medium">{offer.price.toFixed(2)} ₽</span>
+                            <span>/ {offer.unit}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+                
+                {/* Add to Cart Button */}
+                <Button 
+                  onClick={() => addToCart(group.offers[0], group)}
+                  size="sm"
+                  className="shrink-0"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  В корзину
+                </Button>
               </div>
-
-              {group.offers.length > 5 && (
-                <p className="text-sm text-muted-foreground mt-3 text-center">
-                  И ещё {group.offers.length - 5} предложений
-                </p>
-              )}
             </Card>
           ))
         )}
