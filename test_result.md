@@ -191,6 +191,87 @@ test_plan:
   test_all: true
   test_priority: "high_first"
 
+  - task: "Enhanced Analytics Page"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerAnalytics.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Analytics page fully functional. Displays: Total orders (2), Total amount (7,370.7 ₽), Savings (0.00 ₽), Orders by status (1 new, 1 confirmed, 0 partial, 0 declined), Recent orders list with dates and amounts. 'Смотреть все' link navigates correctly to orders page."
+
+  - task: "Delivery Address Management with Phone Numbers"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerProfile.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Delivery addresses section working correctly. Can add multiple addresses with address, phone, and additional phone fields. 'Добавить адрес' button adds new address cards. Save functionality works and updates profile successfully. Frontend handles both old string format and new object format for backward compatibility."
+
+  - task: "Delivery Address Selection During Checkout"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/customer/CustomerCatalog.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Delivery address selection modal does NOT appear during checkout even with multiple addresses. Root cause: Backend API validation error - old delivery addresses stored as strings cause ResponseValidationError when fetching company data. Error: 'Input should be a valid dictionary or object to extract fields from'. The frontend code is correct and handles conversion, but backend Pydantic validation fails before data reaches frontend. Orders can still be placed but without address selection capability."
+
+  - task: "Order Details Display with Delivery Address"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/pages/customer/CustomerOrders.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "NOT IMPLEMENTED: Order details page does not display delivery address information. The Order model in backend has deliveryAddress field and orders are saved with delivery addresses, but the frontend CustomerOrders.js component does not render this information in the order details section. This feature needs to be added to show delivery address, phone, and additional phone in order details."
+
+backend:
+  - task: "Delivery Address API Validation"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG: Backend API returns ResponseValidationError when fetching company data if deliveryAddresses contain old string format. Error: 'Input should be a valid dictionary or object to extract fields from'. The Company model expects List[DeliveryAddress] but database contains mixed formats (strings and objects). Need to either: (1) Add migration to convert all string addresses to object format, OR (2) Update API response model to handle both formats before validation."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.1"
+  test_sequence: 2
+  run_ui: true
+  last_test_date: "2025-12-08"
+
+test_plan:
+  current_focus:
+    - "Delivery Address Selection During Checkout"
+    - "Delivery Address API Validation"
+    - "Order Details Display with Delivery Address"
+  stuck_tasks:
+    - "Delivery Address Selection During Checkout"
+    - "Delivery Address API Validation"
+  test_all: false
+  test_priority: "high_first"
+
 agent_communication:
   - agent: "testing"
     message: "Comprehensive end-to-end testing completed for BestPrice B2B marketplace. All critical requirements verified: (1) Supplier names HIDDEN in catalog, (2) Best Price badges displayed correctly, (3) Cart and order placement working, (4) Supplier names VISIBLE in order history after placement. The application is functioning correctly according to specifications."
+  - agent: "testing"
+    message: "NEW FEATURES TESTING COMPLETED (2025-12-08): Tested Analytics page, Delivery address management, and Checkout flow. CRITICAL ISSUES FOUND: (1) Backend API validation error prevents delivery address modal from appearing - old string format addresses cause Pydantic validation failure. (2) Order details page does not display delivery address information (not implemented). Analytics and profile delivery address management are working correctly. Recommend: Fix backend validation to handle mixed address formats, then add delivery address display to order details page."
