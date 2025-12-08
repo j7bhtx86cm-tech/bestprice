@@ -303,14 +303,68 @@ export const CustomerCatalog = () => {
             Лучшие цены от поставщиков
           </p>
         </div>
-        <Button 
-          onClick={() => setShowCart(true)} 
-          className="relative"
-          variant="default"
-        >
-          <ShoppingCart className="mr-2 h-4 w-4" />
-          Корзина ({cart.length})
-        </Button>
+        
+        {/* Cart Button with Mini Cart Preview */}
+        <div className="relative">
+          <Button 
+            onClick={() => setShowCart(true)} 
+            onMouseEnter={() => setShowMiniCart(true)}
+            onMouseLeave={() => setTimeout(() => setShowMiniCart(false), 300)}
+            className="relative"
+            variant="default"
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Корзина ({cart.length})
+            {cart.length > 0 && (
+              <Badge className="ml-2 bg-red-500">{cart.reduce((sum, item) => sum + item.quantity, 0)}</Badge>
+            )}
+          </Button>
+          
+          {/* Mini Cart Dropdown */}
+          {showMiniCart && cart.length > 0 && (
+            <Card 
+              className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto shadow-xl z-50"
+              onMouseEnter={() => setShowMiniCart(true)}
+              onMouseLeave={() => setShowMiniCart(false)}
+            >
+              <div className="p-4">
+                <h3 className="font-semibold mb-3">В корзине ({cart.length})</h3>
+                <div className="space-y-2">
+                  {cart.slice(0, 5).map(item => (
+                    <div key={item.cartId} className="text-sm p-2 bg-gray-50 rounded">
+                      <p className="font-medium truncate">{item.productName}</p>
+                      <div className="flex justify-between text-xs text-gray-600 mt-1">
+                        <span>{item.quantity} {item.unit}</span>
+                        <span className="font-medium">{(item.price * item.quantity).toFixed(2)} ₽</span>
+                      </div>
+                    </div>
+                  ))}
+                  {cart.length > 5 && (
+                    <p className="text-xs text-gray-500 text-center">
+                      +{cart.length - 5} товаров
+                    </p>
+                  )}
+                </div>
+                <div className="border-t mt-3 pt-3">
+                  <div className="flex justify-between font-semibold">
+                    <span>Итого:</span>
+                    <span>{getCartTotal().toFixed(2)} ₽</span>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      setShowMiniCart(false);
+                      setShowCart(true);
+                    }}
+                    className="w-full mt-2"
+                    size="sm"
+                  >
+                    Оформить заказ
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
 
       {/* Search */}
