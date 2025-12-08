@@ -346,7 +346,13 @@ export const CustomerCatalog = () => {
                   
                   {/* Product Name */}
                   <h3 className="text-base font-medium mb-1">{group.displayName}</h3>
-                  <p className="text-sm text-gray-500">Артикул: {group.article}</p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <span>Артикул: {group.article}</span>
+                    <span>•</span>
+                    <span className="font-medium text-blue-600">
+                      {group.offers[0]?.supplierName || 'Поставщик'}
+                    </span>
+                  </div>
                   
                   {/* Alternative Prices */}
                   {group.offers.length > 1 && (
@@ -354,13 +360,19 @@ export const CustomerCatalog = () => {
                       <summary className="text-sm text-blue-600 cursor-pointer hover:text-blue-700">
                         + {group.offers.length - 1} других предложений
                       </summary>
-                      <div className="mt-2 space-y-1 pl-4">
+                      <div className="mt-2 space-y-2 pl-4">
                         {group.offers.slice(1, 5).map((offer, offerIdx) => (
-                          <div key={offerIdx} className="text-sm text-gray-600 flex items-center gap-2">
-                            <span className="font-medium">{offer.price.toFixed(2)} ₽</span>
-                            <span>/ {offer.unit}</span>
+                          <div key={offerIdx} className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-700">{offer.price.toFixed(2)} ₽</span>
+                              <span className="text-gray-500">/ {offer.unit}</span>
+                            </div>
+                            <span className="text-blue-600 font-medium">{offer.supplierName}</span>
                           </div>
                         ))}
+                      </div>
+                    </details>
+                  )}
                       </div>
                     </details>
                   )}
