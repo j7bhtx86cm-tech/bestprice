@@ -134,11 +134,27 @@ export const CustomerOrders = () => {
 
   return (
     <div data-testid="customer-orders-page">
-      <h2 className="text-2xl font-bold mb-6">История заказов</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">История заказов</h2>
+        {statusFilter && (
+          <Button variant="outline" size="sm" onClick={clearFilter}>
+            <X className="h-4 w-4 mr-2" />
+            Сбросить фильтр: {statusLabels[statusFilter]}
+          </Button>
+        )}
+      </div>
 
       {orders.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-gray-600">У вас пока нет заказов</p>
+        </Card>
+      ) : filteredOrders.length === 0 ? (
+        <Card className="p-8 text-center">
+          <Filter className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600">Нет заказов со статусом "{statusLabels[statusFilter]}"</p>
+          <Button variant="outline" className="mt-4" onClick={clearFilter}>
+            Показать все заказы
+          </Button>
         </Card>
       ) : (
         <div className="space-y-4">
