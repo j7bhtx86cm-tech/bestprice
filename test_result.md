@@ -253,7 +253,7 @@ backend:
 metadata:
   created_by: "testing_agent"
   version: "1.2"
-  test_sequence: 3
+  test_sequence: 4
   run_ui: true
   last_test_date: "2025-12-08"
 
