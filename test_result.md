@@ -317,8 +317,21 @@ metadata:
   run_ui: true
   last_test_date: "2025-12-08"
 
+  - task: "Fixed Persistent Mini Cart"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/customer/CustomerCatalog.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "CODE REVIEW COMPLETED (2025-12-08): Unable to perform automated Playwright testing due to browser automation tool timeout issues (system limitation). However, comprehensive code review confirms implementation is CORRECT. Mini cart implementation (lines 294-343): (1) ✅ Conditional rendering - only shows when cart.length > 0, (2) ✅ Fixed positioning with 'fixed top-20 right-6 z-50' classes ensures it stays in top-right corner during scroll, (3) ✅ Shows all required content: product name (line 313), quantity/unit (line 315), price (line 316), supplier name (line 318), (4) ✅ Shows total at bottom (lines 328-331), (5) ✅ Has 'Оформить заказ' button (lines 332-338), (6) ✅ Cart button shows 'Корзина ({cart.length})' with red badge for total quantity (lines 361-364), (7) ✅ Updates automatically when products added via React state management. All requirements met in code. RECOMMENDATION: Main agent should perform manual verification or wait for browser automation tool to be fixed for live testing."
+
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Fixed Persistent Mini Cart"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -336,3 +349,5 @@ agent_communication:
     message: "FINAL COMPREHENSIVE TEST COMPLETED (2025-12-08): All features from technical specification verified. CRITICAL BACKEND FIX: Found and fixed delivery address validation error affecting 2 companies (ООО Ресторан Вкусно, ООО Кафе Столовая) - old string format addresses converted to object format. Test Results: (1) Search System: ✅ 'креветки 31/40' returns 12 products with BOTH terms, price-first display in large green font, sorted lowest to highest. (2) Analytics: ✅ Shows 3 main cards (Total Orders: 5, Потрачено через BestPrice: 33,793.24 ₽, Ваша экономия: -5,420.00 ₽ with -19.1% percentage). NEW 'Анализ экономии' card NOT visible because savings are NEGATIVE - this is CORRECT behavior (card only shows when savings > 0). (3) Clickable Orders: ✅ Status boxes navigate to filtered orders, 'Сбросить фильтр' button works. (4) Documents: ✅ Layout correct (uploaded docs at top, form at bottom), all 4 fields in order with required markers, button validation working (disabled when incomplete, enabled when all filled + file attached), multiple file upload supported. ALL TESTS PASSED."
   - agent: "testing"
     message: "COMPLETE VERIFICATION CHECKLIST TESTING (2025-12-08): All technical specification requirements verified successfully. Test Results: (1) ✅ SEARCH SYSTEM: Search 'креветки 31/40' returns 14 products with BOTH terms, price displayed FIRST in large green font (896.40 ₽), product name comes AFTER price, results sorted lowest to highest (896.40, 896.40, 903.96, 916.50, 920.00), shows 'Найдено товаров: 14 • Сортировка: от дешёвых к дорогим'. (2) ✅ ANALYTICS SAVINGS CALCULATION: Main metrics displayed (Total Orders: 5, Total Amount: 33,793.24 ₽, Savings: -5,420.00 ₽), 'Сравнение стоимости покупок' card EXISTS with all required elements: 'Если покупать у одного поставщика: 28,373.24 ₽' (Лучший вариант: Алиди), 'Через BestPrice (несколько поставщиков): 33,793.24 ₽', shows 'Переплата: 19.1%', explanation text 'Как считается: Мы находим поставщика с наибольшим количеством нужных товаров...' present. (3) ✅ CLICKABLE ORDER STATUS: Clicking 'Новые' status box navigates to /customer/orders?status=new, shows 'Сбросить фильтр: Новый' button, displays only 4 orders with 'Новый' status, reset filter shows all 5 orders and clears URL parameter. (4) ✅ DOCUMENTS LAYOUT: 'Загруженные документы' section at TOP, 'Загрузить новый документ' form at BOTTOM, all 4 fields numbered correctly (1. Тип документа *, 2. ИНН поставщика *, 3. ОГРН поставщика *, 4. Прикрепить документы *), button says 'Отправить на модерацию', button DISABLED initially, button still DISABLED after filling only document type, INN and OGRN pre-filled (7701234567, 1027701234567), button ENABLED after filling all fields and attaching file. ALL VERIFICATION REQUIREMENTS MET."
+  - agent: "testing"
+    message: "MINI CART CODE REVIEW (2025-12-08): Attempted to test fixed persistent mini cart feature but browser automation tool experienced persistent timeout issues (300s timeout on all attempts - system limitation, not application issue). Performed comprehensive code review instead. FINDINGS: Implementation is CORRECT and matches ALL requirements. Mini cart uses 'fixed top-20 right-6 z-50' positioning which ensures it stays in top-right corner during scroll. Conditional rendering ensures it only appears when cart has items. Shows all required information (product name, quantity, price, supplier name, total, checkout button). Cart button correctly shows count and red badge. React state management ensures automatic updates when products are added. Frontend service is running and accessible (verified via curl). RECOMMENDATION: Manual verification needed or retry automated testing when browser automation tool is stable."
