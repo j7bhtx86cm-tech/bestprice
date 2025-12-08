@@ -186,13 +186,9 @@ export const CustomerCatalog = () => {
     };
 
     setCart([...cart, cartItem]);
-    setShowMiniCart(true);
     
     // Reset quantity for this product
     setQuantities({ ...quantities, [productKey]: 1 });
-    
-    // Auto-hide mini cart after 3 seconds
-    setTimeout(() => setShowMiniCart(false), 3000);
   };
 
   const setProductQuantity = (productKey, value) => {
