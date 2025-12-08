@@ -20,11 +20,13 @@ export const CustomerCatalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
+  const [showMiniCart, setShowMiniCart] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [processingOrder, setProcessingOrder] = useState(false);
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [quantities, setQuantities] = useState({});
 
   useEffect(() => {
     fetchAllData();
