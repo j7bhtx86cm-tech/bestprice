@@ -21,15 +21,34 @@ export const CustomerCatalog = () => {
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
   const [processingOrder, setProcessingOrder] = useState(false);
+  const [company, setCompany] = useState(null);
+  const [selectedAddress, setSelectedAddress] = useState(null);
 
   useEffect(() => {
     fetchAllData();
+    fetchCompanyInfo();
   }, []);
 
   useEffect(() => {
     filterProducts();
   }, [searchTerm, groupedProducts]);
+
+  const fetchCompanyInfo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/companies/my`, { headers });
+      setCompany(response.data);
+      // Auto-select first delivery address if only one exists
+      if (response.data.deliveryAddresses && response.data.deliveryAddresses.length === 1) {
+        setSelectedAddress(response.data.deliveryAddresses[0]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch company info:', error);
+    }
+  };
 
   const fetchAllData = async () => {
     try {
