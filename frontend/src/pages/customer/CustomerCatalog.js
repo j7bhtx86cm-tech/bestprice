@@ -169,21 +169,35 @@ export const CustomerCatalog = () => {
     setFilteredGroups(sortedFiltered);
   };
 
-  const addToCart = (offer, group) => {
+  const addToCart = (offer, group, productKey) => {
+    const qty = quantities[productKey] || 1;
+    
     const cartItem = {
       cartId: `${offer.priceListId}_${Date.now()}`,
       priceListId: offer.priceListId,
       supplierId: offer.supplierId,
-      supplierName: offer.supplierName, // Hidden in cart, revealed in order history
+      supplierName: offer.supplierName,
       productName: group.displayName,
       article: offer.article,
       price: offer.price,
       unit: group.unit,
-      quantity: 1,
+      quantity: qty,
       isBestPrice: offer.isBestPrice || false
     };
 
     setCart([...cart, cartItem]);
+    setShowMiniCart(true);
+    
+    // Reset quantity for this product
+    setQuantities({ ...quantities, [productKey]: 1 });
+    
+    // Auto-hide mini cart after 3 seconds
+    setTimeout(() => setShowMiniCart(false), 3000);
+  };
+
+  const setProductQuantity = (productKey, value) => {
+    const qty = Math.max(1, parseInt(value) || 1);
+    setQuantities({ ...quantities, [productKey]: qty });
   };
 
   const updateCartQuantity = (cartId, delta) => {
