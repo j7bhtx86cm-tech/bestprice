@@ -243,34 +243,34 @@ export const CustomerDocuments = () => {
           {/* 2. INN */}
           <div>
             <Label htmlFor="inn" className="text-sm font-medium mb-2">
-              2. ИНН поставщика
+              2. ИНН поставщика <span className="text-red-500">*</span>
             </Label>
             <Input
               id="inn"
               value={formData.inn}
               onChange={(e) => setFormData({ ...formData, inn: e.target.value })}
               placeholder="ИНН компании-поставщика"
-              className="bg-gray-50"
+              required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Автоматически заполнен из профиля вашей компании
+              Введите ИНН поставщика из договора
             </p>
           </div>
 
           {/* 3. OGRN */}
           <div>
             <Label htmlFor="ogrn" className="text-sm font-medium mb-2">
-              3. ОГРН поставщика
+              3. ОГРН поставщика <span className="text-red-500">*</span>
             </Label>
             <Input
               id="ogrn"
               value={formData.ogrn}
               onChange={(e) => setFormData({ ...formData, ogrn: e.target.value })}
               placeholder="ОГРН компании-поставщика"
-              className="bg-gray-50"
+              required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Автоматически заполнен из профиля вашей компании
+              Введите ОГРН поставщика из договора
             </p>
           </div>
 
