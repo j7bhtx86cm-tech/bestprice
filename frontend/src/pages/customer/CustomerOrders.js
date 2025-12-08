@@ -135,7 +135,9 @@ export const CustomerOrders = () => {
                     <td className="px-4 py-3 text-sm">
                       {new Date(order.orderDate).toLocaleDateString('ru-RU')}
                     </td>
-                    <td className="px-4 py-3 text-sm">Поставщик</td>
+                    <td className="px-4 py-3 text-sm font-medium">
+                      {suppliers[order.supplierCompanyId]?.companyName || 'Загрузка...'}
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium">
                       {order.amount.toLocaleString('ru-RU')} ₽
                     </td>
