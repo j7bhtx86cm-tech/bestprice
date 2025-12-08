@@ -141,6 +141,14 @@ export const CustomerDocuments = () => {
     }
   };
 
+  // Check if form is valid for submission
+  const isFormValid = () => {
+    return formData.documentType && 
+           formData.inn && 
+           formData.ogrn && 
+           formData.files.length > 0;
+  };
+
   if (loading) {
     return <div className="text-center py-8">Загрузка...</div>;
   }
