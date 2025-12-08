@@ -311,14 +311,20 @@ export const CustomerDocuments = () => {
 
           <Button 
             type="submit" 
-            disabled={uploading} 
-            data-testid="upload-document-btn"
+            disabled={uploading || !isFormValid()} 
+            data-testid="submit-moderation-btn"
             size="lg"
             className="w-full"
           >
             <Upload className="h-4 w-4 mr-2" />
-            {uploading ? 'Загрузка...' : 'Загрузить документы'}
+            {uploading ? 'Загрузка...' : 'Отправить на модерацию'}
           </Button>
+          
+          {!isFormValid() && (
+            <p className="text-sm text-amber-600 text-center">
+              Заполните все обязательные поля и прикрепите документы для активации кнопки
+            </p>
+          )}
         </form>
       </Card>
     </div>
