@@ -802,21 +802,64 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
     total_orders = len(orders)
     total_amount = sum(order['amount'] for order in orders)
     
-    # Calculate actual savings by comparing against all products
+    # Get all products and suppliers
     all_products = await db.price_lists.find({}, {"_id": 0}).to_list(10000)
-    total_savings = 0
+    suppliers = await db.companies.find({"type": CompanyType.supplier}, {"_id": 0}).to_list(1000)
     
+    # Calculate savings using optimal supplier strategy
+    all_ordered_items = []
     for order in orders:
         for item in order.get('orderDetails', []):
-            similar_products = [p for p in all_products 
-                              if p['productName'].lower() == item['productName'].lower() 
-                              and p['unit'].lower() == item['unit'].lower()]
+            all_ordered_items.append({
+                'productName': item['productName'],
+                'unit': item['unit'],
+                'quantity': item['quantity'],
+                'paidPrice': item['price']
+            })
+    
+    # Strategy 1: Find supplier with most available items
+    supplier_coverage = {}
+    for supplier in suppliers:
+        supplier_id = supplier['id']
+        supplier_products = [p for p in all_products if p['supplierCompanyId'] == supplier_id]
+        
+        matched_count = 0
+        total_cost = 0
+        
+        for item in all_ordered_items:
+            matching = [p for p in supplier_products 
+                       if p['productName'].lower() == item['productName'].lower() 
+                       and p['unit'].lower() == item['unit'].lower()]
             
-            if len(similar_products) > 1:
-                avg_price = sum(p['price'] for p in similar_products) / len(similar_products)
-                item_savings = (avg_price - item['price']) * item['quantity']
-                if item_savings > 0:
-                    total_savings += item_savings
+            if matching:
+                matched_count += 1
+                total_cost += matching[0]['price'] * item['quantity']
+            else:
+                # Find from other suppliers
+                other_matches = [p for p in all_products 
+                               if p['productName'].lower() == item['productName'].lower() 
+                               and p['unit'].lower() == item['unit'].lower()]
+                if other_matches:
+                    # Use cheapest from other suppliers
+                    cheapest = min(other_matches, key=lambda x: x['price'])
+                    total_cost += cheapest['price'] * item['quantity']
+        
+        supplier_coverage[supplier_id] = {
+            'name': supplier['companyName'],
+            'matched': matched_count,
+            'totalCost': total_cost
+        }
+    
+    # Find best single supplier (most items matched)
+    best_supplier = max(supplier_coverage.values(), key=lambda x: x['matched']) if supplier_coverage else None
+    single_supplier_cost = best_supplier['totalCost'] if best_supplier else total_amount
+    
+    # Calculate actual multi-supplier cost (current orders)
+    multi_supplier_cost = total_amount
+    
+    # Calculate savings
+    actual_savings = single_supplier_cost - multi_supplier_cost
+    savings_percentage = (actual_savings / single_supplier_cost * 100) if single_supplier_cost > 0 else 0
     
     # Get orders by status
     orders_by_status = {
@@ -832,7 +875,11 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
     return {
         "totalOrders": total_orders,
         "totalAmount": total_amount,
-        "savings": total_savings,
+        "savings": actual_savings,
+        "savingsPercentage": savings_percentage,
+        "singleSupplierCost": single_supplier_cost,
+        "multiSupplierCost": multi_supplier_cost,
+        "bestSupplierName": best_supplier['name'] if best_supplier else None,
         "ordersByStatus": orders_by_status,
         "recentOrders": recent_orders
     }
