@@ -170,7 +170,7 @@ export const CustomerOrders = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {orders.map((order) => (
+                {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm">
                       {new Date(order.orderDate).toLocaleDateString('ru-RU')}
