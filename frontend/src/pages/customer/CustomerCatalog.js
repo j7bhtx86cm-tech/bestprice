@@ -430,7 +430,7 @@ export const CustomerCatalog = () => {
                 </div>
                 
                 <Button 
-                  onClick={placeOrder} 
+                  onClick={handleCheckout} 
                   disabled={processingOrder || cart.length === 0}
                   className="w-full"
                   size="lg"
@@ -440,6 +440,74 @@ export const CustomerCatalog = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delivery Address Selection Modal */}
+      <Dialog open={showAddressModal} onOpenChange={setShowAddressModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Выберите адрес доставки</DialogTitle>
+            <DialogDescription>
+              Пожалуйста, подтвердите адрес доставки для этого заказа
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 mt-4">
+            {company?.deliveryAddresses && company.deliveryAddresses.map((address, index) => (
+              <Card 
+                key={index}
+                className={`p-4 cursor-pointer transition-all ${
+                  selectedAddress === address 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'hover:border-gray-400'
+                }`}
+                onClick={() => setSelectedAddress(address)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                    selectedAddress === address 
+                      ? 'border-blue-500 bg-blue-500' 
+                      : 'border-gray-300'
+                  }`}>
+                    {selectedAddress === address && (
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{address.address || address}</p>
+                    {address.phone && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Тел: {address.phone}
+                      </p>
+                    )}
+                    {address.additionalPhone && (
+                      <p className="text-sm text-muted-foreground">
+                        Доп. тел: {address.additionalPhone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddressModal(false)}
+              className="flex-1"
+            >
+              Отмена
+            </Button>
+            <Button 
+              onClick={placeOrder}
+              disabled={!selectedAddress || processingOrder}
+              className="flex-1"
+            >
+              {processingOrder ? 'Оформление...' : 'Подтвердить заказ'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
