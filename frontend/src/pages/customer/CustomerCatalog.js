@@ -85,47 +85,64 @@ export const CustomerCatalog = () => {
   const groupProductsForBestPrice = (productsMap) => {
     const productGroups = {};
 
-    // Create groups based on productName + unit
+    // Create groups based on article + productName + unit to avoid duplicates
     Object.entries(productsMap).forEach(([supplierId, { supplier, products }]) => {
       products.forEach(product => {
-        const key = `${product.productName.toLowerCase().trim()}|${product.unit.toLowerCase().trim()}`;
+        // Use article as primary key if available, otherwise use product name
+        const normalizedName = product.productName.toLowerCase().trim();
+        const normalizedUnit = product.unit.toLowerCase().trim();
+        const key = `${product.article.toLowerCase().trim()}|${normalizedName}|${normalizedUnit}`;
         
         if (!productGroups[key]) {
           productGroups[key] = {
             displayName: product.productName,
             unit: product.unit,
+            article: product.article,
+            searchText: `${product.productName} ${product.article} ${product.unit}`.toLowerCase(),
             offers: []
           };
         }
 
-        productGroups[key].offers.push({
-          priceListId: product.id,
-          supplierId: supplier.id,
-          supplierName: supplier.companyName,
-          article: product.article,
-          price: product.price,
-          unit: product.unit,
-          availability: product.availability,
-          product: product
-        });
+        // Check if this supplier already has this product (avoid duplicates from same supplier)
+        const existingOffer = productGroups[key].offers.find(o => o.supplierId === supplier.id);
+        if (!existingOffer) {
+          productGroups[key].offers.push({
+            priceListId: product.id,
+            supplierId: supplier.id,
+            supplierName: supplier.companyName,
+            article: product.article,
+            price: product.price,
+            unit: product.unit,
+            availability: product.availability,
+            product: product
+          });
+        }
       });
     });
 
     // Convert to array and sort offers by price
     const groupedArray = Object.values(productGroups).map(group => {
-      // Sort offers by price (ascending)
-      group.offers.sort((a, b) => a.price - b.price);
+      // Remove duplicate offers and sort by price (ascending)
+      const uniqueOffers = group.offers.filter((offer, index, self) => 
+        index === self.findIndex(o => o.supplierId === offer.supplierId && o.article === offer.article)
+      );
+      
+      uniqueOffers.sort((a, b) => a.price - b.price);
       
       // Mark the best price
-      if (group.offers.length > 0) {
-        group.offers[0].isBestPrice = true;
+      if (uniqueOffers.length > 0) {
+        uniqueOffers[0].isBestPrice = true;
       }
 
-      return group;
+      return {
+        ...group,
+        offers: uniqueOffers,
+        lowestPrice: uniqueOffers[0]?.price || 0
+      };
     }).filter(group => group.offers.length > 0);
 
-    // Sort groups alphabetically by product name
-    return groupedArray.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    // Sort groups by lowest price (best deals first)
+    return groupedArray.sort((a, b) => a.lowestPrice - b.lowestPrice);
   };
 
   const filterProducts = () => {
@@ -134,10 +151,20 @@ export const CustomerCatalog = () => {
       return;
     }
 
-    const filtered = groupedProducts.filter(group =>
-      group.displayName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredGroups(filtered);
+    const searchLower = searchTerm.toLowerCase().trim();
+    const searchWords = searchLower.split(/\s+/);
+
+    // Smart search: matches all words in any order
+    const filtered = groupedProducts.filter(group => {
+      const searchText = group.searchText;
+      // Check if all search words are present
+      return searchWords.every(word => searchText.includes(word));
+    });
+
+    // Sort filtered results by price (lowest first)
+    const sortedFiltered = filtered.sort((a, b) => a.lowestPrice - b.lowestPrice);
+    
+    setFilteredGroups(sortedFiltered);
   };
 
   const addToCart = (offer, group) => {
