@@ -187,6 +187,18 @@ export const CustomerOrders = () => {
                 <p className="text-sm text-gray-600">Поставщик</p>
                 <p className="font-medium">{suppliers[selectedOrder.supplierCompanyId]?.companyName || 'Загрузка...'}</p>
               </div>
+              {selectedOrder.deliveryAddress && (
+                <div>
+                  <p className="text-sm text-gray-600">Адрес доставки</p>
+                  <p className="font-medium">{selectedOrder.deliveryAddress.address}</p>
+                  {selectedOrder.deliveryAddress.phone && (
+                    <p className="text-sm text-gray-600 mt-1">Тел: {selectedOrder.deliveryAddress.phone}</p>
+                  )}
+                  {selectedOrder.deliveryAddress.additionalPhone && (
+                    <p className="text-sm text-gray-600">Доп. тел: {selectedOrder.deliveryAddress.additionalPhone}</p>
+                  )}
+                </div>
+              )}
             </div>
             
             {/* Savings Banner */}
