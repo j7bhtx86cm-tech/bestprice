@@ -760,7 +760,8 @@ async def create_order(data: OrderCreate, current_user: dict = Depends(get_curre
         customerCompanyId=company['id'],
         supplierCompanyId=data.supplierCompanyId,
         amount=data.amount,
-        orderDetails=data.orderDetails
+        orderDetails=data.orderDetails,
+        deliveryAddress=data.deliveryAddress
     )
     order_dict = order.model_dump()
     order_dict['orderDate'] = order_dict['orderDate'].isoformat()
