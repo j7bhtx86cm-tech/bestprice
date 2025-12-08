@@ -249,7 +249,7 @@ class CustomerRegistration(BaseModel):
     contactPersonName: str
     contactPersonPosition: str
     contactPersonPhone: str
-    deliveryAddresses: List[str]
+    deliveryAddresses: List[DeliveryAddress]
     dataProcessingConsent: bool
 
 # ==================== HELPER FUNCTIONS ====================
