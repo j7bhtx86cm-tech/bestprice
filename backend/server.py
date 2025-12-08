@@ -127,7 +127,7 @@ class CompanyCreate(BaseModel):
     contactPersonName: Optional[str] = None
     contactPersonPosition: Optional[str] = None
     contactPersonPhone: Optional[str] = None
-    deliveryAddresses: Optional[List[str]] = []
+    deliveryAddresses: Optional[List[DeliveryAddress]] = []
     contractAccepted: bool = False
 
 class CompanyUpdate(BaseModel):
@@ -136,7 +136,7 @@ class CompanyUpdate(BaseModel):
     email: Optional[EmailStr] = None
     contactPersonName: Optional[str] = None
     contactPersonPhone: Optional[str] = None
-    deliveryAddresses: Optional[List[str]] = None
+    deliveryAddresses: Optional[List[DeliveryAddress]] = None
 
 # Document Models
 class Document(BaseModel):
