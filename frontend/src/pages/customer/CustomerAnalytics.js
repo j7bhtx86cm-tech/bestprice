@@ -102,33 +102,47 @@ export const CustomerAnalytics = () => {
       </div>
 
       {/* Savings Comparison Card */}
-      {analytics && analytics.savings > 0 && (
+      {analytics && analytics.singleSupplierCost !== undefined && (
         <Card className="p-6 mb-6 bg-gradient-to-r from-blue-50 to-green-50">
           <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <TrendingDown className="h-5 w-5 text-green-600" />
-            Анализ экономии
+            <TrendingDown className="h-5 w-5 text-blue-600" />
+            Сравнение стоимости покупок
           </h3>
           <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Если бы вы покупали у одного поставщика:</p>
-              <p className="text-2xl font-bold text-gray-700">
+            <div className="p-4 bg-white rounded-lg">
+              <p className="text-sm text-gray-600 mb-2">Если покупать у одного поставщика:</p>
+              <p className="text-3xl font-bold text-gray-700">
                 {analytics.singleSupplierCost?.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) || 0} ₽
               </p>
               {analytics.bestSupplierName && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Лучший вариант: {analytics.bestSupplierName}
+                <p className="text-sm text-gray-600 mt-2">
+                  Лучший вариант: <span className="font-medium">{analytics.bestSupplierName}</span>
                 </p>
               )}
             </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Покупая через BestPrice:</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="p-4 bg-white rounded-lg">
+              <p className="text-sm text-gray-600 mb-2">Через BestPrice (несколько поставщиков):</p>
+              <p className="text-3xl font-bold text-blue-600">
                 {analytics.multiSupplierCost?.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) || 0} ₽
               </p>
-              <p className="text-sm text-green-600 mt-1 font-medium">
-                Экономия: {analytics.savingsPercentage?.toFixed(1) || 0}%
-              </p>
+              <div className="mt-2">
+                {analytics.savings > 0 ? (
+                  <p className="text-sm text-green-600 font-medium">
+                    ✓ Экономия: {analytics.savingsPercentage?.toFixed(1) || 0}%
+                  </p>
+                ) : (
+                  <p className="text-sm text-amber-600 font-medium">
+                    Переплата: {Math.abs(analytics.savingsPercentage || 0).toFixed(1)}%
+                  </p>
+                )}
+              </div>
             </div>
+          </div>
+          <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Как считается:</strong> Мы находим поставщика с наибольшим количеством нужных товаров, 
+              добавляем недостающие позиции от других поставщиков, и сравниваем с вашими заказами через BestPrice.
+            </p>
           </div>
         </Card>
       )}
