@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye } from 'lucide-react';
+import { Eye, TrendingDown, Award } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -26,15 +26,37 @@ export const CustomerOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [suppliers, setSuppliers] = useState({});
+  const [allProducts, setAllProducts] = useState([]);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrdersAndSuppliers();
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrdersAndSuppliers = async () => {
     try {
-      const response = await axios.get(`${API}/orders/my`);
-      setOrders(response.data);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // Fetch orders
+      const ordersResponse = await axios.get(`${API}/orders/my`, { headers });
+      setOrders(ordersResponse.data);
+
+      // Fetch all suppliers
+      const suppliersResponse = await axios.get(`${API}/suppliers`, { headers });
+      const suppliersMap = {};
+      suppliersResponse.data.forEach(supplier => {
+        suppliersMap[supplier.id] = supplier;
+      });
+      setSuppliers(suppliersMap);
+
+      // Fetch all products for price comparison
+      const allProductsList = [];
+      for (const supplier of suppliersResponse.data) {
+        const priceListResponse = await axios.get(`${API}/suppliers/${supplier.id}/price-lists`, { headers });
+        allProductsList.push(...priceListResponse.data.map(p => ({ ...p, supplierId: supplier.id })));
+      }
+      setAllProducts(allProductsList);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
     } finally {
@@ -44,11 +66,42 @@ export const CustomerOrders = () => {
 
   const fetchOrderDetails = async (orderId) => {
     try {
-      const response = await axios.get(`${API}/orders/${orderId}`);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/orders/${orderId}`, { headers });
       setSelectedOrder(response.data);
     } catch (error) {
       console.error('Failed to fetch order details:', error);
     }
+  };
+
+  // Calculate savings by comparing ordered price to the average market price
+  const calculateSavings = (order) => {
+    if (!order || !order.orderDetails) return 0;
+
+    let totalSavings = 0;
+
+    order.orderDetails.forEach(item => {
+      // Find all products with the same name and unit
+      const similarProducts = allProducts.filter(p => 
+        p.productName.toLowerCase() === item.productName.toLowerCase() && 
+        p.unit.toLowerCase() === item.unit.toLowerCase()
+      );
+
+      if (similarProducts.length > 1) {
+        // Calculate average price
+        const avgPrice = similarProducts.reduce((sum, p) => sum + p.price, 0) / similarProducts.length;
+        
+        // Savings = (avg price - paid price) * quantity
+        const itemSavings = (avgPrice - item.price) * item.quantity;
+        
+        if (itemSavings > 0) {
+          totalSavings += itemSavings;
+        }
+      }
+    });
+
+    return totalSavings;
   };
 
   if (loading) {
