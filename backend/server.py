@@ -801,12 +801,40 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
     
     total_orders = len(orders)
     total_amount = sum(order['amount'] for order in orders)
-    savings = total_amount * 0.15  # Mock 15% savings
+    
+    # Calculate actual savings by comparing against all products
+    all_products = await db.price_lists.find({}, {"_id": 0}).to_list(10000)
+    total_savings = 0
+    
+    for order in orders:
+        for item in order.get('orderDetails', []):
+            similar_products = [p for p in all_products 
+                              if p['productName'].lower() == item['productName'].lower() 
+                              and p['unit'].lower() == item['unit'].lower()]
+            
+            if len(similar_products) > 1:
+                avg_price = sum(p['price'] for p in similar_products) / len(similar_products)
+                item_savings = (avg_price - item['price']) * item['quantity']
+                if item_savings > 0:
+                    total_savings += item_savings
+    
+    # Get orders by status
+    orders_by_status = {
+        "new": sum(1 for o in orders if o['status'] == 'new'),
+        "confirmed": sum(1 for o in orders if o['status'] == 'confirmed'),
+        "declined": sum(1 for o in orders if o['status'] == 'declined'),
+        "partial": sum(1 for o in orders if o['status'] == 'partial')
+    }
+    
+    # Recent orders
+    recent_orders = sorted(orders, key=lambda x: x['orderDate'], reverse=True)[:5]
     
     return {
         "totalOrders": total_orders,
         "totalAmount": total_amount,
-        "savings": savings
+        "savings": total_savings,
+        "ordersByStatus": orders_by_status,
+        "recentOrders": recent_orders
     }
 
 # ==================== SUPPLIER ROUTES ====================
