@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, TrendingDown, Award } from 'lucide-react';
+import { Eye, TrendingDown, Award, Filter, X } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -23,15 +24,38 @@ const statusLabels = {
 };
 
 export const CustomerOrders = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [suppliers, setSuppliers] = useState({});
   const [allProducts, setAllProducts] = useState([]);
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || null);
 
   useEffect(() => {
     fetchOrdersAndSuppliers();
   }, []);
+
+  useEffect(() => {
+    // Update filter from URL parameter
+    const status = searchParams.get('status');
+    setStatusFilter(status);
+  }, [searchParams]);
+
+  useEffect(() => {
+    // Filter orders when statusFilter changes
+    if (statusFilter) {
+      setFilteredOrders(orders.filter(order => order.status === statusFilter));
+    } else {
+      setFilteredOrders(orders);
+    }
+  }, [statusFilter, orders]);
+
+  const clearFilter = () => {
+    setSearchParams({});
+    setStatusFilter(null);
+  };
 
   const fetchOrdersAndSuppliers = async () => {
     try {
