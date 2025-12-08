@@ -265,16 +265,28 @@ export const CustomerOrders = () => {
             
             <div>
               <p className="text-sm text-gray-600 mb-2">Состав заказа</p>
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 {selectedOrder.orderDetails.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                    <div>
-                      <p className="font-medium">{item.productName}</p>
-                      <p className="text-sm text-gray-600">{item.article}</p>
+                  <div key={index} className="p-3 bg-white rounded-lg border">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-base">{item.productName}</p>
+                        <p className="text-sm text-gray-500">Артикул: {item.article}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-lg">{item.quantity} {item.unit}</p>
+                        <p className="text-sm text-gray-600">{item.price} ₽/{item.unit}</p>
+                        <p className="text-sm font-medium text-blue-600 mt-1">
+                          {(item.price * item.quantity).toFixed(2)} ₽
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{item.quantity} {item.unit}</p>
-                      <p className="text-sm text-gray-600">{item.price} ₽/{item.unit}</p>
+                    <div className="pt-2 border-t border-gray-200">
+                      <p className="text-xs text-gray-500">
+                        Поставщик: <span className="font-medium text-gray-700">
+                          {suppliers[selectedOrder.supplierCompanyId]?.companyName || 'Загрузка...'}
+                        </span>
+                      </p>
                     </div>
                   </div>
                 ))}
