@@ -89,6 +89,12 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: Dict[str, Any]
 
+# Delivery Address Model
+class DeliveryAddress(BaseModel):
+    address: str
+    phone: str
+    additionalPhone: Optional[str] = None
+
 # Company Models
 class Company(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -105,7 +111,7 @@ class Company(BaseModel):
     contactPersonName: Optional[str] = None
     contactPersonPosition: Optional[str] = None
     contactPersonPhone: Optional[str] = None
-    deliveryAddresses: Optional[List[str]] = []
+    deliveryAddresses: Optional[List[DeliveryAddress]] = []
     contractAccepted: bool = False
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
