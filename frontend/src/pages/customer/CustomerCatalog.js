@@ -300,12 +300,10 @@ export const CustomerCatalog = () => {
           </p>
         </div>
         
-        {/* Cart Button with Mini Cart Preview */}
+        {/* Cart Button with Persistent Mini Cart */}
         <div className="relative">
           <Button 
             onClick={() => setShowCart(true)} 
-            onMouseEnter={() => setShowMiniCart(true)}
-            onMouseLeave={() => setTimeout(() => setShowMiniCart(false), 300)}
             className="relative"
             variant="default"
           >
@@ -316,13 +314,9 @@ export const CustomerCatalog = () => {
             )}
           </Button>
           
-          {/* Mini Cart Dropdown */}
-          {showMiniCart && cart.length > 0 && (
-            <Card 
-              className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto shadow-xl z-50"
-              onMouseEnter={() => setShowMiniCart(true)}
-              onMouseLeave={() => setShowMiniCart(false)}
-            >
+          {/* Persistent Mini Cart - Always Visible When Cart Has Items */}
+          {cart.length > 0 && (
+            <Card className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto shadow-xl z-50">
               <div className="p-4">
                 <h3 className="font-semibold mb-3">В корзине ({cart.length})</h3>
                 <div className="space-y-2">
@@ -333,6 +327,7 @@ export const CustomerCatalog = () => {
                         <span>{item.quantity} {item.unit}</span>
                         <span className="font-medium">{(item.price * item.quantity).toFixed(2)} ₽</span>
                       </div>
+                      <p className="text-xs text-blue-600 mt-1">{item.supplierName}</p>
                     </div>
                   ))}
                   {cart.length > 5 && (
@@ -347,10 +342,7 @@ export const CustomerCatalog = () => {
                     <span>{getCartTotal().toFixed(2)} ₽</span>
                   </div>
                   <Button 
-                    onClick={() => {
-                      setShowMiniCart(false);
-                      setShowCart(true);
-                    }}
+                    onClick={() => setShowCart(true)}
                     className="w-full mt-2"
                     size="sm"
                   >
