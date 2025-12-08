@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileText } from 'lucide-react';
+import { Upload, FileText, File, Paperclip } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -24,11 +24,12 @@ const statusLabels = {
 };
 
 const documentTypes = [
+  'Договор с поставщиком',
   'Устав',
   'Свидетельство о регистрации',
   'ИНН',
   'ОГРН',
-  'Договор аренды',
+  'Лицензия',
   'Другое'
 ];
 
@@ -37,16 +38,42 @@ export const CustomerDocuments = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [documentType, setDocumentType] = useState('');
+  const [company, setCompany] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    documentType: '',
+    inn: '',
+    ogrn: '',
+    files: []
+  });
 
   useEffect(() => {
     fetchDocuments();
+    fetchCompany();
   }, []);
+
+  const fetchCompany = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/companies/my`, { headers });
+      setCompany(response.data);
+      // Pre-fill INN and OGRN from company data
+      setFormData(prev => ({
+        ...prev,
+        inn: response.data.inn || '',
+        ogrn: response.data.ogrn || ''
+      }));
+    } catch (error) {
+      console.error('Failed to fetch company:', error);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
-      const response = await axios.get(`${API}/documents/my`);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/documents/my`, { headers });
       setDocuments(response.data);
     } catch (error) {
       console.error('Failed to fetch documents:', error);
@@ -56,15 +83,19 @@ export const CustomerDocuments = () => {
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    if (e.target.files) {
+      setFormData({
+        ...formData,
+        files: Array.from(e.target.files)
+      });
     }
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!selectedFile || !documentType) {
-      setMessage('Выберите файл и тип документа');
+    if (formData.files.length === 0 || !formData.documentType) {
+      setMessage('Выберите тип документа и прикрепите файлы');
+      setTimeout(() => setMessage(''), 3000);
       return;
     }
 
@@ -72,22 +103,39 @@ export const CustomerDocuments = () => {
     setMessage('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('document_type', documentType);
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
 
-      await axios.post(`${API}/documents/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      // Upload each file
+      for (const file of formData.files) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', file);
+        uploadFormData.append('document_type', formData.documentType);
+
+        await axios.post(`${API}/documents/upload`, uploadFormData, {
+          headers: {
+            ...headers,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      }
+
+      setMessage('success');
+      setFormData({
+        documentType: '',
+        inn: company?.inn || '',
+        ogrn: company?.ogrn || '',
+        files: []
       });
-
-      setMessage('Документ успешно загружен');
-      setSelectedFile(null);
-      setDocumentType('');
+      // Reset file input
+      const fileInput = document.getElementById('files');
+      if (fileInput) fileInput.value = '';
+      
       fetchDocuments();
+      setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage('Ошибка при загрузке документа');
+      setMessage('error');
+      setTimeout(() => setMessage(''), 3000);
     } finally {
       setUploading(false);
     }
@@ -98,61 +146,22 @@ export const CustomerDocuments = () => {
   }
 
   return (
-    <div data-testid="customer-documents-page">
-      <h2 className="text-2xl font-bold mb-6">Документы</h2>
+    <div data-testid="customer-documents-page" className="max-w-5xl mx-auto">
+      <h2 className="text-4xl font-bold mb-2">Документы</h2>
+      <p className="text-base text-muted-foreground mb-6">Управление документами по договорам с поставщиками</p>
 
-      {message && (
-        <Alert className="mb-4" variant={message.includes('успешно') ? 'default' : 'destructive'}>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      )}
-
+      {/* Uploaded Documents List - MOVED TO TOP */}
       <Card className="p-6 mb-6">
-        <h3 className="text-lg font-semibold mb-4">Загрузить новый документ</h3>
-        <form onSubmit={handleUpload} className="space-y-4">
-          <div>
-            <Label htmlFor="documentType">Тип документа</Label>
-            <select
-              id="documentType"
-              value={documentType}
-              onChange={(e) => setDocumentType(e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Выберите тип</option>
-              {documentTypes.map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <Label htmlFor="file">Файл</Label>
-            <Input
-              id="file"
-              type="file"
-              onChange={handleFileChange}
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              required
-            />
-            {selectedFile && (
-              <p className="text-sm text-gray-600 mt-1">Выбран: {selectedFile.name}</p>
-            )}
-          </div>
-          <Button type="submit" disabled={uploading} data-testid="upload-document-btn">
-            <Upload className="h-4 w-4 mr-2" />
-            {uploading ? 'Загрузка...' : 'Загрузить'}
-          </Button>
-        </form>
-      </Card>
-
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Загруженные документы</h3>
+        <h3 className="text-xl font-semibold mb-4">Загруженные документы</h3>
         {documents.length === 0 ? (
-          <p className="text-gray-600 text-center py-4">Документы не загружены</p>
+          <div className="text-center py-8 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>Документы не загружены</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {documents.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                     <FileText className="w-5 h-5 text-blue-600" />
@@ -160,7 +169,7 @@ export const CustomerDocuments = () => {
                   <div>
                     <p className="font-medium">{doc.type}</p>
                     <p className="text-sm text-gray-600">
-                      {new Date(doc.createdAt).toLocaleDateString('ru-RU')}
+                      Загружен: {new Date(doc.createdAt).toLocaleDateString('ru-RU')}
                     </p>
                   </div>
                 </div>
@@ -171,6 +180,138 @@ export const CustomerDocuments = () => {
             ))}
           </div>
         )}
+      </Card>
+
+      {/* Messages */}
+      {message === 'success' && (
+        <Alert className="mb-6 bg-green-50 border-green-200">
+          <AlertDescription className="text-green-800">
+            ✓ Документы успешно загружены
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {message === 'error' && (
+        <Alert className="mb-6 bg-red-50 border-red-200">
+          <AlertDescription className="text-red-800">
+            ✗ Ошибка при загрузке документов
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {message && !['success', 'error'].includes(message) && (
+        <Alert className="mb-6">
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Upload Form - MOVED TO BOTTOM */}
+      <Card className="p-6">
+        <h3 className="text-xl font-semibold mb-4">Загрузить новый документ</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Загрузите документы, связанные с договорами поставщиков
+        </p>
+        
+        <form onSubmit={handleUpload} className="space-y-5">
+          {/* 1. Document Type */}
+          <div>
+            <Label htmlFor="documentType" className="text-sm font-medium mb-2">
+              1. Тип документа <span className="text-red-500">*</span>
+            </Label>
+            <select
+              id="documentType"
+              value={formData.documentType}
+              onChange={(e) => setFormData({ ...formData, documentType: e.target.value })}
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Выберите тип</option>
+              {documentTypes.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. INN */}
+          <div>
+            <Label htmlFor="inn" className="text-sm font-medium mb-2">
+              2. ИНН поставщика
+            </Label>
+            <Input
+              id="inn"
+              value={formData.inn}
+              onChange={(e) => setFormData({ ...formData, inn: e.target.value })}
+              placeholder="ИНН компании-поставщика"
+              className="bg-gray-50"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Автоматически заполнен из профиля вашей компании
+            </p>
+          </div>
+
+          {/* 3. OGRN */}
+          <div>
+            <Label htmlFor="ogrn" className="text-sm font-medium mb-2">
+              3. ОГРН поставщика
+            </Label>
+            <Input
+              id="ogrn"
+              value={formData.ogrn}
+              onChange={(e) => setFormData({ ...formData, ogrn: e.target.value })}
+              placeholder="ОГРН компании-поставщика"
+              className="bg-gray-50"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Автоматически заполнен из профиля вашей компании
+            </p>
+          </div>
+
+          {/* 4. Attach Documents */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50">
+            <div className="text-center">
+              <Paperclip className="h-10 w-10 mx-auto mb-3 text-gray-400" />
+              <Label htmlFor="files" className="text-base font-medium mb-2 block">
+                4. Прикрепить документы <span className="text-red-500">*</span>
+              </Label>
+              <p className="text-sm text-gray-500 mb-4">
+                PDF, DOC, DOCX, JPG, PNG (макс. 10 МБ)
+              </p>
+              <Input
+                id="files"
+                type="file"
+                onChange={handleFileChange}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                multiple
+                required
+                className="cursor-pointer"
+              />
+              {formData.files.length > 0 && (
+                <div className="mt-4 text-left">
+                  <p className="text-sm font-medium mb-2">Выбрано файлов: {formData.files.length}</p>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {formData.files.map((file, idx) => (
+                      <li key={idx} className="flex items-center gap-2">
+                        <File className="h-3 w-3" />
+                        {file.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Button 
+            type="submit" 
+            disabled={uploading} 
+            data-testid="upload-document-btn"
+            size="lg"
+            className="w-full"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading ? 'Загрузка...' : 'Загрузить документы'}
+          </Button>
+        </form>
       </Card>
     </div>
   );
