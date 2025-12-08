@@ -445,15 +445,42 @@ export const CustomerCatalog = () => {
                   )}
                 </div>
                 
-                {/* Add to Cart Button */}
-                <Button 
-                  onClick={() => addToCart(group.offers[0], group)}
-                  size="sm"
-                  className="shrink-0"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  В корзину
-                </Button>
+                {/* Quantity Selector and Add to Cart */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center border rounded-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setProductQuantity(`${idx}`, (quantities[`${idx}`] || 1) - 1)}
+                      disabled={(quantities[`${idx}`] || 1) <= 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={quantities[`${idx}`] || 1}
+                      onChange={(e) => setProductQuantity(`${idx}`, e.target.value)}
+                      className="w-14 h-8 text-center border-0 focus-visible:ring-0 p-0"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setProductQuantity(`${idx}`, (quantities[`${idx}`] || 1) + 1)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Button 
+                    onClick={() => addToCart(group.offers[0], group, `${idx}`)}
+                    size="sm"
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-1" />
+                    В корзину
+                  </Button>
+                </div>
               </div>
             </Card>
           ))
