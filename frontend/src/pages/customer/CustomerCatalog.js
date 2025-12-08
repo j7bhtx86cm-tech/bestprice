@@ -175,8 +175,23 @@ export const CustomerCatalog = () => {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
+  const handleCheckout = () => {
+    // Check if multiple delivery addresses exist
+    if (company && company.deliveryAddresses && company.deliveryAddresses.length > 1) {
+      setShowAddressModal(true);
+    } else {
+      placeOrder();
+    }
+  };
+
   const placeOrder = async () => {
     if (cart.length === 0) return;
+
+    // If multiple addresses exist and none selected, show address modal
+    if (company && company.deliveryAddresses && company.deliveryAddresses.length > 1 && !selectedAddress) {
+      setShowAddressModal(true);
+      return;
+    }
 
     setProcessingOrder(true);
     try {
@@ -207,7 +222,8 @@ export const CustomerCatalog = () => {
         return axios.post(`${API}/orders`, {
           supplierCompanyId: orderData.supplierCompanyId,
           amount: amount,
-          orderDetails: orderData.items
+          orderDetails: orderData.items,
+          deliveryAddress: selectedAddress
         }, { headers });
       });
 
@@ -216,6 +232,7 @@ export const CustomerCatalog = () => {
       // Clear cart and show success
       setCart([]);
       setShowCart(false);
+      setShowAddressModal(false);
       setShowSuccessModal(true);
     } catch (error) {
       console.error('Failed to place order:', error);
