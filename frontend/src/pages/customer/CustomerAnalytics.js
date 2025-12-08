@@ -103,22 +103,34 @@ export const CustomerAnalytics = () => {
       <Card className="p-6 mb-6">
         <h3 className="text-xl font-semibold mb-4">Заказы по статусу</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
+          <button
+            onClick={() => navigate('/customer/orders?status=new')}
+            className="text-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+          >
             <p className="text-2xl font-bold text-blue-600">{analytics?.ordersByStatus?.new || 0}</p>
             <p className="text-sm text-gray-600 mt-1">Новые</p>
-          </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
+          </button>
+          <button
+            onClick={() => navigate('/customer/orders?status=confirmed')}
+            className="text-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors cursor-pointer"
+          >
             <p className="text-2xl font-bold text-green-600">{analytics?.ordersByStatus?.confirmed || 0}</p>
             <p className="text-sm text-gray-600 mt-1">Подтверждены</p>
-          </div>
-          <div className="text-center p-4 bg-yellow-50 rounded-lg">
+          </button>
+          <button
+            onClick={() => navigate('/customer/orders?status=partial')}
+            className="text-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors cursor-pointer"
+          >
             <p className="text-2xl font-bold text-yellow-600">{analytics?.ordersByStatus?.partial || 0}</p>
             <p className="text-sm text-gray-600 mt-1">Частичные</p>
-          </div>
-          <div className="text-center p-4 bg-red-50 rounded-lg">
+          </button>
+          <button
+            onClick={() => navigate('/customer/orders?status=declined')}
+            className="text-center p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+          >
             <p className="text-2xl font-bold text-red-600">{analytics?.ordersByStatus?.declined || 0}</p>
             <p className="text-sm text-gray-600 mt-1">Отклонены</p>
-          </div>
+          </button>
         </div>
       </Card>
 
