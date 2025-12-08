@@ -168,7 +168,7 @@ export const CustomerOrders = () => {
       {selectedOrder && (
         <Card className="p-6 mt-6">
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-lg font-semibold">Детали заказа</h3>
+            <h3 className="text-xl font-semibold">Детали заказа</h3>
             <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>Закрыть</Button>
           </div>
           <div className="space-y-4">
@@ -183,7 +183,34 @@ export const CustomerOrders = () => {
                   {statusLabels[selectedOrder.status]}
                 </Badge>
               </div>
+              <div>
+                <p className="text-sm text-gray-600">Поставщик</p>
+                <p className="font-medium">{suppliers[selectedOrder.supplierCompanyId]?.companyName || 'Загрузка...'}</p>
+              </div>
             </div>
+            
+            {/* Savings Banner */}
+            {calculateSavings(selectedOrder) > 0 && (
+              <Card className="p-4 bg-green-50 border-green-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-full bg-green-100 p-2">
+                      <TrendingDown className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-900">Ваша экономия</p>
+                      <p className="text-xs text-green-700">По сравнению со средней рыночной ценой</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-green-600">
+                      {calculateSavings(selectedOrder).toFixed(2)} ₽
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+            
             <div>
               <p className="text-sm text-gray-600 mb-2">Состав заказа</p>
               <div className="bg-gray-50 rounded-lg p-4">
