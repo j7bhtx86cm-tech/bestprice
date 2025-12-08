@@ -116,6 +116,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "Login flow tested successfully. User can login with restaurant1@example.com and is redirected to customer dashboard."
+      - working: true
+        agent: "testing"
+        comment: "RE-TESTED (2025-12-08): User reported login issue. Comprehensive testing performed: (1) Homepage hero button 'Я ресторан' correctly navigates to /auth, (2) Role selection page displays 'Я ресторан' card with green Store icon, (3) Clicking card navigates to /customer/auth, (4) Login page shows 'Вход для ресторанов' (NOT 'Вход для поставщиков'), (5) Login with restaurant1@example.com/password123 succeeds without errors, (6) Successfully redirects to /customer/catalog, (7) Catalog loads with 2491 products. Direct navigation to /customer/auth also tested and works. NO ISSUES FOUND - entire flow is working correctly."
 
   - task: "Product Catalog Display with Best Price Badges"
     implemented: true
