@@ -333,8 +333,7 @@ metadata:
         comment: "LIVE TESTING COMPLETED (2025-12-09): Successfully tested mini cart with Playwright. (1) ✅ Mini cart appears in top-right corner when products added to cart, (2) ✅ Shows product details (name, quantity, price, supplier), (3) ✅ Shows total and 'Оформить заказ' button, (4) ✅ X close button present and functional - clicking it clears the cart and hides mini cart, (5) ✅ Cart count updates correctly. All functionality working as expected."
 
 test_plan:
-  current_focus:
-    - "Fixed Persistent Mini Cart"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
