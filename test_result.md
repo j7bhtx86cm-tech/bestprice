@@ -332,8 +332,58 @@ metadata:
         agent: "testing"
         comment: "LIVE TESTING COMPLETED (2025-12-09): Successfully tested mini cart with Playwright. (1) ✅ Mini cart appears in top-right corner when products added to cart, (2) ✅ Shows product details (name, quantity, price, supplier), (3) ✅ Shows total and 'Оформить заказ' button, (4) ✅ X close button present and functional - clicking it clears the cart and hides mini cart, (5) ✅ Cart count updates correctly. All functionality working as expected."
 
+  - task: "Order History with Date AND Time Display"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/customer/CustomerOrders.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "TESTED (2025-12-09): CRITICAL ISSUE - Order history table only shows DATE without TIME. Line 176 in CustomerOrders.js uses `toLocaleDateString('ru-RU')` which only displays date (e.g., '08.12.2025'). User requirement is to show BOTH date AND time. Order details page correctly shows date and time (line 218-222), but the order history table is missing time component."
+
+  - task: "Order Details with Date AND Time"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerOrders.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-09): ✅ WORKING - Order details correctly display 'Дата и время заказа' field with BOTH date AND time (e.g., '08.12.2025 18:29'). Implementation at lines 218-222 uses both `toLocaleDateString()` and `toLocaleTimeString()` which is correct."
+
+  - task: "Multi-Supplier Analytics Card"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/customer/CustomerOrders.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "TESTED (2025-12-09): CRITICAL BUG - Multi-supplier analytics card appears but shows incorrect data. Card displays '📦 Единая покупка из 4 заказов' and 'Заказ был разделен между 0 поставщиками:' with NO supplier names listed. The supplier count shows 0 and supplier names are missing. Expected: Should show actual supplier count (e.g., '3 поставщиками') and list supplier names (e.g., 'Алиди, VICI, Загружа...'). Issue is in lines 248-278 of CustomerOrders.js - the supplier names array is not being populated correctly."
+
+  - task: "Mini Cart Close Button"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerCatalog.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-09): ✅ WORKING - Mini cart X button (lines 301-308) correctly clears the cart and hides the mini cart when clicked. Tested by adding product to cart, clicking X button, and verifying cart is empty and mini cart disappears."
+
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Order History with Date AND Time Display"
+    - "Multi-Supplier Analytics Card"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
