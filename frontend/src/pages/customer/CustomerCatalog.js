@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ShoppingCart, Search, Plus, Minus, Trash2, Award, CheckCircle, Package } from 'lucide-react';
+import { ShoppingCart, Search, Plus, Minus, Trash2, Award, CheckCircle, Package, X } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
