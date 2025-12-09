@@ -301,10 +301,10 @@ export const CustomerCatalog = () => {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => setShowCart(true)}
-                  className="text-xs"
+                  onClick={() => setCart([])}
+                  className="h-6 w-6 p-0"
                 >
-                  Открыть
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
