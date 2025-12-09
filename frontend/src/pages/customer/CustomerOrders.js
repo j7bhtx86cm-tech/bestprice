@@ -214,8 +214,12 @@ export const CustomerOrders = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600">Дата заказа</p>
-                <p className="font-medium">{new Date(selectedOrder.orderDate).toLocaleDateString('ru-RU')}</p>
+                <p className="text-sm text-gray-600">Дата и время заказа</p>
+                <p className="font-medium">
+                  {new Date(selectedOrder.orderDate).toLocaleDateString('ru-RU')}
+                  {' '}
+                  {new Date(selectedOrder.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Статус</p>
@@ -240,6 +244,38 @@ export const CustomerOrders = () => {
                 </div>
               )}
             </div>
+            
+            {/* Multi-Supplier Shopping Session Analytics */}
+            {(() => {
+              const orderTime = new Date(selectedOrder.orderDate).getTime();
+              const relatedOrders = orders.filter(o => {
+                const oTime = new Date(o.orderDate).getTime();
+                return Math.abs(oTime - orderTime) < 60000; // Orders within 1 minute
+              });
+              
+              if (relatedOrders.length > 1) {
+                const totalAmount = relatedOrders.reduce((sum, o) => sum + o.amount, 0);
+                const supplierNames = [...new Set(relatedOrders.map(o => suppliers[o.supplierCompanyId]?.companyName).filter(Boolean))];
+                
+                return (
+                  <Card className="p-4 bg-blue-50 border-blue-200">
+                    <div className="space-y-2">
+                      <p className="font-semibold text-blue-900">
+                        📦 Единая покупка из {relatedOrders.length} заказов
+                      </p>
+                      <p className="text-sm text-blue-800">
+                        Заказ был разделен между {supplierNames.length} поставщиками: {supplierNames.join(', ')}
+                      </p>
+                      <div className="flex justify-between items-center pt-2 border-t border-blue-200">
+                        <span className="text-sm font-medium text-blue-900">Общая сумма покупки:</span>
+                        <span className="text-lg font-bold text-blue-600">{totalAmount.toFixed(2)} ₽</span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              }
+              return null;
+            })()}
             
             {/* Savings Banner */}
             {calculateSavings(selectedOrder) > 0 && (
