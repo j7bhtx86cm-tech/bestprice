@@ -312,10 +312,10 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.3"
-  test_sequence: 5
+  version: "1.4"
+  test_sequence: 6
   run_ui: true
-  last_test_date: "2025-12-08"
+  last_test_date: "2025-12-09"
 
   - task: "Fixed Persistent Mini Cart"
     implemented: true
