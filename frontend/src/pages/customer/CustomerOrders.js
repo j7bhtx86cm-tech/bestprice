@@ -174,6 +174,10 @@ export const CustomerOrders = () => {
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm">
                       {new Date(order.orderDate).toLocaleDateString('ru-RU')}
+                      {' '}
+                      <span className="text-gray-500">
+                        {new Date(order.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm font-medium">
                       {suppliers[order.supplierCompanyId]?.companyName || 'Загрузка...'}
