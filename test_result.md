@@ -319,7 +319,7 @@ metadata:
 
   - task: "Fixed Persistent Mini Cart"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/customer/CustomerCatalog.js"
     stuck_count: 0
     priority: "high"
@@ -328,6 +328,9 @@ metadata:
       - working: "NA"
         agent: "testing"
         comment: "CODE REVIEW COMPLETED (2025-12-08): Unable to perform automated Playwright testing due to browser automation tool timeout issues (system limitation). However, comprehensive code review confirms implementation is CORRECT. Mini cart implementation (lines 294-343): (1) ✅ Conditional rendering - only shows when cart.length > 0, (2) ✅ Fixed positioning with 'fixed top-20 right-6 z-50' classes ensures it stays in top-right corner during scroll, (3) ✅ Shows all required content: product name (line 313), quantity/unit (line 315), price (line 316), supplier name (line 318), (4) ✅ Shows total at bottom (lines 328-331), (5) ✅ Has 'Оформить заказ' button (lines 332-338), (6) ✅ Cart button shows 'Корзина ({cart.length})' with red badge for total quantity (lines 361-364), (7) ✅ Updates automatically when products added via React state management. All requirements met in code. RECOMMENDATION: Main agent should perform manual verification or wait for browser automation tool to be fixed for live testing."
+      - working: true
+        agent: "testing"
+        comment: "LIVE TESTING COMPLETED (2025-12-09): Successfully tested mini cart with Playwright. (1) ✅ Mini cart appears in top-right corner when products added to cart, (2) ✅ Shows product details (name, quantity, price, supplier), (3) ✅ Shows total and 'Оформить заказ' button, (4) ✅ X close button present and functional - clicking it clears the cart and hides mini cart, (5) ✅ Cart count updates correctly. All functionality working as expected."
 
 test_plan:
   current_focus:
