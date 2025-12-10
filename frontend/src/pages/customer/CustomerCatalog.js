@@ -28,6 +28,7 @@ export const CustomerCatalog = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [quantities, setQuantities] = useState({});
   const [miniCartTimeout, setMiniCartTimeout] = useState(null);
+  const [lastCartLength, setLastCartLength] = useState(0);
 
   useEffect(() => {
     fetchAllData();
@@ -37,6 +38,27 @@ export const CustomerCatalog = () => {
   useEffect(() => {
     filterProducts();
   }, [searchTerm, groupedProducts]);
+
+  // Show mini cart notification when cart is updated
+  useEffect(() => {
+    if (cart.length > lastCartLength) {
+      // Cart has new items - show notification
+      setShowMiniCart(true);
+      
+      // Clear any existing timeout
+      if (miniCartTimeout) {
+        clearTimeout(miniCartTimeout);
+      }
+      
+      // Auto-hide after 3 seconds
+      const timeout = setTimeout(() => {
+        setShowMiniCart(false);
+      }, 3000);
+      setMiniCartTimeout(timeout);
+    }
+    
+    setLastCartLength(cart.length);
+  }, [cart.length]);
 
   const fetchCompanyInfo = async () => {
     try {
