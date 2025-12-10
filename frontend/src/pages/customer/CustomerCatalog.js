@@ -551,6 +551,11 @@ export const CustomerCatalog = () => {
                       <p className="text-sm text-muted-foreground">
                         Артикул: {item.article}
                       </p>
+                      {item.minQuantity > 1 && (
+                        <p className="text-xs text-amber-600 mt-1">
+                          Мин. заказ: {item.minQuantity} {item.unit}
+                        </p>
+                      )}
                       <p className="font-medium mt-2">
                         Итого: {(item.price * item.quantity).toFixed(2)} ₽
                       </p>
@@ -571,7 +576,7 @@ export const CustomerCatalog = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => updateCartQuantity(item.cartId, -1)}
-                          disabled={item.quantity <= 1}
+                          disabled={item.quantity <= (item.minQuantity || 1)}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
