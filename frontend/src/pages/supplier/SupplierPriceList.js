@@ -39,10 +39,27 @@ export const SupplierPriceList = () => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    // Filter products when search term changes
+    if (searchTerm.trim()) {
+      const filtered = products.filter(p =>
+        p.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.article.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.unit.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts(products);
+    }
+  }, [searchTerm, products]);
+
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(`${API}/price-lists/my`);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/price-lists/my`, { headers });
       setProducts(response.data);
+      setFilteredProducts(response.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
     } finally {
@@ -53,10 +70,12 @@ export const SupplierPriceList = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       await axios.post(`${API}/price-lists`, {
         ...newProduct,
         price: parseFloat(newProduct.price)
-      });
+      }, { headers });
       setMessage('Товар успешно добавлен');
       setIsAddDialogOpen(false);
       setNewProduct({
@@ -75,7 +94,9 @@ export const SupplierPriceList = () => {
 
   const handleUpdateProduct = async (productId, updates) => {
     try {
-      await axios.put(`${API}/price-lists/${productId}`, updates);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.put(`${API}/price-lists/${productId}`, updates, { headers });
       setMessage('Товар обновлен');
       setEditingProduct(null);
       fetchProducts();
@@ -88,7 +109,9 @@ export const SupplierPriceList = () => {
     if (!window.confirm('Удалить этот товар?')) return;
     
     try {
-      await axios.delete(`${API}/price-lists/${productId}`);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.delete(`${API}/price-lists/${productId}`, { headers });
       setMessage('Товар удален');
       fetchProducts();
     } catch (error) {
@@ -101,10 +124,12 @@ export const SupplierPriceList = () => {
     if (!uploadFile) return;
 
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const formData = new FormData();
       formData.append('file', uploadFile);
 
-      const response = await axios.post(`${API}/price-lists/upload`, formData);
+      const response = await axios.post(`${API}/price-lists/upload`, formData, { headers });
       setFilePreview(response.data);
       setColumnMapping({
         productName: response.data.columns[0] || '',
@@ -119,6 +144,8 @@ export const SupplierPriceList = () => {
 
   const handleImport = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const formData = new FormData();
       formData.append('file', uploadFile);
       formData.append('column_mapping', JSON.stringify(columnMapping));
