@@ -423,6 +423,14 @@ export const CustomerCatalog = () => {
                     </span>
                   </div>
                   
+                  {/* Minimum Order Info */}
+                  {group.offers[0]?.minQuantity > 1 && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      Мин. заказ: {group.offers[0].minQuantity} {group.unit} 
+                      ({(group.offers[0].minQuantity * group.lowestPrice).toFixed(2)} ₽)
+                    </p>
+                  )}
+                  
                   {/* Alternative Prices */}
                   {group.offers.length > 1 && (
                     <details className="mt-2">
@@ -432,9 +440,16 @@ export const CustomerCatalog = () => {
                       <div className="mt-2 space-y-2 pl-4">
                         {group.offers.slice(1, 5).map((offer, offerIdx) => (
                           <div key={offerIdx} className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-700">{offer.price.toFixed(2)} ₽</span>
-                              <span className="text-gray-500">/ {offer.unit}</span>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-700">{offer.price.toFixed(2)} ₽</span>
+                                <span className="text-gray-500">/ {offer.unit}</span>
+                              </div>
+                              {offer.minQuantity > 1 && (
+                                <span className="text-xs text-amber-600">
+                                  Мин: {offer.minQuantity} {offer.unit}
+                                </span>
+                              )}
                             </div>
                             <span className="text-blue-600 font-medium">{offer.supplierName}</span>
                           </div>
