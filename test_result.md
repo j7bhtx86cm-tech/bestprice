@@ -370,15 +370,18 @@ metadata:
 
   - task: "Mini Cart Close Button"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/pages/customer/CustomerCatalog.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "testing"
         comment: "TESTED (2025-12-09): ✅ WORKING - Mini cart X button (lines 301-308) correctly clears the cart and hides the mini cart when clicked. Tested by adding product to cart, clicking X button, and verifying cart is empty and mini cart disappears."
+      - working: false
+        agent: "testing"
+        comment: "RE-TESTED (2025-12-09): ❌ CRITICAL BUG - Mini cart notification does NOT appear at all when adding items to cart. Tested multiple times: added products to cart, cart button updates correctly (shows 'Корзина (1)' then 'Корзина (2)'), but mini cart notification with '✓ Добавлено в корзину' NEVER appears in the DOM. Root cause: React state update race condition - when addToCart() calls setCart() and setShowMiniCart(true), the render condition {showMiniCart && cart.length > 0} evaluates with OLD cart.length before state update completes. Cannot test [X] button behavior because notification never appears. Full cart modal and order placement work correctly."
 
 test_plan:
   current_focus:
