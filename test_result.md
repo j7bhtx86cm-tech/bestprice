@@ -385,9 +385,11 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Mini Cart Close Button"
     - "Order History with Date AND Time Display"
     - "Multi-Supplier Analytics Card"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Mini Cart Close Button"
   test_all: false
   test_priority: "high_first"
 
