@@ -171,7 +171,8 @@ export const CustomerCatalog = () => {
   };
 
   const addToCart = (offer, group, productKey) => {
-    const qty = quantities[productKey] || 1;
+    const minQty = offer.minQuantity || 1;
+    const qty = quantities[productKey] || minQty;  // Use minQuantity as default
     
     const cartItem = {
       cartId: `${offer.priceListId}_${Date.now()}`,
@@ -183,13 +184,14 @@ export const CustomerCatalog = () => {
       price: offer.price,
       unit: group.unit,
       quantity: qty,
+      minQuantity: minQty,
       isBestPrice: offer.isBestPrice || false
     };
 
     setCart([...cart, cartItem]);
     
-    // Reset quantity for this product
-    setQuantities({ ...quantities, [productKey]: 1 });
+    // Reset quantity for this product to its minimum
+    setQuantities({ ...quantities, [productKey]: minQty });
   };
 
   const setProductQuantity = (productKey, value) => {
