@@ -310,24 +310,27 @@ export const CustomerCatalog = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Fixed Mini Cart - Top Right Corner */}
-      {cart.length > 0 && (
-        <div className="fixed top-20 right-6 z-50 w-80">
-          <Card className="shadow-xl">
+      {/* Mini Cart Notification - Appears for 3 seconds when adding items */}
+      {showMiniCart && cart.length > 0 && (
+        <div className="fixed top-20 right-6 z-50 w-80 animate-in slide-in-from-right">
+          <Card className="shadow-xl border-2 border-green-500">
             <div className="p-4">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold">В корзине ({cart.length})</h3>
+                <h3 className="font-semibold text-green-600">✓ Добавлено в корзину</h3>
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => setCart([])}
+                  onClick={() => {
+                    setShowMiniCart(false);
+                    if (miniCartTimeout) clearTimeout(miniCartTimeout);
+                  }}
                   className="h-6 w-6 p-0"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {cart.slice(0, 5).map(item => (
+                {cart.slice(-3).reverse().map(item => (
                   <div key={item.cartId} className="text-sm p-2 bg-gray-50 rounded">
                     <p className="font-medium truncate">{item.productName}</p>
                     <div className="flex justify-between text-xs text-gray-600 mt-1">
@@ -337,19 +340,21 @@ export const CustomerCatalog = () => {
                     <p className="text-xs text-blue-600 mt-1">{item.supplierName}</p>
                   </div>
                 ))}
-                {cart.length > 5 && (
-                  <p className="text-xs text-gray-500 text-center">
-                    +{cart.length - 5} товаров
-                  </p>
-                )}
               </div>
               <div className="border-t mt-3 pt-3">
+                <div className="flex justify-between font-semibold mb-2">
+                  <span>Всего в корзине:</span>
+                  <span>{cart.reduce((sum, item) => sum + item.quantity, 0)} шт</span>
+                </div>
                 <div className="flex justify-between font-semibold mb-2">
                   <span>Итого:</span>
                   <span>{getCartTotal().toFixed(2)} ₽</span>
                 </div>
                 <Button 
-                  onClick={() => setShowCart(true)}
+                  onClick={() => {
+                    setShowMiniCart(false);
+                    setShowCart(true);
+                  }}
                   className="w-full"
                   size="sm"
                 >
