@@ -379,7 +379,7 @@ export const SupplierPriceList = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     {editingProduct?.id === product.id ? (
