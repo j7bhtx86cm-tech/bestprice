@@ -202,7 +202,8 @@ export const CustomerCatalog = () => {
   const updateCartQuantity = (cartId, delta) => {
     setCart(cart.map(item => {
       if (item.cartId === cartId) {
-        const newQuantity = Math.max(1, item.quantity + delta);
+        const minQty = item.minQuantity || 1;
+        const newQuantity = Math.max(minQty, item.quantity + delta);
         return { ...item, quantity: newQuantity };
       }
       return item;
