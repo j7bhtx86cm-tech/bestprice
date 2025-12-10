@@ -465,23 +465,34 @@ export const CustomerCatalog = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setProductQuantity(`${idx}`, (quantities[`${idx}`] || 1) - 1)}
-                      disabled={(quantities[`${idx}`] || 1) <= 1}
+                      onClick={() => {
+                        const minQty = group.offers[0]?.minQuantity || 1;
+                        const current = quantities[`${idx}`] || minQty;
+                        setProductQuantity(`${idx}`, Math.max(minQty, current - 1));
+                      }}
+                      disabled={(quantities[`${idx}`] || group.offers[0]?.minQuantity || 1) <= (group.offers[0]?.minQuantity || 1)}
                       className="h-8 w-8 p-0"
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
                     <Input
                       type="number"
-                      min="1"
-                      value={quantities[`${idx}`] || 1}
-                      onChange={(e) => setProductQuantity(`${idx}`, e.target.value)}
+                      min={group.offers[0]?.minQuantity || 1}
+                      value={quantities[`${idx}`] || group.offers[0]?.minQuantity || 1}
+                      onChange={(e) => {
+                        const minQty = group.offers[0]?.minQuantity || 1;
+                        setProductQuantity(`${idx}`, Math.max(minQty, e.target.value));
+                      }}
                       className="w-14 h-8 text-center border-0 focus-visible:ring-0 p-0"
                     />
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setProductQuantity(`${idx}`, (quantities[`${idx}`] || 1) + 1)}
+                      onClick={() => {
+                        const minQty = group.offers[0]?.minQuantity || 1;
+                        const current = quantities[`${idx}`] || minQty;
+                        setProductQuantity(`${idx}`, current + 1);
+                      }}
                       className="h-8 w-8 p-0"
                     >
                       <Plus className="h-3 w-3" />
