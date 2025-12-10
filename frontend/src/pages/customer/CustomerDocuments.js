@@ -25,10 +25,11 @@ const statusLabels = {
 
 const documentTypes = [
   'Договор с поставщиком',
+  'Договор аренды',
+  'Приказ о назначении',
+  'Протокол о назначении',
   'Устав',
   'Свидетельство о регистрации',
-  'ИНН',
-  'ОГРН',
   'Лицензия',
   'Другое'
 ];
@@ -42,8 +43,8 @@ export const CustomerDocuments = () => {
   
   const [formData, setFormData] = useState({
     documentType: '',
-    inn: '',
-    ogrn: '',
+    edo: '',
+    guid: '',
     files: []
   });
 
@@ -58,12 +59,6 @@ export const CustomerDocuments = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await axios.get(`${API}/companies/my`, { headers });
       setCompany(response.data);
-      // Pre-fill INN and OGRN from company data
-      setFormData(prev => ({
-        ...prev,
-        inn: response.data.inn || '',
-        ogrn: response.data.ogrn || ''
-      }));
     } catch (error) {
       console.error('Failed to fetch company:', error);
     }
@@ -106,7 +101,6 @@ export const CustomerDocuments = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Upload each file
       for (const file of formData.files) {
         const uploadFormData = new FormData();
         uploadFormData.append('file', file);
@@ -123,11 +117,10 @@ export const CustomerDocuments = () => {
       setMessage('success');
       setFormData({
         documentType: '',
-        inn: company?.inn || '',
-        ogrn: company?.ogrn || '',
+        edo: '',
+        guid: '',
         files: []
       });
-      // Reset file input
       const fileInput = document.getElementById('files');
       if (fileInput) fileInput.value = '';
       
@@ -141,11 +134,10 @@ export const CustomerDocuments = () => {
     }
   };
 
-  // Check if form is valid for submission
   const isFormValid = () => {
     return formData.documentType && 
-           formData.inn && 
-           formData.ogrn && 
+           formData.edo && 
+           formData.guid && 
            formData.files.length > 0;
   };
 
@@ -158,7 +150,7 @@ export const CustomerDocuments = () => {
       <h2 className="text-4xl font-bold mb-2">Документы</h2>
       <p className="text-base text-muted-foreground mb-6">Управление документами по договорам с поставщиками</p>
 
-      {/* Uploaded Documents List - MOVED TO TOP */}
+      {/* Uploaded Documents List */}
       <Card className="p-6 mb-6">
         <h3 className="text-xl font-semibold mb-4">Загруженные документы</h3>
         {documents.length === 0 ? (
@@ -213,7 +205,7 @@ export const CustomerDocuments = () => {
         </Alert>
       )}
 
-      {/* Upload Form - MOVED TO BOTTOM */}
+      {/* Upload Form */}
       <Card className="p-6">
         <h3 className="text-xl font-semibold mb-4">Загрузить новый документ</h3>
         <p className="text-sm text-muted-foreground mb-6">
@@ -240,38 +232,32 @@ export const CustomerDocuments = () => {
             </select>
           </div>
 
-          {/* 2. INN */}
+          {/* 2. ЭДО Number */}
           <div>
-            <Label htmlFor="inn" className="text-sm font-medium mb-2">
-              2. ИНН поставщика <span className="text-red-500">*</span>
+            <Label htmlFor="edo" className="text-sm font-medium mb-2">
+              2. Номер ЭДО <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="inn"
-              value={formData.inn}
-              onChange={(e) => setFormData({ ...formData, inn: e.target.value })}
-              placeholder="ИНН компании-поставщика"
+              id="edo"
+              value={formData.edo}
+              onChange={(e) => setFormData({ ...formData, edo: e.target.value })}
+              placeholder="Введите номер электронного документооборота"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Введите ИНН поставщика из договора
-            </p>
           </div>
 
-          {/* 3. OGRN */}
+          {/* 3. GUID */}
           <div>
-            <Label htmlFor="ogrn" className="text-sm font-medium mb-2">
-              3. ОГРН поставщика <span className="text-red-500">*</span>
+            <Label htmlFor="guid" className="text-sm font-medium mb-2">
+              3. GUID <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="ogrn"
-              value={formData.ogrn}
-              onChange={(e) => setFormData({ ...formData, ogrn: e.target.value })}
-              placeholder="ОГРН компании-поставщика"
+              id="guid"
+              value={formData.guid}
+              onChange={(e) => setFormData({ ...formData, guid: e.target.value })}
+              placeholder="Введите GUID"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Введите ОГРН поставщика из договора
-            </p>
           </div>
 
           {/* 4. Attach Documents */}
@@ -322,7 +308,7 @@ export const CustomerDocuments = () => {
           
           {!isFormValid() && (
             <p className="text-sm text-amber-600 text-center">
-              Заполните все обязательные поля и прикрепите документы для активации кнопки
+              Заполните все обязательные поля (Тип, ЭДО, GUID) и прикрепите документы
             </p>
           )}
         </form>
