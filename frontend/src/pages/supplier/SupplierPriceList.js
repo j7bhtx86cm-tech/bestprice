@@ -496,6 +496,7 @@ export const SupplierPriceList = () => {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <Card className="p-4 mt-6 bg-blue-50 border-blue-200">
