@@ -115,6 +115,7 @@ export const CustomerCatalog = () => {
             article: product.article,
             price: product.price,
             unit: product.unit,
+            minQuantity: product.minQuantity || 1,
             availability: product.availability,
             product: product
           });
