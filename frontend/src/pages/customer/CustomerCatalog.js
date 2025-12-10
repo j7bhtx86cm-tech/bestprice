@@ -27,6 +27,7 @@ export const CustomerCatalog = () => {
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [quantities, setQuantities] = useState({});
+  const [miniCartTimeout, setMiniCartTimeout] = useState(null);
 
   useEffect(() => {
     fetchAllData();
