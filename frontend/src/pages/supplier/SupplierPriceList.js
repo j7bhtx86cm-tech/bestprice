@@ -365,19 +365,38 @@ export const SupplierPriceList = () => {
           <p className="text-sm text-gray-500">Добавьте товары вручную или загрузите файл</p>
         </Card>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium">Товар</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Артикул</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Цена</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Ед.</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Наличие</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Активен</th>
-                <th className="px-4 py-3 text-left text-sm font-medium">Действия</th>
-              </tr>
-            </thead>
+        <>
+          {/* Search Input */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск по названию, артикулу, единице..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {searchTerm && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Найдено: {filteredProducts.length} из {products.length} товаров
+              </p>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Товар</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Артикул</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Цена</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Ед.</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Наличие</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Активен</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium">Действия</th>
+                </tr>
+              </thead>
             <tbody className="bg-white divide-y">
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
