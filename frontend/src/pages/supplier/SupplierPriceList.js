@@ -150,7 +150,7 @@ export const SupplierPriceList = () => {
       formData.append('file', uploadFile);
       formData.append('column_mapping', JSON.stringify(columnMapping));
 
-      await axios.post(`${API}/price-lists/import`, formData);
+      await axios.post(`${API}/price-lists/import`, formData, { headers });
       setMessage('Прайс-лист успешно импортирован');
       setIsUploadDialogOpen(false);
       setUploadFile(null);
