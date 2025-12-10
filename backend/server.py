@@ -176,6 +176,7 @@ class PriceList(BaseModel):
     article: str
     price: float
     unit: str
+    minQuantity: Optional[int] = 1
     availability: bool = True
     active: bool = True
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -186,6 +187,7 @@ class PriceListCreate(BaseModel):
     article: str
     price: float
     unit: str
+    minQuantity: Optional[int] = 1
     availability: bool = True
     active: bool = True
 
