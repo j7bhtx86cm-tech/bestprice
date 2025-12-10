@@ -213,22 +213,10 @@ export const CustomerCatalog = () => {
 
     setCart([...cart, cartItem]);
     
-    // Show mini cart notification
-    setShowMiniCart(true);
-    
-    // Clear any existing timeout
-    if (miniCartTimeout) {
-      clearTimeout(miniCartTimeout);
-    }
-    
-    // Auto-hide after 3 seconds
-    const timeout = setTimeout(() => {
-      setShowMiniCart(false);
-    }, 3000);
-    setMiniCartTimeout(timeout);
-    
     // Reset quantity for this product to its minimum
     setQuantities({ ...quantities, [productKey]: minQty });
+    
+    // Note: Mini cart notification will be shown by useEffect watching cart.length
   };
 
   const setProductQuantity = (productKey, value) => {
