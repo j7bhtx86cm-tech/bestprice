@@ -252,96 +252,96 @@ export const CustomerOrders = () => {
                                   </div>
                                 )}
                               </div>
-            
-            {/* Multi-Supplier Shopping Session Analytics */}
-            {(() => {
-              const orderTime = new Date(selectedOrder.orderDate).getTime();
-              const relatedOrders = orders.filter(o => {
-                const oTime = new Date(o.orderDate).getTime();
-                return Math.abs(oTime - orderTime) < 60000; // Orders within 1 minute
-              });
-              
-              if (relatedOrders.length > 1) {
-                const totalAmount = relatedOrders.reduce((sum, o) => sum + o.amount, 0);
-                
-                // Get unique supplier names from related orders
-                const uniqueSupplierIds = [...new Set(relatedOrders.map(o => o.supplierCompanyId))];
-                const supplierNames = uniqueSupplierIds
-                  .map(id => suppliers[id]?.companyName)
-                  .filter(name => name);
-                
-                // Calculate savings vs single supplier
-                const allItems = relatedOrders.flatMap(o => o.orderDetails || []);
-                let singleSupplierCost = totalAmount; // Default to current cost
-                
-                // Find which supplier would be cheapest if buying all items from them
-                if (Object.keys(suppliers).length > 0 && allProducts.length > 0) {
-                  const supplierCosts = {};
-                  
-                  uniqueSupplierIds.forEach(supplierId => {
-                    let cost = 0;
-                    const supplierProducts = allProducts.filter(p => p.supplierId === supplierId);
-                    
-                    allItems.forEach(item => {
-                      const match = supplierProducts.find(p => 
-                        p.productName.toLowerCase() === item.productName.toLowerCase() &&
-                        p.unit.toLowerCase() === item.unit.toLowerCase()
-                      );
-                      
-                      if (match) {
-                        cost += match.price * item.quantity;
-                      } else {
-                        // Add from best alternative
-                        const alternatives = allProducts.filter(p =>
-                          p.productName.toLowerCase() === item.productName.toLowerCase() &&
-                          p.unit.toLowerCase() === item.unit.toLowerCase()
-                        );
-                        if (alternatives.length > 0) {
-                          const cheapest = alternatives.reduce((min, p) => p.price < min.price ? p : min);
-                          cost += cheapest.price * item.quantity;
-                        }
-                      }
-                    });
-                    
-                    if (cost > 0) {
-                      supplierCosts[supplierId] = cost;
-                    }
-                  });
-                  
-                  if (Object.keys(supplierCosts).length > 0) {
-                    singleSupplierCost = Math.min(...Object.values(supplierCosts));
-                  }
-                }
-                
-                const savings = singleSupplierCost - totalAmount;
-                
-                return (
-                  <Card className="p-4 bg-blue-50 border-blue-200">
-                    <div className="space-y-2">
-                      <p className="font-semibold text-blue-900">
-                        📦 Единая покупка из {relatedOrders.length} заказов
-                      </p>
-                      <p className="text-sm text-blue-800">
-                        Заказ был разделен между {supplierNames.length} поставщиками: {supplierNames.join(', ')}
-                      </p>
-                      <div className="pt-2 border-t border-blue-200 space-y-1">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-blue-700">Через BestPrice:</span>
-                          <span className="font-semibold text-blue-900">{totalAmount.toFixed(2)} ₽</span>
-                        </div>
-                        {savings > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-green-700">Экономия:</span>
-                            <span className="font-bold text-green-600">{savings.toFixed(2)} ₽</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              }
-              return null;
-            })()}
+                              
+                              {/* Multi-Supplier Shopping Session Analytics */}
+                              {(() => {
+                                const orderTime = new Date(selectedOrder.orderDate).getTime();
+                                const relatedOrders = orders.filter(o => {
+                                  const oTime = new Date(o.orderDate).getTime();
+                                  return Math.abs(oTime - orderTime) < 60000; // Orders within 1 minute
+                                });
+                                
+                                if (relatedOrders.length > 1) {
+                                  const totalAmount = relatedOrders.reduce((sum, o) => sum + o.amount, 0);
+                                  
+                                  // Get unique supplier names from related orders
+                                  const uniqueSupplierIds = [...new Set(relatedOrders.map(o => o.supplierCompanyId))];
+                                  const supplierNames = uniqueSupplierIds
+                                    .map(id => suppliers[id]?.companyName)
+                                    .filter(name => name);
+                                  
+                                  // Calculate savings vs single supplier
+                                  const allItems = relatedOrders.flatMap(o => o.orderDetails || []);
+                                  let singleSupplierCost = totalAmount; // Default to current cost
+                                  
+                                  // Find which supplier would be cheapest if buying all items from them
+                                  if (Object.keys(suppliers).length > 0 && allProducts.length > 0) {
+                                    const supplierCosts = {};
+                                    
+                                    uniqueSupplierIds.forEach(supplierId => {
+                                      let cost = 0;
+                                      const supplierProducts = allProducts.filter(p => p.supplierId === supplierId);
+                                      
+                                      allItems.forEach(item => {
+                                        const match = supplierProducts.find(p => 
+                                          p.productName.toLowerCase() === item.productName.toLowerCase() &&
+                                          p.unit.toLowerCase() === item.unit.toLowerCase()
+                                        );
+                                        
+                                        if (match) {
+                                          cost += match.price * item.quantity;
+                                        } else {
+                                          // Add from best alternative
+                                          const alternatives = allProducts.filter(p =>
+                                            p.productName.toLowerCase() === item.productName.toLowerCase() &&
+                                            p.unit.toLowerCase() === item.unit.toLowerCase()
+                                          );
+                                          if (alternatives.length > 0) {
+                                            const cheapest = alternatives.reduce((min, p) => p.price < min.price ? p : min);
+                                            cost += cheapest.price * item.quantity;
+                                          }
+                                        }
+                                      });
+                                      
+                                      if (cost > 0) {
+                                        supplierCosts[supplierId] = cost;
+                                      }
+                                    });
+                                    
+                                    if (Object.keys(supplierCosts).length > 0) {
+                                      singleSupplierCost = Math.min(...Object.values(supplierCosts));
+                                    }
+                                  }
+                                  
+                                  const savings = singleSupplierCost - totalAmount;
+                                  
+                                  return (
+                                    <Card className="p-4 bg-blue-50 border-blue-200">
+                                      <div className="space-y-2">
+                                        <p className="font-semibold text-blue-900">
+                                          📦 Единая покупка из {relatedOrders.length} заказов
+                                        </p>
+                                        <p className="text-sm text-blue-800">
+                                          Заказ был разделен между {supplierNames.length} поставщиками: {supplierNames.join(', ')}
+                                        </p>
+                                        <div className="pt-2 border-t border-blue-200 space-y-1">
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-sm text-blue-700">Через BestPrice:</span>
+                                            <span className="font-semibold text-blue-900">{totalAmount.toFixed(2)} ₽</span>
+                                          </div>
+                                          {savings > 0 && (
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-sm text-green-700">Экономия:</span>
+                                              <span className="font-bold text-green-600">{savings.toFixed(2)} ₽</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  );
+                                }
+                                return null;
+                              })()}
             
             {/* Savings Banner */}
             {calculateSavings(selectedOrder) > 0 && (
