@@ -233,17 +233,6 @@ export const CustomerDocuments = () => {
         </div>
       </Card>
 
-      <Card className="p-6">">{supplier.name}</span>
-              {supplier.status === 'accepted' ? (
-                <Badge className="bg-green-100 text-green-800">✓ Принят</Badge>
-              ) : (
-                <Badge className="bg-yellow-100 text-yellow-800">⏳ Ожидание</Badge>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
-
       <Card className="p-6">
         <h3 className="text-xl font-semibold mb-4">Загрузить новый документ</h3>
         <p className="text-sm text-muted-foreground mb-6">
