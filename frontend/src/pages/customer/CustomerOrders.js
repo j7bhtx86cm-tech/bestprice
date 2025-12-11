@@ -342,28 +342,28 @@ export const CustomerOrders = () => {
                                 }
                                 return null;
                               })()}
-            
-            {/* Savings Banner */}
-            {calculateSavings(selectedOrder) > 0 && (
-              <Card className="p-4 bg-green-50 border-green-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="rounded-full bg-green-100 p-2">
-                      <TrendingDown className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-green-900">Ваша экономия</p>
-                      <p className="text-xs text-green-700">По сравнению со средней рыночной ценой</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-600">
-                      {calculateSavings(selectedOrder).toFixed(2)} ₽
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            )}
+                              
+                              {/* Savings Banner */}
+                              {calculateSavings(selectedOrder) > 0 && (
+                                <Card className="p-4 bg-green-50 border-green-200">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="rounded-full bg-green-100 p-2">
+                                        <TrendingDown className="h-5 w-5 text-green-600" />
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-medium text-green-900">Ваша экономия</p>
+                                        <p className="text-xs text-green-700">По сравнению со средней рыночной ценой</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-2xl font-bold text-green-600">
+                                        {calculateSavings(selectedOrder).toFixed(2)} ₽
+                                      </p>
+                                    </div>
+                                  </div>
+                                </Card>
+                              )}
             
             <div>
               <p className="text-sm text-gray-600 mb-2">Состав заказа</p>
