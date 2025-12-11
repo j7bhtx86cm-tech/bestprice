@@ -441,6 +441,9 @@ test_plan:
     - "Mini Cart Close Button"
   test_all: false
   test_priority: "high_first"
+  completed_tests:
+    - "Customer Contract Status Display"
+    - "Supplier Restaurant Documents and Contract Acceptance"
 
 agent_communication:
   - agent: "testing"
