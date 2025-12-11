@@ -407,6 +407,30 @@ metadata:
         agent: "testing"
         comment: "TESTED (2025-12-11): ⚠️ PARTIALLY WORKING - 2 CRITICAL ISSUES FOUND. ✅ WORKING: (1) 'Основной контакт' card displays with 4 fields (ФИО *, Должность, Телефон *, Email *), (2) 'Добавить сотрудника' button adds new cards labeled 'Сотрудник 2', 'Сотрудник 3', etc., (3) Trash icon present on additional cards (not on primary contact), (4) Can fill in team member details in all cards. ❌ CRITICAL ISSUES: (1) Trash icon does NOT remove cards - clicking trash button on 'Сотрудник 2' did not remove the card (still visible after click), (2) No success/error message appears after clicking 'Сохранить все изменения' - no visual feedback to user, (3) No PUT request to /api/companies/my in backend logs - suggests save might not have been triggered or failed silently. Root cause likely in removeTeamMember() function (lines 52-56) or save handler (lines 64-90)."
 
+  - task: "Customer Contract Status Display"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerDocuments.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-11): ✅ ALL REQUIREMENTS MET - Customer documents page displays contract status correctly. (1) ✅ 'Статус договоров с поставщиками' section exists and is positioned correctly (after 'Загруженные документы' but before 'Загрузить новый документ'), (2) ✅ Shows list of 9 suppliers: Алиди, Айфрут, Фаворит, ТД ДУНАЙ, Интегрита, Ромакс, Прайфуд, Vici, В-З, (3) ✅ 7 green badges '✓ Принят' for accepted suppliers, (4) ✅ 2 yellow badges '⏳ Ожидание' for pending suppliers (Фаворит and Ромакс). CRITICAL FIX: Fixed syntax error at line 236 (duplicate malformed Card component) that was preventing app from loading."
+
+  - task: "Supplier Restaurant Documents and Contract Acceptance"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/supplier/SupplierDocuments.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-11): ✅ ALL REQUIREMENTS MET - Supplier documents page fully functional. (1) ✅ Shows list of 2 restaurants with their documents (Ресторан BestPrice, Ресторан Вкусно), (2) ✅ Each restaurant card shows: Restaurant name and INN (7701234567, 7702345678), Status badge (Договор принят / Ожидает принятия), List of documents (Договор аренды, Устав), Eye icon to view each document (3 eye icons found), (3) ✅ For pending restaurant, shows 2 buttons: 'Принять договор' (green) and 'Отклонить' (outline), (4) ✅ Clicking 'Принять договор' works correctly: Status changes to 'Договор принят' with green badge, Success message '✓ Договор принят' appears, Buttons are hidden after acceptance. Both restaurants now show 'Договор принят' status after acceptance."
+
 test_plan:
   current_focus:
     - "Team Members Feature"
