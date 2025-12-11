@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { User, Settings, FileText, ShoppingBag, Star, LogOut } from 'lucide-react';
+import { User, Settings, FileText, ShoppingBag, Star, LogOut, FolderOpen } from 'lucide-react';
 
 export const SupplierLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -14,6 +14,7 @@ export const SupplierLayout = ({ children }) => {
     { path: '/supplier/settings', label: 'Настройки заказов', icon: Settings },
     { path: '/supplier/price-list', label: 'Прайс-лист', icon: FileText },
     { path: '/supplier/orders', label: 'История заказов', icon: ShoppingBag },
+    { path: '/supplier/documents', label: 'Документы ресторанов', icon: FolderOpen },
     { path: '/supplier/rating', label: 'Рейтинг', icon: Star },
   ];
 
