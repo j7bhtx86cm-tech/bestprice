@@ -203,6 +203,47 @@ export const CustomerDocuments = () => {
       )}
 
       {/* Upload Form */}
+      <Card className="p-6 mb-6">
+        <h3 className="text-xl font-semibold mb-4">Статус договоров с поставщиками</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Список поставщиков и статус принятия договора
+        </p>
+        
+        <div className="space-y-2">
+          {[
+            { name: 'Алиди', status: 'accepted' },
+            { name: 'Айфрут', status: 'accepted' },
+            { name: 'Фаворит', status: 'pending' },
+            { name: 'ТД ДУНАЙ', status: 'accepted' },
+            { name: 'Интегрита', status: 'accepted' },
+            { name: 'Ромакс', status: 'pending' },
+            { name: 'Прайфуд', status: 'accepted' },
+            { name: 'Vici', status: 'accepted' },
+            { name: 'В-З', status: 'accepted' }
+          ].map((supplier) => (
+            <div key={supplier.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="font-medium">{supplier.name}</span>
+              {supplier.status === 'accepted' ? (
+                <Badge className="bg-green-100 text-green-800">✓ Принят</Badge>
+              ) : (
+                <Badge className="bg-yellow-100 text-yellow-800">⏳ Ожидание</Badge>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6">">{supplier.name}</span>
+              {supplier.status === 'accepted' ? (
+                <Badge className="bg-green-100 text-green-800">✓ Принят</Badge>
+              ) : (
+                <Badge className="bg-yellow-100 text-yellow-800">⏳ Ожидание</Badge>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+
       <Card className="p-6">
         <h3 className="text-xl font-semibold mb-4">Загрузить новый документ</h3>
         <p className="text-sm text-muted-foreground mb-6">
