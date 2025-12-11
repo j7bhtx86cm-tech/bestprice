@@ -583,6 +583,15 @@ export const CustomerCatalog = () => {
         )}
       </div>
 
+      {/* Load More Button */}
+      {!searchTerm && filteredGroups.length < groupedProducts.length && (
+        <div className="flex justify-center mt-6">
+          <Button onClick={loadMore} variant="outline" size="lg">
+            Показать ещё ({Math.min(50, groupedProducts.length - filteredGroups.length)} из {groupedProducts.length - filteredGroups.length})
+          </Button>
+        </div>
+      )}
+
       {/* Cart Dialog */}
       <Dialog open={showCart} onOpenChange={setShowCart}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
