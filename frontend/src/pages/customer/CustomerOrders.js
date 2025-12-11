@@ -171,50 +171,54 @@ export const CustomerOrders = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
-                      {new Date(order.orderDate).toLocaleDateString('ru-RU')}
-                      {' '}
-                      <span className="text-gray-500">
-                        {new Date(order.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {suppliers[order.supplierCompanyId]?.companyName || 'Загрузка...'}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {order.amount.toLocaleString('ru-RU')} ₽
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
-                        {statusLabels[order.status] || order.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => fetchOrderDetails(order.id)}
-                        data-testid={`view-order-${order.id}`}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Подробнее
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {selectedOrder && (
-        <Card className="p-6 mt-6">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-semibold">Детали заказа</h3>
-            <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>Закрыть</Button>
-          </div>
+                  <React.Fragment key={order.id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm">
+                        {new Date(order.orderDate).toLocaleDateString('ru-RU')}
+                        {' '}
+                        <span className="text-gray-500">
+                          {new Date(order.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {suppliers[order.supplierCompanyId]?.companyName || 'Загрузка...'}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {order.amount.toLocaleString('ru-RU')} ₽
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
+                          {statusLabels[order.status] || order.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (selectedOrder?.id === order.id) {
+                              setSelectedOrder(null);
+                            } else {
+                              fetchOrderDetails(order.id);
+                            }
+                          }}
+                          data-testid={`view-order-${order.id}`}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          {selectedOrder?.id === order.id ? 'Скрыть' : 'Подробнее'}
+                        </Button>
+                      </td>
+                    </tr>
+                    
+                    {/* Inline Order Details */}
+                    {selectedOrder?.id === order.id && (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-4 bg-gray-50">
+                          <Card className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                              <h3 className="text-xl font-semibold">Детали заказа</h3>
+                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>Закрыть</Button>
+                            </div>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
