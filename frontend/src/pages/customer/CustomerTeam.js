@@ -97,22 +97,22 @@ export const CustomerTeam = () => {
 
   return (
     <div data-testid="customer-team-page" className="max-w-4xl mx-auto">
-      <h2 className=\"text-4xl font-bold mb-2\">Ответственные лица и доступ</h2>
-      <p className=\"text-base text-muted-foreground mb-6\">
+      <h2 className="text-4xl font-bold mb-2">Ответственные лица и доступ</h2>
+      <p className="text-base text-muted-foreground mb-6">
         Управление командой и доступом к платформе
       </p>
 
       {message === 'success' && (
-        <Alert className=\"mb-6 bg-green-50 border-green-200\">
-          <AlertDescription className=\"text-green-800\">
+        <Alert className="mb-6 bg-green-50 border-green-200">
+          <AlertDescription className="text-green-800">
             ✓ Данные успешно сохранены
           </AlertDescription>
         </Alert>
       )}
       
       {message === 'error' && (
-        <Alert className=\"mb-6 bg-red-50 border-red-200\">
-          <AlertDescription className=\"text-red-800\">
+        <Alert className="mb-6 bg-red-50 border-red-200">
+          <AlertDescription className="text-red-800">
             ✗ Ошибка при сохранении
           </AlertDescription>
         </Alert>
