@@ -199,7 +199,8 @@ export const CustomerCatalog = () => {
 
   const filterProducts = () => {
     if (!searchTerm.trim()) {
-      setFilteredGroups(groupedProducts);
+      setFilteredGroups(groupedProducts.slice(0, displayLimit));
+      setDisplayLimit(100); // Reset display limit when clearing search
       return;
     }
 
@@ -216,7 +217,18 @@ export const CustomerCatalog = () => {
     // Sort filtered results by price (lowest first)
     const sortedFiltered = filtered.sort((a, b) => a.lowestPrice - b.lowestPrice);
     
-    setFilteredGroups(sortedFiltered);
+    setFilteredGroups(sortedFiltered.slice(0, Math.min(200, sortedFiltered.length)));
+    setDisplayLimit(200); // Show more results for search
+  };
+
+  const loadMore = () => {
+    const newLimit = displayLimit + 50;
+    if (searchTerm.trim()) {
+      setFilteredGroups(groupedProducts.slice(0, newLimit));
+    } else {
+      setFilteredGroups(groupedProducts.slice(0, newLimit));
+    }
+    setDisplayLimit(newLimit);
   };
 
   const addToCart = (offer, group, productKey) => {
