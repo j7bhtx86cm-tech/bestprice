@@ -219,39 +219,39 @@ export const CustomerOrders = () => {
                               <h3 className="text-xl font-semibold">Детали заказа</h3>
                               <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>Закрыть</Button>
                             </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Дата и время заказа</p>
-                <p className="font-medium">
-                  {new Date(selectedOrder.orderDate).toLocaleDateString('ru-RU')}
-                  {' '}
-                  {new Date(selectedOrder.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Статус</p>
-                <Badge className={statusColors[selectedOrder.status]}>
-                  {statusLabels[selectedOrder.status]}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Поставщик</p>
-                <p className="font-medium">{suppliers[selectedOrder.supplierCompanyId]?.companyName || 'Загрузка...'}</p>
-              </div>
-              {selectedOrder.deliveryAddress && (
-                <div>
-                  <p className="text-sm text-gray-600">Адрес доставки</p>
-                  <p className="font-medium">{selectedOrder.deliveryAddress.address}</p>
-                  {selectedOrder.deliveryAddress.phone && (
-                    <p className="text-sm text-gray-600 mt-1">Тел: {selectedOrder.deliveryAddress.phone}</p>
-                  )}
-                  {selectedOrder.deliveryAddress.additionalPhone && (
-                    <p className="text-sm text-gray-600">Доп. тел: {selectedOrder.deliveryAddress.additionalPhone}</p>
-                  )}
-                </div>
-              )}
-            </div>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm text-gray-600">Дата и время заказа</p>
+                                  <p className="font-medium">
+                                    {new Date(selectedOrder.orderDate).toLocaleDateString('ru-RU')}
+                                    {' '}
+                                    {new Date(selectedOrder.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-600">Статус</p>
+                                  <Badge className={statusColors[selectedOrder.status]}>
+                                    {statusLabels[selectedOrder.status]}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-600">Поставщик</p>
+                                  <p className="font-medium">{suppliers[selectedOrder.supplierCompanyId]?.companyName || 'Загрузка...'}</p>
+                                </div>
+                                {selectedOrder.deliveryAddress && (
+                                  <div>
+                                    <p className="text-sm text-gray-600">Адрес доставки</p>
+                                    <p className="font-medium">{selectedOrder.deliveryAddress.address}</p>
+                                    {selectedOrder.deliveryAddress.phone && (
+                                      <p className="text-sm text-gray-600 mt-1">Тел: {selectedOrder.deliveryAddress.phone}</p>
+                                    )}
+                                    {selectedOrder.deliveryAddress.additionalPhone && (
+                                      <p className="text-sm text-gray-600">Доп. тел: {selectedOrder.deliveryAddress.additionalPhone}</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
             
             {/* Multi-Supplier Shopping Session Analytics */}
             {(() => {
