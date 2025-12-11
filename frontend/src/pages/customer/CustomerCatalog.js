@@ -16,6 +16,7 @@ export const CustomerCatalog = () => {
   const [allProducts, setAllProducts] = useState({});
   const [groupedProducts, setGroupedProducts] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
+  const [displayLimit, setDisplayLimit] = useState(100);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
