@@ -6,6 +6,7 @@ import { SupplierSettings } from './SupplierSettings';
 import { SupplierPriceList } from './SupplierPriceList';
 import { SupplierOrders } from './SupplierOrders';
 import { SupplierRating } from './SupplierRating';
+import { SupplierDocuments } from './SupplierDocuments';
 
 export const SupplierDashboard = () => {
   return (
@@ -17,6 +18,7 @@ export const SupplierDashboard = () => {
         <Route path="/price-list" element={<SupplierPriceList />} />
         <Route path="/orders" element={<SupplierOrders />} />
         <Route path="/rating" element={<SupplierRating />} />
+        <Route path="/documents" element={<SupplierDocuments />} />
       </Routes>
     </SupplierLayout>
   );
