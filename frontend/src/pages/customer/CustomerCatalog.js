@@ -80,25 +80,50 @@ export const CustomerCatalog = () => {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+      console.log('📦 Loading catalog...');
+      const startTime = Date.now();
+
       // Fetch all suppliers
       const suppliersResponse = await axios.get(`${API}/suppliers`, { headers });
       setSuppliers(suppliersResponse.data);
+      
+      console.log(`✅ Loaded ${suppliersResponse.data.length} suppliers in ${Date.now() - startTime}ms`);
 
-      // Fetch products from each supplier
+      // Fetch products from each supplier (in parallel for speed)
+      const productPromises = suppliersResponse.data.map(supplier =>
+        axios.get(`${API}/suppliers/${supplier.id}/price-lists`, { headers })
+          .then(response => ({
+            supplier: supplier,
+            products: response.data
+          }))
+      );
+      
+      const productsResults = await Promise.all(productPromises);
+      
       const productsMap = {};
-      for (const supplier of suppliersResponse.data) {
-        const priceListResponse = await axios.get(`${API}/suppliers/${supplier.id}/price-lists`, { headers });
+      let totalProducts = 0;
+      
+      productsResults.forEach(({ supplier, products }) => {
         productsMap[supplier.id] = {
           supplier: supplier,
-          products: priceListResponse.data
+          products: products
         };
-      }
+        totalProducts += products.length;
+      });
+      
       setAllProducts(productsMap);
+      
+      console.log(`✅ Loaded ${totalProducts} products in ${Date.now() - startTime}ms`);
 
       // Group products by identical name and unit
+      const groupStart = Date.now();
       const grouped = groupProductsForBestPrice(productsMap);
+      console.log(`✅ Grouped into ${grouped.length} product groups in ${Date.now() - groupStart}ms`);
+      
       setGroupedProducts(grouped);
-      setFilteredGroups(grouped);
+      setFilteredGroups(grouped.slice(0, 100)); // Show first 100 initially
+      
+      console.log(`✅ Total catalog load time: ${Date.now() - startTime}ms`);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
