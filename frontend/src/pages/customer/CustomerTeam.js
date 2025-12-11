@@ -30,7 +30,6 @@ export const CustomerTeam = () => {
       const response = await axios.get(`${API}/companies/my`, { headers });
       setCompany(response.data);
       
-      // Load existing contact person as first team member
       if (response.data.contactPersonName) {
         setTeamMembers([{
           name: response.data.contactPersonName || '',
@@ -71,7 +70,6 @@ export const CustomerTeam = () => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      // Save primary contact (first team member)
       const primary = teamMembers[0];
       await axios.put(`${API}/companies/my`, {
         contactPersonName: primary.name,
@@ -118,76 +116,76 @@ export const CustomerTeam = () => {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className=\"space-y-6\">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {teamMembers.map((member, index) => (
-          <Card key={index} className=\"p-6\">
-            <div className=\"flex justify-between items-start mb-4\">
-              <div className=\"flex items-center gap-3\">
-                <div className=\"w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center\">
-                  <User className=\"w-5 h-5 text-blue-600\" />
+          <Card key={index} className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className=\"font-semibold\">{index === 0 ? 'Основной контакт' : `Сотрудник ${index + 1}`}</h3>
-                  <p className=\"text-sm text-gray-600\">Ответственное лицо</p>
+                  <h3 className="font-semibold">{index === 0 ? 'Основной контакт' : `Сотрудник ${index + 1}`}</h3>
+                  <p className="text-sm text-gray-600">Ответственное лицо</p>
                 </div>
               </div>
               {index > 0 && (
                 <Button
-                  type=\"button\"
-                  variant=\"ghost\"
-                  size=\"sm\"
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => removeTeamMember(index)}
-                  className=\"text-red-600 hover:text-red-700\"
+                  className="text-red-600 hover:text-red-700"
                 >
-                  <Trash2 className=\"h-4 w-4\" />
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>
 
-            <div className=\"grid md:grid-cols-2 gap-4\">
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label className=\"text-sm mb-2\">ФИО <span className=\"text-red-500\">*</span></Label>
+                <Label className="text-sm mb-2">ФИО <span className="text-red-500">*</span></Label>
                 <Input
                   value={member.name}
                   onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
-                  placeholder=\"Иванов Иван Иванович\"
+                  placeholder="Иванов Иван Иванович"
                   required
                 />
               </div>
 
               <div>
-                <Label className=\"text-sm mb-2\">Должность</Label>
+                <Label className="text-sm mb-2">Должность</Label>
                 <Input
                   value={member.position}
                   onChange={(e) => updateTeamMember(index, 'position', e.target.value)}
-                  placeholder=\"Директор, Менеджер...\"
+                  placeholder="Директор, Менеджер..."
                 />
               </div>
 
               <div>
-                <Label className=\"text-sm mb-2\">
-                  <Phone className=\"h-3 w-3 inline mr-1\" />
-                  Телефон <span className=\"text-red-500\">*</span>
+                <Label className="text-sm mb-2">
+                  <Phone className="h-3 w-3 inline mr-1" />
+                  Телефон <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  type=\"tel\"
+                  type="tel"
                   value={member.phone}
                   onChange={(e) => updateTeamMember(index, 'phone', e.target.value)}
-                  placeholder=\"+7 (999) 123-45-67\"
+                  placeholder="+7 (999) 123-45-67"
                   required
                 />
               </div>
 
               <div>
-                <Label className=\"text-sm mb-2\">
-                  <Mail className=\"h-3 w-3 inline mr-1\" />
-                  Email <span className=\"text-red-500\">*</span>
+                <Label className="text-sm mb-2">
+                  <Mail className="h-3 w-3 inline mr-1" />
+                  Email <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  type=\"email\"
+                  type="email"
                   value={member.email}
                   onChange={(e) => updateTeamMember(index, 'email', e.target.value)}
-                  placeholder=\"ivanov@company.ru\"
+                  placeholder="ivanov@company.ru"
                   required
                 />
               </div>
@@ -196,23 +194,23 @@ export const CustomerTeam = () => {
         ))}
 
         <Button
-          type=\"button\"
-          variant=\"outline\"
+          type="button"
+          variant="outline"
           onClick={addTeamMember}
-          className=\"w-full\"
+          className="w-full"
         >
-          <Plus className=\"h-4 w-4 mr-2\" />
+          <Plus className="h-4 w-4 mr-2" />
           Добавить сотрудника
         </Button>
 
-        <Button type=\"submit\" disabled={saving} className=\"w-full\" size=\"lg\">
+        <Button type="submit" disabled={saving} className="w-full" size="lg">
           {saving ? 'Сохранение...' : 'Сохранить все изменения'}
         </Button>
       </form>
 
-      <Card className=\"p-6 mt-6 bg-blue-50\">
-        <h3 className=\"text-lg font-semibold mb-2\">Управление доступом</h3>
-        <p className=\"text-sm text-gray-700\">
+      <Card className="p-6 mt-6 bg-blue-50">
+        <h3 className="text-lg font-semibold mb-2">Управление доступом</h3>
+        <p className="text-sm text-gray-700">
           Добавьте сотрудников вашей компании для совместной работы на платформе BestPrice.
           В будущих версиях будет доступно управление правами доступа для каждого сотрудника.
         </p>
