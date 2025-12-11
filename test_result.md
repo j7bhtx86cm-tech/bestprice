@@ -383,8 +383,33 @@ metadata:
         agent: "testing"
         comment: "RE-TESTED (2025-12-09): ❌ CRITICAL BUG - Mini cart notification does NOT appear at all when adding items to cart. Tested multiple times: added products to cart, cart button updates correctly (shows 'Корзина (1)' then 'Корзина (2)'), but mini cart notification with '✓ Добавлено в корзину' NEVER appears in the DOM. Root cause: React state update race condition - when addToCart() calls setCart() and setShowMiniCart(true), the render condition {showMiniCart && cart.length > 0} evaluates with OLD cart.length before state update completes. Cannot test [X] button behavior because notification never appears. Full cart modal and order placement work correctly."
 
+  - task: "Star Ratings Feature"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerRatings.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-11): ✅ ALL REQUIREMENTS MET - Star ratings feature fully functional. (1) ✅ List of 9 suppliers visible (Алиди, Айфрут, Фаворит, etc.) with company details (INN, phone, email), (2) ✅ 'Оценить' button on each supplier card, (3) ✅ Rating form expands correctly showing 5 empty stars (clickable), comment textarea with placeholder, 'Сохранить оценку' and 'Отмена' buttons, (4) ✅ Stars fill up to clicked position with yellow color (fill-yellow-400) - tested clicking 1st, 3rd, and 5th stars, (5) ✅ Can enter comment in textarea, (6) ✅ 'Сохранить оценку' button works - shows alert 'Оценка сохранена: 5 звезд', (7) ✅ Form collapses after save. NOTE: Currently saves to console.log only (no backend endpoint yet), but all UI functionality working perfectly."
+
+  - task: "Team Members Feature"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/customer/CustomerTeam.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "TESTED (2025-12-11): ⚠️ PARTIALLY WORKING - 2 CRITICAL ISSUES FOUND. ✅ WORKING: (1) 'Основной контакт' card displays with 4 fields (ФИО *, Должность, Телефон *, Email *), (2) 'Добавить сотрудника' button adds new cards labeled 'Сотрудник 2', 'Сотрудник 3', etc., (3) Trash icon present on additional cards (not on primary contact), (4) Can fill in team member details in all cards. ❌ CRITICAL ISSUES: (1) Trash icon does NOT remove cards - clicking trash button on 'Сотрудник 2' did not remove the card (still visible after click), (2) No success/error message appears after clicking 'Сохранить все изменения' - no visual feedback to user, (3) No PUT request to /api/companies/my in backend logs - suggests save might not have been triggered or failed silently. Root cause likely in removeTeamMember() function (lines 52-56) or save handler (lines 64-90)."
+
 test_plan:
   current_focus:
+    - "Team Members Feature"
     - "Mini Cart Close Button"
     - "Order History with Date AND Time Display"
     - "Multi-Supplier Analytics Card"
