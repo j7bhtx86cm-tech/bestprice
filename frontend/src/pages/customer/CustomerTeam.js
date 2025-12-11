@@ -92,11 +92,11 @@ export const CustomerTeam = () => {
   };
 
   if (loading) {
-    return <div className=\"text-center py-8\">Загрузка...</div>;
+    return <div className="text-center py-8">Загрузка...</div>;
   }
 
   return (
-    <div data-testid=\"customer-team-page\" className=\"max-w-4xl mx-auto\">
+    <div data-testid="customer-team-page" className="max-w-4xl mx-auto">
       <h2 className=\"text-4xl font-bold mb-2\">Ответственные лица и доступ</h2>
       <p className=\"text-base text-muted-foreground mb-6\">
         Управление командой и доступом к платформе
