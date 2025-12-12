@@ -466,12 +466,17 @@ async def login(data: UserLogin):
 
 @api_router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
-    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    if current_user['role'] == 'responsible':
+        company_id = current_user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
     return {
         "id": current_user['id'],
         "email": current_user['email'],
         "role": current_user['role'],
-        "companyId": company['id'] if company else None
+        "companyId": company_id
     }
 
 @api_router.get("/auth/inn/{inn}")
