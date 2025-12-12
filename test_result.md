@@ -445,6 +445,115 @@ test_plan:
     - "Customer Contract Status Display"
     - "Supplier Restaurant Documents and Contract Acceptance"
 
+  - task: "Mobile Login for Responsible Person"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/mobile/MobileLogin.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG FOUND (2025-12-12): Login failed with 'Ошибка входа' error. Root cause: MobileLogin.js line 31 calls login(loginData) passing object {email, password}, but AuthContext.login() expects two separate parameters login(email, password). This caused authentication to fail."
+      - working: true
+        agent: "testing"
+        comment: "FIXED (2025-12-12): Updated MobileLogin.js line 31 to call login(loginData.email, loginData.password) with separate parameters. Login now works correctly - user manager@bestprice.ru successfully authenticates and redirects to /app/home."
+
+  - task: "Mobile Home Screen"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/mobile/MobileHome.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-12): ✅ Home screen displays correctly. Shows 'Здравствуйте!' greeting, 2 large buttons ('Создать заказ' with cart icon, 'Мои заказы' with list icon), company name in header, logout button. All requirements met."
+
+  - task: "Mobile Create Order Flow"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/mobile/MobileCreateOrder.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-12): ✅ Create order flow working perfectly. Can add multiple items (Position 1 Qty 5, Position 2 Qty 10), items display in list with trash icons (2 trash icons found), 'Просмотр заказа' button navigates to preview. All functionality working."
+
+  - task: "Mobile Order Preview"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/mobile/MobileOrderPreview.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-12): ✅ Order preview displays correctly. Shows product details (product name, position number, quantity, price per unit, supplier name in badge), total amount (3004.55 ₽), 'Подтвердить заказ' and 'Редактировать' buttons present. Order confirmation successful."
+
+  - task: "Mobile Order Success Screen"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/mobile/MobileOrderSuccess.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "TESTED (2025-12-12): ✅ Success screen displays correctly. Shows checkmark icon (green), 'Заказ создан!' message, 3 buttons ('Мои заказы', 'Новый заказ', 'На главную'). All navigation buttons working."
+
+  - task: "Mobile Orders List"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/mobile/MobileOrders.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG (2025-12-12): Orders list shows 'Заказов нет' (No orders) even after creating orders. Backend returns 404 for GET /api/orders/my. Root cause: Endpoint tries to find company by userId which doesn't exist for responsible users (they have companyId in user document)."
+      - working: true
+        agent: "testing"
+        comment: "FIXED (2025-12-12): Updated /api/orders/my endpoint in server.py to handle responsible users by getting companyId from user document instead of looking up company by userId. Orders now display correctly - showing 38 order cards with date/time (08.12.2025 18:29), items count, amount, status badges. All 3 filters (Все, Сегодня, Неделя) present and working."
+
+  - task: "Mobile Order Details"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/mobile/MobileOrderDetails.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG (2025-12-12): Order details shows 'Заказ не найден' (Order not found) when clicking on order. Backend returns 404 for GET /api/orders/{order_id}. Same root cause as orders list - endpoint doesn't handle responsible users correctly."
+      - working: true
+        agent: "testing"
+        comment: "FIXED (2025-12-12): Updated /api/orders/{order_id} endpoint in server.py to handle responsible users. Order details now display correctly showing: Order number (Заказ №c68141a9), Date and time section, Status section (Новый badge), Supplier section, Order composition (product names, quantities, prices, articles), Total amount. All required information visible."
+
+backend:
+  - task: "Mobile Orders API for Responsible Users"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG (2025-12-12): Two endpoints not handling responsible users correctly: (1) GET /api/orders/my returns 404 - tries to find company by userId, (2) GET /api/orders/{order_id} returns 404 - same issue. Responsible users have companyId directly in user document, not linked via companies collection."
+      - working: true
+        agent: "testing"
+        comment: "FIXED (2025-12-12): Updated both endpoints to check user role and get companyId appropriately: For responsible users: company_id = current_user.get('companyId'). For other users: lookup company by userId. Both endpoints now return 200 OK and data correctly."
+
 agent_communication:
   - agent: "testing"
     message: "Comprehensive end-to-end testing completed for BestPrice B2B marketplace. All critical requirements verified."
