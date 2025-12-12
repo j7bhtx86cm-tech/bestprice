@@ -445,7 +445,12 @@ async def login(data: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     # Get company
-    company = await db.companies.find_one({"userId": user['id']}, {"_id": 0})
+    if user['role'] == 'responsible':
+        # Responsible users have companyId directly in user document
+        company_id = user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
     
     token = create_access_token({"sub": user['id'], "role": user['role']})
     
@@ -455,7 +460,7 @@ async def login(data: UserLogin):
             "id": user['id'],
             "email": user['email'],
             "role": user['role'],
-            "companyId": company['id'] if company else None
+            "companyId": company_id
         }
     )
 
