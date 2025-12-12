@@ -197,6 +197,17 @@ class PriceListUpdate(BaseModel):
     availability: Optional[bool] = None
     active: Optional[bool] = None
 
+# Restaurant Position Catalog Models
+class RestaurantPosition(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    restaurantCompanyId: str
+    positionNumber: str
+    productId: str
+    productName: str
+    unit: str
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Order Models
 class OrderItem(BaseModel):
     productName: str
