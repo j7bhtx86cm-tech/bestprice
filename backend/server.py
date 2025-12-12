@@ -806,12 +806,18 @@ async def get_order(order_id: str, current_user: dict = Depends(get_current_user
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
-    if not company:
+    # Get company ID based on user role
+    if current_user['role'] == UserRole.responsible:
+        company_id = current_user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
     
     # Check if user has access to this order
-    if order['customerCompanyId'] != company['id'] and order['supplierCompanyId'] != company['id']:
+    if order['customerCompanyId'] != company_id and order['supplierCompanyId'] != company_id:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     return order
