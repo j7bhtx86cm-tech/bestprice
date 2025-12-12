@@ -14,6 +14,10 @@ export const ProtectedRoute = ({ children, role }) => {
   }
 
   if (!user) {
+    // For mobile app, redirect to /app/login
+    if (role === 'responsible') {
+      return <Navigate to="/app/login" replace />;
+    }
     return <Navigate to="/auth" replace />;
   }
 
