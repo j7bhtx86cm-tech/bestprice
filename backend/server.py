@@ -760,14 +760,20 @@ async def upload_document(
 
 @api_router.get("/orders/my", response_model=List[Order])
 async def get_my_orders(current_user: dict = Depends(get_current_user)):
-    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
-    if not company:
+    # Get company ID based on user role
+    if current_user['role'] == UserRole.responsible:
+        company_id = current_user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
     
     if current_user['role'] == UserRole.supplier:
-        orders = await db.orders.find({"supplierCompanyId": company['id']}, {"_id": 0}).to_list(1000)
+        orders = await db.orders.find({"supplierCompanyId": company_id}, {"_id": 0}).to_list(1000)
     else:
-        orders = await db.orders.find({"customerCompanyId": company['id']}, {"_id": 0}).to_list(1000)
+        orders = await db.orders.find({"customerCompanyId": company_id}, {"_id": 0}).to_list(1000)
     
     return orders
 
