@@ -28,7 +28,7 @@ export const MobileLogin = () => {
     setError('');
 
     try {
-      const success = await login(loginData);
+      const success = await login(loginData.email, loginData.password);
       if (success) {
         navigate('/app/home');
       } else {
