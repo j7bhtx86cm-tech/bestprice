@@ -43,6 +43,7 @@ class UserRole(str, Enum):
     supplier = "supplier"
     customer = "customer"
     admin = "admin"
+    responsible = "responsible"
 
 class CompanyType(str, Enum):
     supplier = "supplier"
