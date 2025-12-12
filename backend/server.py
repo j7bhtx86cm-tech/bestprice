@@ -879,6 +879,195 @@ async def get_supplier_price_lists(supplier_id: str):
     price_lists = await db.price_lists.find({"supplierCompanyId": supplier_id, "active": True}, {"_id": 0}).to_list(10000)
     return price_lists
 
+
+# ==================== MOBILE APP ROUTES ====================
+
+@api_router.get("/mobile/positions", response_model=List[RestaurantPosition])
+async def get_restaurant_positions(current_user: dict = Depends(get_current_user)):
+    """Get restaurant's position catalog for mobile ordering"""
+    if current_user['role'] not in [UserRole.customer, UserRole.responsible]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Get company ID from user or directly from responsible role
+    if current_user['role'] == UserRole.responsible:
+        company_id = current_user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    positions = await db.restaurant_positions.find(
+        {"restaurantCompanyId": company_id}, 
+        {"_id": 0}
+    ).to_list(1000)
+    
+    return positions
+
+class MobileOrderPreviewRequest(BaseModel):
+    items: List[dict]  # [{"position_number": "15", "qty": 3}, ...]
+
+@api_router.post("/mobile/orders/preview")
+async def preview_mobile_order(data: MobileOrderPreviewRequest, current_user: dict = Depends(get_current_user)):
+    """Preview order from position numbers"""
+    if current_user['role'] not in [UserRole.customer, UserRole.responsible]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Get company ID
+    if current_user['role'] == UserRole.responsible:
+        company_id = current_user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Get all products and positions
+    all_products = await db.price_lists.find({"active": True}, {"_id": 0}).to_list(10000)
+    positions = await db.restaurant_positions.find(
+        {"restaurantCompanyId": company_id}, 
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Build position map
+    position_map = {p['positionNumber']: p for p in positions}
+    
+    resolved_items = []
+    errors = []
+    warnings = []
+    total_amount = 0
+    
+    for item in data.items:
+        pos_num = str(item.get('position_number', ''))
+        qty = float(item.get('qty', 0))
+        
+        if not pos_num or qty <= 0:
+            errors.append(f"Invalid item: position={pos_num}, qty={qty}")
+            continue
+        
+        # Find position in restaurant catalog
+        position = position_map.get(pos_num)
+        if not position:
+            errors.append(f"Position {pos_num} not found in catalog")
+            continue
+        
+        # Find all suppliers offering this product
+        product_offers = [p for p in all_products 
+                         if p['productName'].lower() == position['productName'].lower() 
+                         and p['unit'].lower() == position['unit'].lower()]
+        
+        if not product_offers:
+            errors.append(f"Position {pos_num} ({position['productName']}) - no suppliers found")
+            continue
+        
+        # Select cheapest supplier
+        best_offer = min(product_offers, key=lambda x: x['price'])
+        
+        # Check minimum quantity
+        min_qty = best_offer.get('minQuantity', 1)
+        if qty < min_qty:
+            warnings.append(f"Position {pos_num}: minimum order is {min_qty} {position['unit']}, adjusted from {qty}")
+            qty = min_qty
+        
+        # Get supplier name
+        supplier = await db.companies.find_one({"id": best_offer['supplierCompanyId']}, {"_id": 0})
+        
+        item_total = best_offer['price'] * qty
+        total_amount += item_total
+        
+        resolved_items.append({
+            "position_number": pos_num,
+            "product_name": position['productName'],
+            "qty": qty,
+            "unit": position['unit'],
+            "supplier_name": supplier['companyName'] if supplier else 'Unknown',
+            "supplier_id": best_offer['supplierCompanyId'],
+            "price_per_unit": best_offer['price'],
+            "total": item_total,
+            "product_id": position['productId'],
+            "article": best_offer.get('article', '')
+        })
+    
+    return {
+        "positions": resolved_items,
+        "total_amount": total_amount,
+        "warnings": warnings,
+        "errors": errors
+    }
+
+class MobileOrderConfirmRequest(BaseModel):
+    items: List[dict]  # Same as preview
+
+@api_router.post("/mobile/orders/confirm")
+async def confirm_mobile_order(data: MobileOrderConfirmRequest, current_user: dict = Depends(get_current_user)):
+    """Confirm and create orders from mobile app"""
+    if current_user['role'] not in [UserRole.customer, UserRole.responsible]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Get company ID
+    if current_user['role'] == UserRole.responsible:
+        company_id = current_user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Re-run preview logic to get resolved items
+    preview_response = await preview_mobile_order(
+        MobileOrderPreviewRequest(items=data.items),
+        current_user
+    )
+    
+    if preview_response['errors']:
+        raise HTTPException(status_code=400, detail=f"Cannot create order: {preview_response['errors']}")
+    
+    # Group items by supplier
+    items_by_supplier = {}
+    for item in preview_response['positions']:
+        supplier_id = item['supplier_id']
+        if supplier_id not in items_by_supplier:
+            items_by_supplier[supplier_id] = []
+        
+        items_by_supplier[supplier_id].append({
+            'productName': item['product_name'],
+            'article': item['article'],
+            'quantity': item['qty'],
+            'price': item['price_per_unit'],
+            'unit': item['unit']
+        })
+    
+    # Create orders (one per supplier)
+    created_orders = []
+    
+    for supplier_id, items in items_by_supplier.items():
+        amount = sum(item['price'] * item['quantity'] for item in items)
+        
+        order = Order(
+            customerCompanyId=company_id,
+            supplierCompanyId=supplier_id,
+            amount=amount,
+            orderDetails=items,
+            deliveryAddress=None  # Mobile orders don't specify delivery address initially
+        )
+        
+        order_dict = order.model_dump()
+        order_dict['orderDate'] = order_dict['orderDate'].isoformat()
+        order_dict['createdAt'] = order_dict['createdAt'].isoformat()
+        
+        await db.orders.insert_one(order_dict)
+        created_orders.append(order_dict['id'])
+    
+    return {
+        "order_ids": created_orders,
+        "total_orders": len(created_orders),
+        "total_amount": preview_response['total_amount']
+    }
+
+
 # Include router
 app.include_router(api_router)
 
