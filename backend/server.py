@@ -819,32 +819,30 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
     # Get all products and suppliers
     all_products = await db.price_lists.find({}, {"_id": 0}).to_list(10000)
     
-    # Calculate CORRECT savings: Best possible price vs what customer paid
-    all_ordered_items = []
-    optimal_total = 0
-    actual_total = 0
+    # Calculate CORRECT BestPrice value: Compare best possible vs actual paid
+    optimal_total = 0  # Best possible if buying each item at cheapest price
+    actual_total = 0   # What customer actually paid
     
     for order in orders:
         for item in order.get('orderDetails', []):
-            # Find ALL suppliers offering this product
+            actual_item_cost = item['price'] * item['quantity']
+            actual_total += actual_item_cost
+            
+            # Find ALL suppliers offering this exact product
             matching_products = [p for p in all_products 
                                if p['productName'].lower() == item['productName'].lower() 
                                and p['unit'].lower() == item['unit'].lower()]
             
             if matching_products:
-                # Find CHEAPEST price across ALL suppliers
+                # Find CHEAPEST price across ALL suppliers  
                 cheapest_price = min(p['price'] for p in matching_products)
                 optimal_item_cost = cheapest_price * item['quantity']
-                actual_item_cost = item['price'] * item['quantity']
-                
                 optimal_total += optimal_item_cost
-                actual_total += actual_item_cost
             else:
-                # If product not found in current catalog, use paid price
-                actual_total += item['price'] * item['quantity']
-                optimal_total += item['price'] * item['quantity']
+                # Product not in catalog, use actual price
+                optimal_total += actual_item_cost
     
-    # Calculate savings
+    # Calculate savings (should be 0 or positive if BestPrice is working correctly)
     actual_savings = optimal_total - actual_total
     savings_percentage = (actual_savings / optimal_total * 100) if optimal_total > 0 else 0
     
