@@ -403,6 +403,21 @@ backend:
         agent: "testing"
         comment: "FIXED! Backend data migration successfully converted all old string format delivery addresses to object format. API now returns company data correctly without validation errors."
 
+  - task: "Mobile Orders API for Responsible Users"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG (2025-12-12): Two endpoints not handling responsible users correctly: (1) GET /api/orders/my returns 404 - tries to find company by userId, (2) GET /api/orders/{order_id} returns 404 - same issue. Responsible users have companyId directly in user document, not linked via companies collection."
+      - working: true
+        agent: "testing"
+        comment: "FIXED (2025-12-12): Updated both endpoints to check user role and get companyId appropriately: For responsible users: company_id = current_user.get('companyId'). For other users: lookup company by userId. Both endpoints now return 200 OK and data correctly."
+
 metadata:
   created_by: "testing_agent"
   version: "1.4"
