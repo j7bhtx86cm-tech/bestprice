@@ -814,7 +814,6 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
     orders = await db.orders.find({"customerCompanyId": company['id']}, {"_id": 0}).to_list(1000)
     
     total_orders = len(orders)
-    total_amount = sum(order['amount'] for order in orders)
     
     # Get all products and suppliers
     all_products = await db.price_lists.find({}, {"_id": 0}).to_list(10000)
