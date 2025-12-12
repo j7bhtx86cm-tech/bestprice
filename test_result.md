@@ -552,6 +552,13 @@ test_plan:
   completed_tests:
     - "Customer Contract Status Display"
     - "Supplier Restaurant Documents and Contract Acceptance"
+    - "Mobile Login for Responsible Person"
+    - "Mobile Home Screen"
+    - "Mobile Create Order Flow"
+    - "Mobile Order Preview"
+    - "Mobile Order Success Screen"
+    - "Mobile Orders List"
+    - "Mobile Order Details"
 
   - task: "Mobile Login for Responsible Person"
     implemented: true
