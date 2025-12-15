@@ -15,10 +15,15 @@ export const ProtectedRoute = ({ children, role }) => {
 
   if (!user) {
     // For mobile app, redirect to /app/login
-    if (role === 'responsible') {
+    if (role === 'responsible' || role === 'chef') {
       return <Navigate to="/app/login" replace />;
     }
     return <Navigate to="/auth" replace />;
+  }
+
+  // Allow chef and responsible (staff) to access customer routes
+  if (role === 'customer' && ['customer', 'chef', 'responsible'].includes(user.role)) {
+    return children;
   }
 
   if (role && user.role !== role) {
