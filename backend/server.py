@@ -708,11 +708,12 @@ async def delete_price_list(price_id: str, current_user: dict = Depends(get_curr
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
-    if not company:
+    # Get company ID from user
+    company_id = current_user.get('companyId')
+    if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    result = await db.price_lists.delete_one({"id": price_id, "supplierCompanyId": company['id']})
+    result = await db.pricelists.delete_one({"id": price_id, "supplierId": company_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Price list not found")
     
