@@ -848,7 +848,8 @@ async def upload_document(
 @api_router.get("/orders/my", response_model=List[Order])
 async def get_my_orders(current_user: dict = Depends(get_current_user)):
     # Get company ID based on user role
-    if current_user['role'] == UserRole.responsible:
+    if current_user['role'] in [UserRole.responsible, UserRole.chef, UserRole.supplier]:
+        # These roles have companyId directly in user document
         company_id = current_user.get('companyId')
     else:
         company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
