@@ -393,7 +393,6 @@ export const SupplierPriceList = () => {
                   <th className="px-4 py-3 text-left text-sm font-medium">Цена</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Ед.</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Наличие</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium">Активен</th>
                   <th className="px-4 py-3 text-left text-sm font-medium">Действия</th>
                 </tr>
               </thead>
@@ -401,15 +400,7 @@ export const SupplierPriceList = () => {
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    {editingProduct?.id === product.id ? (
-                      <Input
-                        value={editingProduct.productName}
-                        onChange={(e) => setEditingProduct({...editingProduct, productName: e.target.value})}
-                        className="w-full"
-                      />
-                    ) : (
-                      <span className="font-medium">{product.productName}</span>
-                    )}
+                    <span className="font-medium">{product.productName}</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{product.article}</td>
                   <td className="px-4 py-3">
@@ -440,26 +431,13 @@ export const SupplierPriceList = () => {
                   </td>
                   <td className="px-4 py-3">
                     {editingProduct?.id === product.id ? (
-                      <Switch
-                        checked={editingProduct.active}
-                        onCheckedChange={(checked) => setEditingProduct({...editingProduct, active: checked})}
-                      />
-                    ) : (
-                      <Badge className={product.active ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}>
-                        {product.active ? 'Да' : 'Нет'}
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {editingProduct?.id === product.id ? (
                       <div className="flex gap-1">
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => handleUpdateProduct(product.id, {
                             price: editingProduct.price,
-                            availability: editingProduct.availability,
-                            active: editingProduct.active
+                            availability: editingProduct.availability
                           })}
                         >
                           <Check className="h-4 w-4" />
