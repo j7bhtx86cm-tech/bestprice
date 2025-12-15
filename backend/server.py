@@ -688,7 +688,7 @@ async def update_price_list(price_id: str, data: PriceListUpdate, current_user: 
     pricelist = await db.pricelists.find_one({"id": price_id}, {"_id": 0})
     product = await db.products.find_one({"id": pricelist['productId']}, {"_id": 0})
     
-    # Return in expected format
+    # Return in expected format with actual saved values
     return {
         "id": pricelist['id'],
         "supplierCompanyId": pricelist['supplierId'],
@@ -697,8 +697,8 @@ async def update_price_list(price_id: str, data: PriceListUpdate, current_user: 
         "price": pricelist['price'],
         "unit": product['unit'] if product else '',
         "minQuantity": pricelist.get('minQuantity', 1),
-        "availability": update_data.get('availability', True),
-        "active": update_data.get('active', True),
+        "availability": pricelist.get('availability', True),
+        "active": pricelist.get('active', True),
         "createdAt": pricelist.get('createdAt', datetime.now(timezone.utc).isoformat()),
         "updatedAt": datetime.now(timezone.utc).isoformat()
     }
