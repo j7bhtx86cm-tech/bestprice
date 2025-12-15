@@ -418,6 +418,21 @@ backend:
         agent: "testing"
         comment: "FIXED (2025-12-12): Updated both endpoints to check user role and get companyId appropriately: For responsible users: company_id = current_user.get('companyId'). For other users: lookup company by userId. Both endpoints now return 200 OK and data correctly."
 
+  - task: "Four User Portals - Role-Based Access Control"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "BUG FOUND: GET /api/orders/my endpoint returned 404 for chef and supplier roles. Root cause: Endpoint only checked for 'responsible' role when getting companyId from user document, but chef and supplier roles also have companyId directly in user document (not in companies collection). This caused the endpoint to try looking up company by userId which doesn't exist for these roles."
+      - working: true
+        agent: "testing"
+        comment: "FIXED AND TESTED: Updated /api/orders/my endpoint (line 851) to check for all three roles: [UserRole.responsible, UserRole.chef, UserRole.supplier]. Comprehensive testing completed for all 4 user portals: (1) RESTAURANT ADMIN (customer@bestprice.ru): ✅ Login, ✅ Catalog (6,184 products from 7 suppliers), ✅ Analytics (38 orders, 486,197.91 ₽), ✅ Team Management (3 members: Иван Менеджер, Мария Соколова, Алексей Петров), ✅ Matrix Management (2 matrices), ✅ Order History (38 orders). (2) STAFF (staff@bestprice.ru): ✅ Login, ✅ Profile, ✅ Matrix ('Основное меню' with 10 products), ✅ Catalog (7 suppliers), ✅ Order History (38 orders), ✅ Analytics DENIED (403), ✅ Team Management DENIED (403). (3) CHEF (chef@bestprice.ru): ✅ Login, ✅ Profile, ✅ Matrix ('Основное меню' with 10 products), ✅ Catalog (7 suppliers), ✅ Order History (38 orders), ✅ Analytics DENIED (403), ✅ Team Management DENIED (403). (4) SUPPLIER (ifruit@bestprice.ru): ✅ Login, ✅ Price List (622 products), ✅ Inline Editing (price and availability updates working), ✅ Search (found 13 products matching 'масло'), ✅ Orders (0 orders, accessible). All 25 tests passed - all 4 portals working independently with correct role-based access control."
+
 metadata:
   created_by: "testing_agent"
   version: "1.4"
