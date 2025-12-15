@@ -5,225 +5,331 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Plus, Trash2, Mail, Phone } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { User, Plus, Trash2, Mail, Phone, UserCheck } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 export const CustomerTeam = () => {
-  const [company, setCompany] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [matrices, setMatrices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [message, setMessage] = useState('');
-  const [teamMembers, setTeamMembers] = useState([
-    { name: '', phone: '', email: '', position: '' }
-  ]);
+  const [newMember, setNewMember] = useState({
+    name: '',
+    position: 'staff',
+    phone: '',
+    email: '',
+    matrixId: ''
+  });
 
   useEffect(() => {
-    fetchCompany();
+    fetchTeamMembers();
+    fetchMatrices();
   }, []);
 
-  const fetchCompany = async () => {
+  const fetchMatrices = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/companies/my`, { headers });
-      setCompany(response.data);
-      
-      if (response.data.contactPersonName) {
-        setTeamMembers([{
-          name: response.data.contactPersonName || '',
-          phone: response.data.contactPersonPhone || '',
-          email: response.data.email || '',
-          position: response.data.contactPersonPosition || ''
-        }]);
-      }
+      const response = await axios.get(`${API}/matrices`, { headers });
+      setMatrices(response.data);
     } catch (error) {
-      console.error('Failed to fetch company:', error);
+      console.error('Failed to fetch matrices:', error);
+    }
+  };
+
+  const fetchTeamMembers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/team/members`, { headers });
+      setTeamMembers(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch team members:', error);
+      setTeamMembers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const addTeamMember = () => {
-    setTeamMembers([...teamMembers, { name: '', phone: '', email: '', position: '' }]);
-  };
-
-  const removeTeamMember = (index) => {
-    if (teamMembers.length > 1) {
-      setTeamMembers(teamMembers.filter((_, i) => i !== index));
+  const handleAddMember = async () => {
+    if (!newMember.name || !newMember.email || !newMember.phone) {
+      alert('Пожалуйста, заполните все обязательные поля');
+      return;
     }
-  };
-
-  const updateTeamMember = (index, field, value) => {
-    const updated = [...teamMembers];
-    updated[index][field] = value;
-    setTeamMembers(updated);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage('');
 
     try {
       const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const primary = teamMembers[0];
-      await axios.put(`${API}/companies/my`, {
-        contactPersonName: primary.name,
-        contactPersonPhone: primary.phone,
-        contactPersonPosition: primary.position,
-        email: primary.email
-      }, { headers });
+      const role = newMember.position === 'chef' ? 'chef' : 'responsible';
+      const password = 'password123';
       
-      setMessage('success');
-      fetchCompany();
+      await axios.post(
+        `${API}/team/members`,
+        {
+          name: newMember.name,
+          role: role,
+          phone: newMember.phone,
+          email: newMember.email,
+          matrixId: newMember.matrixId || null,
+          password: password
+        },
+        { headers }
+      );
+      
+      setShowAddModal(false);
+      setNewMember({
+        name: '',
+        position: 'staff',
+        phone: '',
+        email: '',
+        matrixId: ''
+      });
+      
+      fetchTeamMembers();
+      
+      setMessage(`success|Сотрудник добавлен!\nEmail: ${newMember.email}\nПароль: ${password}`);
+      setTimeout(() => setMessage(''), 5000);
+    } catch (error) {
+      console.error('Failed to add team member:', error);
+      setMessage('error|' + (error.response?.data?.detail || 'Ошибка добавления сотрудника'));
+      setTimeout(() => setMessage(''), 5000);
+    }
+  };
+
+  const handleDeleteMember = async (memberId) => {
+    if (!confirm('Вы уверены, что хотите удалить этого сотрудника?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.delete(`${API}/team/members/${memberId}`, { headers });
+      fetchTeamMembers();
+      setMessage('success|Сотрудник удален');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage('error');
+      console.error('Failed to delete member:', error);
+      setMessage('error|Ошибка удаления сотрудника');
       setTimeout(() => setMessage(''), 3000);
-    } finally {
-      setSaving(false);
     }
+  };
+
+  const getRoleLabel = (role) => {
+    return role === 'chef' ? 'Повар' : 'Сотрудник';
+  };
+
+  const getMatrixName = (matrixId) => {
+    const matrix = matrices.find(m => m.id === matrixId);
+    return matrix ? matrix.name : 'Не назначена';
   };
 
   if (loading) {
     return <div className="text-center py-8">Загрузка...</div>;
   }
 
-  return (
-    <div data-testid="customer-team-page" className="max-w-4xl mx-auto">
-      <h2 className="text-4xl font-bold mb-2">Ответственные лица и доступ</h2>
-      <p className="text-base text-muted-foreground mb-6">
-        Управление командой и доступом к платформе
-      </p>
+  const [messageType, messageText] = message.split('|');
 
-      {message === 'success' && (
+  return (
+    <div data-testid="customer-team-page">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-4xl font-bold mb-2">Ответственные лица и доступ</h2>
+          <p className="text-base text-muted-foreground">
+            Управление командой и доступом к платформе
+          </p>
+        </div>
+        <Button onClick={() => setShowAddModal(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Добавить сотрудника
+        </Button>
+      </div>
+
+      {messageType === 'success' && (
         <Alert className="mb-6 bg-green-50 border-green-200">
-          <AlertDescription className="text-green-800">
-            ✓ Данные успешно сохранены
+          <AlertDescription className="text-green-800 whitespace-pre-line">
+            ✓ {messageText}
           </AlertDescription>
         </Alert>
       )}
       
-      {message === 'error' && (
+      {messageType === 'error' && (
         <Alert className="mb-6 bg-red-50 border-red-200">
           <AlertDescription className="text-red-800">
-            ✗ Ошибка при сохранении
+            ✗ {messageText}
           </AlertDescription>
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {teamMembers.map((member, index) => (
-          <Card key={index} className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-blue-600" />
+      {teamMembers.length === 0 ? (
+        <Card className="p-12 text-center">
+          <User className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 mb-4">У вас пока нет сотрудников</p>
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Добавить первого сотрудника
+          </Button>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {teamMembers.map((member) => (
+            <Card key={member.id} className="p-6">
+              <div className="flex justify-between items-start">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <UserCheck className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{member.name || member.email}</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      <span className="font-medium">{getRoleLabel(member.role)}</span>
+                    </p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-600">
+                        <Mail className="h-3 w-3 inline mr-1" />
+                        {member.email}
+                      </p>
+                      {member.phone && (
+                        <p className="text-sm text-gray-600">
+                          <Phone className="h-3 w-3 inline mr-1" />
+                          {member.phone}
+                        </p>
+                      )}
+                      {member.matrixId && (
+                        <p className="text-sm text-blue-600">
+                          Матрица: {getMatrixName(member.matrixId)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold">{index === 0 ? 'Основной контакт' : `Сотрудник ${index + 1}`}</h3>
-                  <p className="text-sm text-gray-600">Ответственное лицо</p>
-                </div>
-              </div>
-              {index > 0 && (
                 <Button
-                  type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeTeamMember(index)}
+                  onClick={() => handleDeleteMember(member.id)}
                   className="text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
-              )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Добавить сотрудника</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-sm mb-2 block">
+                ФИО <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={newMember.name}
+                onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                placeholder="Иванов Иван Иванович"
+              />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm mb-2">ФИО <span className="text-red-500">*</span></Label>
-                <Input
-                  value={member.name}
-                  onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
-                  placeholder="Иванов Иван Иванович"
-                  required
-                />
-              </div>
+            <div>
+              <Label className="text-sm mb-2 block">
+                Должность <span className="text-red-500">*</span>
+              </Label>
+              <select
+                value={newMember.position}
+                onChange={(e) => setNewMember({ ...newMember, position: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="staff">Сотрудник</option>
+                <option value="chef">Повар</option>
+              </select>
+            </div>
 
+            <div>
+              <Label className="text-sm mb-2 block">
+                Телефон <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="tel"
+                value={newMember.phone}
+                onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                placeholder="+7 (999) 123-45-67"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm mb-2 block">
+                Email <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="email"
+                value={newMember.email}
+                onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                placeholder="ivanov@company.ru"
+              />
+            </div>
+
+            {matrices.length > 0 && (
               <div>
-                <Label className="text-sm mb-2">Должность</Label>
+                <Label className="text-sm mb-2 block">Назначить матрицу (опционально)</Label>
                 <select
-                  value={member.position}
-                  onChange={(e) => updateTeamMember(index, 'position', e.target.value)}
+                  value={newMember.matrixId}
+                  onChange={(e) => setNewMember({ ...newMember, matrixId: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Выберите должность</option>
-                  <option value="staff">Сотрудник</option>
-                  <option value="chef">Повар</option>
+                  <option value="">Без матрицы</option>
+                  {matrices.map((matrix) => (
+                    <option key={matrix.id} value={matrix.id}>
+                      {matrix.name}
+                    </option>
+                  ))}
                 </select>
               </div>
+            )}
 
-              <div>
-                <Label className="text-sm mb-2">
-                  <Phone className="h-3 w-3 inline mr-1" />
-                  Телефон <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="tel"
-                  value={member.phone}
-                  onChange={(e) => updateTeamMember(index, 'phone', e.target.value)}
-                  placeholder="+7 (999) 123-45-67"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm mb-2">
-                  <Mail className="h-3 w-3 inline mr-1" />
-                  Email <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="email"
-                  value={member.email}
-                  onChange={(e) => updateTeamMember(index, 'email', e.target.value)}
-                  placeholder="ivanov@company.ru"
-                  required
-                />
-              </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowAddModal(false)}
+              >
+                Отмена
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleAddMember}
+              >
+                Добавить
+              </Button>
             </div>
-          </Card>
-        ))}
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addTeamMember}
-          className="w-full"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Добавить сотрудника
-        </Button>
-
-        <Button type="submit" disabled={saving} className="w-full" size="lg">
-          {saving ? 'Сохранение...' : 'Сохранить все изменения'}
-        </Button>
-      </form>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Card className="p-6 mt-6 bg-blue-50">
         <h3 className="text-lg font-semibold mb-2">Управление доступом</h3>
         <p className="text-sm text-gray-700 mb-4">
           Добавьте сотрудников вашей компании для совместной работы на платформе BestPrice.
         </p>
-        <p className="text-sm text-gray-600">
-          <strong>Сотрудник:</strong> Имеет доступ к матрице, каталогу и созданию заказов.<br/>
-          <strong>Повар:</strong> Такие же права, как у сотрудника, но с другой ролью для внутреннего разделения.
-        </p>
-        <p className="text-sm text-gray-500 mt-2">
-          После добавления сотрудника, он получит email для входа и пароль по умолчанию: <code className="bg-white px-2 py-1 rounded">password123</code>
-        </p>
+        <div className="space-y-2 text-sm text-gray-600">
+          <p>
+            <strong>Сотрудник:</strong> Имеет доступ к матрице, каталогу и созданию заказов.
+          </p>
+          <p>
+            <strong>Повар:</strong> Такие же права, как у сотрудника, но с другой ролью для внутреннего разделения.
+          </p>
+          <p className="text-gray-500 mt-4">
+            После добавления сотрудника, он получит email для входа и пароль по умолчанию:{' '}
+            <code className="bg-white px-2 py-1 rounded">password123</code>
+          </p>
+        </div>
       </Card>
     </div>
   );
