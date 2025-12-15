@@ -1224,6 +1224,373 @@ async def confirm_mobile_order(data: MobileOrderConfirmRequest, current_user: di
     }
 
 
+# ==================== MATRIX ROUTES ====================
+
+@api_router.post("/matrices", response_model=Matrix)
+async def create_matrix(data: MatrixCreate, current_user: dict = Depends(get_current_user)):
+    """Admin creates a new product matrix for a restaurant"""
+    if current_user['role'] not in [UserRole.customer, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Only admins can create matrices")
+    
+    # Verify the restaurant company belongs to this admin
+    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    if not company or company['id'] != data.restaurantCompanyId:
+        raise HTTPException(status_code=403, detail="Can only create matrices for your own restaurant")
+    
+    matrix = Matrix(**data.model_dump())
+    matrix_dict = matrix.model_dump()
+    matrix_dict['createdAt'] = matrix_dict['createdAt'].isoformat()
+    matrix_dict['updatedAt'] = matrix_dict['updatedAt'].isoformat()
+    await db.matrices.insert_one(matrix_dict)
+    
+    return matrix
+
+@api_router.get("/matrices", response_model=List[Matrix])
+async def get_matrices(current_user: dict = Depends(get_current_user)):
+    """Get all matrices for current user's restaurant"""
+    if current_user['role'] == UserRole.chef or current_user['role'] == UserRole.responsible:
+        # Chef/Staff: Get their assigned matrix
+        user = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+        if not user or not user.get('matrixId'):
+            return []
+        matrices = await db.matrices.find({"id": user['matrixId']}, {"_id": 0}).to_list(1)
+        return matrices
+    else:
+        # Admin: Get all matrices for their restaurant
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        if not company:
+            return []
+        matrices = await db.matrices.find({"restaurantCompanyId": company['id']}, {"_id": 0}).to_list(100)
+        return matrices
+
+@api_router.get("/matrices/{matrix_id}", response_model=Matrix)
+async def get_matrix(matrix_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific matrix"""
+    matrix = await db.matrices.find_one({"id": matrix_id}, {"_id": 0})
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    # Verify access
+    if current_user['role'] in [UserRole.chef, UserRole.responsible]:
+        user = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+        if not user or user.get('matrixId') != matrix_id:
+            raise HTTPException(status_code=403, detail="Not authorized to view this matrix")
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        if not company or matrix['restaurantCompanyId'] != company['id']:
+            raise HTTPException(status_code=403, detail="Not authorized to view this matrix")
+    
+    return matrix
+
+@api_router.delete("/matrices/{matrix_id}")
+async def delete_matrix(matrix_id: str, current_user: dict = Depends(get_current_user)):
+    """Admin deletes a matrix"""
+    if current_user['role'] not in [UserRole.customer, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Only admins can delete matrices")
+    
+    matrix = await db.matrices.find_one({"id": matrix_id}, {"_id": 0})
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    # Verify ownership
+    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    if not company or matrix['restaurantCompanyId'] != company['id']:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Delete matrix and all its products
+    await db.matrices.delete_one({"id": matrix_id})
+    await db.matrix_products.delete_many({"matrixId": matrix_id})
+    
+    return {"message": "Matrix deleted successfully"}
+
+# Matrix Products Management
+
+@api_router.get("/matrices/{matrix_id}/products")
+async def get_matrix_products(matrix_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all products in a matrix"""
+    # Verify access to matrix
+    matrix = await db.matrices.find_one({"id": matrix_id}, {"_id": 0})
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    # Get matrix products
+    matrix_products = await db.matrix_products.find(
+        {"matrixId": matrix_id}, 
+        {"_id": 0}
+    ).sort("rowNumber", 1).to_list(1000)
+    
+    # Enrich with current pricing from all suppliers
+    enriched_products = []
+    for mp in matrix_products:
+        # Get product details
+        product = await db.products.find_one({"id": mp['productId']}, {"_id": 0})
+        if not product:
+            continue
+        
+        # Get all supplier prices for this product
+        pricelists = await db.pricelists.find({"productId": mp['productId']}, {"_id": 0}).to_list(100)
+        
+        # Get supplier details
+        suppliers_data = []
+        for pl in pricelists:
+            supplier = await db.companies.find_one({"id": pl['supplierId']}, {"_id": 0})
+            if supplier:
+                suppliers_data.append({
+                    "supplierId": pl['supplierId'],
+                    "supplierName": supplier['name'],
+                    "price": pl['price'],
+                    "minQuantity": pl.get('minQuantity', 1),
+                    "packQuantity": pl.get('packQuantity', 1)
+                })
+        
+        # Sort by price
+        suppliers_data.sort(key=lambda x: x['price'])
+        
+        enriched_products.append({
+            **mp,
+            "globalProductName": product['name'],
+            "suppliers": suppliers_data,
+            "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
+            "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None
+        })
+    
+    return enriched_products
+
+@api_router.post("/matrices/{matrix_id}/products", response_model=MatrixProduct)
+async def add_product_to_matrix(
+    matrix_id: str, 
+    data: MatrixProductCreate, 
+    current_user: dict = Depends(get_current_user)
+):
+    """Add a product to a matrix (Admin or Chef/Staff)"""
+    # Verify access
+    matrix = await db.matrices.find_one({"id": matrix_id}, {"_id": 0})
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    if current_user['role'] in [UserRole.chef, UserRole.responsible]:
+        user = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+        if not user or user.get('matrixId') != matrix_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        if not company or matrix['restaurantCompanyId'] != company['id']:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Get product details
+    product = await db.products.find_one({"id": data.productId}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Get next row number
+    existing_products = await db.matrix_products.find(
+        {"matrixId": matrix_id}, 
+        {"_id": 0, "rowNumber": 1}
+    ).sort("rowNumber", -1).limit(1).to_list(1)
+    
+    next_row = 1
+    if existing_products:
+        next_row = existing_products[0]['rowNumber'] + 1
+    
+    # Get product code from pricelist
+    pricelist = await db.pricelists.find_one({"productId": data.productId}, {"_id": 0})
+    product_code = pricelist.get('supplierItemCode', '') if pricelist else ''
+    
+    # Create matrix product
+    matrix_product = MatrixProduct(
+        matrixId=matrix_id,
+        rowNumber=next_row,
+        productId=data.productId,
+        productName=data.productName if data.productName else product['name'],
+        productCode=data.productCode if data.productCode else product_code,
+        unit=product['unit']
+    )
+    
+    mp_dict = matrix_product.model_dump()
+    mp_dict['createdAt'] = mp_dict['createdAt'].isoformat()
+    await db.matrix_products.insert_one(mp_dict)
+    
+    return matrix_product
+
+@api_router.put("/matrices/{matrix_id}/products/{product_id}", response_model=MatrixProduct)
+async def update_matrix_product(
+    matrix_id: str,
+    product_id: str,
+    data: MatrixProductUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update a product in the matrix (Admin only - for renaming)"""
+    if current_user['role'] not in [UserRole.customer, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Only admins can edit matrix products")
+    
+    # Verify access
+    matrix = await db.matrices.find_one({"id": matrix_id}, {"_id": 0})
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    if not company or matrix['restaurantCompanyId'] != company['id']:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Update
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    result = await db.matrix_products.update_one(
+        {"id": product_id, "matrixId": matrix_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Matrix product not found")
+    
+    updated_product = await db.matrix_products.find_one({"id": product_id}, {"_id": 0})
+    return updated_product
+
+@api_router.delete("/matrices/{matrix_id}/products/{product_id}")
+async def remove_product_from_matrix(
+    matrix_id: str,
+    product_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remove a product from the matrix (Admin only)"""
+    if current_user['role'] not in [UserRole.customer, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Only admins can remove products")
+    
+    # Verify access
+    matrix = await db.matrices.find_one({"id": matrix_id}, {"_id": 0})
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    if not company or matrix['restaurantCompanyId'] != company['id']:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    result = await db.matrix_products.delete_one({"id": product_id, "matrixId": matrix_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Matrix product not found")
+    
+    return {"message": "Product removed from matrix"}
+
+# Matrix-Based Ordering (Chef/Staff)
+
+@api_router.post("/matrices/{matrix_id}/orders")
+async def create_matrix_order(
+    matrix_id: str,
+    data: MatrixOrderCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Chef/Staff creates an order from matrix using row numbers"""
+    if current_user['role'] not in [UserRole.chef, UserRole.responsible]:
+        raise HTTPException(status_code=403, detail="Only Chef/Staff can create orders from matrix")
+    
+    # Verify access to matrix
+    user = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+    if not user or user.get('matrixId') != matrix_id:
+        raise HTTPException(status_code=403, detail="Not authorized to order from this matrix")
+    
+    matrix = await db.matrices.find_one({"id": matrix_id}, {"_id": 0})
+    if not matrix:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    
+    # Get all matrix products
+    matrix_products = await db.matrix_products.find({"matrixId": matrix_id}, {"_id": 0}).to_list(1000)
+    row_map = {mp['rowNumber']: mp for mp in matrix_products}
+    
+    # Process order items
+    orders_by_supplier = {}  # Group items by supplier (best price)
+    
+    for item in data.items:
+        row_num = item.get('rowNumber')
+        quantity = float(item.get('quantity', 0))
+        
+        if not row_num or quantity <= 0:
+            continue
+        
+        # Find matrix product
+        matrix_product = row_map.get(row_num)
+        if not matrix_product:
+            continue
+        
+        # Get best price supplier for this product
+        pricelists = await db.pricelists.find(
+            {"productId": matrix_product['productId']}, 
+            {"_id": 0}
+        ).to_list(100)
+        
+        if not pricelists:
+            continue
+        
+        # Sort by price and get cheapest
+        pricelists.sort(key=lambda x: x['price'])
+        best_pl = pricelists[0]
+        
+        supplier_id = best_pl['supplierId']
+        
+        if supplier_id not in orders_by_supplier:
+            orders_by_supplier[supplier_id] = {
+                "items": [],
+                "total": 0
+            }
+        
+        item_total = quantity * best_pl['price']
+        orders_by_supplier[supplier_id]["items"].append({
+            "productName": matrix_product['productName'],
+            "article": matrix_product['productCode'],
+            "quantity": quantity,
+            "price": best_pl['price'],
+            "unit": matrix_product['unit'],
+            "rowNumber": row_num
+        })
+        orders_by_supplier[supplier_id]["total"] += item_total
+        
+        # Update last order quantity in matrix
+        await db.matrix_products.update_one(
+            {"id": matrix_product['id']},
+            {"$set": {"lastOrderQuantity": quantity}}
+        )
+    
+    # Get delivery address
+    delivery_address = None
+    if data.deliveryAddressId:
+        company = await db.companies.find_one({"id": matrix['restaurantCompanyId']}, {"_id": 0})
+        if company and company.get('deliveryAddresses'):
+            for addr in company['deliveryAddresses']:
+                if addr.get('id') == data.deliveryAddressId:
+                    delivery_address = addr
+                    break
+    
+    # Create orders (one per supplier)
+    created_orders = []
+    for supplier_id, order_data in orders_by_supplier.items():
+        order = Order(
+            customerCompanyId=matrix['restaurantCompanyId'],
+            supplierCompanyId=supplier_id,
+            amount=order_data["total"],
+            orderDetails=order_data["items"],
+            deliveryAddress=delivery_address,
+            status=OrderStatus.new
+        )
+        
+        order_dict = order.model_dump()
+        order_dict['orderDate'] = order_dict['orderDate'].isoformat()
+        order_dict['createdAt'] = order_dict['createdAt'].isoformat()
+        if order_dict.get('deliveryAddress'):
+            order_dict['deliveryAddress'] = order_dict['deliveryAddress']
+        
+        await db.orders.insert_one(order_dict)
+        created_orders.append({
+            "orderId": order.id,
+            "supplierId": supplier_id,
+            "amount": order_data["total"],
+            "itemCount": len(order_data["items"])
+        })
+    
+    return {
+        "message": f"Created {len(created_orders)} order(s)",
+        "orders": created_orders
+    }
+
 # Include router
 app.include_router(api_router)
 
