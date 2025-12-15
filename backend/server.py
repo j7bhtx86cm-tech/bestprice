@@ -1673,6 +1673,44 @@ async def delete_team_member(user_id: str, current_user: dict = Depends(get_curr
     
     return {"message": "Team member deleted successfully"}
 
+# ==================== USER PROFILE ROUTES ====================
+
+@api_router.get("/users/my-profile")
+async def get_my_profile(current_user: dict = Depends(get_current_user)):
+    """Get current user's profile"""
+    user = await db.users.find_one({"id": current_user['id']}, {"_id": 0, "passwordHash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@api_router.put("/users/my-profile")
+async def update_my_profile(data: dict, current_user: dict = Depends(get_current_user)):
+    """Update current user's profile (phone and email only)"""
+    # Only allow updating certain fields
+    allowed_updates = {}
+    if 'phone' in data:
+        allowed_updates['phone'] = data['phone']
+    if 'email' in data:
+        # Check if email is already in use by another user
+        existing = await db.users.find_one({"email": data['email'], "id": {"$ne": current_user['id']}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        allowed_updates['email'] = data['email']
+    
+    if not allowed_updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    result = await db.users.update_one(
+        {"id": current_user['id']},
+        {"$set": allowed_updates}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user = await db.users.find_one({"id": current_user['id']}, {"_id": 0, "passwordHash": 0})
+    return user
+
 # Include router
 app.include_router(api_router)
 
