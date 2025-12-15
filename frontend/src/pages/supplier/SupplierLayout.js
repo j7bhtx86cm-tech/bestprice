@@ -11,9 +11,10 @@ export const SupplierLayout = ({ children }) => {
 
   const menuItems = [
     { path: '/supplier/profile', label: 'Профиль', icon: User },
-    { path: '/supplier/settings', label: 'Настройки заказов', icon: Settings },
     { path: '/supplier/price-list', label: 'Прайс-лист', icon: FileText },
+    { path: '/supplier/restaurants', label: 'Мои рестораны', icon: Building2 },
     { path: '/supplier/orders', label: 'История заказов', icon: ShoppingBag },
+    { path: '/supplier/settings', label: 'Настройки заказов', icon: Settings },
     { path: '/supplier/documents', label: 'Документы ресторанов', icon: FolderOpen },
     { path: '/supplier/rating', label: 'Рейтинг', icon: Star },
   ];

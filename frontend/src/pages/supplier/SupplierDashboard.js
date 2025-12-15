@@ -7,6 +7,7 @@ import { SupplierPriceList } from './SupplierPriceList';
 import { SupplierOrders } from './SupplierOrders';
 import { SupplierRating } from './SupplierRating';
 import { SupplierDocuments } from './SupplierDocuments';
+import { SupplierRestaurants } from './SupplierRestaurants';
 
 export const SupplierDashboard = () => {
   return (
@@ -16,6 +17,7 @@ export const SupplierDashboard = () => {
         <Route path="/profile" element={<SupplierProfile />} />
         <Route path="/settings" element={<SupplierSettings />} />
         <Route path="/price-list" element={<SupplierPriceList />} />
+        <Route path="/restaurants" element={<SupplierRestaurants />} />
         <Route path="/orders" element={<SupplierOrders />} />
         <Route path="/rating" element={<SupplierRating />} />
         <Route path="/documents" element={<SupplierDocuments />} />
