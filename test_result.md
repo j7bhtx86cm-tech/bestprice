@@ -574,6 +574,7 @@ test_plan:
     - "Mobile Order Success Screen"
     - "Mobile Orders List"
     - "Mobile Order Details"
+    - "Four User Portals - Role-Based Access Control"
 
 agent_communication:
   - agent: "testing"
