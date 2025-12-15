@@ -18,6 +18,7 @@ export const CustomerLayout = ({ children }) => {
     if (isChefOrStaff) {
       // Simplified menu for Chef/Staff
       return [
+        { path: '/customer/my-profile', label: 'Мой профиль', icon: User },
         { path: '/customer/matrix', label: 'Моя матрица', icon: Grid3x3 },
         { path: '/customer/catalog', label: 'Каталог товаров', icon: Package },
         { path: '/customer/orders', label: 'История заказов', icon: ShoppingCart },
