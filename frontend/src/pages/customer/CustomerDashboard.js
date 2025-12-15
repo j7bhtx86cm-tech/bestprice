@@ -10,6 +10,7 @@ import { CustomerAnalytics } from './CustomerAnalytics';
 import { CustomerRatings } from './CustomerRatings';
 import { CustomerMatrices } from './CustomerMatrices';
 import { CustomerMatrix } from './CustomerMatrix';
+import { CustomerMyProfile } from './CustomerMyProfile';
 
 export const CustomerDashboard = () => {
   return (
@@ -18,6 +19,7 @@ export const CustomerDashboard = () => {
         <Route path="/" element={<Navigate to="/customer/catalog" replace />} />
         <Route path="/catalog" element={<CustomerCatalog />} />
         <Route path="/profile" element={<CustomerProfile />} />
+        <Route path="/my-profile" element={<CustomerMyProfile />} />
         <Route path="/team" element={<CustomerTeam />} />
         <Route path="/documents" element={<CustomerDocuments />} />
         <Route path="/orders" element={<CustomerOrders />} />
