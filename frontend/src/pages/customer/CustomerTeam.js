@@ -214,9 +214,15 @@ export const CustomerTeam = () => {
 
       <Card className="p-6 mt-6 bg-blue-50">
         <h3 className="text-lg font-semibold mb-2">Управление доступом</h3>
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-gray-700 mb-4">
           Добавьте сотрудников вашей компании для совместной работы на платформе BestPrice.
-          В будущих версиях будет доступно управление правами доступа для каждого сотрудника.
+        </p>
+        <p className="text-sm text-gray-600">
+          <strong>Сотрудник:</strong> Имеет доступ к матрице, каталогу и созданию заказов.<br/>
+          <strong>Повар:</strong> Такие же права, как у сотрудника, но с другой ролью для внутреннего разделения.
+        </p>
+        <p className="text-sm text-gray-500 mt-2">
+          После добавления сотрудника, он получит email для входа и пароль по умолчанию: <code className="bg-white px-2 py-1 rounded">password123</code>
         </p>
       </Card>
     </div>
