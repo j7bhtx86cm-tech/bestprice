@@ -100,132 +100,138 @@ export const SupplierOrders = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
-                      {new Date(order.orderDate).toLocaleDateString('ru-RU')}
-                      {' '}
-                      <span className="text-gray-500">
-                        {new Date(order.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {customers[order.customerCompanyId]?.companyName || 'Клиент'}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {order.orderDetails?.length || 0} позиций
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {order.amount.toLocaleString('ru-RU')} ₽
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
-                        {statusLabels[order.status] || order.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => fetchOrderDetails(order.id)}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Подробнее
-                      </Button>
-                    </td>
-                  </tr>
+                  <React.Fragment key={order.id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm">
+                        {new Date(order.orderDate).toLocaleDateString('ru-RU')}
+                        {' '}
+                        <span className="text-gray-500">
+                          {new Date(order.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {customers[order.customerCompanyId]?.companyName || 'Клиент'}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {order.orderDetails?.length || 0} позиций
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {order.amount.toLocaleString('ru-RU')} ₽
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
+                          {statusLabels[order.status] || order.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (selectedOrder?.id === order.id) {
+                              setSelectedOrder(null);
+                            } else {
+                              fetchOrderDetails(order.id);
+                            }
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          {selectedOrder?.id === order.id ? 'Скрыть' : 'Подробнее'}
+                        </Button>
+                      </td>
+                    </tr>
+                    
+                    {/* Inline Order Details */}
+                    {selectedOrder?.id === order.id && (
+                      <tr>
+                        <td colSpan="6" className="px-4 py-4 bg-gray-50">
+                          <Card className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                              <h3 className="text-xl font-semibold">Детали заказа</h3>
+                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>
+                                Закрыть
+                              </Button>
+                            </div>
+                            
+                            <div className="space-y-4">
+                              {/* Order Info */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm text-gray-600">Дата и время заказа</p>
+                                  <p className="font-medium">
+                                    {new Date(selectedOrder.orderDate).toLocaleDateString('ru-RU')}
+                                    {' '}
+                                    {new Date(selectedOrder.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-600">Статус</p>
+                                  <Badge className={statusColors[selectedOrder.status]}>
+                                    {statusLabels[selectedOrder.status]}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              {/* Delivery Address */}
+                              {selectedOrder.deliveryAddress && (
+                                <Card className="p-4 bg-blue-50 border-blue-200">
+                                  <div className="flex items-start gap-3">
+                                    <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
+                                    <div>
+                                      <p className="font-medium text-blue-900">Адрес доставки</p>
+                                      <p className="text-sm text-blue-800 mt-1">{selectedOrder.deliveryAddress.address}</p>
+                                      {selectedOrder.deliveryAddress.phone && (
+                                        <div className="flex items-center gap-2 mt-2 text-sm text-blue-700">
+                                          <Phone className="h-3 w-3" />
+                                          <span>{selectedOrder.deliveryAddress.phone}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </Card>
+                              )}
+
+                              {/* Order Items */}
+                              <div>
+                                <p className="text-sm text-gray-600 mb-3 font-medium">Состав заказа</p>
+                                <div className="space-y-2">
+                                  {selectedOrder.orderDetails?.map((item, index) => (
+                                    <div key={index} className="p-4 bg-white rounded-lg border">
+                                      <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                          <p className="font-medium text-base">{item.productName}</p>
+                                          <p className="text-sm text-gray-500">Артикул: {item.article || 'Н/Д'}</p>
+                                          <p className="text-sm text-gray-600 mt-1">
+                                            {item.quantity} {item.unit} × {item.price.toLocaleString('ru-RU')} ₽
+                                          </p>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-lg font-semibold text-blue-600">
+                                            {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Total */}
+                              <div className="pt-4 border-t flex justify-between items-center">
+                                <p className="text-lg font-semibold">Итого к поставке:</p>
+                                <p className="text-2xl font-bold text-blue-600">{selectedOrder.amount.toLocaleString('ru-RU')} ₽</p>
+                              </div>
+                            </div>
+                          </Card>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      )}
-
-      {selectedOrder && (
-        <Card className="p-6 mt-6">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-semibold">Детали заказа</h3>
-            <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>
-              Закрыть
-            </Button>
-          </div>
-          
-          <div className="space-y-4">
-            {/* Order Info */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Дата и время заказа</p>
-                <p className="font-medium">
-                  {new Date(selectedOrder.orderDate).toLocaleDateString('ru-RU')}
-                  {' '}
-                  {new Date(selectedOrder.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Статус</p>
-                <Badge className={statusColors[selectedOrder.status]}>
-                  {statusLabels[selectedOrder.status]}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Delivery Address */}
-            {selectedOrder.deliveryAddress && (
-              <Card className="p-4 bg-blue-50">
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-blue-900">Адрес доставки</p>
-                    <p className="text-sm text-blue-800 mt-1">{selectedOrder.deliveryAddress.address}</p>
-                    {selectedOrder.deliveryAddress.phone && (
-                      <div className="flex items-center gap-2 mt-2 text-sm text-blue-700">
-                        <Phone className="h-3 w-3" />
-                        <span>{selectedOrder.deliveryAddress.phone}</span>
-                      </div>
-                    )}
-                    {selectedOrder.deliveryAddress.additionalPhone && (
-                      <div className="flex items-center gap-2 text-sm text-blue-700">
-                        <Phone className="h-3 w-3" />
-                        <span>{selectedOrder.deliveryAddress.additionalPhone}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* Order Items */}
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Состав заказа</p>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                {selectedOrder.orderDetails.map((item, index) => (
-                  <div key={index} className="p-3 bg-white rounded-lg border">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-medium text-base">{item.productName}</p>
-                        <p className="text-sm text-gray-500">Артикул: {item.article}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-lg">{item.quantity} {item.unit}</p>
-                        <p className="text-sm text-gray-600">{item.price} ₽/{item.unit}</p>
-                        <p className="text-sm font-medium text-blue-600 mt-1">
-                          {(item.price * item.quantity).toFixed(2)} ₽
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Total */}
-            <div className="pt-4 border-t">
-              <div className="flex justify-between items-center">
-                <p className="text-lg font-semibold">Итого к поставке:</p>
-                <p className="text-2xl font-bold">{selectedOrder.amount.toLocaleString('ru-RU')} ₽</p>
-              </div>
-            </div>
-          </div>
-        </Card>
       )}
     </div>
   );
