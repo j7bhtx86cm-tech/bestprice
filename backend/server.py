@@ -101,6 +101,20 @@ class MatrixOrderCreate(BaseModel):
     deliveryAddressId: Optional[str] = None
     items: List[dict]  # [{"rowNumber": 1, "quantity": 5}, ...]
 
+# Supplier-Restaurant Settings
+class SupplierRestaurantSettings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    supplierId: str
+    restaurantId: str
+    ordersEnabled: bool = True
+    unavailabilityReason: Optional[str] = None
+    updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UpdateRestaurantAvailability(BaseModel):
+    ordersEnabled: bool
+    unavailabilityReason: Optional[str] = None
+
 class LogisticsType(str, Enum):
     own = "own"
     transport_company = "transport company"
