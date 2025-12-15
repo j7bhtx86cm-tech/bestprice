@@ -70,7 +70,8 @@ export const CustomerAuth = () => {
     
     try {
       const user = await login(loginData.email, loginData.password);
-      if (user.role === 'customer') {
+      // Allow customer, chef, and staff (responsible) to access restaurant portal
+      if (['customer', 'chef', 'responsible'].includes(user.role)) {
         navigate('/customer');
       } else {
         setError('Этот аккаунт не является рестораном');
