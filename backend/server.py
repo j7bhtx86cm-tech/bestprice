@@ -1591,6 +1591,88 @@ async def create_matrix_order(
         "orders": created_orders
     }
 
+# ==================== TEAM MANAGEMENT ROUTES ====================
+
+@api_router.post("/team/members")
+async def create_team_member(data: dict, current_user: dict = Depends(get_current_user)):
+    """Admin creates a chef or staff member"""
+    if current_user['role'] not in [UserRole.customer, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Only admins can create team members")
+    
+    # Get admin's company
+    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check if email already exists
+    existing_user = await db.users.find_one({"email": data['email']})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already in use")
+    
+    # Hash password
+    hashed_password = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt())
+    
+    # Create user
+    user = {
+        "id": str(uuid.uuid4()),
+        "email": data['email'],
+        "passwordHash": hashed_password.decode('utf-8'),
+        "role": data['role'],  # 'chef' or 'responsible'
+        "companyId": company['id'],
+        "matrixId": data.get('matrixId'),
+        "createdAt": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.users.insert_one(user)
+    
+    return {
+        "message": "Team member created successfully",
+        "user": {
+            "id": user['id'],
+            "email": user['email'],
+            "role": user['role']
+        }
+    }
+
+@api_router.get("/team/members")
+async def get_team_members(current_user: dict = Depends(get_current_user)):
+    """Get all team members for current company"""
+    if current_user['role'] not in [UserRole.customer, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    if not company:
+        return []
+    
+    # Get all chef and staff users for this company
+    users = await db.users.find(
+        {
+            "companyId": company['id'],
+            "role": {"$in": ["chef", "responsible"]}
+        },
+        {"_id": 0, "passwordHash": 0}
+    ).to_list(100)
+    
+    return users
+
+@api_router.delete("/team/members/{user_id}")
+async def delete_team_member(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a team member"""
+    if current_user['role'] not in [UserRole.customer, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Only admins can delete team members")
+    
+    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Delete user (only if they belong to this company)
+    result = await db.users.delete_one({"id": user_id, "companyId": company['id']})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "Team member deleted successfully"}
+
 # Include router
 app.include_router(api_router)
 
