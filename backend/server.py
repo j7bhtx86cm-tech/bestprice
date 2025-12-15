@@ -663,28 +663,45 @@ async def create_price_list(data: PriceListCreate, current_user: dict = Depends(
     await db.price_lists.insert_one(price_dict)
     return price_list
 
-@api_router.put("/price-lists/{price_id}", response_model=PriceList)
+@api_router.put("/price-lists/{price_id}")
 async def update_price_list(price_id: str, data: PriceListUpdate, current_user: dict = Depends(get_current_user)):
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
-    if not company:
+    # Get company ID from user
+    company_id = current_user.get('companyId')
+    if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
     
+    # Update pricelist
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    update_data['updatedAt'] = datetime.now(timezone.utc).isoformat()
     
-    result = await db.price_lists.update_one(
-        {"id": price_id, "supplierCompanyId": company['id']},
+    result = await db.pricelists.update_one(
+        {"id": price_id, "supplierId": company_id},
         {"$set": update_data}
     )
     
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Price list not found")
+        raise HTTPException(status_code=404, detail="Price list item not found")
     
-    price_list = await db.price_lists.find_one({"id": price_id}, {"_id": 0})
-    return price_list
+    # Get updated pricelist and join with product
+    pricelist = await db.pricelists.find_one({"id": price_id}, {"_id": 0})
+    product = await db.products.find_one({"id": pricelist['productId']}, {"_id": 0})
+    
+    # Return in expected format
+    return {
+        "id": pricelist['id'],
+        "supplierCompanyId": pricelist['supplierId'],
+        "productName": product['name'] if product else '',
+        "article": pricelist.get('supplierItemCode', ''),
+        "price": pricelist['price'],
+        "unit": product['unit'] if product else '',
+        "minQuantity": pricelist.get('minQuantity', 1),
+        "availability": update_data.get('availability', True),
+        "active": update_data.get('active', True),
+        "createdAt": pricelist.get('createdAt', datetime.now(timezone.utc).isoformat()),
+        "updatedAt": datetime.now(timezone.utc).isoformat()
+    }
 
 @api_router.delete("/price-lists/{price_id}")
 async def delete_price_list(price_id: str, current_user: dict = Depends(get_current_user)):
