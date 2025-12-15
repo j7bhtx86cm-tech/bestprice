@@ -25,10 +25,13 @@ const statusLabels = {
 export const CustomerAnalytics = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [suppliers, setSuppliers] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchAnalytics();
+    fetchSuppliers();
   }, []);
 
   const fetchAnalytics = async () => {
@@ -41,6 +44,40 @@ export const CustomerAnalytics = () => {
       console.error('Failed to fetch analytics:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/suppliers`, { headers });
+      const suppliersMap = {};
+      response.data.forEach(supplier => {
+        suppliersMap[supplier.id] = supplier;
+      });
+      setSuppliers(suppliersMap);
+    } catch (error) {
+      console.error('Failed to fetch suppliers:', error);
+    }
+  };
+
+  const fetchOrderDetails = async (orderId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/orders/${orderId}`, { headers });
+      setSelectedOrder(response.data);
+    } catch (error) {
+      console.error('Failed to fetch order details:', error);
+    }
+  };
+
+  const toggleOrderDetails = (order) => {
+    if (selectedOrder?.id === order.id) {
+      setSelectedOrder(null);
+    } else {
+      fetchOrderDetails(order.id);
     }
   };
 
