@@ -20,65 +20,74 @@ export const Home = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20" data-testid="hero-section">
+      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-green-600 text-white py-24" data-testid="hero-section">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-5xl font-bold mb-6">
+          <div className="inline-block mb-6 animate-pulse">
+            <div className="bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium shadow-lg">
+              🎯 Оптимизация закупок для ресторанов
+            </div>
+          </div>
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 drop-shadow-lg">
             Платформа для HoReCa
           </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl mb-10 max-w-2xl mx-auto leading-relaxed opacity-95">
             Связываем поставщиков и рестораны для эффективных закупок продуктов
           </p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex gap-4 justify-center flex-wrap">
             <Button
               size="lg"
               variant="secondary"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/supplier/auth')}
               data-testid="hero-supplier-btn"
+              className="bg-white text-blue-700 hover:bg-gray-100 shadow-xl px-8 py-6 text-lg font-semibold"
             >
-              Я поставщик
+              Я поставщик →
             </Button>
             <Button
               size="lg"
               variant="outline"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/customer/auth')}
               data-testid="hero-customer-btn"
-              className="text-white border-white hover:bg-white hover:text-blue-600"
+              className="text-white border-2 border-white hover:bg-white/10 backdrop-blur-sm shadow-xl px-8 py-6 text-lg font-semibold"
             >
-              Я ресторан
+              Я ресторан →
             </Button>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-16 bg-gray-50" data-testid="how-it-works-section">
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white" data-testid="how-it-works-section">
         <div className="container mx-auto px-4">
-          <h3 className="text-3xl font-bold text-center mb-12">Как это работает</h3>
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-6 text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShoppingCart className="w-8 h-8 text-blue-600" />
+          <h3 className="text-4xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+            Как это работает
+          </h3>
+          <p className="text-center text-gray-600 mb-12 text-lg">Простой процесс в 3 шага</p>
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-200">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <ShoppingCart className="w-10 h-10 text-white" />
               </div>
-              <h4 className="text-xl font-semibold mb-2">Регистрация</h4>
-              <p className="text-gray-600">
+              <h4 className="text-2xl font-semibold mb-3">Регистрация</h4>
+              <p className="text-gray-600 leading-relaxed">
                 Зарегистрируйтесь как поставщик или ресторан
               </p>
             </Card>
-            <Card className="p-6 text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-8 h-8 text-blue-600" />
+            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 border-2 hover:border-green-200">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <TrendingUp className="w-10 h-10 text-white" />
               </div>
-              <h4 className="text-xl font-semibold mb-2">Выбор продуктов</h4>
-              <p className="text-gray-600">
+              <h4 className="text-2xl font-semibold mb-3">Выбор продуктов</h4>
+              <p className="text-gray-600 leading-relaxed">
                 Просматривайте прайс-листы и сравнивайте цены
               </p>
             </Card>
-            <Card className="p-6 text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-blue-600" />
+            <Card className="p-8 text-center hover:shadow-xl transition-all duration-300 border-2 hover:border-purple-200">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <CheckCircle className="w-10 h-10 text-white" />
               </div>
-              <h4 className="text-xl font-semibold mb-2">Оформление заказа</h4>
-              <p className="text-gray-600">
+              <h4 className="text-2xl font-semibold mb-3">Оформление заказа</h4>
+              <p className="text-gray-600 leading-relaxed">
                 Оформляйте заказы и отслеживайте доставку
               </p>
             </Card>
