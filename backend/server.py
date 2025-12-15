@@ -897,9 +897,64 @@ async def get_suppliers():
     return suppliers
 
 @api_router.get("/suppliers/{supplier_id}/price-lists", response_model=List[PriceList])
-async def get_supplier_price_lists(supplier_id: str):
-    price_lists = await db.price_lists.find({"supplierCompanyId": supplier_id, "active": True}, {"_id": 0}).to_list(10000)
-    return price_lists
+async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = None):
+    query = {"supplierId": supplier_id}
+    
+    # Enhanced search with synonym support
+    if search:
+        search_lower = search.lower().strip()
+        
+        # Define synonyms and translations
+        synonyms_map = {
+            # English to Russian food terms
+            "sweet chili": ["кисло острый", "кисло-острый", "свит чили"],
+            "chili": ["чили", "перец"],
+            "sauce": ["соус"],
+            "sweet": ["сладкий", "кисло"],
+            "cheese": ["сыр"],
+            "chicken": ["курица", "куриный", "курин"],
+            "beef": ["говядина", "говяжий"],
+            "pork": ["свинина", "свиной"],
+            "fish": ["рыба", "рыбный"],
+            "potato": ["картофель", "картошка"],
+            "tomato": ["помидор", "томат"],
+            "mushroom": ["гриб", "грибы", "грибной", "шампиньон"],
+            "rice": ["рис"],
+            "pasta": ["макароны", "паста"],
+            "butter": ["масло"],
+            "oil": ["масло"],
+            "milk": ["молоко"],
+            "cream": ["сливки", "крем"],
+            "sugar": ["сахар"],
+            "salt": ["соль"],
+            "pepper": ["перец"],
+            "onion": ["лук", "луковый"],
+            "garlic": ["чеснок"],
+            "bread": ["хлеб"],
+            # Russian variations
+            "кисло острый": ["sweet chili", "кисло-острый", "свит чили"],
+            "грибы": ["mushroom", "гриб", "грибной", "шампиньон", "опята", "вешенки"],
+            "шампиньоны": ["mushroom", "грибы"],
+            "соус": ["sauce"],
+        }
+        
+        # Build search terms including original and synonyms
+        search_terms = [search_lower]
+        for key, values in synonyms_map.items():
+            if key in search_lower:
+                search_terms.extend(values)
+        
+        # Remove duplicates
+        search_terms = list(set(search_terms))
+        
+        # Build regex patterns for flexible matching
+        regex_patterns = [{"name": {"$regex": term, "$options": "i"}} for term in search_terms]
+        
+        # Add to query
+        query["$or"] = regex_patterns
+    
+    pricelists = await db.pricelists.find(query, {"_id": 0}).to_list(10000)
+    return pricelists
 
 
 # ==================== MOBILE APP ROUTES ====================
