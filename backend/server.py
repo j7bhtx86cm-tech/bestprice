@@ -636,8 +636,8 @@ async def get_my_price_lists(current_user: dict = Depends(get_current_user)):
                 "price": pl['price'],
                 "unit": product['unit'],
                 "minQuantity": pl.get('minQuantity', 1),
-                "availability": True,
-                "active": True,
+                "availability": pl.get('availability', True),
+                "active": pl.get('active', True),
                 "createdAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat()),
                 "updatedAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat())
             })
