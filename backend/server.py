@@ -44,6 +44,7 @@ class UserRole(str, Enum):
     customer = "customer"
     admin = "admin"
     responsible = "responsible"
+    chef = "chef"
 
 class CompanyType(str, Enum):
     supplier = "supplier"
@@ -59,6 +60,46 @@ class OrderStatus(str, Enum):
     confirmed = "confirmed"
     declined = "declined"
     partial = "partial"
+
+# ==================== MATRIX MODELS ====================
+
+class Matrix(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    restaurantCompanyId: str
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MatrixCreate(BaseModel):
+    name: str
+    restaurantCompanyId: str
+
+class MatrixProduct(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    matrixId: str
+    rowNumber: int
+    productId: str
+    productName: str  # Can be customized locally
+    productCode: str
+    unit: str
+    lastOrderQuantity: Optional[float] = None
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MatrixProductCreate(BaseModel):
+    productId: str
+    productName: Optional[str] = None  # If not provided, use global product name
+    productCode: Optional[str] = None
+
+class MatrixProductUpdate(BaseModel):
+    productName: Optional[str] = None
+    lastOrderQuantity: Optional[float] = None
+
+class MatrixOrderCreate(BaseModel):
+    matrixId: str
+    deliveryAddressId: Optional[str] = None
+    items: List[dict]  # [{"rowNumber": 1, "quantity": 5}, ...]
 
 class LogisticsType(str, Enum):
     own = "own"
