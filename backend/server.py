@@ -909,7 +909,8 @@ async def get_order(order_id: str, current_user: dict = Depends(get_current_user
         raise HTTPException(status_code=404, detail="Order not found")
     
     # Get company ID based on user role
-    if current_user['role'] == UserRole.responsible:
+    if current_user['role'] in [UserRole.responsible, UserRole.chef, UserRole.supplier]:
+        # These roles have companyId directly in user document
         company_id = current_user.get('companyId')
     else:
         company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
