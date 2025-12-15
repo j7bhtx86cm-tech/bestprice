@@ -228,25 +228,104 @@ export const CustomerAnalytics = () => {
               Смотреть все →
             </button>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {analytics.recentOrders.map((order, index) => (
-              <div key={order.id || index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Package className="w-5 h-5 text-blue-600" />
+              <React.Fragment key={order.id || index}>
+                <div
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => toggleOrderDetails(order)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Package className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Заказ от {new Date(order.orderDate).toLocaleDateString('ru-RU')}</p>
+                      <p className="text-sm text-gray-600">{order.orderDetails?.length || 0} товаров</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">Заказ от {new Date(order.orderDate).toLocaleDateString('ru-RU')}</p>
-                    <p className="text-sm text-gray-600">{order.orderDetails?.length || 0} товаров</p>
+                  <div className="text-right">
+                    <p className="font-semibold">{order.amount?.toLocaleString('ru-RU')} ₽</p>
+                    <Badge className={`${statusColors[order.status]} mt-1`}>
+                      {statusLabels[order.status] || order.status}
+                    </Badge>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">{order.amount?.toLocaleString('ru-RU')} ₽</p>
-                  <Badge className={`${statusColors[order.status]} mt-1`}>
-                    {statusLabels[order.status] || order.status}
-                  </Badge>
-                </div>
-              </div>
+
+                {/* Inline Order Details */}
+                {selectedOrder?.id === order.id && (
+                  <div className="ml-4 p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-600">Дата и время заказа</p>
+                          <p className="font-medium">
+                            {new Date(selectedOrder.orderDate).toLocaleDateString('ru-RU')}
+                            {' '}
+                            {new Date(selectedOrder.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Статус</p>
+                          <Badge className={statusColors[selectedOrder.status]}>
+                            {statusLabels[selectedOrder.status]}
+                          </Badge>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Поставщик</p>
+                          <p className="font-medium">{suppliers[selectedOrder.supplierCompanyId]?.companyName || 'Загрузка...'}</p>
+                        </div>
+                        {selectedOrder.deliveryAddress && (
+                          <div>
+                            <p className="text-sm text-gray-600">Адрес доставки</p>
+                            <p className="font-medium">{selectedOrder.deliveryAddress.address}</p>
+                            {selectedOrder.deliveryAddress.phone && (
+                              <p className="text-sm text-gray-600 mt-1">Тел: {selectedOrder.deliveryAddress.phone}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold mb-3">Состав заказа</h4>
+                        <div className="space-y-2">
+                          {selectedOrder.orderDetails?.map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-start bg-white p-3 rounded border">
+                              <div className="flex-1">
+                                <p className="font-medium">{item.productName}</p>
+                                <p className="text-sm text-gray-600">
+                                  {item.quantity} {item.unit} × {item.price.toLocaleString('ru-RU')} ₽
+                                </p>
+                              </div>
+                              <p className="font-semibold text-right">
+                                {(item.quantity * item.price).toLocaleString('ru-RU')} ₽
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="border-t mt-4 pt-4 flex justify-between items-center">
+                          <p className="font-semibold text-lg">Итого:</p>
+                          <p className="font-bold text-xl text-blue-600">
+                            {selectedOrder.amount?.toLocaleString('ru-RU')} ₽
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOrder(null);
+                          }}
+                          className="text-sm text-gray-600 hover:text-gray-800"
+                        >
+                          Скрыть детали
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         </Card>
