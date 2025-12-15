@@ -155,11 +155,15 @@ export const CustomerTeam = () => {
 
               <div>
                 <Label className="text-sm mb-2">Должность</Label>
-                <Input
+                <select
                   value={member.position}
                   onChange={(e) => updateTeamMember(index, 'position', e.target.value)}
-                  placeholder="Директор, Менеджер..."
-                />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Выберите должность</option>
+                  <option value="staff">Сотрудник</option>
+                  <option value="chef">Повар</option>
+                </select>
               </div>
 
               <div>
