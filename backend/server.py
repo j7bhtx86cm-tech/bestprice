@@ -605,17 +605,44 @@ async def update_my_supplier_settings(data: SupplierSettingsUpdate, current_user
 
 # ==================== PRICE LIST ROUTES ====================
 
-@api_router.get("/price-lists/my", response_model=List[PriceList])
+@api_router.get("/price-lists/my")
 async def get_my_price_lists(current_user: dict = Depends(get_current_user)):
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
+    # Get company ID from user
+    company_id = current_user.get('companyId')
+    if not company_id:
+        return []
     
-    price_lists = await db.price_lists.find({"supplierCompanyId": company['id']}, {"_id": 0}).to_list(1000)
-    return price_lists
+    # Get pricelists for this supplier
+    pricelists = await db.pricelists.find({"supplierId": company_id}, {"_id": 0}).to_list(10000)
+    
+    # Get products and join data
+    product_ids = [pl['productId'] for pl in pricelists]
+    products = await db.products.find({"id": {"$in": product_ids}}, {"_id": 0}).to_list(10000)
+    products_map = {p['id']: p for p in products}
+    
+    # Format for frontend (PriceList format)
+    result = []
+    for pl in pricelists:
+        product = products_map.get(pl['productId'])
+        if product:
+            result.append({
+                "id": pl['id'],
+                "supplierCompanyId": pl['supplierId'],
+                "productName": product['name'],
+                "article": pl.get('supplierItemCode', ''),
+                "price": pl['price'],
+                "unit": product['unit'],
+                "minQuantity": pl.get('minQuantity', 1),
+                "availability": True,
+                "active": True,
+                "createdAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat()),
+                "updatedAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat())
+            })
+    
+    return result
 
 @api_router.post("/price-lists", response_model=PriceList)
 async def create_price_list(data: PriceListCreate, current_user: dict = Depends(get_current_user)):
