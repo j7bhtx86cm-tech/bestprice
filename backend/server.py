@@ -891,10 +891,19 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
 
 # ==================== SUPPLIER ROUTES ====================
 
-@api_router.get("/suppliers", response_model=List[Company])
+@api_router.get("/suppliers")
 async def get_suppliers():
-    suppliers = await db.companies.find({"type": CompanyType.supplier}, {"_id": 0}).to_list(1000)
-    return suppliers
+    suppliers = await db.companies.find({"companyType": "supplier"}, {"_id": 0}).to_list(1000)
+    # Map to expected frontend format
+    result = []
+    for s in suppliers:
+        result.append({
+            "id": s['id'],
+            "companyName": s['name'],
+            "type": "supplier",
+            "createdAt": s.get('createdAt', datetime.now(timezone.utc).isoformat())
+        })
+    return result
 
 @api_router.get("/suppliers/{supplier_id}/price-lists")
 async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = None):
