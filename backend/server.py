@@ -1772,6 +1772,83 @@ async def update_my_profile(data: dict, current_user: dict = Depends(get_current
     user = await db.users.find_one({"id": current_user['id']}, {"_id": 0, "passwordHash": 0})
     return user
 
+# ==================== SUPPLIER RESTAURANT MANAGEMENT ====================
+
+@api_router.get("/supplier/restaurants")
+async def get_supplier_restaurants(current_user: dict = Depends(get_current_user)):
+    """Get all restaurants that have ordered from this supplier"""
+    if current_user['role'] != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    company_id = current_user.get('companyId')
+    if not company_id:
+        return []
+    
+    # Get all orders for this supplier
+    orders = await db.orders.find({"supplierCompanyId": company_id}, {"_id": 0}).to_list(1000)
+    
+    # Get unique restaurant IDs
+    restaurant_ids = list(set([order['customerCompanyId'] for order in orders]))
+    
+    # Get restaurant details
+    restaurants = []
+    for rest_id in restaurant_ids:
+        restaurant = await db.companies.find_one({"id": rest_id}, {"_id": 0})
+        if restaurant:
+            # Get settings for this supplier-restaurant pair
+            settings = await db.supplier_restaurant_settings.find_one(
+                {"supplierId": company_id, "restaurantId": rest_id},
+                {"_id": 0}
+            )
+            
+            # Count orders
+            order_count = len([o for o in orders if o['customerCompanyId'] == rest_id])
+            
+            restaurants.append({
+                "id": restaurant['id'],
+                "name": restaurant.get('companyName', restaurant.get('name', 'N/A')),
+                "inn": restaurant.get('inn', ''),
+                "orderCount": order_count,
+                "ordersEnabled": settings.get('ordersEnabled', True) if settings else True,
+                "unavailabilityReason": settings.get('unavailabilityReason') if settings else None
+            })
+    
+    return restaurants
+
+@api_router.put("/supplier/restaurants/{restaurant_id}/availability")
+async def update_restaurant_availability(
+    restaurant_id: str,
+    data: UpdateRestaurantAvailability,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update order availability for a specific restaurant"""
+    if current_user['role'] != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    company_id = current_user.get('companyId')
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Upsert settings
+    settings = {
+        "supplierId": company_id,
+        "restaurantId": restaurant_id,
+        "ordersEnabled": data.ordersEnabled,
+        "unavailabilityReason": data.unavailabilityReason,
+        "updatedAt": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.supplier_restaurant_settings.update_one(
+        {"supplierId": company_id, "restaurantId": restaurant_id},
+        {"$set": settings},
+        upsert=True
+    )
+    
+    return {
+        "message": "Restaurant availability updated",
+        "ordersEnabled": data.ordersEnabled
+    }
+
 # Include router
 app.include_router(api_router)
 
