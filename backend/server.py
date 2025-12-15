@@ -896,65 +896,92 @@ async def get_suppliers():
     suppliers = await db.companies.find({"type": CompanyType.supplier}, {"_id": 0}).to_list(1000)
     return suppliers
 
-@api_router.get("/suppliers/{supplier_id}/price-lists", response_model=List[PriceList])
+@api_router.get("/suppliers/{supplier_id}/price-lists")
 async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = None):
     query = {"supplierId": supplier_id}
     
-    # Enhanced search with synonym support
-    if search:
-        search_lower = search.lower().strip()
-        
-        # Define synonyms and translations
-        synonyms_map = {
-            # English to Russian food terms
-            "sweet chili": ["кисло острый", "кисло-острый", "свит чили"],
-            "chili": ["чили", "перец"],
-            "sauce": ["соус"],
-            "sweet": ["сладкий", "кисло"],
-            "cheese": ["сыр"],
-            "chicken": ["курица", "куриный", "курин"],
-            "beef": ["говядина", "говяжий"],
-            "pork": ["свинина", "свиной"],
-            "fish": ["рыба", "рыбный"],
-            "potato": ["картофель", "картошка"],
-            "tomato": ["помидор", "томат"],
-            "mushroom": ["гриб", "грибы", "грибной", "шампиньон"],
-            "rice": ["рис"],
-            "pasta": ["макароны", "паста"],
-            "butter": ["масло"],
-            "oil": ["масло"],
-            "milk": ["молоко"],
-            "cream": ["сливки", "крем"],
-            "sugar": ["сахар"],
-            "salt": ["соль"],
-            "pepper": ["перец"],
-            "onion": ["лук", "луковый"],
-            "garlic": ["чеснок"],
-            "bread": ["хлеб"],
-            # Russian variations
-            "кисло острый": ["sweet chili", "кисло-острый", "свит чили"],
-            "грибы": ["mushroom", "гриб", "грибной", "шампиньон", "опята", "вешенки"],
-            "шампиньоны": ["mushroom", "грибы"],
-            "соус": ["sauce"],
-        }
-        
-        # Build search terms including original and synonyms
-        search_terms = [search_lower]
-        for key, values in synonyms_map.items():
-            if key in search_lower:
-                search_terms.extend(values)
-        
-        # Remove duplicates
-        search_terms = list(set(search_terms))
-        
-        # Build regex patterns for flexible matching
-        regex_patterns = [{"name": {"$regex": term, "$options": "i"}} for term in search_terms]
-        
-        # Add to query
-        query["$or"] = regex_patterns
-    
+    # Get all pricelists for this supplier
     pricelists = await db.pricelists.find(query, {"_id": 0}).to_list(10000)
-    return pricelists
+    
+    # Get all products
+    product_ids = [pl['productId'] for pl in pricelists]
+    products = await db.products.find({"id": {"$in": product_ids}}, {"_id": 0}).to_list(10000)
+    
+    # Create product lookup map
+    products_map = {p['id']: p for p in products}
+    
+    # Join pricelists with products to create the format frontend expects
+    result = []
+    for pl in pricelists:
+        product = products_map.get(pl['productId'])
+        if product:
+            # Enhanced search with synonym support
+            if search:
+                search_lower = search.lower().strip()
+                product_name_lower = product['name'].lower()
+                
+                # Define synonyms and translations
+                synonyms_map = {
+                    # English to Russian food terms
+                    "sweet chili": ["кисло острый", "кисло-острый", "свит чили"],
+                    "chili": ["чили", "перец"],
+                    "sauce": ["соус"],
+                    "sweet": ["сладкий", "кисло"],
+                    "cheese": ["сыр"],
+                    "chicken": ["курица", "куриный", "курин"],
+                    "beef": ["говядина", "говяжий"],
+                    "pork": ["свинина", "свиной"],
+                    "fish": ["рыба", "рыбный"],
+                    "potato": ["картофель", "картошка"],
+                    "tomato": ["помидор", "томат"],
+                    "mushroom": ["гриб", "грибы", "грибной", "шампиньон"],
+                    "rice": ["рис"],
+                    "pasta": ["макароны", "паста"],
+                    "butter": ["масло"],
+                    "oil": ["масло"],
+                    "milk": ["молоко"],
+                    "cream": ["сливки", "крем"],
+                    "sugar": ["сахар"],
+                    "salt": ["соль"],
+                    "pepper": ["перец"],
+                    "onion": ["лук", "луковый"],
+                    "garlic": ["чеснок"],
+                    "bread": ["хлеб"],
+                    # Russian variations
+                    "кисло острый": ["sweet chili", "кисло-острый", "свит чили"],
+                    "грибы": ["mushroom", "гриб", "грибной", "шампиньон", "опята", "вешенки"],
+                    "шампиньоны": ["mushroom", "грибы"],
+                    "соус": ["sauce"],
+                }
+                
+                # Build search terms including original and synonyms
+                search_terms = [search_lower]
+                for key, values in synonyms_map.items():
+                    if key in search_lower:
+                        search_terms.extend(values)
+                
+                # Check if any search term matches product name
+                match_found = any(term in product_name_lower for term in search_terms)
+                
+                if not match_found:
+                    continue  # Skip this product if search doesn't match
+            
+            # Create PriceList response format that frontend expects
+            result.append({
+                "id": pl['id'],
+                "supplierCompanyId": pl['supplierId'],
+                "productName": product['name'],
+                "article": pl.get('supplierItemCode', ''),
+                "price": pl['price'],
+                "unit": product['unit'],
+                "minQuantity": pl.get('minQuantity', 1),
+                "availability": True,
+                "active": True,
+                "createdAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat()),
+                "updatedAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat())
+            })
+    
+    return result
 
 
 # ==================== MOBILE APP ROUTES ====================
