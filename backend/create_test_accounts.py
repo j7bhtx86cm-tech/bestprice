@@ -13,13 +13,13 @@ print("=" * 80)
 print("Creating Test Accounts for Staff and Chef")
 print("=" * 80)
 
-# Get the customer company (restaurant)
-customer_company = db.companies.find_one({"companyType": "customer"}, {"_id": 0})
+# Get the customer company (restaurant) - use 'type' field
+customer_company = db.companies.find_one({"type": "customer"}, {"_id": 0})
 if not customer_company:
-    print("❌ No customer company found. Please create a customer account first.")
+    print("❌ No customer company found.")
     exit(1)
 
-print(f"\n✓ Found restaurant: {customer_company.get('name', customer_company['id'])}")
+print(f"\n✓ Found restaurant: {customer_company.get('companyName', customer_company['id'])}")
 
 # Get or create a test matrix
 matrix = db.matrices.find_one({"restaurantCompanyId": customer_company['id']}, {"_id": 0})
@@ -47,7 +47,7 @@ if existing_staff:
     # Update existing staff account with matrix
     db.users.update_one(
         {"email": staff_email},
-        {"$set": {"matrixId": matrix_id}}
+        {"$set": {"matrixId": matrix_id, "role": "responsible"}}
     )
     print(f"\n✓ Updated existing Staff account: {staff_email}")
 else:
@@ -73,7 +73,7 @@ if existing_chef:
     # Update existing chef account with matrix
     db.users.update_one(
         {"email": chef_email},
-        {"$set": {"matrixId": matrix_id}}
+        {"$set": {"matrixId": matrix_id, "role": "chef"}}
     )
     print(f"✓ Updated existing Chef account: {chef_email}")
 else:
