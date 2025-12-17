@@ -163,11 +163,14 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
     """
     matches = []
     
+    intent_attrs = intent.get('keyAttributes', {})
+    
     for pl in all_pricelists:
         if not pl.get('productName') or not pl.get('unit'):
             continue
             
         product_intent = extract_product_intent(pl['productName'], pl['unit'])
+        product_attrs = product_intent.get('keyAttributes', {})
         
         # Match criteria
         if product_intent['productType'] != intent['productType']:
