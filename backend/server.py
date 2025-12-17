@@ -1111,6 +1111,7 @@ async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = Non
             # Create PriceList response format that frontend expects
             result.append({
                 "id": pl['id'],
+                "productId": pl['productId'],  # ADD THIS for favorites
                 "supplierCompanyId": pl['supplierId'],
                 "productName": product['name'],
                 "article": pl.get('supplierItemCode', ''),
