@@ -207,6 +207,7 @@ export const CustomerCatalog = () => {
         if (!existingOffer) {
           productGroups[key].offers.push({
             priceListId: product.id,
+            productId: product.productId,  // ADD THIS - the actual product ID
             supplierId: supplier.id,
             supplierName: supplier.companyName,
             article: product.article,
@@ -537,7 +538,7 @@ export const CustomerCatalog = () => {
                     <h3 className="text-base font-medium flex-1">{group.displayName}</h3>
                     <button
                       onClick={() => {
-                        const productId = group.offers[0]?.product?.id;
+                        const productId = group.offers[0]?.productId;  // Use productId from offer
                         if (productId) {
                           if (favorites.has(productId)) {
                             handleRemoveFromFavorites(productId);
@@ -547,15 +548,15 @@ export const CustomerCatalog = () => {
                         }
                       }}
                       className={`p-1.5 rounded-full transition-colors ml-2 ${
-                        favorites.has(group.offers[0]?.product?.id)
+                        favorites.has(group.offers[0]?.productId)
                           ? 'bg-red-100 text-red-600 hover:bg-red-200'
                           : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-red-500'
                       }`}
-                      title={favorites.has(group.offers[0]?.product?.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
+                      title={favorites.has(group.offers[0]?.productId) ? 'Убрать из избранного' : 'Добавить в избранное'}
                     >
                       <Heart 
                         className="h-4 w-4" 
-                        fill={favorites.has(group.offers[0]?.product?.id) ? 'currentColor' : 'none'}
+                        fill={favorites.has(group.offers[0]?.productId) ? 'currentColor' : 'none'}
                       />
                     </button>
                   </div>
