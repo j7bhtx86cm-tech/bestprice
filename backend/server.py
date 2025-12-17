@@ -63,6 +63,11 @@ class OrderStatus(str, Enum):
 
 # ==================== MATRIX MODELS ====================
 
+# Matrix Mode Enum
+class MatrixMode(str, Enum):
+    EXACT = "exact"  # Fixed supplier product
+    CHEAPEST = "cheapest"  # Auto-select cheapest from all suppliers
+
 class Matrix(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -84,17 +89,40 @@ class MatrixProduct(BaseModel):
     productName: str  # Can be customized locally
     productCode: str
     unit: str
+    mode: MatrixMode = MatrixMode.EXACT  # EXACT or CHEAPEST
+    # Product Intent fields (for CHEAPEST mode)
+    productType: Optional[str] = None
+    baseUnit: Optional[str] = None
+    keyAttributes: Optional[Dict[str, Any]] = None
+    brand: Optional[str] = None
+    strictBrand: bool = False
     lastOrderQuantity: Optional[float] = None
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MatrixProductCreate(BaseModel):
     productId: str
-    productName: Optional[str] = None  # If not provided, use global product name
+    productName: Optional[str] = None
     productCode: Optional[str] = None
+    mode: MatrixMode = MatrixMode.EXACT
 
 class MatrixProductUpdate(BaseModel):
     productName: Optional[str] = None
     lastOrderQuantity: Optional[float] = None
+
+# Favorites Models
+class Favorite(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    userId: str
+    companyId: str
+    productId: str
+    productName: str
+    productCode: str
+    unit: str
+    addedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class FavoriteCreate(BaseModel):
+    productId: str
 
 class MatrixOrderCreate(BaseModel):
     matrixId: str
