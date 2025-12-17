@@ -110,10 +110,18 @@ def extract_key_attributes(product_name: str) -> Dict[str, Any]:
     if percent_match:
         attributes['percent'] = percent_match.group(0)
     
+    # Check for portion/stick packs (to exclude from bulk matching)
+    if any(word in product_name.lower() for word in ['порци', 'стик', 'stick', 'sachet', 'пакетик']):
+        attributes['is_portion'] = True
+    
     # Extract weight/volume in name (e.g., 1кг, 500мл, 250г)
     weight_match = re.search(r'(\d+(?:,\d+)?)\s*(кг|г|мл|л|kg|g|ml|l)', product_name, re.IGNORECASE)
     if weight_match:
         attributes['pack_size'] = weight_match.group(0)
+        # Extract just the number for comparison
+        num_str = weight_match.group(1).replace(',', '.')
+        attributes['pack_size_num'] = float(num_str)
+        attributes['pack_size_unit'] = weight_match.group(2).lower()
     
     # Extract numbers (generic)
     numbers = re.findall(r'\d+(?:,\d+)?', product_name)
@@ -168,29 +176,32 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
         if product_intent['baseUnit'] != intent['baseUnit']:
             continue
         
-        # IMPORTANT: Check pack size similarity (to avoid matching 1g sticks with 1kg packages)
-        intent_attrs = intent.get('keyAttributes', {})
-        product_attrs = product_intent.get('keyAttributes', {})
+        # IMPORTANT: Exclude portion packs when matching bulk products
+        if intent_attrs.get('is_portion') != product_attrs.get('is_portion'):
+            continue  # Don't match bulk with portions or vice versa
         
-        # If pack size is specified in intent, it must match closely
-        if 'pack_size' in intent_attrs:
-            if 'pack_size' not in product_attrs:
-                continue  # Skip if no pack size info
+        # Check pack size similarity (for bulk products)
+        if 'pack_size_num' in intent_attrs and 'pack_size_num' in product_attrs:
+            intent_num = intent_attrs['pack_size_num']
+            product_num = product_attrs['pack_size_num']
+            intent_unit = intent_attrs.get('pack_size_unit', '')
+            product_unit = product_attrs.get('pack_size_unit', '')
             
-            # Extract numbers from pack sizes for comparison
-            import re
-            intent_nums = re.findall(r'\d+', intent_attrs['pack_size'])
-            product_nums = re.findall(r'\d+', product_attrs['pack_size'])
+            # Convert to same unit if needed (g to kg, ml to l)
+            if intent_unit in ['кг', 'kg'] and product_unit in ['г', 'g']:
+                product_num = product_num / 1000
+            elif intent_unit in ['г', 'g'] and product_unit in ['кг', 'kg']:
+                intent_num = intent_num / 1000
+            elif intent_unit in ['л', 'l'] and product_unit in ['мл', 'ml']:
+                product_num = product_num / 1000
+            elif intent_unit in ['мл', 'ml'] and product_unit in ['л', 'l']:
+                intent_num = intent_num / 1000
             
-            if intent_nums and product_nums:
-                # Compare main number (weight/volume)
-                intent_main = int(intent_nums[0])
-                product_main = int(product_nums[0])
-                
-                # Only match if within reasonable range (e.g., 900g-1100g for 1kg)
-                if intent_main > 0 and product_main > 0:  # Prevent division by zero
-                    if abs(intent_main - product_main) / max(intent_main, product_main) > 0.3:
-                        continue  # Skip if more than 30% different
+            # Only match if within 30% range
+            if intent_num > 0 and product_num > 0:
+                diff_ratio = abs(intent_num - product_num) / max(intent_num, product_num)
+                if diff_ratio > 0.3:
+                    continue  # Skip if more than 30% different
         
         # If strict brand is required
         if intent.get('strictBrand') and intent.get('brand'):
