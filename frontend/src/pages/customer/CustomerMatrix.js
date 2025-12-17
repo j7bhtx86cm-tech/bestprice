@@ -366,6 +366,95 @@ export const CustomerMatrix = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Mode Selection Modal */}
+      <Dialog open={showModeSelectionModal} onOpenChange={setShowModeSelectionModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Выберите режим добавления</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {selectedProductToAdd && (
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="font-medium">{selectedProductToAdd.productName}</p>
+                <p className="text-sm text-gray-600">{selectedProductToAdd.price} ₽ / {selectedProductToAdd.unit}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <label className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedMode === 'exact' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+              }`}>
+                <input
+                  type="radio"
+                  name="mode"
+                  value="exact"
+                  checked={selectedMode === 'exact'}
+                  onChange={(e) => setSelectedMode(e.target.value)}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-lg">📌 Фиксированный продукт (EXACT)</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Всегда использовать этот товар от этого поставщика. 
+                    Цена может меняться, но продукт остается тем же.
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    ✓ Используйте для: товаров с требованием к бренду, контрактных позиций
+                  </p>
+                </div>
+              </label>
+
+              <label className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                selectedMode === 'cheapest' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-green-300'
+              }`}>
+                <input
+                  type="radio"
+                  name="mode"
+                  value="cheapest"
+                  checked={selectedMode === 'cheapest'}
+                  onChange={(e) => setSelectedMode(e.target.value)}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-semibold text-lg">💰 Лучшая цена (CHEAPEST)</span>
+                    <Badge className="bg-green-600 text-white">Рекомендуется</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Автоматически выбирать самый дешевый аналог среди всех поставщиков при каждом заказе.
+                    Система найдет похожие товары и выберет лучшую цену.
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    ✓ Используйте для: экономии, стандартных товаров, товаров без требований к бренду
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowModeSelectionModal(false);
+                  setSelectedProductToAdd(null);
+                }}
+              >
+                Отмена
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={confirmAddProduct}
+              >
+                Добавить в матрицу
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Create Order Modal */}
       <Dialog open={showOrderModal} onOpenChange={setShowOrderModal}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
