@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Heart, Trash2, ShoppingCart, TrendingDown } from 'lucide-react';
+import { Heart, Trash2, ShoppingCart, TrendingDown, Pin, Search } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -54,11 +54,21 @@ export const CustomerFavorites = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await axios.delete(`${API}/favorites/${favoriteId}`, { headers });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};\n      await axios.delete(`${API}/favorites/${favoriteId}`, { headers });
       fetchFavorites();
     } catch (error) {
       console.error('Failed to remove favorite:', error);
+    }
+  };
+
+  const handleModeChange = async (favoriteId, newMode) => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.put(`${API}/favorites/${favoriteId}/mode`, { mode: newMode }, { headers });
+      fetchFavorites(); // Refresh to show updated mode
+    } catch (error) {
+      console.error('Failed to update mode:', error);
     }
   };
 
@@ -147,14 +157,58 @@ export const CustomerFavorites = () => {
                 <Trash2 className="h-4 w-4" />
               </Button>
               
-              <div className="mb-3">
+              <div className="mb-4">
                 <h3 className="font-semibold text-lg mb-1 pr-8">{favorite.productName}</h3>
                 <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
               </div>
 
+              {/* Mode Selection Toggle */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs font-medium text-gray-700 mb-2">Режим заказа:</p>
+                <div className="space-y-2">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`mode-${favorite.id}`}
+                      value="cheapest"
+                      checked={favorite.mode === 'cheapest'}
+                      onChange={() => handleModeChange(favorite.id, 'cheapest')}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1">
+                        <Search className="h-3 w-3 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Искать лучшую цену</span>
+                      </div>
+                      <p className="text-xs text-gray-600">Система найдет дешевле</p>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`mode-${favorite.id}`}
+                      value="exact"
+                      checked={favorite.mode === 'exact'}
+                      onChange={() => handleModeChange(favorite.id, 'exact')}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1">
+                        <Pin className="h-3 w-3 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">Этот товар</span>
+                      </div>
+                      <p className="text-xs text-gray-600">Всегда этот продукт</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Лучшая цена:</span>
+                  <span className="text-sm text-gray-600">
+                    {favorite.mode === 'cheapest' ? 'Лучшая цена:' : 'Цена:'}
+                  </span>
                   <span className="font-bold text-green-600 text-lg">
                     {favorite.bestPrice?.toLocaleString('ru-RU')} ₽
                   </span>
