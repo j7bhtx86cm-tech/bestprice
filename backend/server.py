@@ -1925,109 +1925,44 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
 
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
-    """Get user's favorites with current pricing and mode-aware best prices"""
-    from product_intent_parser import extract_product_intent, find_matching_products
-    
+    """Get user's favorites with current pricing (optimized for speed)"""
     favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).to_list(100)
     
-    # Get ALL pricelists for matching (needed for cheapest mode)
-    all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(10000)
-    
-    # Enrich pricelists with product info
-    for pl in all_pricelists:
-        product = await db.products.find_one({"id": pl['productId']}, {"_id": 0})
-        if product:
-            pl['productName'] = product['name']
-            pl['unit'] = product['unit']
-    
-    # Enrich favorites with pricing
+    # Quick enrichment - only get prices for the exact product (fast)
     enriched = []
     for fav in favorites:
         mode = fav.get('mode', 'cheapest')
         
+        # Get prices for this specific product (fast query)
+        pricelists = await db.pricelists.find({"productId": fav['productId']}, {"_id": 0}).to_list(100)
+        
+        suppliers_data = []
+        for pl in pricelists:
+            supplier = await db.companies.find_one({"id": pl['supplierId']}, {"_id": 0})
+            if supplier:
+                suppliers_data.append({
+                    "supplierId": pl['supplierId'],
+                    "supplierName": supplier['name'],
+                    "price": pl['price'],
+                    "availability": pl.get('availability', True)
+                })
+        
+        suppliers_data.sort(key=lambda x: x['price'])
+        
+        # For cheapest mode, show indicator that system will search when ordering
+        display_label = ""
         if mode == 'cheapest':
-            # CHEAPEST MODE: Search for matching products across ALL suppliers
-            product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
-            if product:
-                # Extract product intent
-                intent = extract_product_intent(product['name'], product['unit'])
-                
-                # Find all matching products
-                matching_pls = find_matching_products(intent, all_pricelists)
-                
-                if matching_pls:
-                    # Get supplier info and build list
-                    suppliers_data = []
-                    for pl in matching_pls:
-                        supplier = await db.companies.find_one({"id": pl['supplierId']}, {"_id": 0})
-                        if supplier:
-                            suppliers_data.append({
-                                "supplierId": pl['supplierId'],
-                                "supplierName": supplier['name'],
-                                "price": pl['price'],
-                                "availability": pl.get('availability', True),
-                                "productName": pl.get('productName', '')
-                            })
-                    
-                    suppliers_data.sort(key=lambda x: x['price'])
-                    
-                    enriched.append({
-                        **fav,
-                        "mode": mode,
-                        "suppliers": suppliers_data,
-                        "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
-                        "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None,
-                        "matchCount": len(suppliers_data),
-                        "originalSupplier": fav.get('originalSupplierId')
-                    })
-                else:
-                    # No matches found, fallback to exact product
-                    pricelists = await db.pricelists.find({"productId": fav['productId']}, {"_id": 0}).to_list(100)
-                    suppliers_data = []
-                    for pl in pricelists:
-                        supplier = await db.companies.find_one({"id": pl['supplierId']}, {"_id": 0})
-                        if supplier:
-                            suppliers_data.append({
-                                "supplierId": pl['supplierId'],
-                                "supplierName": supplier['name'],
-                                "price": pl['price'],
-                                "availability": pl.get('availability', True)
-                            })
-                    
-                    suppliers_data.sort(key=lambda x: x['price'])
-                    
-                    enriched.append({
-                        **fav,
-                        "mode": mode,
-                        "suppliers": suppliers_data,
-                        "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
-                        "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None
-                    })
-        else:
-            # EXACT MODE: Only show this specific product's prices
-            pricelists = await db.pricelists.find({"productId": fav['productId']}, {"_id": 0}).to_list(100)
-            
-            suppliers_data = []
-            for pl in pricelists:
-                supplier = await db.companies.find_one({"id": pl['supplierId']}, {"_id": 0})
-                if supplier:
-                    suppliers_data.append({
-                        "supplierId": pl['supplierId'],
-                        "supplierName": supplier['name'],
-                        "price": pl['price'],
-                        "availability": pl.get('availability', True)
-                    })
-            
-            suppliers_data.sort(key=lambda x: x['price'])
-            
-            enriched.append({
-                **fav,
-                "mode": mode,
-                "suppliers": suppliers_data,
-                "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
-                "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None,
-                "originalSupplier": fav.get('originalSupplierId')
-            })
+            display_label = "Система найдет лучшую цену при заказе"
+        
+        enriched.append({
+            **fav,
+            "mode": mode,
+            "suppliers": suppliers_data,
+            "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
+            "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None,
+            "displayLabel": display_label,
+            "originalSupplier": fav.get('originalSupplierId')
+        })
     
     return enriched
 
