@@ -33,12 +33,19 @@ def extract_product_intent(product_name: str, unit: str) -> Dict[str, Any]:
     }
 
 def extract_product_type(name_lower: str) -> str:
-    """Extract main product category"""
+    """Extract main product category with specific keywords"""
     
-    # Define product type patterns
+    # Define product type patterns - more specific matching
+    # Use tuples: (type_name, required_keywords, optional_keywords)
     patterns = {
+        "порошок_куриный": ["порошок", "куриный"],
+        "порошок_грибной": ["порошок", "грибной"],
+        "бульон_куриный": ["бульон", "куриный"],
+        "бульон_грибной": ["бульон", "грибной"],
         "креветки": ["креветк", "shrimp", "prawn"],
-        "масло": ["масло растительное", "масло подсолнечное", "масло оливковое", "oil"],
+        "масло_растительное": ["масло", "растительн"],
+        "масло_подсолнечное": ["масло", "подсолнечн"],
+        "масло_оливковое": ["масло", "оливков"],
         "соус": ["соус", "sauce", "кетчуп", "ketchup"],
         "сыр": ["сыр", "cheese"],
         "молоко": ["молоко", "milk"],
@@ -63,12 +70,17 @@ def extract_product_type(name_lower: str) -> str:
         "ягоды": ["брусника", "вишня", "клюква", "berry"],
     }
     
+    # Check specific combinations first (порошок куриный, бульон грибной, etc.)
     for product_type, keywords in patterns.items():
-        for keyword in keywords:
-            if keyword in name_lower:
+        if '_' in product_type:  # Composite type
+            if all(kw in name_lower for kw in keywords):
                 return product_type
+        else:  # Simple type
+            for keyword in keywords:
+                if keyword in name_lower:
+                    return product_type
     
-    # Default: use first word
+    # Default: use first meaningful word
     first_word = name_lower.split()[0] if name_lower.split() else "unknown"
     return first_word
 
