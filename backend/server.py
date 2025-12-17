@@ -89,7 +89,7 @@ class MatrixProduct(BaseModel):
     productName: str  # Can be customized locally
     productCode: str
     unit: str
-    mode: MatrixMode = MatrixMode.EXACT  # EXACT or CHEAPEST
+    mode: str = "exact"  # "exact" or "cheapest"
     # Product Intent fields (for CHEAPEST mode)
     productType: Optional[str] = None
     baseUnit: Optional[str] = None
@@ -101,9 +101,9 @@ class MatrixProduct(BaseModel):
 
 class MatrixProductCreate(BaseModel):
     productId: str
-    productName: Optional[str] = None
+    productName: Optional[str] = None  # If not provided, use global product name
     productCode: Optional[str] = None
-    mode: MatrixMode = MatrixMode.EXACT
+    mode: str = "exact"  # "exact" or "cheapest"
 
 class MatrixProductUpdate(BaseModel):
     productName: Optional[str] = None
