@@ -54,7 +54,8 @@ export const CustomerFavorites = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};\n      await axios.delete(`${API}/favorites/${favoriteId}`, { headers });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.delete(`${API}/favorites/${favoriteId}`, { headers });
       fetchFavorites();
     } catch (error) {
       console.error('Failed to remove favorite:', error);
