@@ -18,6 +18,9 @@ export const CustomerMatrix = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [showModeSelectionModal, setShowModeSelectionModal] = useState(false);
+  const [selectedProductToAdd, setSelectedProductToAdd] = useState(null);
+  const [selectedMode, setSelectedMode] = useState('exact');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -104,19 +107,27 @@ export const CustomerMatrix = () => {
   };
 
   const handleAddProduct = async (product) => {
+    // First show mode selection dialog
+    setSelectedProductToAdd(product);
+    setSelectedMode('exact');
+    setShowModeSelectionModal(true);
+  };
+
+  const confirmAddProduct = async () => {
+    if (!selectedProductToAdd) return;
+
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      // Find the productId from the global products
+      // Find the productId
       const productsResponse = await axios.get(`${API}/suppliers`, { headers });
       let productId = null;
       
       for (const supplier of productsResponse.data) {
         const priceListResponse = await axios.get(`${API}/suppliers/${supplier.id}/price-lists`, { headers });
-        const found = priceListResponse.data.find(p => p.productName === product.productName);
+        const found = priceListResponse.data.find(p => p.productName === selectedProductToAdd.productName);
         if (found) {
-          // Get the productId from pricelists collection
           productId = found.id;
           break;
         }
@@ -129,11 +140,16 @@ export const CustomerMatrix = () => {
 
       await axios.post(
         `${API}/matrices/${matrixId}/products`,
-        { productId: productId },
+        { 
+          productId: productId,
+          mode: selectedMode  // Send selected mode
+        },
         { headers }
       );
       
       setShowAddProductModal(false);
+      setShowModeSelectionModal(false);
+      setSelectedProductToAdd(null);
       setSearchTerm('');
       setSearchResults([]);
       fetchMatrixProducts();
