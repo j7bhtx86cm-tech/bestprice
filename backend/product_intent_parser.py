@@ -29,7 +29,7 @@ def extract_product_intent(product_name: str, unit: str) -> Dict[str, Any]:
         "baseUnit": base_unit,
         "keyAttributes": key_attributes,
         "brand": brand,
-        "strictBrand": False  # Can be set by user
+        "strictBrand": False
     }
 
 def extract_product_type(name_lower: str) -> str:
@@ -120,8 +120,11 @@ def extract_key_attributes(product_name: str) -> Dict[str, Any]:
         attributes['pack_size'] = weight_match.group(0)
         # Extract just the number for comparison
         num_str = weight_match.group(1).replace(',', '.')
-        attributes['pack_size_num'] = float(num_str)
-        attributes['pack_size_unit'] = weight_match.group(2).lower()
+        try:
+            attributes['pack_size_num'] = float(num_str)
+            attributes['pack_size_unit'] = weight_match.group(2).lower()
+        except:
+            pass
     
     # Extract numbers (generic)
     numbers = re.findall(r'\d+(?:,\d+)?', product_name)
@@ -137,7 +140,7 @@ def extract_brand(product_name: str) -> Optional[str]:
     known_brands = [
         'Heinz', 'Mutti', 'Aroy-D', 'COOK_ME', 'Sunfeel', 'Baleno',
         'Бояринъ', 'Альфа-М', 'DAS', 'Подворье', 'Агро-Альянс',
-        'Каскад', 'Праймфудс', 'Деревенское'
+        'Каскад', 'Праймфудс', 'Деревенское', 'Delicius'
     ]
     
     for brand in known_brands:
@@ -150,7 +153,7 @@ def extract_brand(product_name: str) -> Optional[str]:
         # If word is all caps or Title Case and length > 3
         if (word.isupper() or word.istitle()) and len(word) > 3:
             # Check if it's not a common Russian word
-            common_words = ['Масло', 'Соус', 'Сыр', 'Молоко', 'Курица']
+            common_words = ['Масло', 'Соус', 'Сыр', 'Молоко', 'Курица', 'Соль']
             if word not in common_words:
                 return word
     
@@ -163,6 +166,7 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
     """
     matches = []
     
+    # Get intent attributes once
     intent_attrs = intent.get('keyAttributes', {})
     
     for pl in all_pricelists:
