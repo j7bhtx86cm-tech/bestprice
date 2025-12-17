@@ -188,8 +188,9 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
                 product_main = int(product_nums[0])
                 
                 # Only match if within reasonable range (e.g., 900g-1100g for 1kg)
-                if abs(intent_main - product_main) / max(intent_main, product_main) > 0.3:
-                    continue  # Skip if more than 30% different
+                if intent_main > 0 and product_main > 0:  # Prevent division by zero
+                    if abs(intent_main - product_main) / max(intent_main, product_main) > 0.3:
+                        continue  # Skip if more than 30% different
         
         # If strict brand is required
         if intent.get('strictBrand') and intent.get('brand'):
