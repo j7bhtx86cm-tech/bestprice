@@ -16,7 +16,9 @@ export const CustomerMatrix = () => {
   const { user } = useAuth();
   const [matrix, setMatrix] = useState(null);
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [matrixSearchTerm, setMatrixSearchTerm] = useState('');
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showModeSelectionModal, setShowModeSelectionModal] = useState(false);
   const [selectedProductToAdd, setSelectedProductToAdd] = useState(null);
@@ -38,6 +40,20 @@ export const CustomerMatrix = () => {
       fetchMatrixProducts();
     }
   }, [matrixId, isChefOrStaff]);
+
+  useEffect(() => {
+    // Filter products when search term changes
+    if (matrixSearchTerm.trim()) {
+      const filtered = products.filter(p =>
+        p.productName.toLowerCase().includes(matrixSearchTerm.toLowerCase()) ||
+        (p.productCode && p.productCode.toLowerCase().includes(matrixSearchTerm.toLowerCase())) ||
+        p.rowNumber.toString().includes(matrixSearchTerm)
+      );
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts(products);
+    }
+  }, [matrixSearchTerm, products]);
 
   const fetchUserMatrix = async () => {
     try {
@@ -70,6 +86,7 @@ export const CustomerMatrix = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await axios.get(`${API}/matrices/${matrixId}/products`, { headers });
       setProducts(response.data);
+      setFilteredProducts(response.data);
     } catch (error) {
       console.error('Failed to fetch matrix products:', error);
     } finally {
@@ -243,6 +260,26 @@ export const CustomerMatrix = () => {
         </div>
       </div>
 
+      {/* Search in Matrix */}
+      {products.length > 0 && (
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Поиск по названию, артикулу или номеру строки..."
+              value={matrixSearchTerm}
+              onChange={(e) => setMatrixSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {matrixSearchTerm && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Найдено: {filteredProducts.length} из {products.length}
+            </p>
+          )}
+        </div>
+      )}
+
       {products.length === 0 ? (
         <Card className="p-12 text-center">
           <p className="text-gray-600 mb-4">В матрице пока нет продуктов</p>
@@ -273,7 +310,7 @@ export const CustomerMatrix = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium">{product.rowNumber}</td>
                     <td className="px-4 py-3 text-sm">{product.productName}</td>
