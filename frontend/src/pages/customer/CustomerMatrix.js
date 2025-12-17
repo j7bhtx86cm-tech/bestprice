@@ -261,6 +261,7 @@ export const CustomerMatrix = () => {
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Название</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Артикул</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ед. изм.</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Режим</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Лучшая цена</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Поставщик</th>
                   {isChefOrStaff && (
@@ -278,6 +279,17 @@ export const CustomerMatrix = () => {
                     <td className="px-4 py-3 text-sm">{product.productName}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{product.productCode}</td>
                     <td className="px-4 py-3 text-sm">{product.unit}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {product.mode === 'cheapest' ? (
+                        <Badge className="bg-green-100 text-green-700 text-xs">
+                          💰 Лучшая цена
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-100 text-blue-700 text-xs">
+                          📌 Фикс
+                        </Badge>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium text-green-600">
                       {product.bestPrice ? `${product.bestPrice.toLocaleString('ru-RU')} ₽` : '-'}
                     </td>
