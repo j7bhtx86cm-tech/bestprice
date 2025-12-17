@@ -156,6 +156,9 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
     matches = []
     
     for pl in all_pricelists:
+        if not pl.get('productName') or not pl.get('unit'):
+            continue
+            
         product_intent = extract_product_intent(pl['productName'], pl['unit'])
         
         # Match criteria
@@ -165,25 +168,43 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
         if product_intent['baseUnit'] != intent['baseUnit']:
             continue
         
+        # IMPORTANT: Check pack size similarity (to avoid matching 1g sticks with 1kg packages)
+        intent_attrs = intent.get('keyAttributes', {})
+        product_attrs = product_intent.get('keyAttributes', {})
+        
+        # If pack size is specified in intent, it must match closely
+        if 'pack_size' in intent_attrs:
+            if 'pack_size' not in product_attrs:
+                continue  # Skip if no pack size info
+            
+            # Extract numbers from pack sizes for comparison
+            import re
+            intent_nums = re.findall(r'\d+', intent_attrs['pack_size'])
+            product_nums = re.findall(r'\d+', product_attrs['pack_size'])
+            
+            if intent_nums and product_nums:
+                # Compare main number (weight/volume)
+                intent_main = int(intent_nums[0])
+                product_main = int(product_nums[0])
+                
+                # Only match if within reasonable range (e.g., 900g-1100g for 1kg)
+                if abs(intent_main - product_main) / max(intent_main, product_main) > 0.3:
+                    continue  # Skip if more than 30% different
+        
         # If strict brand is required
         if intent.get('strictBrand') and intent.get('brand'):
             if product_intent.get('brand') != intent['brand']:
                 continue
         
-        # Check key attributes match (if specified)
-        if intent.get('keyAttributes'):
-            intent_attrs = intent['keyAttributes']
-            product_attrs = product_intent.get('keyAttributes', {})
-            
-            # Check caliber match
-            if 'caliber' in intent_attrs:
-                if product_attrs.get('caliber') != intent_attrs['caliber']:
-                    continue
-            
-            # Check percent match
-            if 'percent' in intent_attrs:
-                if product_attrs.get('percent') != intent_attrs['percent']:
-                    continue
+        # Check caliber match (exact)
+        if 'caliber' in intent_attrs:
+            if product_attrs.get('caliber') != intent_attrs['caliber']:
+                continue
+        
+        # Check percent match (exact)
+        if 'percent' in intent_attrs:
+            if product_attrs.get('percent') != intent_attrs['percent']:
+                continue
         
         matches.append(pl)
     
