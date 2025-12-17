@@ -1453,6 +1453,8 @@ async def add_product_to_matrix(
     current_user: dict = Depends(get_current_user)
 ):
     """Add a product to a matrix (Admin or Chef/Staff)"""
+    from product_intent_parser import extract_product_intent
+    
     # Verify access
     matrix = await db.matrices.find_one({"id": matrix_id}, {"_id": 0})
     if not matrix:
@@ -1486,20 +1488,29 @@ async def add_product_to_matrix(
     pricelist = await db.pricelists.find_one({"productId": data.productId}, {"_id": 0})
     product_code = pricelist.get('supplierItemCode', '') if pricelist else ''
     
+    # Extract product intent (for potential CHEAPEST mode)
+    intent = extract_product_intent(product['name'], product['unit'])
+    
     # Create matrix product
-    matrix_product = MatrixProduct(
-        matrixId=matrix_id,
-        rowNumber=next_row,
-        productId=data.productId,
-        productName=data.productName if data.productName else product['name'],
-        productCode=data.productCode if data.productCode else product_code,
-        unit=product['unit']
-    )
+    matrix_product = {
+        "id": str(uuid.uuid4()),
+        "matrixId": matrix_id,
+        "rowNumber": next_row,
+        "productId": data.productId,
+        "productName": data.productName if data.productName else product['name'],
+        "productCode": data.productCode if data.productCode else product_code,
+        "unit": product['unit'],
+        "mode": data.mode,  # "exact" or "cheapest"
+        "productType": intent.get('productType'),
+        "baseUnit": intent.get('baseUnit'),
+        "keyAttributes": intent.get('keyAttributes'),
+        "brand": intent.get('brand'),
+        "strictBrand": False,
+        "lastOrderQuantity": None,
+        "createdAt": datetime.now(timezone.utc).isoformat()
+    }
     
-    mp_dict = matrix_product.model_dump()
-    mp_dict['createdAt'] = mp_dict['createdAt'].isoformat()
-    await db.matrix_products.insert_one(mp_dict)
-    
+    await db.matrix_products.insert_one(matrix_product)
     return matrix_product
 
 @api_router.put("/matrices/{matrix_id}/products/{product_id}", response_model=MatrixProduct)
