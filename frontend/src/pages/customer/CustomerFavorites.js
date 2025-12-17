@@ -11,7 +11,9 @@ const API = `${BACKEND_URL}/api`;
 
 export const CustomerFavorites = () => {
   const [favorites, setFavorites] = useState([]);
+  const [filteredFavorites, setFilteredFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderItems, setOrderItems] = useState([]);
   const [company, setCompany] = useState(null);
@@ -21,6 +23,19 @@ export const CustomerFavorites = () => {
     fetchFavorites();
     fetchCompanyInfo();
   }, []);
+
+  useEffect(() => {
+    // Filter favorites when search term changes
+    if (searchTerm.trim()) {
+      const filtered = favorites.filter(f =>
+        f.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (f.productCode && f.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredFavorites(filtered);
+    } else {
+      setFilteredFavorites(favorites);
+    }
+  }, [searchTerm, favorites]);
 
   const fetchCompanyInfo = async () => {
     try {
@@ -42,6 +57,7 @@ export const CustomerFavorites = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await axios.get(`${API}/favorites`, { headers });
       setFavorites(response.data);
+      setFilteredFavorites(response.data);
     } catch (error) {
       console.error('Failed to fetch favorites:', error);
     } finally {
@@ -139,7 +155,31 @@ export const CustomerFavorites = () => {
         )}
       </div>
 
-      {favorites.length === 0 ? (
+      {/* Search */}
+      {favorites.length > 0 && (
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Поиск по названию или артикулу..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {searchTerm && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Найдено: {filteredFavorites.length} из {favorites.length}
+            </p>
+          )}
+        </div>
+      )}
+
+      {filteredFavorites.length === 0 && searchTerm ? (
+        <Card className="p-8 text-center">
+          <p className="text-gray-600">Товары не найдены</p>
+        </Card>
+      ) : favorites.length === 0 ? (
         <Card className="p-12 text-center">
           <Heart className="h-16 w-16 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-600 mb-2">У вас пока нет избранных товаров</p>
@@ -147,7 +187,7 @@ export const CustomerFavorites = () => {
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {favorites.map((favorite) => (
+          {filteredFavorites.map((favorite) => (
             <Card key={favorite.id} className="p-5 hover:shadow-lg transition-shadow relative">
               <Button
                 variant="ghost"
