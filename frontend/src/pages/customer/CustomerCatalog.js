@@ -532,8 +532,33 @@ export const CustomerCatalog = () => {
                     )}
                   </div>
                   
-                  {/* Product Name */}
-                  <h3 className="text-base font-medium mb-1">{group.displayName}</h3>
+                  {/* Product Name with Favorite Button */}
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="text-base font-medium flex-1">{group.displayName}</h3>
+                    <button
+                      onClick={() => {
+                        const productId = group.offers[0]?.product?.id;
+                        if (productId) {
+                          if (favorites.has(productId)) {
+                            handleRemoveFromFavorites(productId);
+                          } else {
+                            handleAddToFavorites(productId);
+                          }
+                        }
+                      }}
+                      className={`p-1.5 rounded-full transition-colors ml-2 ${
+                        favorites.has(group.offers[0]?.product?.id)
+                          ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-red-500'
+                      }`}
+                      title={favorites.has(group.offers[0]?.product?.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
+                    >
+                      <Heart 
+                        className="h-4 w-4" 
+                        fill={favorites.has(group.offers[0]?.product?.id) ? 'currentColor' : 'none'}
+                      />
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <span>Артикул: {group.article}</span>
                     <span>•</span>
