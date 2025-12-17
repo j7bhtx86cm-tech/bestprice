@@ -1995,13 +1995,41 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
         if not favorite:
             continue
         
-        # Get best price supplier
-        pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
-        if not pricelists:
-            continue
-        
-        pricelists.sort(key=lambda x: x['price'])
-        best_pl = pricelists[0]
+        # Determine which supplier to use based on mode
+        if favorite.get('mode') == 'exact':
+            # EXACT MODE: Use original supplier if available, otherwise use cheapest
+            target_supplier_id = favorite.get('originalSupplierId')
+            
+            if target_supplier_id:
+                # Try to find pricelist from original supplier
+                exact_pl = await db.pricelists.find_one({
+                    "productId": favorite['productId'],
+                    "supplierId": target_supplier_id
+                }, {"_id": 0})
+                
+                if exact_pl:
+                    best_pl = exact_pl
+                else:
+                    # Original supplier doesn't have it anymore, fallback to cheapest
+                    pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
+                    if not pricelists:
+                        continue
+                    pricelists.sort(key=lambda x: x['price'])
+                    best_pl = pricelists[0]
+            else:
+                # No original supplier stored, use cheapest
+                pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
+                if not pricelists:
+                    continue
+                pricelists.sort(key=lambda x: x['price'])
+                best_pl = pricelists[0]
+        else:
+            # CHEAPEST MODE: Always find the best price
+            pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
+            if not pricelists:
+                continue
+            pricelists.sort(key=lambda x: x['price'])
+            best_pl = pricelists[0]
         
         supplier_id = best_pl['supplierId']
         
