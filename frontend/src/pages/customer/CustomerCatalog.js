@@ -78,6 +78,52 @@ export const CustomerCatalog = () => {
     }
   };
 
+  const fetchFavorites = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/favorites`, { headers });
+      // Create a Set of productIds that are in favorites
+      const favoriteProductIds = new Set(response.data.map(f => f.productId));
+      setFavorites(favoriteProductIds);
+    } catch (error) {
+      console.error('Failed to fetch favorites:', error);
+    }
+  };
+
+  const handleAddToFavorites = async (productId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.post(`${API}/favorites`, { productId }, { headers });
+      fetchFavorites(); // Refresh favorites
+      alert('✓ Добавлено в избранное!');
+    } catch (error) {
+      if (error.response?.status === 400) {
+        alert('Товар уже в избранном');
+      } else {
+        console.error('Failed to add to favorites:', error);
+        alert('Ошибка добавления в избранное');
+      }
+    }
+  };
+
+  const handleRemoveFromFavorites = async (productId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      // Find the favorite ID
+      const favResponse = await axios.get(`${API}/favorites`, { headers });
+      const favorite = favResponse.data.find(f => f.productId === productId);
+      if (favorite) {
+        await axios.delete(`${API}/favorites/${favorite.id}`, { headers });
+        fetchFavorites();
+      }
+    } catch (error) {
+      console.error('Failed to remove from favorites:', error);
+    }
+  };
+
   const fetchAllData = async () => {
     try {
       const token = localStorage.getItem('token');
