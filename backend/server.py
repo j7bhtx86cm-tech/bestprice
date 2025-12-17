@@ -119,10 +119,16 @@ class Favorite(BaseModel):
     productName: str
     productCode: str
     unit: str
+    mode: str = "cheapest"  # "exact" or "cheapest" - default to cheapest
+    originalSupplierId: Optional[str] = None  # Store which supplier user selected it from
     addedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class FavoriteCreate(BaseModel):
     productId: str
+    supplierId: Optional[str] = None  # Which supplier this was from
+
+class FavoriteUpdateMode(BaseModel):
+    mode: str  # "exact" or "cheapest"
 
 class MatrixOrderCreate(BaseModel):
     matrixId: str
@@ -1851,7 +1857,6 @@ async def update_my_profile(data: dict, current_user: dict = Depends(get_current
 @api_router.post("/favorites")
 async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_user)):
     """Add product to favorites"""
-    from product_intent_parser import extract_product_intent
     
     # Get user's company
     company_id = current_user.get('companyId')
@@ -1877,7 +1882,7 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     if existing:
         raise HTTPException(status_code=400, detail="Product already in favorites")
     
-    # Create favorite (as dict, not document)
+    # Create favorite with default mode "cheapest"
     favorite = {
         "id": str(uuid.uuid4()),
         "userId": current_user['id'],
@@ -1886,22 +1891,41 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "productName": product['name'],
         "productCode": product_code,
         "unit": product['unit'],
+        "mode": "cheapest",  # Default to cheapest
+        "originalSupplierId": data.get('supplierId'),  # Store which supplier user picked it from
         "addedAt": datetime.now(timezone.utc).isoformat()
     }
     
     await db.favorites.insert_one(favorite)
     
-    # Return without _id field
     return {
         "id": favorite['id'],
         "productName": favorite['productName'],
         "productCode": favorite['productCode'],
-        "unit": favorite['unit']
+        "unit": favorite['unit'],
+        "mode": favorite['mode']
     }
+
+@api_router.put("/favorites/{favorite_id}/mode")
+async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Update mode for a favorite item"""
+    mode = data.get('mode')
+    if mode not in ['exact', 'cheapest']:
+        raise HTTPException(status_code=400, detail="Invalid mode")
+    
+    result = await db.favorites.update_one(
+        {"id": favorite_id, "userId": current_user['id']},
+        {"$set": {"mode": mode}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    
+    return {"message": "Mode updated", "mode": mode}
 
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
-    """Get user's favorites with current pricing"""
+    """Get user's favorites with current pricing and mode"""
     favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).to_list(100)
     
     # Enrich with current pricing
@@ -1925,9 +1949,11 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
         
         enriched.append({
             **fav,
+            "mode": fav.get('mode', 'cheapest'),  # Include mode
             "suppliers": suppliers_data,
             "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
-            "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None
+            "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None,
+            "originalSupplier": fav.get('originalSupplierId')
         })
     
     return enriched
