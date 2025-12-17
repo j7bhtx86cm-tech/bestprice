@@ -35,26 +35,43 @@ def extract_product_intent(product_name: str, unit: str) -> Dict[str, Any]:
 def extract_product_type(name_lower: str) -> str:
     """Extract main product category with specific keywords"""
     
-    # Define product type patterns - more specific matching
-    # Use tuples: (type_name, required_keywords, optional_keywords)
-    patterns = {
+    # Define specific product patterns - prioritize multi-word matches
+    # Format: type_name: [list of keywords that ALL must be present]
+    composite_patterns = {
+        "анчоус_филе": ["анчоус", "филе"],
+        "тунец_филе": ["тунец", "филе"],
+        "лосось_филе": ["лосось", "филе"],
+        "семга_филе": ["семга", "филе"],
+        "курица_филе": ["курица", "филе"],
         "порошок_куриный": ["порошок", "куриный"],
         "порошок_грибной": ["порошок", "грибной"],
         "бульон_куриный": ["бульон", "куриный"],
         "бульон_грибной": ["бульон", "грибной"],
-        "креветки": ["креветк", "shrimp", "prawn"],
+        "водоросли_нори": ["водоросл", "нори"],
+        "водоросли_вакаме": ["водоросл", "вакаме"],
+        "водоросли_комбу": ["водоросл", "комбу"],
+        "водоросли_чука": ["водоросл", "чука"],
         "масло_растительное": ["масло", "растительн"],
         "масло_подсолнечное": ["масло", "подсолнечн"],
         "масло_оливковое": ["масло", "оливков"],
-        "соус": ["соус", "sauce", "кетчуп", "ketchup"],
+    }
+    
+    # Check composite patterns first (more specific)
+    for product_type, keywords in composite_patterns.items():
+        if all(kw in name_lower for kw in keywords):
+            return product_type
+    
+    # Then check simple patterns
+    simple_patterns = {
+        "креветки": ["креветк", "shrimp", "prawn"],
+        "соус": ["соус", "sauce"],
+        "кетчуп": ["кетчуп", "ketchup"],
         "сыр": ["сыр", "cheese"],
         "молоко": ["молоко", "milk"],
         "сливки": ["сливки", "cream"],
-        "курица": ["курица", "куриный", "курин", "chicken"],
         "говядина": ["говядина", "говяжий", "beef"],
         "свинина": ["свинина", "свиной", "pork"],
-        "рыба": ["рыба", "рыбный", "fish", "лосось", "семга", "форель"],
-        "грибы": ["гриб", "шампиньон", "опята", "вешенки", "mushroom"],
+        "грибы": ["гриб", "шампиньон", "опята"],
         "рис": ["рис", "rice"],
         "макароны": ["макарон", "pasta", "спагетти"],
         "мука": ["мука", "flour"],
@@ -67,18 +84,14 @@ def extract_product_type(name_lower: str) -> str:
         "чеснок": ["чеснок", "garlic"],
         "картофель": ["картофель", "картошка", "potato"],
         "ананасы": ["ананас", "pineapple"],
-        "ягоды": ["брусника", "вишня", "клюква", "berry"],
+        "каперсы": ["каперс", "caper"],
+        "арахис": ["арахис", "peanut"],
     }
     
-    # Check specific combinations first (порошок куриный, бульон грибной, etc.)
-    for product_type, keywords in patterns.items():
-        if '_' in product_type:  # Composite type
-            if all(kw in name_lower for kw in keywords):
+    for product_type, keywords in simple_patterns.items():
+        for keyword in keywords:
+            if keyword in name_lower:
                 return product_type
-        else:  # Simple type
-            for keyword in keywords:
-                if keyword in name_lower:
-                    return product_type
     
     # Default: use first meaningful word
     first_word = name_lower.split()[0] if name_lower.split() else "unknown"
