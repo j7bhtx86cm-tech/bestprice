@@ -1801,6 +1801,182 @@ async def update_my_profile(data: dict, current_user: dict = Depends(get_current
     user = await db.users.find_one({"id": current_user['id']}, {"_id": 0, "passwordHash": 0})
     return user
 
+# ==================== FAVORITES ROUTES ====================
+
+@api_router.post("/favorites")
+async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_user)):
+    """Add product to favorites"""
+    from product_intent_parser import extract_product_intent
+    
+    # Get user's company
+    company_id = current_user.get('companyId')
+    if current_user['role'] == 'customer':
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    # Get product details
+    product = await db.products.find_one({"id": data['productId']}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Get product code from pricelist
+    pricelist = await db.pricelists.find_one({"productId": data['productId']}, {"_id": 0})
+    product_code = pricelist.get('supplierItemCode', '') if pricelist else ''
+    
+    # Check if already in favorites
+    existing = await db.favorites.find_one({
+        "userId": current_user['id'],
+        "productId": data['productId']
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Product already in favorites")
+    
+    # Create favorite
+    favorite = {
+        "id": str(uuid.uuid4()),
+        "userId": current_user['id'],
+        "companyId": company_id,
+        "productId": data['productId'],
+        "productName": product['name'],
+        "productCode": product_code,
+        "unit": product['unit'],
+        "addedAt": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.favorites.insert_one(favorite)
+    return favorite
+
+@api_router.get("/favorites")
+async def get_favorites(current_user: dict = Depends(get_current_user)):
+    """Get user's favorites with current pricing"""
+    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).to_list(100)
+    
+    # Enrich with current pricing
+    enriched = []
+    for fav in favorites:
+        # Get all supplier prices for this product
+        pricelists = await db.pricelists.find({"productId": fav['productId']}, {"_id": 0}).to_list(100)
+        
+        suppliers_data = []
+        for pl in pricelists:
+            supplier = await db.companies.find_one({"id": pl['supplierId']}, {"_id": 0})
+            if supplier:
+                suppliers_data.append({
+                    "supplierId": pl['supplierId'],
+                    "supplierName": supplier['name'],
+                    "price": pl['price'],
+                    "availability": pl.get('availability', True)
+                })
+        
+        suppliers_data.sort(key=lambda x: x['price'])
+        
+        enriched.append({
+            **fav,
+            "suppliers": suppliers_data,
+            "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
+            "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None
+        })
+    
+    return enriched
+
+@api_router.delete("/favorites/{favorite_id}")
+async def remove_from_favorites(favorite_id: str, current_user: dict = Depends(get_current_user)):
+    """Remove product from favorites"""
+    result = await db.favorites.delete_one({"id": favorite_id, "userId": current_user['id']})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    
+    return {"message": "Removed from favorites"}
+
+@api_router.post("/favorites/order")
+async def order_from_favorites(data: dict, current_user: dict = Depends(get_current_user)):
+    """Create orders from favorites with quantities"""
+    # data: { items: [{favoriteId: "...", quantity: 5}, ...], deliveryAddressId: "..." }
+    
+    # Get company ID
+    company_id = current_user.get('companyId')
+    if current_user['role'] == 'customer':
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Process items and group by cheapest supplier
+    orders_by_supplier = {}
+    
+    for item in data['items']:
+        quantity = float(item.get('quantity', 0))
+        if quantity <= 0:
+            continue
+        
+        # Get favorite
+        favorite = await db.favorites.find_one({"id": item['favoriteId']}, {"_id": 0})
+        if not favorite:
+            continue
+        
+        # Get best price supplier
+        pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
+        if not pricelists:
+            continue
+        
+        pricelists.sort(key=lambda x: x['price'])
+        best_pl = pricelists[0]
+        
+        supplier_id = best_pl['supplierId']
+        
+        if supplier_id not in orders_by_supplier:
+            orders_by_supplier[supplier_id] = {"items": [], "total": 0}
+        
+        item_total = quantity * best_pl['price']
+        orders_by_supplier[supplier_id]["items"].append({
+            "productName": favorite['productName'],
+            "article": favorite['productCode'],
+            "quantity": quantity,
+            "price": best_pl['price'],
+            "unit": favorite['unit']
+        })
+        orders_by_supplier[supplier_id]["total"] += item_total
+    
+    # Get delivery address
+    delivery_address = None
+    if data.get('deliveryAddressId'):
+        company = await db.companies.find_one({"id": company_id}, {"_id": 0})
+        if company and company.get('deliveryAddresses'):
+            for addr in company['deliveryAddresses']:
+                if addr.get('id') == data['deliveryAddressId']:
+                    delivery_address = addr
+                    break
+    
+    # Create orders
+    created_orders = []
+    for supplier_id, order_data in orders_by_supplier.items():
+        order = {
+            "id": str(uuid.uuid4()),
+            "customerCompanyId": company_id,
+            "supplierCompanyId": supplier_id,
+            "orderDate": datetime.now(timezone.utc).isoformat(),
+            "amount": order_data["total"],
+            "status": "new",
+            "orderDetails": order_data["items"],
+            "deliveryAddress": delivery_address,
+            "createdAt": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.orders.insert_one(order)
+        created_orders.append({
+            "orderId": order["id"],
+            "supplierId": supplier_id,
+            "amount": order_data["total"]
+        })
+    
+    return {
+        "message": f"Created {len(created_orders)} order(s)",
+        "orders": created_orders
+    }
+
 # ==================== SUPPLIER RESTAURANT MANAGEMENT ====================
 
 @api_router.get("/supplier/restaurants")
