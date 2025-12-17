@@ -11,6 +11,7 @@ import { CustomerRatings } from './CustomerRatings';
 import { CustomerMatrices } from './CustomerMatrices';
 import { CustomerMatrix } from './CustomerMatrix';
 import { CustomerMyProfile } from './CustomerMyProfile';
+import { CustomerFavorites } from './CustomerFavorites';
 
 export const CustomerDashboard = () => {
   return (
@@ -18,6 +19,7 @@ export const CustomerDashboard = () => {
       <Routes>
         <Route path="/" element={<Navigate to="/customer/catalog" replace />} />
         <Route path="/catalog" element={<CustomerCatalog />} />
+        <Route path="/favorites" element={<CustomerFavorites />} />
         <Route path="/profile" element={<CustomerProfile />} />
         <Route path="/my-profile" element={<CustomerMyProfile />} />
         <Route path="/team" element={<CustomerTeam />} />

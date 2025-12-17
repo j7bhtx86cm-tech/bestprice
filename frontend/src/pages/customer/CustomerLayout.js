@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { User, Users, FileText, ShoppingBag, BarChart3, Star, LogOut, Package, Building, Grid3x3, ShoppingCart } from 'lucide-react';
+import { User, Users, FileText, ShoppingBag, BarChart3, Star, LogOut, Package, Building, Grid3x3, ShoppingCart, Heart } from 'lucide-react';
 
 export const CustomerLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ export const CustomerLayout = ({ children }) => {
       return [
         { path: '/customer/my-profile', label: 'Мой профиль', icon: User },
         { path: '/customer/matrix', label: 'Моя матрица', icon: Grid3x3 },
+        { path: '/customer/favorites', label: 'Избранное', icon: Heart },
         { path: '/customer/catalog', label: 'Каталог товаров', icon: Package },
         { path: '/customer/orders', label: 'История заказов', icon: ShoppingCart },
       ];
@@ -28,9 +29,10 @@ export const CustomerLayout = ({ children }) => {
     // Full menu for Admin
     return [
       { path: '/customer/catalog', label: 'Каталог товаров', icon: Package },
+      { path: '/customer/favorites', label: 'Избранное', icon: Star },
       { path: '/customer/orders', label: 'История заказов', icon: ShoppingBag },
       { path: '/customer/analytics', label: 'Аналитика', icon: BarChart3 },
-      { path: '/customer/profile', label: 'Профиль компании', icon: User },
+      { path: '/customer/profile', label: 'Профиль компании', icon: Building },
       { path: '/customer/team', label: 'Ответственные лица', icon: Users },
       { path: '/customer/matrices', label: 'Управление матрицами', icon: Grid3x3 },
       { path: '/customer/documents', label: 'Документы', icon: FileText },
