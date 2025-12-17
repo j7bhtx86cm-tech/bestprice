@@ -1613,18 +1613,51 @@ async def create_matrix_order(
         if not matrix_product:
             continue
         
-        # Get best price supplier for this product
-        pricelists = await db.pricelists.find(
-            {"productId": matrix_product['productId']}, 
-            {"_id": 0}
-        ).to_list(100)
+        # Determine which products to consider based on mode
+        if matrix_product.get('mode') == 'cheapest':
+            # CHEAPEST MODE: Re-search for matching products across all suppliers
+            from product_intent_parser import find_matching_products
+            
+            # Get all pricelists
+            all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(10000)
+            
+            # Enrich with product names
+            for pl in all_pricelists:
+                prod = await db.products.find_one({"id": pl['productId']}, {"_id": 0})
+                if prod:
+                    pl['productName'] = prod['name']
+                    pl['unit'] = prod['unit']
+            
+            # Find matching products using intent
+            intent = {
+                "productType": matrix_product.get('productType'),
+                "baseUnit": matrix_product.get('baseUnit'),
+                "keyAttributes": matrix_product.get('keyAttributes'),
+                "brand": matrix_product.get('brand'),
+                "strictBrand": matrix_product.get('strictBrand', False)
+            }
+            
+            matching_pls = find_matching_products(intent, all_pricelists)
+            
+            if not matching_pls:
+                # Fallback to exact product if no matches found
+                matching_pls = await db.pricelists.find(
+                    {"productId": matrix_product['productId']}, 
+                    {"_id": 0}
+                ).to_list(100)
+        else:
+            # EXACT MODE: Use only this specific product
+            matching_pls = await db.pricelists.find(
+                {"productId": matrix_product['productId']}, 
+                {"_id": 0}
+            ).to_list(100)
         
-        if not pricelists:
+        if not matching_pls:
             continue
         
         # Sort by price and get cheapest
-        pricelists.sort(key=lambda x: x['price'])
-        best_pl = pricelists[0]
+        matching_pls.sort(key=lambda x: x['price'])
+        best_pl = matching_pls[0]
         
         supplier_id = best_pl['supplierId']
         
