@@ -2032,12 +2032,40 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
                 pricelists.sort(key=lambda x: x['price'])
                 best_pl = pricelists[0]
         else:
-            # CHEAPEST MODE: Always find the best price
-            pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
-            if not pricelists:
+            # CHEAPEST MODE: Search for best price using product intent
+            from product_intent_parser import extract_product_intent, find_matching_products
+            
+            # Get product details
+            product = await db.products.find_one({"id": favorite['productId']}, {"_id": 0})
+            if not product:
                 continue
-            pricelists.sort(key=lambda x: x['price'])
-            best_pl = pricelists[0]
+            
+            # Extract intent
+            intent = extract_product_intent(product['name'], product['unit'])
+            
+            # Get all pricelists (only when ordering, not when viewing)
+            all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(10000)
+            
+            # Enrich with product names
+            for pl in all_pricelists:
+                prod = await db.products.find_one({"id": pl['productId']}, {"_id": 0})
+                if prod:
+                    pl['productName'] = prod['name']
+                    pl['unit'] = prod['unit']
+            
+            # Find matches
+            matching_pls = find_matching_products(intent, all_pricelists)
+            
+            if matching_pls:
+                matching_pls.sort(key=lambda x: x['price'])
+                best_pl = matching_pls[0]
+            else:
+                # Fallback to exact product
+                pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
+                if not pricelists:
+                    continue
+                pricelists.sort(key=lambda x: x['price'])
+                best_pl = pricelists[0]
         
         supplier_id = best_pl['supplierId']
         
