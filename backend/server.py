@@ -1872,12 +1872,12 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     existing = await db.favorites.find_one({
         "userId": current_user['id'],
         "productId": data['productId']
-    })
+    }, {"_id": 0})
     
     if existing:
         raise HTTPException(status_code=400, detail="Product already in favorites")
     
-    # Create favorite
+    # Create favorite (as dict, not document)
     favorite = {
         "id": str(uuid.uuid4()),
         "userId": current_user['id'],
@@ -1890,7 +1890,14 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     }
     
     await db.favorites.insert_one(favorite)
-    return favorite
+    
+    # Return without _id field
+    return {
+        "id": favorite['id'],
+        "productName": favorite['productName'],
+        "productCode": favorite['productCode'],
+        "unit": favorite['unit']
+    }
 
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
