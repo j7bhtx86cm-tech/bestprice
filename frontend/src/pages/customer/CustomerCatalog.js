@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ShoppingCart, Search, Plus, Minus, Trash2, Award, CheckCircle, Package, X } from 'lucide-react';
+import { ShoppingCart, Search, Plus, Minus, Trash2, Award, CheckCircle, Package, X, Heart } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -20,6 +20,7 @@ export const CustomerCatalog = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState([]);
+  const [favorites, setFavorites] = useState(new Set());
   const [showCart, setShowCart] = useState(false);
   const [showMiniCart, setShowMiniCart] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -34,6 +35,7 @@ export const CustomerCatalog = () => {
   useEffect(() => {
     fetchAllData();
     fetchCompanyInfo();
+    fetchFavorites();
   }, []);
 
   useEffect(() => {
