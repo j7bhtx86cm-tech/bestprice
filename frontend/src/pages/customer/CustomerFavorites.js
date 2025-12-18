@@ -15,8 +15,10 @@ export const CustomerFavorites = () => {
   const [filteredFavorites, setFilteredFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderItems, setOrderItems] = useState([]);
+  const [filteredOrderItems, setFilteredOrderItems] = useState([]);
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
 
@@ -37,6 +39,18 @@ export const CustomerFavorites = () => {
       setFilteredFavorites(favorites);
     }
   }, [searchTerm, favorites]);
+
+  useEffect(() => {
+    // Filter order items when search term changes
+    if (orderSearchTerm.trim()) {
+      const filtered = orderItems.filter(item =>
+        item.productName.toLowerCase().includes(orderSearchTerm.toLowerCase())
+      );
+      setFilteredOrderItems(filtered);
+    } else {
+      setFilteredOrderItems(orderItems);
+    }
+  }, [orderSearchTerm, orderItems]);
 
   const fetchCompanyInfo = async () => {
     try {
@@ -94,12 +108,14 @@ export const CustomerFavorites = () => {
     const items = favorites.map(f => ({
       favoriteId: f.id,
       productName: f.productName,
-      quantity: 0,
+      quantity: 1,  // Default to 1 (minimum), not 0
       bestPrice: f.bestPrice,
       unit: f.unit,
       bestSupplier: f.bestSupplier
     }));
     setOrderItems(items);
+    setFilteredOrderItems(items);
+    setOrderSearchTerm('');
     setShowOrderModal(true);
   };
 
@@ -310,32 +326,52 @@ export const CustomerFavorites = () => {
               Укажите количество для каждого товара. Система автоматически выберет лучшую цену.
             </p>
             
+            {/* Search in Order Modal */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск товара..."
+                value={orderSearchTerm}
+                onChange={(e) => setOrderSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {orderSearchTerm && (
+              <p className="text-sm text-muted-foreground">
+                Показано: {filteredOrderItems.length} из {orderItems.length}
+              </p>
+            )}
+            
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {orderItems.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-4 p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.productName}</p>
-                    <p className="text-sm text-gray-600">
-                      {item.bestPrice?.toLocaleString('ru-RU')} ₽ / {item.unit}
-                      {item.bestSupplier && ` • ${item.bestSupplier}`}
-                    </p>
+              {filteredOrderItems.map((item, idx) => {
+                const originalIdx = orderItems.findIndex(i => i.favoriteId === item.favoriteId);
+                return (
+                  <div key={item.favoriteId} className="flex items-center gap-4 p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium">{item.productName}</p>
+                      <p className="text-sm text-gray-600">
+                        {item.bestPrice?.toLocaleString('ru-RU')} ₽ / {item.unit}
+                        {item.bestSupplier && ` • ${item.bestSupplier}`}
+                      </p>
+                    </div>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="0.1"
+                      placeholder="1"
+                      value={orderItems[originalIdx]?.quantity || 1}
+                      onChange={(e) => {
+                        const newItems = [...orderItems];
+                        const value = parseFloat(e.target.value);
+                        newItems[originalIdx].quantity = value >= 1 ? value : 1;
+                        setOrderItems(newItems);
+                      }}
+                      className="w-32"
+                    />
+                    <span className="text-sm text-gray-600 w-16">{item.unit}</span>
                   </div>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    placeholder="0"
-                    value={item.quantity || ''}
-                    onChange={(e) => {
-                      const newItems = [...orderItems];
-                      newItems[idx].quantity = parseFloat(e.target.value) || 0;
-                      setOrderItems(newItems);
-                    }}
-                    className="w-32"
-                  />
-                  <span className="text-sm text-gray-600 w-16">{item.unit}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex gap-2 pt-4 border-t">
