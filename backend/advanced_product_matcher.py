@@ -281,16 +281,9 @@ def calculate_s_brand(query_brand: Optional[str], candidate_brand: Optional[str]
         else:
             return 0.0, P_BRAND_STRICT
     else:
-        # Non-strict
-        if query_brand and candidate_brand:
-            if query_brand.lower() == candidate_brand.lower():
-                return 1.0, 0
-            else:
-                return 0.0, 0
-        elif not query_brand or not candidate_brand:
-            return 0.5, 0
-        else:
-            return 0.0, 0
+        # Non-strict: IGNORE BRAND COMPLETELY for best price search
+        # Always return neutral score, no penalty
+        return 0.5, 0
 
 def calculate_score(query: Dict, candidate: Dict, formula_id: str, strict_pack: bool, strict_brand: bool) -> Tuple[float, int]:
     """Calculate similarity score using specified formula"""

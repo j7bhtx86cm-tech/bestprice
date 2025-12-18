@@ -1962,7 +1962,8 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                     query_text=original_product['name'],
                     all_products=all_features,
                     strict_pack=None,
-                    strict_brand=False,
+                    strict_brand=False,  # IMPORTANT: Ignore brand for best price search
+                    brand=None,  # Don't pass brand
                     top_n=20
                 )
                 
