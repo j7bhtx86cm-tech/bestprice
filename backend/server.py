@@ -1956,6 +1956,8 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
         if mode == 'cheapest':
             # CHEAPEST MODE: Search for best match
             if original_product:
+                logging.info(f"Searching for cheaper alternative for: {original_product['name'][:50]}")
+                
                 matches = search_similar_products(
                     query_text=original_product['name'],
                     all_products=all_features,
@@ -1964,11 +1966,13 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                     top_n=20
                 )
                 
+                logging.info(f"Found {len(matches)} matches for {original_product['name'][:30]}")
+                
                 if matches:
-                    # Found matches - check if any are cheaper
                     best_match = matches[0]
+                    logging.info(f"Best match: {best_match['raw_name'][:40]} @ {best_match['price']} ₽")
+                    
                     supplier = companies_map.get(best_match['supplier_id'])
-                    original_price = original_pl['price'] if original_pl else 999999
                     
                     if best_match['price'] < original_price:
                         # Found cheaper option - show it
