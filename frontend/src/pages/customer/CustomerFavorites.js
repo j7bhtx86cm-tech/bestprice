@@ -3,8 +3,9 @@ import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Heart, Trash2, ShoppingCart, TrendingDown, Pin, Search } from 'lucide-react';
+import { Heart, Trash2, ShoppingCart, TrendingDown, Search, CheckCircle, AlertCircle } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -203,47 +204,56 @@ export const CustomerFavorites = () => {
                 <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
               </div>
 
-              {/* Mode Selection Toggle */}
+              {/* Mode Toggle Switch */}
               <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs font-medium text-gray-700 mb-2">Режим заказа:</p>
-                <div className="space-y-2">
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`mode-${favorite.id}`}
-                      value="cheapest"
-                      checked={favorite.mode === 'cheapest'}
-                      onChange={() => handleModeChange(favorite.id, 'cheapest')}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1">
-                        <Search className="h-3 w-3 text-green-600" />
-                        <span className="text-sm font-medium text-gray-900">Искать лучшую цену</span>
-                      </div>
-                      <p className="text-xs text-gray-600">Система найдет дешевле</p>
-                    </div>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor={`mode-${favorite.id}`} className="text-sm font-medium text-gray-700">
+                    Искать лучшую цену
                   </label>
-                  
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`mode-${favorite.id}`}
-                      value="exact"
-                      checked={favorite.mode === 'exact'}
-                      onChange={() => handleModeChange(favorite.id, 'exact')}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1">
-                        <Pin className="h-3 w-3 text-blue-600" />
-                        <span className="text-sm font-medium text-gray-900">Этот товар</span>
-                      </div>
-                      <p className="text-xs text-gray-600">Всегда этот продукт</p>
-                    </div>
-                  </label>
+                  <Switch
+                    id={`mode-${favorite.id}`}
+                    checked={favorite.mode === 'cheapest'}
+                    onCheckedChange={(checked) => handleModeChange(favorite.id, checked ? 'cheapest' : 'exact')}
+                  />
                 </div>
+                <p className="text-xs text-gray-500">
+                  {favorite.mode === 'cheapest' 
+                    ? 'Система ищет дешевле среди похожих товаров' 
+                    : 'Всегда этот продукт от выбранного поставщика'}
+                </p>
               </div>
+
+              {/* Found Product Block (when Best Price ON) */}
+              {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 text-sm">
+                      <p className="font-medium text-green-900 mb-1">Найден дешевле!</p>
+                      <p className="text-gray-700">{favorite.foundProduct.name}</p>
+                      {favorite.foundProduct.brand && (
+                        <p className="text-xs text-gray-600">Бренд: {favorite.foundProduct.brand}</p>
+                      )}
+                      {favorite.foundProduct.pack_weight_kg && (
+                        <p className="text-xs text-gray-600">Фасовка: {favorite.foundProduct.pack_weight_kg} кг</p>
+                      )}
+                      {favorite.foundProduct.pack_volume_l && (
+                        <p className="text-xs text-gray-600">Объем: {favorite.foundProduct.pack_volume_l} л</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback Message */}
+              {favorite.mode === 'cheapest' && favorite.fallbackMessage && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <p className="text-sm text-blue-800">{favorite.fallbackMessage}</p>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -265,15 +275,15 @@ export const CustomerFavorites = () => {
                 <div className="text-xs text-gray-500">
                   Ед. изм: {favorite.unit}
                 </div>
-              </div>
 
-              {favorite.suppliers && favorite.suppliers.length > 1 && (
-                <div className="mt-3 pt-3 border-t">
-                  <p className="text-xs text-gray-500">
-                    Доступно у {favorite.suppliers.length} поставщиков
-                  </p>
-                </div>
-              )}
+                {favorite.mode === 'cheapest' && favorite.matchCount > 1 && (
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-gray-500">
+                      Найдено {favorite.matchCount} похожих товаров
+                    </p>
+                  </div>
+                )}
+              </div>
             </Card>
           ))}
         </div>
