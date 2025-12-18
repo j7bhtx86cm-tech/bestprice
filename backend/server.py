@@ -1961,29 +1961,43 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                 )
                 
                 if matches:
-                    # Found better option
+                    # Found matches - check if any are cheaper
                     best_match = matches[0]
                     supplier = companies_map.get(best_match['supplier_id'])
+                    original_price = original_pl['price'] if original_pl else 999999
                     
-                    enriched.append({
-                        **fav,
-                        "mode": mode,
-                        "originalPrice": original_pl['price'] if original_pl else None,
-                        "originalSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
-                        "bestPrice": best_match['price'],
-                        "bestSupplier": supplier['name'] if supplier else None,
-                        "foundProduct": {
-                            "name": best_match['raw_name'],
-                            "brand": best_match.get('brand'),
-                            "price": best_match['price'],
-                            "score": best_match['score'],
-                            "pack_weight_kg": best_match.get('pack_weight_kg'),
-                            "pack_volume_l": best_match.get('pack_volume_l'),
-                            "supplier_item_id": best_match['supplier_item_id']
-                        },
-                        "matchCount": len(matches),
-                        "hasCheaperMatch": best_match['price'] < (original_pl['price'] if original_pl else 999999)
-                    })
+                    if best_match['price'] < original_price:
+                        # Found cheaper option - show it
+                        enriched.append({
+                            **fav,
+                            "mode": mode,
+                            "originalPrice": original_price,
+                            "originalSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
+                            "bestPrice": best_match['price'],
+                            "bestSupplier": supplier['name'] if supplier else None,
+                            "foundProduct": {
+                                "name": best_match['raw_name'],
+                                "brand": best_match.get('brand'),
+                                "price": best_match['price'],
+                                "score": best_match['score'],
+                                "pack_weight_kg": best_match.get('pack_weight_kg'),
+                                "pack_volume_l": best_match.get('pack_volume_l'),
+                                "supplier_item_id": best_match['supplier_item_id']
+                            },
+                            "matchCount": len(matches),
+                            "hasCheaperMatch": True
+                        })
+                    else:
+                        # Matches found but none cheaper - use exact
+                        enriched.append({
+                            **fav,
+                            "mode": mode,
+                            "bestPrice": original_price,
+                            "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
+                            "foundProduct": None,
+                            "fallbackMessage": "Аналоги найдены, но текущая цена уже лучшая",
+                            "hasCheaperMatch": False
+                        })
                 else:
                     # No matches found - fallback to exact
                     enriched.append({

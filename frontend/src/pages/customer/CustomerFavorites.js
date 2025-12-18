@@ -199,8 +199,18 @@ export const CustomerFavorites = () => {
                 <Trash2 className="h-4 w-4" />
               </Button>
               
+              {/* Main Product Name - Show found product if cheaper match */}
               <div className="mb-4">
-                <h3 className="font-semibold text-lg mb-1 pr-8">{favorite.productName}</h3>
+                <h3 className="font-semibold text-lg mb-1 pr-8">
+                  {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch
+                    ? favorite.foundProduct.name
+                    : favorite.productName}
+                </h3>
+                {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
+                  <p className="text-xs text-gray-500 mb-1">
+                    Оригинал: {favorite.productName}
+                  </p>
+                )}
                 <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
               </div>
 
