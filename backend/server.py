@@ -2259,6 +2259,63 @@ async def update_restaurant_availability(
         "ordersEnabled": data.ordersEnabled
     }
 
+# ==================== ADVANCED PRODUCT SEARCH ====================
+
+@api_router.post("/search/similar")
+async def search_similar_products_endpoint(data: dict):
+    """Advanced product search with 7 formulas and ±10% pack tolerance"""
+    from advanced_product_matcher import search_similar_products, extract_features
+    
+    query_text = data.get('query_text', '')
+    strict_pack = data.get('strict_pack')
+    strict_brand = data.get('strict_brand', False)
+    brand = data.get('brand')
+    top_n = data.get('top_n', 20)
+    
+    if not query_text:
+        raise HTTPException(status_code=400, detail="query_text is required")
+    
+    # Get all products with features
+    all_products_data = []
+    
+    # Check if features collection exists and has data
+    features_count = await db.supplier_item_features.count_documents({})
+    
+    if features_count == 0:
+        # Features not yet extracted, use live extraction
+        pricelists = await db.pricelists.find({"availability": {"$ne": False}}, {"_id": 0}).to_list(10000)
+        
+        for pl in pricelists:
+            product = await db.products.find_one({"id": pl['productId']}, {"_id": 0})
+            if product:
+                features = extract_features(product['name'], product['unit'], pl['price'])
+                features['supplier_item_id'] = pl['id']
+                features['supplier_id'] = pl['supplierId']
+                features['active'] = True
+                all_products_data.append(features)
+    else:
+        # Use pre-computed features
+        features_list = await db.supplier_item_features.find({}, {"_id": 0}).to_list(10000)
+        all_products_data = features_list
+    
+    # Search
+    results = search_similar_products(
+        query_text=query_text,
+        all_products=all_products_data,
+        strict_pack=strict_pack,
+        strict_brand=strict_brand,
+        brand=brand,
+        top_n=top_n
+    )
+    
+    return {
+        "query": query_text,
+        "formula_used": results[0]['formula_id'] if results else '0',
+        "total_candidates": len(all_products_data),
+        "matches_found": len(results),
+        "results": results
+    }
+
 # Include router
 app.include_router(api_router)
 
