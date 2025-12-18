@@ -146,34 +146,40 @@ export const CustomerFavorites = () => {
     const itemsToOrder = orderItems.filter(item => item.quantity > 0);
     
     if (itemsToOrder.length === 0) {
-      alert('Добавьте товары в заказ');
+      alert('Выберите товары');
       return;
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      // Instead of creating order, save to localStorage as cart
+      const existingCart = JSON.parse(localStorage.getItem('favoriteCart') || '[]');
       
-      await axios.post(
-        `${API}/favorites/order`,
-        {
-          items: itemsToOrder.map(item => ({
-            favoriteId: item.favoriteId,
-            quantity: item.quantity
-          })),
-          deliveryAddressId: selectedAddress?.id
-        },
-        { headers }
-      );
+      // Add items to cart
+      const newCartItems = itemsToOrder.map(item => ({
+        cartId: `fav_${item.favoriteId}_${Date.now()}`,
+        favoriteId: item.favoriteId,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: item.bestPrice,
+        unit: item.unit,
+        supplier: item.bestSupplier,
+        addedAt: new Date().toISOString()
+      }));
       
-      // Clear saved quantities after successful order
+      const updatedCart = [...existingCart, ...newCartItems];
+      localStorage.setItem('favoriteCart', JSON.stringify(updatedCart));
+      
+      // Clear saved quantities
       localStorage.removeItem('favoriteOrderQuantities');
       
-      alert('Заказ успешно создан!');
+      alert(`✓ ${itemsToOrder.length} товаров добавлено в корзину!`);
       setShowOrderModal(false);
+      
+      // Optional: Navigate to catalog or show cart
+      // window.location.href = '/customer/catalog';
     } catch (error) {
-      console.error('Failed to create order:', error);
-      alert('Ошибка создания заказа');
+      console.error('Failed to add to cart:', error);
+      alert('Ошибка добавления в корзину');
     }
   };
 
@@ -407,7 +413,8 @@ export const CustomerFavorites = () => {
                 className="flex-1"
                 onClick={handleSubmitOrder}
               >
-                Отправить заказ
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                В корзину
               </Button>
             </div>
           </div>
