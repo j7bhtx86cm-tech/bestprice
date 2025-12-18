@@ -1882,7 +1882,7 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     if existing:
         raise HTTPException(status_code=400, detail="Product already in favorites")
     
-    # Create favorite with default mode "cheapest"
+    # Create favorite with default mode "exact" (not cheapest!)
     favorite = {
         "id": str(uuid.uuid4()),
         "userId": current_user['id'],
@@ -1891,8 +1891,8 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "productName": product['name'],
         "productCode": product_code,
         "unit": product['unit'],
-        "mode": "cheapest",  # Default to cheapest
-        "originalSupplierId": data.get('supplierId'),  # Store which supplier user picked it from
+        "mode": "exact",  # DEFAULT TO EXACT (not cheapest)
+        "originalSupplierId": data.get('supplierId'),
         "addedAt": datetime.now(timezone.utc).isoformat()
     }
     
