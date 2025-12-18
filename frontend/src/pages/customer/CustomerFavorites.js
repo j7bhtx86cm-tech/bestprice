@@ -105,10 +105,14 @@ export const CustomerFavorites = () => {
   };
 
   const handleCreateOrder = () => {
+    // Try to load saved quantities from localStorage
+    const savedQuantities = localStorage.getItem('favoriteOrderQuantities');
+    const quantitiesMap = savedQuantities ? JSON.parse(savedQuantities) : {};
+    
     const items = favorites.map(f => ({
       favoriteId: f.id,
       productName: f.productName,
-      quantity: 1,  // Default to 1 (minimum), not 0
+      quantity: quantitiesMap[f.id] || 1,  // Load saved quantity or default to 1
       bestPrice: f.bestPrice,
       unit: f.unit,
       bestSupplier: f.bestSupplier
@@ -117,6 +121,25 @@ export const CustomerFavorites = () => {
     setFilteredOrderItems(items);
     setOrderSearchTerm('');
     setShowOrderModal(true);
+  };
+
+  const updateQuantity = (favoriteId, value) => {
+    const newValue = parseInt(value) || 1;  // Only integers, min 1
+    const finalValue = Math.max(1, newValue);
+    
+    const newItems = [...orderItems];
+    const idx = newItems.findIndex(i => i.favoriteId === favoriteId);
+    if (idx !== -1) {
+      newItems[idx].quantity = finalValue;
+      setOrderItems(newItems);
+      
+      // Save to localStorage
+      const quantitiesMap = {};
+      newItems.forEach(item => {
+        quantitiesMap[item.favoriteId] = item.quantity;
+      });
+      localStorage.setItem('favoriteOrderQuantities', JSON.stringify(quantitiesMap));
+    }
   };
 
   const handleSubmitOrder = async () => {
@@ -142,6 +165,9 @@ export const CustomerFavorites = () => {
         },
         { headers }
       );
+      
+      // Clear saved quantities after successful order
+      localStorage.removeItem('favoriteOrderQuantities');
       
       alert('Заказ успешно создан!');
       setShowOrderModal(false);
@@ -357,15 +383,10 @@ export const CustomerFavorites = () => {
                     <Input
                       type="number"
                       min="1"
-                      step="0.1"
+                      step="1"
                       placeholder="1"
                       value={orderItems[originalIdx]?.quantity || 1}
-                      onChange={(e) => {
-                        const newItems = [...orderItems];
-                        const value = parseFloat(e.target.value);
-                        newItems[originalIdx].quantity = value >= 1 ? value : 1;
-                        setOrderItems(newItems);
-                      }}
+                      onChange={(e) => updateQuantity(item.favoriteId, e.target.value)}
                       className="w-32"
                     />
                     <span className="text-sm text-gray-600 w-16">{item.unit}</span>
