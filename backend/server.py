@@ -1925,106 +1925,82 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
 
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
-    """Get user's favorites with smart best price search (optimized)"""
-    from product_intent_parser import extract_product_intent, find_matching_products
+    """Get user's favorites with mode-aware best price search"""
+    from advanced_product_matcher import search_similar_products, extract_features
     
     favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).to_list(100)
     
     if not favorites:
         return []
     
-    # OPTIMIZATION: Load all pricelists and products ONCE
-    all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(10000)
-    product_ids = list(set([pl['productId'] for pl in all_pricelists]))
-    all_products = await db.products.find({"id": {"$in": product_ids}}, {"_id": 0}).to_list(10000)
-    products_map = {p['id']: p for p in all_products}
+    # Load all features once (optimized)
+    all_features = await db.supplier_item_features.find({"active": True}, {"_id": 0}).to_list(10000)
     
-    # Enrich pricelists with product info (do once)
-    for pl in all_pricelists:
-        product = products_map.get(pl['productId'])
-        if product:
-            pl['productName'] = product['name']
-            pl['unit'] = product['unit']
-    
-    # Get all companies (do once)
+    # Get companies map
     all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
     companies_map = {c['id']: c for c in all_companies}
     
-    # Process each favorite
     enriched = []
+    
     for fav in favorites:
-        mode = fav.get('mode', 'cheapest')
-        product = products_map.get(fav['productId'])
+        mode = fav.get('mode', 'exact')
         
-        if mode == 'cheapest' and product:
-            # CHEAPEST MODE: Find matching products
-            intent = extract_product_intent(product['name'], product['unit'])
-            matching_pls = find_matching_products(intent, all_pricelists)
-            
-            if matching_pls:
-                # Build supplier list from matches
-                suppliers_data = []
-                for pl in matching_pls:
-                    supplier = companies_map.get(pl['supplierId'])
-                    if supplier:
-                        suppliers_data.append({
-                            "supplierId": pl['supplierId'],
-                            "supplierName": supplier['name'],
-                            "price": pl['price'],
-                            "availability": pl.get('availability', True)
-                        })
+        # Get original product info
+        original_product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
+        original_pl = await db.pricelists.find_one({"productId": fav['productId']}, {"_id": 0})
+        
+        if mode == 'cheapest':
+            # CHEAPEST MODE: Search for best match
+            if original_product:
+                matches = search_similar_products(
+                    query_text=original_product['name'],
+                    all_products=all_features,
+                    strict_pack=None,
+                    strict_brand=False,
+                    top_n=20
+                )
                 
-                suppliers_data.sort(key=lambda x: x['price'])
-                
-                enriched.append({
-                    **fav,
-                    "mode": mode,
-                    "suppliers": suppliers_data[:10],  # Limit to top 10
-                    "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
-                    "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None,
-                    "matchCount": len(suppliers_data)
-                })
-            else:
-                # No matches, use exact product
-                product_pls = [pl for pl in all_pricelists if pl['productId'] == fav['productId']]
-                suppliers_data = []
-                for pl in product_pls:
-                    supplier = companies_map.get(pl['supplierId'])
-                    if supplier:
-                        suppliers_data.append({
-                            "supplierId": pl['supplierId'],
-                            "supplierName": supplier['name'],
-                            "price": pl['price']
-                        })
-                suppliers_data.sort(key=lambda x: x['price'])
-                
-                enriched.append({
-                    **fav,
-                    "mode": mode,
-                    "suppliers": suppliers_data,
-                    "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
-                    "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None
-                })
-        else:
-            # EXACT MODE: Just show exact product price
-            product_pls = [pl for pl in all_pricelists if pl['productId'] == fav['productId']]
-            suppliers_data = []
-            for pl in product_pls:
-                supplier = companies_map.get(pl['supplierId'])
-                if supplier:
-                    suppliers_data.append({
-                        "supplierId": pl['supplierId'],
-                        "supplierName": supplier['name'],
-                        "price": pl['price']
+                if matches:
+                    # Found better option
+                    best_match = matches[0]
+                    supplier = companies_map.get(best_match['supplier_id'])
+                    
+                    enriched.append({
+                        **fav,
+                        "mode": mode,
+                        "originalPrice": original_pl['price'] if original_pl else None,
+                        "originalSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
+                        "bestPrice": best_match['price'],
+                        "bestSupplier": supplier['name'] if supplier else None,
+                        "foundProduct": {
+                            "name": best_match['raw_name'],
+                            "brand": best_match.get('brand'),
+                            "price": best_match['price'],
+                            "score": best_match['score'],
+                            "pack_weight_kg": best_match.get('pack_weight_kg'),
+                            "pack_volume_l": best_match.get('pack_volume_l'),
+                            "supplier_item_id": best_match['supplier_item_id']
+                        },
+                        "matchCount": len(matches),
+                        "hasCheaperMatch": best_match['price'] < (original_pl['price'] if original_pl else 999999)
                     })
-            suppliers_data.sort(key=lambda x: x['price'])
-            
+                else:
+                    # No matches found - fallback to exact
+                    enriched.append({
+                        **fav,
+                        "mode": mode,
+                        "bestPrice": original_pl['price'] if original_pl else None,
+                        "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
+                        "foundProduct": None,
+                        "fallbackMessage": "No cheaper equivalent found — using original item"
+                    })
+        else:
+            # EXACT MODE: Use original product
             enriched.append({
                 **fav,
                 "mode": mode,
-                "suppliers": suppliers_data,
-                "bestPrice": suppliers_data[0]['price'] if suppliers_data else None,
-                "bestSupplier": suppliers_data[0]['supplierName'] if suppliers_data else None
+                "bestPrice": original_pl['price'] if original_pl else None,
+                "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name')
             })
     
     return enriched
