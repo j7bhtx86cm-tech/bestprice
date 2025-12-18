@@ -1969,8 +1969,11 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                 logging.info(f"Found {len(matches)} matches for {original_product['name'][:30]}")
                 
                 if matches:
-                    best_match = matches[0]
-                    logging.info(f"Best match: {best_match['raw_name'][:40]} @ {best_match['price']} ₽")
+                    # Sort by PRICE first (cheapest first), then by score
+                    matches_sorted = sorted(matches, key=lambda x: (x['price'], -x['score']))
+                    best_match = matches_sorted[0]
+                    
+                    logging.info(f"Cheapest match: {best_match['raw_name'][:40]} @ {best_match['price']} ₽ (score: {best_match['score']:.1f})")
                     
                     supplier = companies_map.get(best_match['supplier_id'])
                     
