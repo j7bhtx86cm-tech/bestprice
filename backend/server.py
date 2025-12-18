@@ -1891,8 +1891,9 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "productName": product['name'],
         "productCode": product_code,
         "unit": product['unit'],
-        "mode": "exact",  # DEFAULT TO EXACT (not cheapest)
+        "mode": "exact",  # DEFAULT TO EXACT
         "originalSupplierId": data.get('supplierId'),
+        "originalPrice": pricelist['price'] if pricelist else None,  # Store original price
         "addedAt": datetime.now(timezone.utc).isoformat()
     }
     
@@ -1949,6 +1950,9 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
         original_product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
         original_pl = await db.pricelists.find_one({"productId": fav['productId']}, {"_id": 0})
         
+        # Get original price (from favorite or from pricelist)
+        original_price = fav.get('originalPrice') or (original_pl['price'] if original_pl else None)
+        
         if mode == 'cheapest':
             # CHEAPEST MODE: Search for best match
             if original_product:
@@ -2003,17 +2007,18 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                     enriched.append({
                         **fav,
                         "mode": mode,
-                        "bestPrice": original_pl['price'] if original_pl else None,
+                        "bestPrice": original_price,
                         "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
                         "foundProduct": None,
-                        "fallbackMessage": "No cheaper equivalent found — using original item"
+                        "fallbackMessage": "Аналоги не найдены — используем исходный товар",
+                        "hasCheaperMatch": False
                     })
         else:
             # EXACT MODE: Use original product
             enriched.append({
                 **fav,
                 "mode": mode,
-                "bestPrice": original_pl['price'] if original_pl else None,
+                "bestPrice": original_price,
                 "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name')
             })
     
