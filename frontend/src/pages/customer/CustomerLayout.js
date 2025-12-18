@@ -8,10 +8,32 @@ export const CustomerLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [cartCount, setCartCount] = useState(0);
 
   // Check if user is Chef or Staff
   const isChefOrStaff = user?.role === 'chef' || user?.role === 'responsible';
   const isAdmin = user?.role === 'customer';
+
+  useEffect(() => {
+    // Update cart count on route change
+    updateCartCount();
+    
+    // Listen for storage changes (when items added from other tabs/pages)
+    const handleStorageChange = () => updateCartCount();
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('cartUpdated', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cartUpdated', handleStorageChange);
+    };
+  }, [location]);
+
+  const updateCartCount = () => {
+    const catalogCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
+    const favoriteCart = JSON.parse(localStorage.getItem('favoriteCart') || '[]');
+    setCartCount(catalogCart.length + favoriteCart.length);
+  };
 
   // Menu items based on role
   const getMenuItems = () => {
@@ -21,20 +43,21 @@ export const CustomerLayout = ({ children }) => {
         { path: '/customer/my-profile', label: 'Мой профиль', icon: User },
         { path: '/customer/matrix', label: 'Моя матрица', icon: Grid3x3 },
         { path: '/customer/favorites', label: 'Избранное', icon: Heart },
+        { path: '/customer/cart', label: 'Корзина', icon: ShoppingCart },
         { path: '/customer/catalog', label: 'Каталог товаров', icon: Package },
         { path: '/customer/orders', label: 'История заказов', icon: ShoppingCart },
       ];
     }
     
-    // Full menu for Admin
+    // Full menu for Admin (removed Matrix Management)
     return [
       { path: '/customer/catalog', label: 'Каталог товаров', icon: Package },
-      { path: '/customer/favorites', label: 'Избранное', icon: Star },
+      { path: '/customer/favorites', label: 'Избранное', icon: Heart },
+      { path: '/customer/cart', label: 'Корзина', icon: ShoppingCart },
       { path: '/customer/orders', label: 'История заказов', icon: ShoppingBag },
       { path: '/customer/analytics', label: 'Аналитика', icon: BarChart3 },
       { path: '/customer/profile', label: 'Профиль компании', icon: Building },
       { path: '/customer/team', label: 'Ответственные лица', icon: Users },
-      { path: '/customer/matrices', label: 'Управление матрицами', icon: Grid3x3 },
       { path: '/customer/documents', label: 'Документы', icon: FileText },
       { path: '/customer/ratings', label: 'Оценка поставщиков', icon: Star },
     ];
@@ -52,10 +75,24 @@ export const CustomerLayout = ({ children }) => {
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-blue-600">BestPrice</h1>
-          <Button variant="ghost" onClick={handleLogout} data-testid="logout-btn">
-            <LogOut className="mr-2 h-4 w-4" />
-            Выйти
-          </Button>
+          <div className="flex items-center gap-4">
+            {/* Cart Icon */}
+            <button
+              onClick={() => navigate('/customer/cart')}
+              className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <ShoppingCart className="h-6 w-6 text-gray-700" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+            <Button variant="ghost" onClick={handleLogout} data-testid="logout-btn">
+              <LogOut className="mr-2 h-4 w-4" />
+              Выйти
+            </Button>
+          </div>
         </div>
       </header>
 
