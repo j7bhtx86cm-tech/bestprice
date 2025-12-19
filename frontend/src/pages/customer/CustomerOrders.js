@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, TrendingDown, Award, Filter, X } from 'lucide-react';
+import { Eye, TrendingDown, Award, Filter, X, Trash2 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -55,6 +55,35 @@ export const CustomerOrders = () => {
   const clearFilter = () => {
     setSearchParams({});
     setStatusFilter(null);
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!confirm('Удалить этот заказ?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.delete(`${API}/orders/${orderId}`, { headers });
+      fetchOrdersAndSuppliers(); // Refresh list
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+      alert('Ошибка удаления заказа');
+    }
+  };
+
+  const handleDeleteAllOrders = async () => {
+    if (!confirm('Удалить ВСЕ заказы? Это действие нельзя отменить!')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.delete(`${API}/orders/all/delete`, { headers });
+      alert(`✓ Удалено заказов: ${response.data.deleted_count}`);
+      fetchOrdersAndSuppliers();
+    } catch (error) {
+      console.error('Failed to delete all orders:', error);
+      alert('Ошибка удаления заказов');
+    }
   };
 
   const fetchOrdersAndSuppliers = async () => {
@@ -142,12 +171,24 @@ export const CustomerOrders = () => {
     <div data-testid="customer-orders-page">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">История заказов</h2>
-        {statusFilter && (
-          <Button variant="outline" size="sm" onClick={clearFilter}>
-            <X className="h-4 w-4 mr-2" />
-            Сбросить фильтр: {statusLabels[statusFilter]}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {statusFilter && (
+            <Button variant="outline" size="sm" onClick={clearFilter}>
+              <X className="h-4 w-4 mr-2" />
+              Сбросить фильтр: {statusLabels[statusFilter]}
+            </Button>
+          )}
+          {orders.length > 0 && (
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={handleDeleteAllOrders}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Удалить все заказы
+            </Button>
+          )}
+        </div>
       </div>
 
       {orders.length === 0 ? (
@@ -198,21 +239,31 @@ export const CustomerOrders = () => {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (selectedOrder?.id === order.id) {
-                              setSelectedOrder(null);
-                            } else {
-                              fetchOrderDetails(order.id);
-                            }
-                          }}
-                          data-testid={`view-order-${order.id}`}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          {selectedOrder?.id === order.id ? 'Скрыть' : 'Подробнее'}
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (selectedOrder?.id === order.id) {
+                                setSelectedOrder(null);
+                              } else {
+                                fetchOrderDetails(order.id);
+                              }
+                            }}
+                            data-testid={`view-order-${order.id}`}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            {selectedOrder?.id === order.id ? 'Скрыть' : 'Подробнее'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                     

@@ -961,6 +961,61 @@ async def get_order(order_id: str, current_user: dict = Depends(get_current_user
 
 # ==================== ANALYTICS ROUTES ====================
 
+@api_router.delete("/orders/{order_id}")
+async def delete_order(order_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a single order"""
+    # Get order first to verify ownership
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Get company ID
+    if current_user['role'] in [UserRole.responsible, UserRole.chef, UserRole.supplier]:
+        company_id = current_user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Verify order belongs to this company
+    if order['customerCompanyId'] != company_id and order['supplierCompanyId'] != company_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Delete order
+    await db.orders.delete_one({"id": order_id})
+    
+    return {"message": "Order deleted successfully"}
+
+@api_router.delete("/orders/all/delete")
+async def delete_all_orders(current_user: dict = Depends(get_current_user)):
+    """Delete all orders for current user's company"""
+    # Get company ID
+    if current_user['role'] in [UserRole.responsible, UserRole.chef, UserRole.supplier]:
+        company_id = current_user.get('companyId')
+    else:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        company_id = company['id'] if company else None
+    
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Delete all orders for this company (as customer or supplier)
+    result = await db.orders.delete_many({
+        "$or": [
+            {"customerCompanyId": company_id},
+            {"supplierCompanyId": company_id}
+        ]
+    })
+    
+    return {
+        "message": f"Deleted {result.deleted_count} orders",
+        "deleted_count": result.deleted_count
+    }
+
+# ==================== ANALYTICS ROUTES ====================
+
 @api_router.get("/analytics/customer")
 async def get_customer_analytics(current_user: dict = Depends(get_current_user)):
     if current_user['role'] != UserRole.customer:
