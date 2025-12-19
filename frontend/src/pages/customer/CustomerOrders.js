@@ -64,7 +64,13 @@ export const CustomerOrders = () => {
 
       // Fetch orders
       const ordersResponse = await axios.get(`${API}/orders/my`, { headers });
-      setOrders(ordersResponse.data);
+      
+      // Sort by date descending (newest first)
+      const sortedOrders = ordersResponse.data.sort((a, b) => 
+        new Date(b.orderDate) - new Date(a.orderDate)
+      );
+      
+      setOrders(sortedOrders);
 
       // Fetch all suppliers
       const suppliersResponse = await axios.get(`${API}/suppliers`, { headers });
