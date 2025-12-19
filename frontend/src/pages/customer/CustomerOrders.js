@@ -210,7 +210,7 @@ export const CustomerOrders = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Дата</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Поставщик</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Товаров</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Сумма</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Статус</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Действия</th>
@@ -227,8 +227,8 @@ export const CustomerOrders = () => {
                           {new Date(order.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium">
-                        {suppliers[order.supplierCompanyId]?.companyName || 'Загрузка...'}
+                      <td className="px-4 py-3 text-sm">
+                        {order.orderDetails?.length || 0} позиций
                       </td>
                       <td className="px-4 py-3 text-sm font-medium">
                         {order.amount.toLocaleString('ru-RU')} ₽
