@@ -294,7 +294,9 @@ export const CustomerOrders = () => {
                                 </div>
                                 <div>
                                   <p className="text-sm text-gray-600">Поставщик</p>
-                                  <p className="font-medium">{suppliers[selectedOrder.supplierCompanyId]?.companyName || 'Загрузка...'}</p>
+                                  <p className="font-medium">
+                                    {suppliers[selectedOrder.supplierCompanyId]?.companyName || 'Поставщик не найден'}
+                                  </p>
                                 </div>
                                 {selectedOrder.deliveryAddress && (
                                   <div>
