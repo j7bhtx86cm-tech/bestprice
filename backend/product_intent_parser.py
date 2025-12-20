@@ -33,67 +33,53 @@ def extract_product_intent(product_name: str, unit: str) -> Dict[str, Any]:
     }
 
 def extract_product_type(name_lower: str) -> str:
-    """Extract main product category with specific keywords"""
+    """Extract main product category with STRICT matching - primary type must match first"""
     
-    # Define specific product patterns - prioritize multi-word matches
-    # Format: type_name: [list of keywords that ALL must be present]
+    # CRITICAL: Check PRIMARY FOOD TYPE first - these must match exactly
+    primary_foods = {
+        'креветки': ['креветк', 'shrimp', 'prawn'],
+        'моцарелла': ['моцарелл', 'mozzarella'],
+        'сыр': ['сыр', 'cheese'],
+        'кальмар': ['кальмар', 'squid'],
+        'анчоус': ['анчоус', 'anchov'],
+        'тунец': ['тунец', 'tuna'],
+        'лосось': ['лосось', 'семга', 'salmon'],
+        'сибас': ['сибас', 'сибасс', 'seabass'],
+        'дорадо': ['дорадо', 'дорада', 'dorado'],
+        'треска': ['треска', 'cod'],
+        'минтай': ['минтай', 'pollock'],
+        'курица': ['курица', 'куриц', 'chicken'],
+        'говядина': ['говядин', 'beef'],
+        'свинина': ['свинин', 'pork'],
+        'молоко': ['молоко', 'milk'],
+        'кетчуп': ['кетчуп', 'ketchup'],
+        'соль': ['соль', 'salt'],
+        'сахар': ['сахар', 'sugar'],
+        'мука': ['мука', 'flour'],
+        'рис': ['рис', 'rice'],
+        'масло': ['масло', 'oil', 'butter'],
+    }
+    
+    # Check primary foods first (STRICT)
+    for food_type, keywords in primary_foods.items():
+        for keyword in keywords:
+            if keyword in name_lower:
+                return food_type
+    
+    # Check specific combinations
     composite_patterns = {
-        "анчоус_филе": ["анчоус", "филе"],
-        "тунец_филе": ["тунец", "филе"],
-        "лосось_филе": ["лосось", "филе"],
-        "семга_филе": ["семга", "филе"],
-        "курица_филе": ["курица", "филе"],
         "порошок_куриный": ["порошок", "куриный"],
-        "порошок_грибной": ["порошок", "грибной"],
         "бульон_куриный": ["бульон", "куриный"],
         "бульон_грибной": ["бульон", "грибной"],
         "водоросли_нори": ["водоросл", "нори"],
-        "водоросли_вакаме": ["водоросл", "вакаме"],
         "водоросли_комбу": ["водоросл", "комбу"],
-        "водоросли_чука": ["водоросл", "чука"],
-        "масло_растительное": ["масло", "растительн"],
-        "масло_подсолнечное": ["масло", "подсолнечн"],
-        "масло_оливковое": ["масло", "оливков"],
     }
     
-    # Check composite patterns first (more specific)
-    for product_type, keywords in composite_patterns.items():
+    for ptype, keywords in composite_patterns.items():
         if all(kw in name_lower for kw in keywords):
-            return product_type
+            return ptype
     
-    # Then check simple patterns
-    simple_patterns = {
-        "креветки": ["креветк", "shrimp", "prawn"],
-        "соус": ["соус", "sauce"],
-        "кетчуп": ["кетчуп", "ketchup"],
-        "сыр": ["сыр", "cheese"],
-        "молоко": ["молоко", "milk"],
-        "сливки": ["сливки", "cream"],
-        "говядина": ["говядина", "говяжий", "beef"],
-        "свинина": ["свинина", "свиной", "pork"],
-        "грибы": ["гриб", "шампиньон", "опята"],
-        "рис": ["рис", "rice"],
-        "макароны": ["макарон", "pasta", "спагетти"],
-        "мука": ["мука", "flour"],
-        "сахар": ["сахар", "sugar"],
-        "соль": ["соль", "salt"],
-        "перец": ["перец", "pepper"],
-        "томаты": ["томат", "помидор", "tomato"],
-        "огурцы": ["огурец", "cucumber"],
-        "лук": ["лук", "onion"],
-        "чеснок": ["чеснок", "garlic"],
-        "картофель": ["картофель", "картошка", "potato"],
-        "ананасы": ["ананас", "pineapple"],
-        "каперсы": ["каперс", "caper"],
-        "арахис": ["арахис", "peanut"],
-    }
-    
-    for product_type, keywords in simple_patterns.items():
-        for keyword in keywords:
-            if keyword in name_lower:
-                return product_type
-    
-    # Default: use first meaningful word
+    # Default: first word
     first_word = name_lower.split()[0] if name_lower.split() else "unknown"
     return first_word
 
