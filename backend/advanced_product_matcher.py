@@ -411,8 +411,18 @@ def search_similar_products(
         if not prod.get('active', True):
             continue
         
+        # CRITICAL: Filter 0 price products (category headers)
+        if prod.get('price', 0) <= 0:
+            continue
+        
+        # Unit must match
         if prod.get('unit_norm') != query_features['unit_norm']:
             continue
+        
+        # PRIMARY PRODUCT TYPE MUST MATCH (krevetki != mozzarella!)
+        if query_features.get('product_type') and prod.get('product_type'):
+            if query_features['product_type'] != prod['product_type']:
+                continue
         
         # Super class filter
         if query_features['super_class'] != 'other' and prod.get('super_class') != 'other':
