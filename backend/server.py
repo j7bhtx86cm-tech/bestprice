@@ -1125,26 +1125,50 @@ async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = Non
             
             # Enhanced search with fuzzy matching
             if search:
-                search_normalized = normalize_with_synonyms(search.lower())
-                product_normalized = normalize_with_synonyms(product['name'].lower())
+                # Normalize and expand search with synonyms
+                search_terms = [search.lower().strip()]
                 
-                # Check if search term appears or fuzzy matches
-                if search_normalized not in product_normalized:
-                    # Try fuzzy match on individual words
+                # Add common typo corrections
+                typo_map = {
+                    'ласось': 'лосось',
+                    'лососс': 'лосось', 
+                    'сибасс': 'сибас',
+                    'дорада': 'дорадо',
+                    'креветка': 'креветки'
+                }
+                
+                search_normalized = search.lower().strip()
+                for typo, correct in typo_map.items():
+                    if typo in search_normalized:
+                        search_terms.append(search_normalized.replace(typo, correct))
+                
+                # Check if any search term matches
+                product_name_lower = product['name'].lower()
+                match_found = any(term in product_name_lower for term in search_terms)
+                
+                # Also try fuzzy match on words
+                if not match_found:
                     search_words = search_normalized.split()
-                    product_words = product_normalized.split()
+                    product_words = product_name_lower.split()
                     
-                    match_found = False
                     for sw in search_words:
                         for pw in product_words:
-                            if sw in pw or pw in sw or fuzzy_match(sw, pw, max_errors=2):
-                                match_found = True
-                                break
+                            # Simple fuzzy: allow 1-2 char difference
+                            if len(sw) > 3 and len(pw) > 3:
+                                if sw in pw or pw in sw:
+                                    match_found = True
+                                    break
+                                # Check edit distance (simple)
+                                if abs(len(sw) - len(pw)) <= 2:
+                                    diff = sum(1 for a, b in zip(sw, pw) if a != b)
+                                    if diff <= 2:
+                                        match_found = True
+                                        break
                         if match_found:
                             break
-                    
-                    if not match_found:
-                        continue
+                
+                if not match_found:
+                    continue
             
             result.append({
                 "id": pl['id'],
