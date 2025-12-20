@@ -327,16 +327,17 @@ export const CustomerFavorites = () => {
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredFavorites.map((favorite) => (
-            <Card 
-              key={favorite.id} 
-              className="p-5 hover:shadow-lg transition-shadow relative cursor-grab active:cursor-grabbing hover:border-2 hover:border-blue-300"
+          {filteredFavorites.map((favorite, index) => (
+            <div
+              key={favorite.id}
               draggable
               onDragStart={(e) => handleDragStart(e, favorite)}
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, favorite)}
+              className="cursor-grab active:cursor-grabbing"
             >
+              <Card className="p-5 hover:shadow-lg transition-shadow relative hover:border-2 hover:border-blue-300">
               <Button
                 variant="ghost"
                 size="sm"
@@ -442,6 +443,7 @@ export const CustomerFavorites = () => {
                 )}
               </div>
             </Card>
+            </div>
           ))}
         </div>
       )}
