@@ -21,6 +21,7 @@ export const CustomerFavorites = () => {
   const [filteredOrderItems, setFilteredOrderItems] = useState([]);
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [draggedItem, setDraggedItem] = useState(null);
 
   useEffect(() => {
     fetchFavorites();
@@ -102,6 +103,51 @@ export const CustomerFavorites = () => {
     } catch (error) {
       console.error('Failed to update mode:', error);
     }
+  };
+
+  const handleDragStart = (e, favorite) => {
+    setDraggedItem(favorite);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e, targetFavorite) => {
+    e.preventDefault();
+    
+    if (!draggedItem || draggedItem.id === targetFavorite.id) {
+      return;
+    }
+
+    // Reorder favorites array
+    const draggedIndex = favorites.findIndex(f => f.id === draggedItem.id);
+    const targetIndex = favorites.findIndex(f => f.id === targetFavorite.id);
+    
+    const newFavorites = [...favorites];
+    newFavorites.splice(draggedIndex, 1);
+    newFavorites.splice(targetIndex, 0, draggedItem);
+    
+    // Update display order for all
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    
+    for (let i = 0; i < newFavorites.length; i++) {
+      try {
+        await axios.put(
+          `${API}/favorites/${newFavorites[i].id}/position`,
+          { position: i },
+          { headers }
+        );
+      } catch (err) {
+        console.error('Failed to update position:', err);
+      }
+    }
+    
+    fetchFavorites();
+    setDraggedItem(null);
   };
 
   const handleCreateOrder = () => {
@@ -268,7 +314,14 @@ export const CustomerFavorites = () => {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredFavorites.map((favorite) => (
-            <Card key={favorite.id} className="p-5 hover:shadow-lg transition-shadow relative">
+            <Card 
+              key={favorite.id} 
+              className="p-5 hover:shadow-lg transition-shadow relative cursor-move"
+              draggable
+              onDragStart={(e) => handleDragStart(e, favorite)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, favorite)}
+            >
               <Button
                 variant="ghost"
                 size="sm"

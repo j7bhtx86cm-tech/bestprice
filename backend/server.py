@@ -2170,6 +2170,21 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
     
     return enriched
 
+@api_router.put("/favorites/{favorite_id}/position")
+async def update_favorite_position(favorite_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Update favorite display order"""
+    new_position = data.get('position', 0)
+    
+    result = await db.favorites.update_one(
+        {"id": favorite_id, "userId": current_user['id']},
+        {"$set": {"displayOrder": new_position}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    
+    return {"message": "Position updated"}
+
 @api_router.delete("/favorites/{favorite_id}")
 async def remove_from_favorites(favorite_id: str, current_user: dict = Depends(get_current_user)):
     """Remove product from favorites"""
