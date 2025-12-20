@@ -274,20 +274,28 @@ export const CustomerCatalog = () => {
         return true;
       }
       
-      // Fuzzy match (1-2 char errors)
+      // Fuzzy match (stricter - only for words starting with same letter)
       for (const sw of searchWords) {
-        if (sw.length <= 2) continue;
+        if (sw.length <= 3) continue; // Longer words only for fuzzy
+        
         const groupWords = group.searchText.split(/\s+/);
         for (const gw of groupWords) {
-          if (gw.length <= 2) continue;
+          if (gw.length <= 3) continue;
+          
+          // Must start with same letter
+          if (sw[0] !== gw[0]) continue;
+          
+          // Substring match
           if (gw.includes(sw) || sw.includes(gw)) return true;
-          if (Math.abs(sw.length - gw.length) <= 2) {
+          
+          // Edit distance only if same first letter AND similar length
+          if (Math.abs(sw.length - gw.length) <= 1) {
             let diff = 0;
             for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
               if (sw[i] !== gw[i]) diff++;
-              if (diff > 2) break;
+              if (diff > 1) break;  // Only 1 char error, not 2
             }
-            if (diff <= 2) return true;
+            if (diff <= 1) return true;
           }
         }
       }

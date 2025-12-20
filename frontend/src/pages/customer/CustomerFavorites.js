@@ -106,15 +106,15 @@ export const CustomerFavorites = () => {
   };
 
   const handleDragStart = (e, favorite) => {
+    console.log('Drag started:', favorite.productName);
     setDraggedItem(favorite);
     e.dataTransfer.effectAllowed = 'move';
-    // Add visual feedback
-    e.target.style.opacity = '0.5';
+    e.currentTarget.style.opacity = '0.5';
   };
 
   const handleDragEnd = (e) => {
-    e.target.style.opacity = '1';
-    setDraggedItem(null);
+    console.log('Drag ended');
+    e.currentTarget.style.opacity = '1';
   };
 
   const handleDragOver = (e) => {
@@ -124,36 +124,43 @@ export const CustomerFavorites = () => {
 
   const handleDrop = async (e, targetFavorite) => {
     e.preventDefault();
+    console.log('Dropped on:', targetFavorite.productName);
     
     if (!draggedItem || draggedItem.id === targetFavorite.id) {
+      console.log('Same item or no drag - skipping');
+      setDraggedItem(null);
       return;
     }
 
-    // Reorder favorites array
-    const draggedIndex = favorites.findIndex(f => f.id === draggedItem.id);
-    const targetIndex = favorites.findIndex(f => f.id === targetFavorite.id);
-    
-    const newFavorites = [...favorites];
-    newFavorites.splice(draggedIndex, 1);
-    newFavorites.splice(targetIndex, 0, draggedItem);
-    
-    // Update display order for all
-    const token = localStorage.getItem('token');
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    
-    for (let i = 0; i < newFavorites.length; i++) {
-      try {
+    try {
+      const allFavs = [...favorites];
+      const draggedIndex = allFavs.findIndex(f => f.id === draggedItem.id);
+      const targetIndex = allFavs.findIndex(f => f.id === targetFavorite.id);
+      
+      console.log(`Moving from ${draggedIndex} to ${targetIndex}`);
+      
+      // Reorder
+      const [removed] = allFavs.splice(draggedIndex, 1);
+      allFavs.splice(targetIndex, 0, removed);
+      
+      // Update positions
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      for (let i = 0; i < allFavs.length; i++) {
         await axios.put(
-          `${API}/favorites/${newFavorites[i].id}/position`,
+          `${API}/favorites/${allFavs[i].id}/position`,
           { position: i },
           { headers }
         );
-      } catch (err) {
-        console.error('Failed to update position:', err);
       }
+      
+      console.log('Positions updated');
+      fetchFavorites();
+    } catch (err) {
+      console.error('Reorder error:', err);
     }
     
-    fetchFavorites();
     setDraggedItem(null);
   };
 
