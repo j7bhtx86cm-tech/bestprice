@@ -1957,10 +1957,93 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
 
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
-    """Get user's favorites with enhanced fuzzy matching"""
-    from enhanced_matching import enhanced_product_match, normalize_with_synonyms, remove_location_words
+    """Get user's favorites with product matching"""
+    from advanced_product_matcher import search_similar_products, extract_features
     
     favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(100)
+    
+    if not favorites:
+        return []
+    
+    # Load all features once
+    all_features = await db.supplier_item_features.find({"active": True, "price": {"$gt": 0}}, {"_id": 0}).to_list(10000)
+    
+    # Get companies map
+    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    companies_map = {c['id']: c for c in all_companies}
+    
+    enriched = []
+    
+    for fav in favorites:
+        mode = fav.get('mode', 'exact')
+        
+        # Get original product info
+        original_product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
+        original_pl = await db.pricelists.find_one({"productId": fav['productId']}, {"_id": 0})
+        original_price = fav.get('originalPrice') or (original_pl['price'] if original_pl else None)
+        
+        if mode == 'cheapest' and original_product:
+            # Use WORKING advanced_product_matcher
+            matches = search_similar_products(
+                query_text=original_product['name'],
+                all_products=all_features,
+                strict_pack=None,
+                strict_brand=False,  # Ignore brand for best price
+                brand=None,
+                top_n=20
+            )
+            
+            # Sort by price first (cheapest)
+            if matches:
+                matches_sorted = sorted(matches, key=lambda x: (x['price'], -x['score']))
+                best_match = matches_sorted[0]
+                
+                if best_match['price'] < original_price:
+                    supplier = companies_map.get(best_match['supplier_id'])
+                    
+                    enriched.append({
+                        **fav,
+                        "mode": mode,
+                        "originalPrice": original_price,
+                        "bestPrice": best_match['price'],
+                        "bestSupplier": supplier['name'] if supplier else None,
+                        "foundProduct": {
+                            "name": best_match['raw_name'],
+                            "brand": best_match.get('brand'),
+                            "price": best_match['price'],
+                            "score": best_match['score'],
+                            "supplier_item_id": best_match['supplier_item_id']
+                        },
+                        "hasCheaperMatch": True
+                    })
+                else:
+                    enriched.append({
+                        **fav,
+                        "mode": mode,
+                        "bestPrice": original_price,
+                        "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
+                        "fallbackMessage": "Аналоги найдены, но текущая цена уже лучшая",
+                        "hasCheaperMatch": False
+                    })
+            else:
+                enriched.append({
+                    **fav,
+                    "mode": mode,
+                    "bestPrice": original_price,
+                    "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
+                    "fallbackMessage": "Аналоги не найдены",
+                    "hasCheaperMatch": False
+                })
+        else:
+            # EXACT MODE
+            enriched.append({
+                **fav,
+                "mode": mode,
+                "bestPrice": original_price,
+                "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name')
+            })
+    
+    return enriched
     
     if not favorites:
         return []
