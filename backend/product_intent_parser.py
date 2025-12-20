@@ -33,17 +33,18 @@ def extract_product_intent(product_name: str, unit: str) -> Dict[str, Any]:
     }
 
 def extract_product_type(name_lower: str) -> str:
-    """Extract main product category with STRICT matching - primary type must match first"""
+    """Extract PRIMARY food type ONLY - strict matching, no generic words"""
     
-    # CRITICAL: Check PRIMARY FOOD TYPE first - these must match exactly
+    # PRIMARY FOOD TYPES - must be strict and specific
     primary_foods = {
         'креветки': ['креветк', 'shrimp', 'prawn'],
         'моцарелла': ['моцарелл', 'mozzarella'],
-        'сыр': ['сыр', 'cheese'],
+        'аппетайзер': ['аппетайзер', 'appetizer'],  # Separate from shrimp!
+        'сыр': ['сыр\\ ', 'cheese'],  # Space after to avoid matching other words
         'кальмар': ['кальмар', 'squid'],
         'анчоус': ['анчоус', 'anchov'],
         'тунец': ['тунец', 'tuna'],
-        'лосось': ['лосось', 'семга', 'salmon'],
+        'лосось': ['лосось', 'ласось', 'семга', 'salmon'],
         'сибас': ['сибас', 'сибасс', 'seabass'],
         'дорадо': ['дорадо', 'дорада', 'dorado'],
         'треска': ['треска', 'cod'],
@@ -51,6 +52,7 @@ def extract_product_type(name_lower: str) -> str:
         'курица': ['курица', 'куриц', 'chicken'],
         'говядина': ['говядин', 'beef'],
         'свинина': ['свинин', 'pork'],
+        'молоко_кокосовое': ['кокосовое молоко', 'кокосов молок', 'coconut milk'],
         'молоко': ['молоко', 'milk'],
         'кетчуп': ['кетчуп', 'ketchup'],
         'соль': ['соль', 'salt'],
@@ -58,15 +60,21 @@ def extract_product_type(name_lower: str) -> str:
         'мука': ['мука', 'flour'],
         'рис': ['рис', 'rice'],
         'масло': ['масло', 'oil', 'butter'],
+        'напиток': ['напиток', 'beverage', 'drink'],  # Generic but track it
     }
     
-    # Check primary foods first (STRICT)
+    # Check coconut milk specifically first (multi-word)
+    if 'кокос' in name_lower and 'молок' in name_lower:
+        return 'молоко_кокосовое'
+    
+    # Check each primary food type
     for food_type, keywords in primary_foods.items():
         for keyword in keywords:
-            if keyword in name_lower:
+            # Use word boundaries to avoid partial matches
+            if f' {keyword}' in f' {name_lower}' or name_lower.startswith(keyword):
                 return food_type
     
-    # Check specific combinations
+    # Composite patterns (both must be present)
     composite_patterns = {
         "порошок_куриный": ["порошок", "куриный"],
         "бульон_куриный": ["бульон", "куриный"],
@@ -79,7 +87,7 @@ def extract_product_type(name_lower: str) -> str:
         if all(kw in name_lower for kw in keywords):
             return ptype
     
-    # Default: first word
+    # Default: first meaningful word (not generic)
     first_word = name_lower.split()[0] if name_lower.split() else "unknown"
     return first_word
 
