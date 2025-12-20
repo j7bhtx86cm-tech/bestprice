@@ -435,10 +435,34 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.5"
-  test_sequence: 7
+  version: "1.6"
+  test_sequence: 8
   run_ui: true
-  last_test_date: "2025-12-13"
+  last_test_date: "2025-12-20"
+
+  - task: "Fuzzy/Typo Search in Catalog"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/pages/customer/CustomerCatalog.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "TESTED (2025-12-20): ❌ FUZZY SEARCH NOT IMPLEMENTED - User reported typo search not working. Comprehensive testing confirms: (1) Search 'лососк' (typo for лосось): 0 results, (2) Search 'лосось' (correct): 14 results, (3) Search 'ласось' (typo): 0 results, (4) Search 'сибасс' (typo for сибас): 1 result (likely contains 'сибасс' in name), (5) Search 'сибас' (correct): 3 results. ROOT CAUSE: Lines 249-271 in CustomerCatalog.js implement exact substring matching only: `searchWords.every(word => searchText.includes(word))`. This requires exact character matches and does NOT handle typos or fuzzy matching. To implement fuzzy search, need to add Levenshtein distance algorithm or use a library like fuse.js for fuzzy string matching with configurable tolerance for character differences."
+
+  - task: "Drag and Drop in Favorites"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/customer/CustomerFavorites.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "NOT TESTED (2025-12-20): User requested testing of drag and drop functionality in Favorites page. Code review shows implementation exists (lines 108-151: handleDragStart, handleDragOver, handleDrop handlers; lines 320-323: draggable attributes on Card components). However, per system instructions, drag and drop features cannot be tested due to system limitations. Favorites page is accessible at /customer/favorites with 23 draggable cards present. Main agent should implement alternative testing approach or request manual verification from user."
 
   - task: "Fixed Persistent Mini Cart"
     implemented: true
