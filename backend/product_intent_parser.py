@@ -76,13 +76,19 @@ def extract_brand(raw_name: str) -> Optional[str]:
         if brand.lower() in raw_name.lower():
             return brand
     
-    # Never brand these
-    GENERIC = ['Напиток', 'Продукт', 'Аппетайзер', 'Масло', 'Соус', 'Сыр', 'Молоко', 'Соль', 'Креветки', 'Курица']
+    # NEVER treat these as brands (expanded list)
+    GENERIC = [
+        'Напиток', 'Продукт', 'Аппетайзер', 'Аппетайзеры',
+        'Масло', 'Соус', 'Сыр', 'Молоко', 'Соль', 'Креветки',
+        'Курица', 'Рыба', 'Филе', 'Кокос', 'Палочки',
+        'Кондитерские', 'Консервация', 'Бакалея'
+    ]
     
     words = raw_name.split()
     for word in words:
-        if (word.isupper() or word.istitle()) and len(word) > 3 and word not in GENERIC:
-            return word
+        if (word.isupper() or word.istitle()) and len(word) > 3:
+            if word not in GENERIC:
+                return word
     
     return None
 
