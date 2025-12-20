@@ -316,7 +316,7 @@ export const CustomerFavorites = () => {
           {filteredFavorites.map((favorite) => (
             <Card 
               key={favorite.id} 
-              className="p-5 hover:shadow-lg transition-shadow relative cursor-move"
+              className="p-5 hover:shadow-lg transition-shadow relative cursor-grab active:cursor-grabbing"
               draggable
               onDragStart={(e) => handleDragStart(e, favorite)}
               onDragOver={handleDragOver}
@@ -326,50 +326,10 @@ export const CustomerFavorites = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleRemoveFavorite(favorite.id)}
-                className="absolute top-2 right-2 text-red-500 hover:text-red-600"
+                className="absolute top-2 right-2 text-red-500 hover:text-red-600 z-10"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
-              
-              {/* Reorder Buttons */}
-              <div className="absolute top-2 left-2 flex flex-col gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={async () => {
-                    const idx = filteredFavorites.findIndex(f => f.id === favorite.id);
-                    if (idx > 0) {
-                      const token = localStorage.getItem('token');
-                      const headers = { Authorization: `Bearer ${token}` };
-                      await axios.put(`${API}/favorites/${favorite.id}/position`, { position: idx - 1 }, { headers });
-                      await axios.put(`${API}/favorites/${filteredFavorites[idx - 1].id}/position`, { position: idx }, { headers });
-                      fetchFavorites();
-                    }
-                  }}
-                  className="h-6 w-6 p-0 bg-white shadow-sm"
-                  title="Вверх"
-                >
-                  ↑
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={async () => {
-                    const idx = filteredFavorites.findIndex(f => f.id === favorite.id);
-                    if (idx < filteredFavorites.length - 1) {
-                      const token = localStorage.getItem('token');
-                      const headers = { Authorization: `Bearer ${token}` };
-                      await axios.put(`${API}/favorites/${favorite.id}/position`, { position: idx + 1 }, { headers });
-                      await axios.put(`${API}/favorites/${filteredFavorites[idx + 1].id}/position`, { position: idx }, { headers });
-                      fetchFavorites();
-                    }
-                  }}
-                  className="h-6 w-6 p-0 bg-white shadow-sm"
-                  title="Вниз"
-                >
-                  ↓
-                </Button>
-              </div>
               
               {/* Main Product Name - Show found product if cheaper match */}
               <div className="mb-4">

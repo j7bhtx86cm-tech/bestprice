@@ -1131,10 +1131,14 @@ async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = Non
                 # Add common typo corrections
                 typo_map = {
                     'ласось': 'лосось',
-                    'лососс': 'лосось', 
+                    'лососс': 'лосось',
+                    'лососк': 'лосось',
+                    'лосос': 'лосось',
                     'сибасс': 'сибас',
+                    'сибаса': 'сибас',
                     'дорада': 'дорадо',
-                    'креветка': 'креветки'
+                    'креветка': 'креветки',
+                    'креветк': 'креветки'
                 }
                 
                 search_normalized = search.lower().strip()
