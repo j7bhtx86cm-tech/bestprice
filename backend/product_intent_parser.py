@@ -1,46 +1,18 @@
 """
-Simple rule-based Product Intent Parser for Russian product names
-Extracts: product_type, base_unit, key_attributes, brand
+FIXED Product Intent Parser with Strict Primary Type Matching
 """
 import re
-from typing import Dict, Optional, Any
-
-def extract_product_intent(product_name: str, unit: str) -> Dict[str, Any]:
-    """
-    Parse product name and extract intent parameters
-    Returns: {product_type, base_unit, key_attributes, brand, strict_brand}
-    """
-    name_lower = product_name.lower()
-    
-    # Extract product type (main category)
-    product_type = extract_product_type(name_lower)
-    
-    # Normalize unit
-    base_unit = normalize_unit(unit)
-    
-    # Extract key attributes (numbers, percentages, caliber)
-    key_attributes = extract_key_attributes(product_name)
-    
-    # Extract brand (if identifiable)
-    brand = extract_brand(product_name)
-    
-    return {
-        "productType": product_type,
-        "baseUnit": base_unit,
-        "keyAttributes": key_attributes,
-        "brand": brand,
-        "strictBrand": False
-    }
+from typing import Dict, Optional, Any, List
 
 def extract_product_type(name_lower: str) -> str:
-    """Extract PRIMARY food type ONLY - strict matching, no generic words"""
+    """Extract PRIMARY food type with strict word boundaries"""
     
-    # PRIMARY FOOD TYPES - must be strict and specific
+    # PRIMARY FOOD TYPES - checked with word boundaries to avoid partial matches
     primary_foods = {
         'креветки': ['креветк', 'shrimp', 'prawn'],
         'моцарелла': ['моцарелл', 'mozzarella'],
-        'аппетайзер': ['аппетайзер', 'appetizer'],  # Separate from shrimp!
-        'сыр': ['сыр\\ ', 'cheese'],  # Space after to avoid matching other words
+        'аппетайзер': ['аппетайзер', 'appetizer'],
+        'сыр': ['сыр'],  # Careful - don't match "сыром" etc
         'кальмар': ['кальмар', 'squid'],
         'анчоус': ['анчоус', 'anchov'],
         'тунец': ['тунец', 'tuna'],
@@ -52,7 +24,7 @@ def extract_product_type(name_lower: str) -> str:
         'курица': ['курица', 'куриц', 'chicken'],
         'говядина': ['говядин', 'beef'],
         'свинина': ['свинин', 'pork'],
-        'молоко_кокосовое': ['кокосовое молоко', 'кокосов молок', 'coconut milk'],
+        'молоко_кокосовое': [],  # Special case handled separately
         'молоко': ['молоко', 'milk'],
         'кетчуп': ['кетчуп', 'ketchup'],
         'соль': ['соль', 'salt'],
@@ -60,54 +32,73 @@ def extract_product_type(name_lower: str) -> str:
         'мука': ['мука', 'flour'],
         'рис': ['рис', 'rice'],
         'масло': ['масло', 'oil', 'butter'],
-        'напиток': ['напиток', 'beverage', 'drink'],  # Generic but track it
     }
     
-    # Check coconut milk specifically first (multi-word)
-    if 'кокос' in name_lower and 'молок' in name_lower:
+    # Special case: Coconut milk
+    if ('кокос' in name_lower or 'coconut' in name_lower) and ('молок' in name_lower or 'milk' in name_lower):
         return 'молоко_кокосовое'
     
-    # Check each primary food type
+    # Check each primary type with word boundary awareness
     for food_type, keywords in primary_foods.items():
         for keyword in keywords:
-            # Use word boundaries to avoid partial matches
-            if f' {keyword}' in f' {name_lower}' or name_lower.startswith(keyword):
+            # Check if keyword appears as whole word or at start
+            pattern = f'\\b{re.escape(keyword)}'
+            if re.search(pattern, name_lower):
                 return food_type
     
-    # Composite patterns (both must be present)
-    composite_patterns = {
-        "порошок_куриный": ["порошок", "куриный"],
-        "бульон_куриный": ["бульон", "куриный"],
-        "бульон_грибной": ["бульон", "грибной"],
-        "водоросли_нори": ["водоросл", "нори"],
-        "водоросли_комбу": ["водоросл", "комбу"],
-    }
+    # Composite patterns
+    if 'порошок' in name_lower and 'куриный' in name_lower:
+        return 'порошок_куриный'
+    if 'бульон' in name_lower and 'куриный' in name_lower:
+        return 'бульон_куриный'
+    if 'бульон' in name_lower and 'грибной' in name_lower:
+        return 'бульон_грибной'
     
-    for ptype, keywords in composite_patterns.items():
-        if all(kw in name_lower for kw in keywords):
-            return ptype
-    
-    # Default: first meaningful word (not generic)
+    # Default
     first_word = name_lower.split()[0] if name_lower.split() else "unknown"
     return first_word
+
+def extract_brand(raw_name: str) -> Optional[str]:
+    """Extract brand - EXCLUDE GENERIC WORDS"""
+    
+    known_brands = [
+        'Heinz', 'Mutti', 'Aroy-D', 'COOK_ME', 'Sunfeel', 'Baleno',
+        'Бояринъ', 'Альфа-М', 'DAS', 'Подворье', 'Агро-Альянс',
+        'Каскад', 'Праймфудс', 'Деревенское', 'Delicius', 'Knorr',
+        'КНОРР', 'PRB', 'Federici', 'Luxuria', 'Кara'
+    ]
+    
+    for brand in known_brands:
+        if brand.lower() in raw_name.lower():
+            return brand
+    
+    # CRITICAL: Never treat these as brands
+    GENERIC_WORDS = [
+        'Напиток', 'Продукт', 'Аппетайзер', 'Аппетайзеры',
+        'Масло', 'Соус', 'Сыр', 'Молоко', 'Соль', 'Филе',
+        'Креветки', 'Курица', 'Рыба', 'Мясо', 'Кондитерские'
+    ]
+    
+    words = raw_name.split()
+    for word in words:
+        if (word.isupper() or word.istitle()) and len(word) > 3:
+            if word not in GENERIC_WORDS:
+                return word
+    
+    return None
 
 def normalize_unit(unit: str) -> str:
     """Normalize unit to base measurement"""
     unit_lower = unit.lower().strip()
     
-    # Weight conversions
     if unit_lower in ['kg', 'кг', 'килограмм']:
         return 'kg'
     if unit_lower in ['g', 'г', 'грамм']:
         return 'g'
-    
-    # Volume conversions
     if unit_lower in ['l', 'л', 'литр', 'liter']:
         return 'l'
     if unit_lower in ['ml', 'мл', 'миллилитр']:
         return 'ml'
-    
-    # Count
     if unit_lower in ['pcs', 'шт', 'piece', 'штука']:
         return 'pcs'
     if unit_lower in ['pack', 'упак', 'package']:
@@ -116,28 +107,27 @@ def normalize_unit(unit: str) -> str:
     return unit_lower
 
 def extract_key_attributes(product_name: str) -> Dict[str, Any]:
-    """Extract key attributes like caliber, fat percentage, weight"""
+    \"\"\"Extract secondary attributes - NOT for primary type matching\"\"\"
     attributes = {}
     
-    # Extract caliber (e.g., 31/40, 21/25)
-    caliber_match = re.search(r'(\d+)/(\d+)', product_name)
+    # Caliber
+    caliber_match = re.search(r'(\\d+)/(\\d+)', product_name)
     if caliber_match:
         attributes['caliber'] = caliber_match.group(0)
     
-    # Extract percentage (e.g., 82%, 67%)
-    percent_match = re.search(r'(\d+)%', product_name)
+    # Percentage
+    percent_match = re.search(r'(\\d+)%', product_name)
     if percent_match:
         attributes['percent'] = percent_match.group(0)
     
-    # Check for portion/stick packs (to exclude from bulk matching)
-    if any(word in product_name.lower() for word in ['порци', 'стик', 'stick', 'sachet', 'пакетик']):
+    # Check for portion packs
+    if any(word in product_name.lower() for word in ['порци', 'стик', 'stick', 'sachet']):
         attributes['is_portion'] = True
     
-    # Extract weight/volume in name (e.g., 1кг, 500мл, 250г)
-    weight_match = re.search(r'(\d+(?:,\d+)?)\s*(кг|г|мл|л|kg|g|ml|l)', product_name, re.IGNORECASE)
+    # Extract pack size
+    weight_match = re.search(r'(\\d+(?:,\\d+)?)\\s*(кг|г|мл|л|kg|g|ml|l)', product_name, re.IGNORECASE)
     if weight_match:
         attributes['pack_size'] = weight_match.group(0)
-        # Extract just the number for comparison
         num_str = weight_match.group(1).replace(',', '.')
         try:
             attributes['pack_size_num'] = float(num_str)
@@ -145,53 +135,36 @@ def extract_key_attributes(product_name: str) -> Dict[str, Any]:
         except:
             pass
     
-    # Extract numbers (generic)
-    numbers = re.findall(r'\d+(?:,\d+)?', product_name)
-    if numbers and not attributes:
-        attributes['numbers'] = numbers[:2]  # First 2 numbers
-    
     return attributes
 
-def extract_brand(product_name: str) -> Optional[str]:
-    """Try to identify brand name"""
+def extract_product_intent(product_name: str, unit: str) -> Dict[str, Any]:
+    \"\"\"Extract product intent with strict primary type\"\"\"
+    name_lower = product_name.lower()
     
-    # Common brands in Russian market
-    known_brands = [
-        'Heinz', 'Mutti', 'Aroy-D', 'COOK_ME', 'Sunfeel', 'Baleno',
-        'Бояринъ', 'Альфа-М', 'DAS', 'Подворье', 'Агро-Альянс',
-        'Каскад', 'Праймфудс', 'Деревенское', 'Delicius'
-    ]
+    product_type = extract_product_type(name_lower)
+    base_unit = normalize_unit(unit)
+    key_attributes = extract_key_attributes(product_name)
+    brand = extract_brand(product_name)
     
-    for brand in known_brands:
-        if brand.lower() in product_name.lower():
-            return brand
-    
-    # Try to find capitalized words (often brands)
-    words = product_name.split()
-    for word in words:
-        # If word is all caps or Title Case and length > 3
-        if (word.isupper() or word.istitle()) and len(word) > 3:
-            # Check if it's not a common Russian word
-            common_words = ['Масло', 'Соус', 'Сыр', 'Молоко', 'Курица', 'Соль']
-            if word not in common_words:
-                return word
-    
-    return None
+    return {
+        "productType": product_type,
+        "baseUnit": base_unit,
+        "keyAttributes": key_attributes,
+        "brand": brand,
+        "strictBrand": False
+    }
 
 def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list:
-    """
-    Find matching products with PRIMARY type check FIRST, secondary attributes SECOND
-    """
+    \"\"\"Find matches with STRICT primary type check\"\"\"
     matches = []
-    
     intent_attrs = intent.get('keyAttributes', {})
-    query_primary = intent.get('productType')  # Primary food type
+    query_primary = intent.get('productType')
     
     for pl in all_pricelists:
         if not pl.get('productName') or not pl.get('unit'):
             continue
         
-        # Skip 0 price products (category headers)
+        # Filter 0 price
         if pl.get('price', 0) <= 0:
             continue
             
@@ -199,38 +172,26 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
         candidate_primary = product_intent.get('productType')
         product_attrs = product_intent.get('keyAttributes', {})
         
-        # CRITICAL: PRIMARY TYPE MUST MATCH FIRST
-        # креветки only matches креветки, NOT моцарелла/сыр/etc
-        if query_primary and candidate_primary:
-            # Remove secondary words for comparison
-            query_base = query_primary.split('_')[0] if '_' in query_primary else query_primary
-            candidate_base = candidate_primary.split('_')[0] if '_' in candidate_primary else candidate_primary
-            
-            # Primary types must match (krevetki != mozzarella)
-            if query_base != candidate_base:
-                continue  # Skip - different primary food type
-        elif query_primary or candidate_primary:
-            # One has type, other doesn't - incompatible
-            continue
+        # PRIMARY TYPE MUST MATCH (strict!)
+        if query_primary != candidate_primary:
+            continue  # креветки != моцарелла != сыр
         
         # Base unit must match
         if product_intent['baseUnit'] != intent['baseUnit']:
             continue
         
-        # SECONDARY FILTERS (after primary type matches):
-        
-        # Exclude portion packs when matching bulk
+        # Secondary filters (only after primary matches)
         if intent_attrs.get('is_portion') != product_attrs.get('is_portion'):
             continue
         
-        # Check pack size similarity
+        # Pack size
         if 'pack_size_num' in intent_attrs and 'pack_size_num' in product_attrs:
             intent_num = intent_attrs['pack_size_num']
             product_num = product_attrs['pack_size_num']
             intent_unit = intent_attrs.get('pack_size_unit', '')
             product_unit = product_attrs.get('pack_size_unit', '')
             
-            # Normalize units
+            # Normalize
             if intent_unit in ['кг', 'kg'] and product_unit in ['г', 'g']:
                 product_num = product_num / 1000
             elif intent_unit in ['г', 'g'] and product_unit in ['кг', 'kg']:
@@ -240,28 +201,21 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
             elif intent_unit in ['мл', 'ml'] and product_unit in ['л', 'l']:
                 intent_num = intent_num / 1000
             
-            # ±30% tolerance
             if intent_num > 0 and product_num > 0:
                 diff_ratio = abs(intent_num - product_num) / max(intent_num, product_num)
                 if diff_ratio > 0.3:
                     continue
         
-        # Brand matching (if strict)
-        if intent.get('strictBrand') and intent.get('brand'):
-            if product_intent.get('brand') != intent['brand']:
-                continue
-        
-        # Caliber (exact match required)
+        # Caliber
         if 'caliber' in intent_attrs:
             if product_attrs.get('caliber') != intent_attrs['caliber']:
                 continue
         
-        # Percentage (exact match)
+        # Percentage
         if 'percent' in intent_attrs:
             if product_attrs.get('percent') != intent_attrs['percent']:
                 continue
         
-        # All checks passed - this is a valid match
         matches.append(pl)
     
     return matches
