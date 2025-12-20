@@ -108,6 +108,13 @@ export const CustomerFavorites = () => {
   const handleDragStart = (e, favorite) => {
     setDraggedItem(favorite);
     e.dataTransfer.effectAllowed = 'move';
+    // Add visual feedback
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '1';
+    setDraggedItem(null);
   };
 
   const handleDragOver = (e) => {
@@ -316,9 +323,10 @@ export const CustomerFavorites = () => {
           {filteredFavorites.map((favorite) => (
             <Card 
               key={favorite.id} 
-              className="p-5 hover:shadow-lg transition-shadow relative cursor-grab active:cursor-grabbing"
+              className="p-5 hover:shadow-lg transition-shadow relative cursor-grab active:cursor-grabbing hover:border-2 hover:border-blue-300"
               draggable
               onDragStart={(e) => handleDragStart(e, favorite)}
+              onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, favorite)}
             >
