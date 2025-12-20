@@ -172,40 +172,57 @@ def extract_brand(product_name: str) -> Optional[str]:
 
 def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list:
     """
-    Find all products matching the intent across all pricelists
-    Used for CHEAPEST mode to find alternatives
+    Find matching products with PRIMARY type check FIRST, secondary attributes SECOND
     """
     matches = []
     
-    # Get intent attributes once
     intent_attrs = intent.get('keyAttributes', {})
+    query_primary = intent.get('productType')  # Primary food type
     
     for pl in all_pricelists:
         if not pl.get('productName') or not pl.get('unit'):
             continue
+        
+        # Skip 0 price products (category headers)
+        if pl.get('price', 0) <= 0:
+            continue
             
         product_intent = extract_product_intent(pl['productName'], pl['unit'])
+        candidate_primary = product_intent.get('productType')
         product_attrs = product_intent.get('keyAttributes', {})
         
-        # Match criteria
-        if product_intent['productType'] != intent['productType']:
+        # CRITICAL: PRIMARY TYPE MUST MATCH FIRST
+        # креветки only matches креветки, NOT моцарелла/сыр/etc
+        if query_primary and candidate_primary:
+            # Remove secondary words for comparison
+            query_base = query_primary.split('_')[0] if '_' in query_primary else query_primary
+            candidate_base = candidate_primary.split('_')[0] if '_' in candidate_primary else candidate_primary
+            
+            # Primary types must match (krevetki != mozzarella)
+            if query_base != candidate_base:
+                continue  # Skip - different primary food type
+        elif query_primary or candidate_primary:
+            # One has type, other doesn't - incompatible
             continue
         
+        # Base unit must match
         if product_intent['baseUnit'] != intent['baseUnit']:
             continue
         
-        # IMPORTANT: Exclude portion packs when matching bulk products
-        if intent_attrs.get('is_portion') != product_attrs.get('is_portion'):
-            continue  # Don't match bulk with portions or vice versa
+        # SECONDARY FILTERS (after primary type matches):
         
-        # Check pack size similarity (for bulk products)
+        # Exclude portion packs when matching bulk
+        if intent_attrs.get('is_portion') != product_attrs.get('is_portion'):
+            continue
+        
+        # Check pack size similarity
         if 'pack_size_num' in intent_attrs and 'pack_size_num' in product_attrs:
             intent_num = intent_attrs['pack_size_num']
             product_num = product_attrs['pack_size_num']
             intent_unit = intent_attrs.get('pack_size_unit', '')
             product_unit = product_attrs.get('pack_size_unit', '')
             
-            # Convert to same unit if needed (g to kg, ml to l)
+            # Normalize units
             if intent_unit in ['кг', 'kg'] and product_unit in ['г', 'g']:
                 product_num = product_num / 1000
             elif intent_unit in ['г', 'g'] and product_unit in ['кг', 'kg']:
@@ -215,27 +232,28 @@ def find_matching_products(intent: Dict[str, Any], all_pricelists: list) -> list
             elif intent_unit in ['мл', 'ml'] and product_unit in ['л', 'l']:
                 intent_num = intent_num / 1000
             
-            # Only match if within 30% range
+            # ±30% tolerance
             if intent_num > 0 and product_num > 0:
                 diff_ratio = abs(intent_num - product_num) / max(intent_num, product_num)
                 if diff_ratio > 0.3:
-                    continue  # Skip if more than 30% different
+                    continue
         
-        # If strict brand is required
+        # Brand matching (if strict)
         if intent.get('strictBrand') and intent.get('brand'):
             if product_intent.get('brand') != intent['brand']:
                 continue
         
-        # Check caliber match (exact)
+        # Caliber (exact match required)
         if 'caliber' in intent_attrs:
             if product_attrs.get('caliber') != intent_attrs['caliber']:
                 continue
         
-        # Check percent match (exact)
+        # Percentage (exact match)
         if 'percent' in intent_attrs:
             if product_attrs.get('percent') != intent_attrs['percent']:
                 continue
         
+        # All checks passed - this is a valid match
         matches.append(pl)
     
     return matches
