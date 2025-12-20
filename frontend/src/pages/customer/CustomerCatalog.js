@@ -249,25 +249,54 @@ export const CustomerCatalog = () => {
   const filterProducts = () => {
     if (!searchTerm.trim()) {
       setFilteredGroups(groupedProducts.slice(0, displayLimit));
-      setDisplayLimit(100); // Reset display limit when clearing search
+      setDisplayLimit(100);
       return;
     }
 
-    const searchLower = searchTerm.toLowerCase().trim();
-    const searchWords = searchLower.split(/\s+/);
+    // Typo corrections
+    const typoMap = {
+      'ласось': 'лосось', 'лососс': 'лосось', 'лососк': 'лосось', 'лосос': 'лосось',
+      'сибасс': 'сибас', 'сибаса': 'сибас',
+      'дорада': 'дорадо',
+      'креветка': 'креветки'
+    };
+    
+    let searchNorm = searchTerm.toLowerCase().trim();
+    for (const [typo, correct] of Object.entries(typoMap)) {
+      searchNorm = searchNorm.replace(typo, correct);
+    }
+    
+    const searchWords = searchNorm.split(/\s+/);
 
-    // Smart search: matches all words in any order
     const filtered = groupedProducts.filter(group => {
-      const searchText = group.searchText;
-      // Check if all search words are present
-      return searchWords.every(word => searchText.includes(word));
+      // Try with corrected typos
+      if (searchWords.every(word => group.searchText.includes(word))) {
+        return true;
+      }
+      
+      // Fuzzy match (1-2 char errors)
+      for (const sw of searchWords) {
+        if (sw.length <= 2) continue;
+        const groupWords = group.searchText.split(/\s+/);
+        for (const gw of groupWords) {
+          if (gw.length <= 2) continue;
+          if (gw.includes(sw) || sw.includes(gw)) return true;
+          if (Math.abs(sw.length - gw.length) <= 2) {
+            let diff = 0;
+            for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
+              if (sw[i] !== gw[i]) diff++;
+              if (diff > 2) break;
+            }
+            if (diff <= 2) return true;
+          }
+        }
+      }
+      return false;
     });
 
-    // Sort filtered results by price (lowest first)
     const sortedFiltered = filtered.sort((a, b) => a.lowestPrice - b.lowestPrice);
-    
     setFilteredGroups(sortedFiltered.slice(0, Math.min(200, sortedFiltered.length)));
-    setDisplayLimit(200); // Show more results for search
+    setDisplayLimit(200);
   };
 
   const loadMore = () => {
