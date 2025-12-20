@@ -1981,10 +1981,93 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
 
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
-    """Get user's favorites with mode-aware best price search"""
-    from advanced_product_matcher import search_similar_products, extract_features
+    """Get user's favorites with enhanced fuzzy matching"""
+    from enhanced_matching import enhanced_product_match, normalize_with_synonyms, remove_location_words
     
-    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).to_list(100)
+    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(100)
+    
+    if not favorites:
+        return []
+    
+    # Load all features once
+    all_features = await db.supplier_item_features.find({"active": True}, {"_id": 0}).to_list(10000)
+    
+    # Get companies map
+    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    companies_map = {c['id']: c for c in all_companies}
+    
+    enriched = []
+    
+    for fav in favorites:
+        mode = fav.get('mode', 'exact')
+        
+        # Get original product info
+        original_product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
+        original_pl = await db.pricelists.find_one({"productId": fav['productId']}, {"_id": 0})
+        original_price = fav.get('originalPrice') or (original_pl['price'] if original_pl else None)
+        
+        if mode == 'cheapest' and original_product:
+            # CHEAPEST MODE: Use ENHANCED fuzzy matching
+            logging.info(f"Fuzzy search for: {original_product['name'][:50]}")
+            
+            # Find matches using enhanced algorithm
+            matches = []
+            for feature in all_features:
+                match_result = enhanced_product_match(
+                    original_product['name'],
+                    feature['raw_name'],
+                    mode='cheapest'
+                )
+                
+                if match_result['match'] and match_result['score'] >= 70:
+                    matches.append({
+                        **feature,
+                        'fuzzy_score': match_result['score']
+                    })
+            
+            # Sort by price (cheapest first)
+            matches.sort(key=lambda x: x['price'])
+            
+            logging.info(f"Fuzzy matching found {len(matches)} results")
+            
+            if matches and matches[0]['price'] < original_price:
+                best = matches[0]
+                supplier = companies_map.get(best['supplier_id'])
+                
+                enriched.append({
+                    **fav,
+                    "mode": mode,
+                    "originalPrice": original_price,
+                    "bestPrice": best['price'],
+                    "bestSupplier": supplier['name'] if supplier else None,
+                    "foundProduct": {
+                        "name": best['raw_name'],
+                        "brand": best.get('brand'),
+                        "price": best['price'],
+                        "score": best['fuzzy_score'],
+                        "supplier_item_id": best['supplier_item_id']
+                    },
+                    "hasCheaperMatch": True
+                })
+            else:
+                enriched.append({
+                    **fav,
+                    "mode": mode,
+                    "bestPrice": original_price,
+                    "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
+                    "fallbackMessage": "Аналоги найдены, но текущая цена уже лучшая",
+                    "hasCheaperMatch": False
+                })
+        else:
+            # EXACT MODE
+            enriched.append({
+                **fav,
+                "mode": mode,
+                "bestPrice": original_price,
+                "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name')
+            })
+    
+    return enriched
     
     if not favorites:
         return []
