@@ -2034,8 +2034,10 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                 if prod['price'] >= original_price:
                     continue
                 
-                # For КРЕВЕТКИ (shrimp): caliber MUST match (16/20, 31/40, 90/120, etc.)
-                if original_type == 'креветки' and original_caliber:
+                # For products with CALIBER: caliber MUST match
+                # Caliber represents important attributes: shrimp size, fish size, fat %, piece count
+                # Examples: 16/20 (shrimp), 4/5 (salmon), 90/10 (beef fat %), 100/110 (cucumber size)
+                if original_caliber:
                     prod_caliber = extract_caliber(prod['productName'])
                     # If original has caliber, found product MUST have same caliber
                     if not prod_caliber or prod_caliber != original_caliber:
