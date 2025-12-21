@@ -105,10 +105,25 @@ def normalize_unit(unit: str) -> str:
     return unit_lower
 
 def extract_weight_kg(text: str) -> Optional[float]:
-    """Extract weight in kg from product name"""
+    """Extract primary product weight in kg from product name
+    
+    Handles cases like:
+    - "СИБАС тушка (300-400 гр) вес 5 кг" → extract 0.3-0.4 kg (product size), not 5kg (package)
+    - "МИНТАЙ филе 1 кг" → extract 1 kg
+    """
     if not text:
         return None
     
+    # Pattern 1: Weight in parentheses (300-400 гр) - usually the actual product size
+    paren_match = re.search(r'\((\d+(?:-\d+)?)\s*(?:гр|г|g)\)', text, re.IGNORECASE)
+    if paren_match:
+        # Extract the first number from range like "300-400"
+        nums = re.findall(r'\d+', paren_match.group(1))
+        if nums:
+            # Use first number as the weight
+            return float(nums[0]) / 1000
+    
+    # Pattern 2: Direct weight mention (not in parentheses)
     # Find all weight mentions
     matches = re.findall(r'(\d+(?:[.,]\d+)?)\s*(кг|kg|г|гр|g)\b', text, re.IGNORECASE)
     
@@ -126,8 +141,16 @@ def extract_weight_kg(text: str) -> Optional[float]:
         except:
             continue
     
-    # Return the largest weight found (usually the package weight)
-    return max(weights_kg) if weights_kg else None
+    if not weights_kg:
+        return None
+    
+    # If we have multiple weights, prefer the smaller one (likely product size, not package)
+    # But if all weights are large (>2kg), use the smallest
+    small_weights = [w for w in weights_kg if w <= 2.0]
+    if small_weights:
+        return min(small_weights)  # Smallest reasonable product size
+    
+    return min(weights_kg)  # All weights are large, use smallest
 
 def extract_key_attributes(product_name: str) -> Dict[str, Any]:
     attributes = {}
