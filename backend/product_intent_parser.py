@@ -108,22 +108,39 @@ def extract_weight_kg(text: str) -> Optional[float]:
     """Extract primary product weight in kg from product name
     
     Handles cases like:
-    - "СИБАС тушка (300-400 гр) вес 5 кг" → extract 0.3-0.4 kg (product size), not 5kg (package)
+    - "СИБАС тушка (300-400 гр) вес 5 кг" → extract 0.35 kg (average of range), not 5kg (package)
     - "МИНТАЙ филе 1 кг" → extract 1 kg
+    - "300/400" → extract 0.35 kg (average)
     """
     if not text:
         return None
     
-    # Pattern 1: Weight in parentheses (300-400 гр) - usually the actual product size
-    paren_match = re.search(r'\((\d+(?:-\d+)?)\s*(?:гр|г|g)\)', text, re.IGNORECASE)
-    if paren_match:
-        # Extract the first number from range like "300-400"
-        nums = re.findall(r'\d+', paren_match.group(1))
-        if nums:
-            # Use first number as the weight
-            return float(nums[0]) / 1000
+    # Pattern 1: Weight range in parentheses or with slash (300-400 гр) or (300/400)
+    # Extract as range and take average
+    range_match = re.search(r'\(?(\d+)[-/](\d+)\)?[\s]*(гр|г|g)\b', text, re.IGNORECASE)
+    if range_match:
+        try:
+            min_val = float(range_match.group(1))
+            max_val = float(range_match.group(2))
+            avg_val = (min_val + max_val) / 2  # Average of range
+            unit = range_match.group(3).lower()
+            
+            # Convert to kg if in grams
+            if unit in ['гр', 'г', 'g']:
+                return avg_val / 1000
+            return avg_val
+        except:
+            pass
     
-    # Pattern 2: Direct weight mention (not in parentheses)
+    # Pattern 2: Weight in parentheses (300 гр) - exact value
+    paren_match = re.search(r'\((\d+)\s*(?:гр|г|g)\)', text, re.IGNORECASE)
+    if paren_match:
+        try:
+            return float(paren_match.group(1)) / 1000
+        except:
+            pass
+    
+    # Pattern 3: Direct weight mention (not in parentheses)
     # Find all weight mentions
     matches = re.findall(r'(\d+(?:[.,]\d+)?)\s*(кг|kg|г|гр|g)\b', text, re.IGNORECASE)
     
