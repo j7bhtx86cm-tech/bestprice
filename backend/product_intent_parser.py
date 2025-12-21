@@ -104,6 +104,31 @@ def normalize_unit(unit: str) -> str:
     if unit_lower in ['pcs', 'шт']: return 'pcs'
     return unit_lower
 
+def extract_weight_kg(text: str) -> Optional[float]:
+    """Extract weight in kg from product name"""
+    if not text:
+        return None
+    
+    # Find all weight mentions
+    matches = re.findall(r'(\d+(?:[.,]\d+)?)\s*(кг|kg|г|гр|g)\b', text, re.IGNORECASE)
+    
+    if not matches:
+        return None
+    
+    weights_kg = []
+    for num_str, unit in matches:
+        try:
+            num = float(num_str.replace(',', '.'))
+            # Convert grams to kg
+            if unit.lower() in ['г', 'гр', 'g']:
+                num = num / 1000
+            weights_kg.append(num)
+        except:
+            continue
+    
+    # Return the largest weight found (usually the package weight)
+    return max(weights_kg) if weights_kg else None
+
 def extract_key_attributes(product_name: str) -> Dict[str, Any]:
     attributes = {}
     
