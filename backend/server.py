@@ -2030,13 +2030,17 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                     # Check weight similarity (±20% tolerance)
                     prod_weight = extract_weight_kg(prod['productName'])
                     
-                    # If both have weight info, check tolerance
+                    # STRICT: Both products must have weight info for comparison
+                    # This prevents mismatches like "2kg ketchup" with "25ml dip-pot"
                     if original_weight and prod_weight:
                         weight_diff = abs(original_weight - prod_weight) / original_weight
-                        # Skip if weight difference > 20% (e.g., don't match 300g with 1kg)
+                        # Skip if weight difference > 20%
                         if weight_diff > 0.20:
                             continue
-                    # If no weight info available, allow match (best effort)
+                    elif original_weight or prod_weight:
+                        # One has weight, one doesn't - skip to avoid false matches
+                        continue
+                    # If both have no weight info, allow match (rare edge case)
                     
                     # Get supplier info
                     supplier_id = prod.get('supplierId')
