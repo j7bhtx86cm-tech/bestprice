@@ -617,6 +617,7 @@ test_plan:
     - "Four User Portals - Role-Based Access Control"
     - "Drag and Drop in Favorites"
     - "Fuzzy/Typo Search in Catalog"
+    - "Best Price Toggle Functionality in Favorites"
 
 agent_communication:
   - agent: "testing"
