@@ -253,15 +253,17 @@ export const CustomerCatalog = () => {
       return;
     }
 
-    // Typo corrections
+    // Expanded typo corrections
     const typoMap = {
       'ласось': 'лосось', 'лососс': 'лосось', 'лососк': 'лосось', 'лосос': 'лосось',
-      'сибасс': 'сибас', 'сибаса': 'сибас',
+      'сибасс': 'сибас', 'сибаса': 'сибас', 'сибац': 'сибас',
       'дорада': 'дорадо',
       'креветка': 'креветки'
     };
     
     let searchNorm = searchTerm.toLowerCase().trim();
+    
+    // Apply typo corrections
     for (const [typo, correct] of Object.entries(typoMap)) {
       searchNorm = searchNorm.replace(typo, correct);
     }
@@ -269,31 +271,38 @@ export const CustomerCatalog = () => {
     const searchWords = searchNorm.split(/\s+/);
 
     const filtered = groupedProducts.filter(group => {
-      // Try with corrected typos
+      // 1. Exact match with corrected typos
       if (searchWords.every(word => group.searchText.includes(word))) {
         return true;
       }
       
-      // Fuzzy match (stricter - only for words starting with same letter)
+      // 2. Fuzzy match with stricter rules
       for (const sw of searchWords) {
-        if (sw.length <= 3) continue; // Longer words only for fuzzy
+        if (sw.length < 4) continue; // Skip very short words for fuzzy matching
         
         const groupWords = group.searchText.split(/\s+/);
         for (const gw of groupWords) {
-          if (gw.length <= 3) continue;
+          if (gw.length < 4) continue;
           
-          // Must start with same letter
-          if (sw[0] !== gw[0]) continue;
+          // Calculate similarity ratio
+          const maxLen = Math.max(sw.length, gw.length);
+          const minLen = Math.min(sw.length, gw.length);
           
-          // Substring match
+          // Only fuzzy match if lengths are similar (within 40% difference)
+          if ((maxLen - minLen) / maxLen > 0.4) continue;
+          
+          // Check if words start with same 2 letters (stricter than 1 letter)
+          const sameStart = sw[0] === gw[0] || (sw.length >= 2 && gw.length >= 2 && sw.slice(0, 2) === gw.slice(0, 2));
+          
+          // Substring match (most reliable)
           if (gw.includes(sw) || sw.includes(gw)) return true;
           
-          // Edit distance only if same first letter AND similar length
-          if (Math.abs(sw.length - gw.length) <= 1) {
+          // Levenshtein-like distance check (only 1 error allowed, and must have similar start)
+          if (sameStart && Math.abs(sw.length - gw.length) <= 1) {
             let diff = 0;
             for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
               if (sw[i] !== gw[i]) diff++;
-              if (diff > 1) break;  // Only 1 char error, not 2
+              if (diff > 1) break;  // Stop if more than 1 error
             }
             if (diff <= 1) return true;
           }
