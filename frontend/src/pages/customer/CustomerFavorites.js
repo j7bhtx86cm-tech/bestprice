@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Heart, Trash2, ShoppingCart, TrendingDown, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { Heart, Trash2, ShoppingCart, TrendingDown, Search, CheckCircle, AlertCircle, GripVertical } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -105,63 +106,39 @@ export const CustomerFavorites = () => {
     }
   };
 
-  const handleDragStart = (e, favorite) => {
-    console.log('Drag started:', favorite.productName);
-    setDraggedItem(favorite);
-    e.dataTransfer.effectAllowed = 'move';
-    e.currentTarget.style.opacity = '0.5';
-  };
-
-  const handleDragEnd = (e) => {
-    console.log('Drag ended');
-    e.currentTarget.style.opacity = '1';
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = async (e, targetFavorite) => {
-    e.preventDefault();
-    console.log('Dropped on:', targetFavorite.productName);
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
     
-    if (!draggedItem || draggedItem.id === targetFavorite.id) {
-      console.log('Same item or no drag - skipping');
-      setDraggedItem(null);
-      return;
-    }
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+    
+    if (sourceIndex === destIndex) return;
+
+    // Reorder locally first for immediate feedback
+    const reordered = Array.from(filteredFavorites);
+    const [removed] = reordered.splice(sourceIndex, 1);
+    reordered.splice(destIndex, 0, removed);
+    setFilteredFavorites(reordered);
 
     try {
-      const allFavs = [...favorites];
-      const draggedIndex = allFavs.findIndex(f => f.id === draggedItem.id);
-      const targetIndex = allFavs.findIndex(f => f.id === targetFavorite.id);
-      
-      console.log(`Moving from ${draggedIndex} to ${targetIndex}`);
-      
-      // Reorder
-      const [removed] = allFavs.splice(draggedIndex, 1);
-      allFavs.splice(targetIndex, 0, removed);
-      
-      // Update positions
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      for (let i = 0; i < allFavs.length; i++) {
-        await axios.put(
-          `${API}/favorites/${allFavs[i].id}/position`,
-          { position: i },
-          { headers }
-        );
-      }
+      // Send new order to backend
+      const orderMap = reordered.map((fav, index) => ({
+        id: fav.id,
+        displayOrder: index
+      }));
       
-      console.log('Positions updated');
+      await axios.post(`${API}/favorites/reorder`, { favorites: orderMap }, { headers });
+      
+      // Refresh from server
       fetchFavorites();
-    } catch (err) {
-      console.error('Reorder error:', err);
+    } catch (error) {
+      console.error('Failed to reorder:', error);
+      // Revert on error
+      fetchFavorites();
     }
-    
-    setDraggedItem(null);
   };
 
   const handleCreateOrder = () => {
