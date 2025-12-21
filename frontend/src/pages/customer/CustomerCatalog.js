@@ -276,7 +276,7 @@ export const CustomerCatalog = () => {
         return true;
       }
       
-      // 2. Fuzzy match with stricter rules
+      // 2. Fuzzy match with VERY STRICT rules to avoid false positives like "сибас" matching "соба"
       for (const sw of searchWords) {
         if (sw.length < 4) continue; // Skip very short words for fuzzy matching
         
@@ -284,27 +284,30 @@ export const CustomerCatalog = () => {
         for (const gw of groupWords) {
           if (gw.length < 4) continue;
           
-          // Calculate similarity ratio
-          const maxLen = Math.max(sw.length, gw.length);
-          const minLen = Math.min(sw.length, gw.length);
+          // STRICT LENGTH CHECK: lengths must be very similar (within 1 character)
+          if (Math.abs(sw.length - gw.length) > 1) continue;
           
-          // Only fuzzy match if lengths are similar (within 40% difference)
-          if ((maxLen - minLen) / maxLen > 0.4) continue;
+          // STRICT PREFIX CHECK: Must start with same 2+ characters
+          if (sw.length >= 3 && gw.length >= 3) {
+            // For longer words (5+ chars), require first 3 chars to match
+            const prefixLen = sw.length >= 5 ? 3 : 2;
+            if (sw.slice(0, prefixLen) !== gw.slice(0, prefixLen)) continue;
+          } else if (sw[0] !== gw[0]) {
+            // For shorter words, at least first char must match
+            continue;
+          }
           
-          // Check if words start with same 2 letters (stricter than 1 letter)
-          const sameStart = sw[0] === gw[0] || (sw.length >= 2 && gw.length >= 2 && sw.slice(0, 2) === gw.slice(0, 2));
-          
-          // Substring match (most reliable)
+          // Substring match (most reliable - one word contains the other)
           if (gw.includes(sw) || sw.includes(gw)) return true;
           
-          // Levenshtein-like distance check (only 1 error allowed, and must have similar start)
-          if (sameStart && Math.abs(sw.length - gw.length) <= 1) {
+          // Levenshtein-like distance check (ONLY 1 char difference allowed)
+          if (Math.abs(sw.length - gw.length) <= 1) {
             let diff = 0;
             for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
               if (sw[i] !== gw[i]) diff++;
               if (diff > 1) break;  // Stop if more than 1 error
             }
-            if (diff <= 1) return true;
+            if (diff === 1) return true;  // Exactly 1 typo
           }
         }
       }
@@ -312,7 +315,7 @@ export const CustomerCatalog = () => {
     });
 
     const sortedFiltered = filtered.sort((a, b) => a.lowestPrice - b.lowestPrice);
-    setFilteredGroups(sortedFiltered.slice(0, Math.min(200, sortedFiltered.length)));
+    setFilteredFiltered.slice(0, Math.min(200, sortedFiltered.length)));
     setDisplayLimit(200);
   };
 
