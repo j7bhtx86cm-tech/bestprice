@@ -433,6 +433,18 @@ backend:
         agent: "testing"
         comment: "FIXED AND TESTED: Updated /api/orders/my endpoint (line 851) to check for all three roles: [UserRole.responsible, UserRole.chef, UserRole.supplier]. Comprehensive testing completed for all 4 user portals: (1) RESTAURANT ADMIN (customer@bestprice.ru): ✅ Login, ✅ Catalog (6,184 products from 7 suppliers), ✅ Analytics (38 orders, 486,197.91 ₽), ✅ Team Management (3 members: Иван Менеджер, Мария Соколова, Алексей Петров), ✅ Matrix Management (2 matrices), ✅ Order History (38 orders). (2) STAFF (staff@bestprice.ru): ✅ Login, ✅ Profile, ✅ Matrix ('Основное меню' with 10 products), ✅ Catalog (7 suppliers), ✅ Order History (38 orders), ✅ Analytics DENIED (403), ✅ Team Management DENIED (403). (3) CHEF (chef@bestprice.ru): ✅ Login, ✅ Profile, ✅ Matrix ('Основное меню' with 10 products), ✅ Catalog (7 suppliers), ✅ Order History (38 orders), ✅ Analytics DENIED (403), ✅ Team Management DENIED (403). (4) SUPPLIER (ifruit@bestprice.ru): ✅ Login, ✅ Price List (622 products), ✅ Inline Editing (price and availability updates working), ✅ Search (found 13 products matching 'масло'), ✅ Orders (0 orders, accessible). All 25 tests passed - all 4 portals working independently with correct role-based access control."
 
+  - task: "Best Price Matching Logic - Weight Tolerance and Type Matching"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py, /app/backend/product_intent_parser.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED (2025-12-22): ❌ CRITICAL BUGS FOUND - Best Price matching logic in /api/favorites endpoint has weight tolerance issues. Tested 25 existing favorites with mode='cheapest'. RESULTS: ✅ 8 CORRECT MATCHES (32%): (1) СИБАС 300-400g matched with СИБАСС 300-400g (0% weight diff), (2) Креветки 1kg matched with 850g (15% diff), (3) Соль 1kg matched with 1kg (0% diff), (4) КРЕВЕТКИ 0.93kg matched with 0.85kg (8.6% diff), (5) Анчоус 700g matched with 700g (0% diff), (6) КРЕВЕТКИ 1kg matched with 850g (15% diff), (7) Каперсы 230g matched with 240g (4.3% diff), (8) Моцарелла 125g matched with 100g (20% diff). ❌ 4 CRITICAL BUGS (16%): (1) Кетчуп 285ml matched with 25ml dip-pot (91.2% weight diff - should NOT match), (2) Кетчуп 800g matched with 25ml dip-pot (96.9% weight diff - should NOT match), (3) Кетчуп 2kg matched with 25ml dip-pot (98.8% weight diff - should NOT match), (4) Молоко 973ml matched with 200ml (20455% weight diff - should NOT match). ⚠️ 13 WARNINGS (52%): Could not extract weights for comparison (products like 'Суповой набор', 'Водоросли', 'Грибы' without weight in name). ROOT CAUSE: Weight tolerance check at line 2035-2038 in server.py only applies when BOTH products have extractable weights. If weight extraction fails for either product, the 20% tolerance is bypassed and products are matched anyway. This causes incorrect matches like 2kg ketchup bottles with 25ml dip-pots. EXPECTED BEHAVIOR: (1) Type matching: ✅ Working correctly (СИБАС only matches СИБАС, МИНТАЙ only matches МИНТАЙ), (2) Weight tolerance: ❌ NOT working - should reject matches with >20% weight difference, (3) Price sorting: ✅ Working correctly (returns cheapest price first). RECOMMENDATION: Fix weight extraction logic in product_intent_parser.py to handle more product name formats, OR add stricter validation to reject matches when weight cannot be extracted for comparison."
+
 metadata:
   created_by: "testing_agent"
   version: "1.8"
