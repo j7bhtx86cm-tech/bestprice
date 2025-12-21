@@ -2275,6 +2275,23 @@ async def update_favorite_position(favorite_id: str, data: dict, current_user: d
     
     return {"message": "Position updated"}
 
+@api_router.post("/favorites/reorder")
+async def reorder_favorites(data: dict, current_user: dict = Depends(get_current_user)):
+    """Bulk update favorites display order"""
+    favorites = data.get('favorites', [])
+    
+    if not favorites:
+        raise HTTPException(status_code=400, detail="No favorites provided")
+    
+    # Update all favorites in bulk
+    for fav in favorites:
+        await db.favorites.update_one(
+            {"id": fav['id'], "userId": current_user['id']},
+            {"$set": {"displayOrder": fav['displayOrder']}}
+        )
+    
+    return {"message": "Favorites reordered successfully"}
+
 @api_router.delete("/favorites/{favorite_id}")
 async def remove_from_favorites(favorite_id: str, current_user: dict = Depends(get_current_user)):
     """Remove product from favorites"""
