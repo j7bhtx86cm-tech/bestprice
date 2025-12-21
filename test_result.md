@@ -583,7 +583,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Fuzzy/Typo Search in Catalog"
     - "Team Members Feature"
     - "Mini Cart Close Button"
     - "Order History with Date AND Time Display"
@@ -604,6 +603,7 @@ test_plan:
     - "Mobile Order Details"
     - "Four User Portals - Role-Based Access Control"
     - "Drag and Drop in Favorites"
+    - "Fuzzy/Typo Search in Catalog"
 
 agent_communication:
   - agent: "testing"
