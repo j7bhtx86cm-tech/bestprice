@@ -2011,9 +2011,10 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
             continue
         
         if mode == 'cheapest':
-            # CHEAPEST MODE: Find products with same type AND similar weight
+            # CHEAPEST MODE: Find products with same type AND similar weight/attributes
             original_type = extract_product_type(original_product['name'].lower())
             original_weight = extract_weight_kg(original_product['name'])
+            original_caliber = extract_caliber(original_product['name'])
             
             # Find all products with same type
             all_products = await db.price_lists.find(
@@ -2025,36 +2026,48 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
             for prod in all_products:
                 prod_type = extract_product_type(prod['productName'].lower())
                 
-                # Match if same primary product type
-                if prod_type == original_type and prod['price'] < original_price:
-                    # Check weight similarity (±20% tolerance)
-                    prod_weight = extract_weight_kg(prod['productName'])
-                    
-                    # STRICT: Both products must have weight info for comparison
-                    # This prevents mismatches like "2kg ketchup" with "25ml dip-pot"
-                    if original_weight and prod_weight:
-                        weight_diff = abs(original_weight - prod_weight) / original_weight
-                        # Skip if weight difference > 20%
-                        if weight_diff > 0.20:
-                            continue
-                    elif original_weight or prod_weight:
-                        # One has weight, one doesn't - skip to avoid false matches
+                # PRIMARY TYPE MUST MATCH EXACTLY
+                if prod_type != original_type:
+                    continue
+                
+                # Skip if price not cheaper
+                if prod['price'] >= original_price:
+                    continue
+                
+                # For КРЕВЕТКИ (shrimp): caliber MUST match (16/20, 31/40, 90/120, etc.)
+                if original_type == 'креветки' and original_caliber:
+                    prod_caliber = extract_caliber(prod['productName'])
+                    # If original has caliber, found product MUST have same caliber
+                    if not prod_caliber or prod_caliber != original_caliber:
                         continue
-                    # If both have no weight info, allow match (rare edge case)
-                    
-                    # Get supplier info
-                    supplier_id = prod.get('supplierId')
-                    supplier_name = companies_map.get(supplier_id, 'Unknown')
-                    
-                    matches.append({
-                        'productName': prod['productName'],
-                        'price': prod['price'],
-                        'supplierId': supplier_id,
-                        'supplierName': supplier_name,
-                        'productId': prod.get('productId'),
-                        'article': prod.get('article'),
-                        'weight': prod_weight
-                    })
+                
+                # Check weight similarity (±20% tolerance)
+                prod_weight = extract_weight_kg(prod['productName'])
+                
+                # STRICT: Both products must have weight info for comparison
+                if original_weight and prod_weight:
+                    weight_diff = abs(original_weight - prod_weight) / original_weight
+                    # Skip if weight difference > 20%
+                    if weight_diff > 0.20:
+                        continue
+                elif original_weight or prod_weight:
+                    # One has weight, one doesn't - skip to avoid false matches
+                    continue
+                # If both have no weight info, allow match (rare edge case)
+                
+                # Get supplier info
+                supplier_id = prod.get('supplierId')
+                supplier_name = companies_map.get(supplier_id, 'Unknown')
+                
+                matches.append({
+                    'productName': prod['productName'],
+                    'price': prod['price'],
+                    'supplierId': supplier_id,
+                    'supplierName': supplier_name,
+                    'productId': prod.get('productId'),
+                    'article': prod.get('article'),
+                    'weight': prod_weight
+                })
             
             # Sort by price (cheapest first)
             matches.sort(key=lambda x: x['price'])
