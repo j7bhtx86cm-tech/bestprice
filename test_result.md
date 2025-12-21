@@ -608,6 +608,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Best Price Matching Logic - Weight Tolerance and Type Matching"
     - "Team Members Feature"
     - "Mini Cart Close Button"
     - "Order History with Date AND Time Display"
@@ -617,6 +618,7 @@ test_plan:
   test_all: false
   test_priority: "high_first"
   completed_tests:
+    - "Best Price Matching Logic - Weight Tolerance and Type Matching"
     - "Customer Contract Status Display"
     - "Supplier Restaurant Documents and Contract Acceptance"
     - "Mobile Login for Responsible Person"
