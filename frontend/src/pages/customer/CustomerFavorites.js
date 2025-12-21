@@ -303,126 +303,151 @@ export const CustomerFavorites = () => {
           <p className="text-sm text-gray-500">Добавляйте товары в избранное из каталога для быстрого заказа</p>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredFavorites.map((favorite, index) => (
-            <div
-              key={favorite.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, favorite)}
-              onDragEnd={handleDragEnd}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, favorite)}
-              className="cursor-grab active:cursor-grabbing"
-            >
-              <Card className="p-5 hover:shadow-lg transition-shadow relative hover:border-2 hover:border-blue-300">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleRemoveFavorite(favorite.id)}
-                className="absolute top-2 right-2 text-red-500 hover:text-red-600 z-10"
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="favorites-list">
+            {(provided, snapshot) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
               >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              
-              {/* Main Product Name - Show found product if cheaper match */}
-              <div className="mb-4">
-                <h3 className="font-semibold text-lg mb-1 pr-8">
-                  {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch
-                    ? favorite.foundProduct.name
-                    : favorite.productName}
-                </h3>
-                {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
-                  <p className="text-xs text-gray-500 mb-1">
-                    Оригинал: {favorite.productName}
-                  </p>
-                )}
-                <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
+                {filteredFavorites.map((favorite, index) => (
+                  <Draggable
+                    key={favorite.id}
+                    draggableId={favorite.id}
+                    index={index}
+                  >
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={`${snapshot.isDragging ? 'opacity-50 rotate-2' : ''}`}
+                      >
+                        <Card className={`p-5 hover:shadow-lg transition-all relative ${
+                          snapshot.isDragging ? 'shadow-2xl scale-105' : 'hover:border-2 hover:border-blue-300'
+                        }`}>
+                          {/* Drag Handle */}
+                          <div
+                            {...provided.dragHandleProps}
+                            className="absolute top-2 left-2 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+                          >
+                            <GripVertical className="h-5 w-5" />
+                          </div>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveFavorite(favorite.id)}
+                            className="absolute top-2 right-2 text-red-500 hover:text-red-600 z-10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          
+                          {/* Main Product Name */}
+                          <div className="mb-4 ml-6">
+                            <h3 className="font-semibold text-lg mb-1 pr-8">
+                              {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch
+                                ? favorite.foundProduct.name
+                                : favorite.productName}
+                            </h3>
+                            {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
+                              <p className="text-xs text-gray-500 mb-1">
+                                Оригинал: {favorite.productName}
+                              </p>
+                            )}
+                            <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
+                          </div>
+
+                          {/* Mode Toggle Switch */}
+                          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <label htmlFor={`mode-${favorite.id}`} className="text-sm font-medium text-gray-700">
+                                Искать лучшую цену
+                              </label>
+                              <Switch
+                                id={`mode-${favorite.id}`}
+                                checked={favorite.mode === 'cheapest'}
+                                onCheckedChange={(checked) => handleModeChange(favorite.id, checked ? 'cheapest' : 'exact')}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {favorite.mode === 'cheapest' 
+                                ? 'Система ищет дешевле среди похожих товаров' 
+                                : 'Всегда этот продукт от выбранного поставщика'}
+                            </p>
+                          </div>
+
+                          {/* Found Product Block */}
+                          {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
+                            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <div className="flex items-start gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 text-sm">
+                                  <p className="font-medium text-green-900 mb-1">Найден дешевле!</p>
+                                  <p className="text-gray-700">{favorite.foundProduct.name}</p>
+                                  {favorite.foundProduct.brand && (
+                                    <p className="text-xs text-gray-600">Бренд: {favorite.foundProduct.brand}</p>
+                                  )}
+                                  {favorite.foundProduct.pack_weight_kg && (
+                                    <p className="text-xs text-gray-600">Фасовка: {favorite.foundProduct.pack_weight_kg} кг</p>
+                                  )}
+                                  {favorite.foundProduct.pack_volume_l && (
+                                    <p className="text-xs text-gray-600">Объем: {favorite.foundProduct.pack_volume_l} л</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Fallback Message */}
+                          {favorite.mode === 'cheapest' && favorite.fallbackMessage && (
+                            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <div className="flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
+                                <p className="text-sm text-blue-800">{favorite.fallbackMessage}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">
+                                {favorite.mode === 'cheapest' ? 'Лучшая цена:' : 'Цена:'}
+                              </span>
+                              <span className="font-bold text-green-600 text-lg">
+                                {favorite.bestPrice?.toLocaleString('ru-RU')} ₽
+                              </span>
+                            </div>
+                            
+                            {favorite.bestSupplier && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <TrendingDown className="h-4 w-4 text-green-600" />
+                                <span>{favorite.bestSupplier}</span>
+                              </div>
+                            )}
+                            
+                            <div className="text-xs text-gray-500">
+                              Ед. изм: {favorite.unit}
+                            </div>
+
+                            {favorite.mode === 'cheapest' && favorite.matchCount > 1 && (
+                              <div className="pt-2 border-t">
+                                <p className="text-xs text-gray-500">
+                                  Найдено {favorite.matchCount} похожих товаров
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
               </div>
-
-              {/* Mode Toggle Switch */}
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <label htmlFor={`mode-${favorite.id}`} className="text-sm font-medium text-gray-700">
-                    Искать лучшую цену
-                  </label>
-                  <Switch
-                    id={`mode-${favorite.id}`}
-                    checked={favorite.mode === 'cheapest'}
-                    onCheckedChange={(checked) => handleModeChange(favorite.id, checked ? 'cheapest' : 'exact')}
-                  />
-                </div>
-                <p className="text-xs text-gray-500">
-                  {favorite.mode === 'cheapest' 
-                    ? 'Система ищет дешевле среди похожих товаров' 
-                    : 'Всегда этот продукт от выбранного поставщика'}
-                </p>
-              </div>
-
-              {/* Found Product Block (when Best Price ON) */}
-              {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 text-sm">
-                      <p className="font-medium text-green-900 mb-1">Найден дешевле!</p>
-                      <p className="text-gray-700">{favorite.foundProduct.name}</p>
-                      {favorite.foundProduct.brand && (
-                        <p className="text-xs text-gray-600">Бренд: {favorite.foundProduct.brand}</p>
-                      )}
-                      {favorite.foundProduct.pack_weight_kg && (
-                        <p className="text-xs text-gray-600">Фасовка: {favorite.foundProduct.pack_weight_kg} кг</p>
-                      )}
-                      {favorite.foundProduct.pack_volume_l && (
-                        <p className="text-xs text-gray-600">Объем: {favorite.foundProduct.pack_volume_l} л</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Fallback Message */}
-              {favorite.mode === 'cheapest' && favorite.fallbackMessage && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-                    <p className="text-sm text-blue-800">{favorite.fallbackMessage}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">
-                    {favorite.mode === 'cheapest' ? 'Лучшая цена:' : 'Цена:'}
-                  </span>
-                  <span className="font-bold text-green-600 text-lg">
-                    {favorite.bestPrice?.toLocaleString('ru-RU')} ₽
-                  </span>
-                </div>
-                
-                {favorite.bestSupplier && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <TrendingDown className="h-4 w-4 text-green-600" />
-                    <span>{favorite.bestSupplier}</span>
-                  </div>
-                )}
-                
-                <div className="text-xs text-gray-500">
-                  Ед. изм: {favorite.unit}
-                </div>
-
-                {favorite.mode === 'cheapest' && favorite.matchCount > 1 && (
-                  <div className="pt-2 border-t">
-                    <p className="text-xs text-gray-500">
-                      Найдено {favorite.matchCount} похожих товаров
-                    </p>
-                  </div>
-                )}
-              </div>
-            </Card>
-            </div>
-          ))}
-        </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       )}
 
       {/* Create Order Modal */}
