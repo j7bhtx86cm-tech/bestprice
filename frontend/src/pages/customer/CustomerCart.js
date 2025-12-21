@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ShoppingCart, Trash2, Plus, Minus, Package, MapPin } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, Package, MapPin, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -272,16 +272,31 @@ export const CustomerCart = () => {
             </div>
           </Card>
 
-          {/* Delivery Address Selection */}
-          {company?.deliveryAddresses && company.deliveryAddresses.length > 1 && (
-            <Card className="p-6">
-              <h3 className="font-semibold mb-3">Адрес доставки</h3>
-              <div className="space-y-2">
+          {/* Delivery Address Selection - ALWAYS SHOW */}
+          <Card className="p-6 border-2 border-blue-200">
+            <div className="flex items-start gap-3 mb-4">
+              <MapPin className="h-6 w-6 text-blue-600 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1">Адрес доставки</h3>
+                <p className="text-sm text-gray-600">Выберите ресторан для доставки заказа</p>
+              </div>
+            </div>
+            
+            {!company?.deliveryAddresses || company.deliveryAddresses.length === 0 ? (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Адреса доставки не настроены. Добавьте адреса в профиле компании.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
                 {company.deliveryAddresses.map((addr, idx) => (
                   <label
                     key={idx}
-                    className={`flex items-start gap-3 p-3 border rounded cursor-pointer ${
-                      selectedAddress?.address === addr.address ? 'border-blue-500 bg-blue-50' : ''
+                    className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                      selectedAddress?.address === addr.address 
+                        ? 'border-blue-500 bg-blue-50 shadow-md' 
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                     }`}
                   >
                     <input
@@ -289,17 +304,40 @@ export const CustomerCart = () => {
                       name="address"
                       checked={selectedAddress?.address === addr.address}
                       onChange={() => setSelectedAddress(addr)}
-                      className="mt-1"
+                      className="mt-1 h-4 w-4 text-blue-600"
                     />
                     <div className="flex-1">
-                      <p className="font-medium">{addr.address}</p>
-                      <p className="text-sm text-gray-600">Тел: {addr.phone}</p>
+                      <p className="font-medium text-gray-900">{addr.address || addr}</p>
+                      {addr.phone && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          📞 {addr.phone}
+                        </p>
+                      )}
+                      {addr.additionalPhone && (
+                        <p className="text-sm text-gray-600">
+                          📞 Доп: {addr.additionalPhone}
+                        </p>
+                      )}
+                      {selectedAddress?.address === addr.address && (
+                        <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="font-medium">Выбрано для доставки</span>
+                        </div>
+                      )}
                     </div>
                   </label>
                 ))}
               </div>
-            </Card>
-          )}
+            )}
+            
+            {!selectedAddress && company?.deliveryAddresses?.length > 0 && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800 font-medium">
+                  ⚠️ Пожалуйста, выберите адрес доставки перед оформлением заказа
+                </p>
+              </div>
+            )}
+          </Card>
 
           {/* Checkout Button */}
           <div className="flex gap-3">
@@ -314,9 +352,9 @@ export const CustomerCart = () => {
               className="flex-1"
               size="lg"
               onClick={handleCheckout}
-              disabled={processingOrder}
+              disabled={processingOrder || !selectedAddress}
             >
-              {processingOrder ? 'Оформление...' : 'Оформить заказ'}
+              {processingOrder ? 'Оформление...' : !selectedAddress ? 'Выберите адрес доставки' : 'Оформить заказ'}
             </Button>
           </div>
         </div>
