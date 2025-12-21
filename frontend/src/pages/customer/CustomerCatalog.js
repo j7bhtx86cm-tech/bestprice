@@ -258,8 +258,7 @@ export const CustomerCatalog = () => {
       'ласось': 'лосось', 'лососс': 'лосось', 'лососк': 'лосось', 'лосос': 'лосось',
       'сибасс': 'сибас', 'сибаса': 'сибас', 'сибац': 'сибас',
       'дорада': 'дорадо',
-      'креветка': 'креветки',
-      'фило': 'филе'  // Common confusion: "фило тесто" (philo dough) vs "филе" (fillet)
+      'креветка': 'креветки'
     };
     
     let searchNorm = searchTerm.toLowerCase().trim();
@@ -269,19 +268,16 @@ export const CustomerCatalog = () => {
       searchNorm = searchNorm.replace(typo, correct);
     }
     
-    // Special handling for "филе" - must be fish/meat, not dough
-    const isFiletSearch = searchNorm.includes('филе');
-    
     const searchWords = searchNorm.split(/\s+/);
 
     const filtered = groupedProducts.filter(group => {
       const searchText = group.searchText;
       
-      // Special case: exclude dough/pastry when searching for fillet
-      if (isFiletSearch) {
-        if (searchText.includes('тесто') || searchText.includes('фило') || searchText.includes('dough')) {
-          return false;  // Skip pastry/dough products when searching for fillet
-        }
+      // Special case: When searching for "филе", exclude ONLY pastry dough (not all products with "тесто")
+      // But still show fish/meat products
+      const isFiletSearch = searchWords.includes('филе');
+      if (isFiletSearch && (searchText.includes('фило') || (searchText.includes('тесто') && !searchText.includes('рыб') && !searchText.includes('мяс') && !searchText.includes('филе')))) {
+        return false;  // Skip ONLY philo dough and plain dough, not fish/meat
       }
       
       // 1. Exact match with corrected typos
@@ -302,8 +298,10 @@ export const CustomerCatalog = () => {
           
           // STRICT PREFIX CHECK
           if (sw.length >= 5 && gw.length >= 5) {
-            const prefixLen = sw.length >= 5 ? 3 : 2;
+            const prefixLen = 3;
             if (sw.slice(0, prefixLen) !== gw.slice(0, prefixLen)) continue;
+          } else if (sw.length >= 3 && gw.length >= 3) {
+            if (sw.slice(0, 2) !== gw.slice(0, 2)) continue;
           } else if (sw[0] !== gw[0]) {
             continue;
           }
