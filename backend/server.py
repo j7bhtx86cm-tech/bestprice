@@ -1986,6 +1986,7 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
     """Get user's favorites with product matching"""
+    from product_intent_parser import extract_product_type, extract_weight_kg
     
     favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(100)
     
@@ -2010,10 +2011,9 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
             continue
         
         if mode == 'cheapest':
-            # CHEAPEST MODE: Find all products with same primary type, sort by price
-            from product_intent_parser import extract_product_type
-            
+            # CHEAPEST MODE: Find products with same type AND similar weight
             original_type = extract_product_type(original_product['name'].lower())
+            original_weight = extract_weight_kg(original_product['name'])
             
             # Find all products with same type
             all_products = await db.price_lists.find(
@@ -2027,6 +2027,17 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                 
                 # Match if same primary product type
                 if prod_type == original_type and prod['price'] < original_price:
+                    # Check weight similarity (±20% tolerance)
+                    prod_weight = extract_weight_kg(prod['productName'])
+                    
+                    # If both have weight info, check tolerance
+                    if original_weight and prod_weight:
+                        weight_diff = abs(original_weight - prod_weight) / original_weight
+                        # Skip if weight difference > 20% (e.g., don't match 300g with 1kg)
+                        if weight_diff > 0.20:
+                            continue
+                    # If no weight info available, allow match (best effort)
+                    
                     # Get supplier info
                     supplier_id = prod.get('supplierId')
                     supplier_name = companies_map.get(supplier_id, 'Unknown')
@@ -2037,7 +2048,8 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                         'supplierId': supplier_id,
                         'supplierName': supplier_name,
                         'productId': prod.get('productId'),
-                        'article': prod.get('article')
+                        'article': prod.get('article'),
+                        'weight': prod_weight
                     })
             
             # Sort by price (cheapest first)
@@ -2056,7 +2068,8 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                     "unit": fav.get('unit', original_product.get('unit', 'шт')),
                     "foundProduct": {
                         "name": best['productName'],
-                        "price": best['price']
+                        "price": best['price'],
+                        "weight": best.get('weight')
                     },
                     "hasCheaperMatch": True,
                     "matchCount": len(matches)
