@@ -92,9 +92,9 @@ def extract_product_type(name_lower: str) -> str:
     
     # Dough/Pastry - distinguish from fillet
     if 'тесто' in name_lower or 'dough' in name_lower:
+        if 'фило' in name_lower or 'фило' in name_lower:
+            return 'тесто_фило'
         return 'тесто'
-    if 'фило' in name_lower and ('тесто' in name_lower or 'паст' in name_lower or 'dough' in name_lower):
-        return 'тесто_фило'
     
     # Composites
     if 'порошок' in name_lower and 'куриный' in name_lower:
