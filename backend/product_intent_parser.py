@@ -5,7 +5,7 @@ import re
 from typing import Dict, Optional, Any
 
 def extract_product_type(name_lower: str) -> str:
-    """Extract PRIMARY food type only"""
+    """Extract PRIMARY food type with sub-type differentiation"""
     
     # Coconut milk special case
     if ('кокос' in name_lower or 'coconut' in name_lower) and ('молок' in name_lower or 'milk' in name_lower):
@@ -20,12 +20,16 @@ def extract_product_type(name_lower: str) -> str:
         return 'аппетайзер'
     if 'кальмар' in name_lower or 'squid' in name_lower:
         return 'кальмар'
+    if 'мидии' in name_lower or 'mussel' in name_lower:
+        return 'мидии'
     if 'анчоус' in name_lower or 'anchov' in name_lower:
         return 'анчоус'
     if 'тунец' in name_lower or 'tuna' in name_lower:
         return 'тунец'
     if 'лосось' in name_lower or 'ласось' in name_lower or 'семга' in name_lower or 'salmon' in name_lower:
         return 'лосось'
+    if 'форель' in name_lower or 'trout' in name_lower:
+        return 'форель'
     if 'сибас' in name_lower or 'сибасс' in name_lower or 'seabass' in name_lower:
         return 'сибас'
     if 'дорадо' in name_lower or 'дорада' in name_lower or 'dorado' in name_lower:
@@ -34,13 +38,31 @@ def extract_product_type(name_lower: str) -> str:
         return 'треска'
     if 'минтай' in name_lower or 'pollock' in name_lower:
         return 'минтай'
+    if 'угорь' in name_lower or 'eel' in name_lower:
+        return 'угорь'
+    
+    # Meats - check for fat percentage products (different from regular meat)
     if 'курица' in name_lower or 'куриц' in name_lower or 'chicken' in name_lower:
         return 'курица'
     if 'говядин' in name_lower or 'beef' in name_lower:
+        # Check if it's ground beef with fat ratio (70/30, 90/10)
+        if 'фарш' in name_lower or 'ground' in name_lower or 'молот' in name_lower:
+            return 'говядина_фарш'  # Ground beef with potential fat ratio
         return 'говядина'
     if 'свинин' in name_lower or 'pork' in name_lower:
+        if 'фарш' in name_lower or 'ground' in name_lower or 'молот' in name_lower:
+            return 'свинина_фарш'
         return 'свинина'
+    
+    # Vegetables with size grades
+    if 'огурц' in name_lower or 'cucumber' in name_lower:
+        return 'огурцы'
+    
+    # Condiments
     if 'кетчуп' in name_lower or 'ketchup' in name_lower:
+        # Distinguish between bottles and dip-pots
+        if 'дип' in name_lower or 'порц' in name_lower or 'dip' in name_lower:
+            return 'кетчуп_порционный'
         return 'кетчуп'
     if 'соль' in name_lower or 'salt' in name_lower:
         return 'соль'
@@ -55,7 +77,7 @@ def extract_product_type(name_lower: str) -> str:
     if 'масло' in name_lower:
         return 'масло'
     
-    # Mushrooms - check for specific types
+    # Mushrooms - check for specific types and mixes
     if 'гриб' in name_lower or 'mushroom' in name_lower:
         # Check if it's a mix
         if ('вешенк' in name_lower or 'oyster' in name_lower) and ('шампиньон' in name_lower or 'белые' in name_lower or 'champignon' in name_lower):
@@ -64,9 +86,15 @@ def extract_product_type(name_lower: str) -> str:
             return 'грибы_вешенки'
         elif 'шампиньон' in name_lower or 'champignon' in name_lower:
             return 'грибы_шампиньоны'
-        elif 'белые' in name_lower:
+        elif 'белые' in name_lower or 'белый' in name_lower:
             return 'грибы_белые'
         return 'грибы'
+    
+    # Dough/Pastry - distinguish from fillet
+    if 'тесто' in name_lower or 'dough' in name_lower:
+        return 'тесто'
+    if 'фило' in name_lower and ('тесто' in name_lower or 'паст' in name_lower or 'dough' in name_lower):
+        return 'тесто_фило'
     
     # Composites
     if 'порошок' in name_lower and 'куриный' in name_lower:
