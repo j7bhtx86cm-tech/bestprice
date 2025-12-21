@@ -315,7 +315,7 @@ export const CustomerCatalog = () => {
     });
 
     const sortedFiltered = filtered.sort((a, b) => a.lowestPrice - b.lowestPrice);
-    setFilteredFiltered.slice(0, Math.min(200, sortedFiltered.length)));
+    setFilteredGroups(sortedFiltered.slice(0, Math.min(200, sortedFiltered.length)));
     setDisplayLimit(200);
   };
 
