@@ -258,7 +258,8 @@ export const CustomerCatalog = () => {
       'ласось': 'лосось', 'лососс': 'лосось', 'лососк': 'лосось', 'лосос': 'лосось',
       'сибасс': 'сибас', 'сибаса': 'сибас', 'сибац': 'сибас',
       'дорада': 'дорадо',
-      'креветка': 'креветки'
+      'креветка': 'креветки',
+      'фило': 'филе'  // Common confusion: "фило тесто" (philo dough) vs "филе" (fillet)
     };
     
     let searchNorm = searchTerm.toLowerCase().trim();
@@ -268,46 +269,56 @@ export const CustomerCatalog = () => {
       searchNorm = searchNorm.replace(typo, correct);
     }
     
+    // Special handling for "филе" - must be fish/meat, not dough
+    const isFiletSearch = searchNorm.includes('филе');
+    
     const searchWords = searchNorm.split(/\s+/);
 
     const filtered = groupedProducts.filter(group => {
+      const searchText = group.searchText;
+      
+      // Special case: exclude dough/pastry when searching for fillet
+      if (isFiletSearch) {
+        if (searchText.includes('тесто') || searchText.includes('фило') || searchText.includes('dough')) {
+          return false;  // Skip pastry/dough products when searching for fillet
+        }
+      }
+      
       // 1. Exact match with corrected typos
-      if (searchWords.every(word => group.searchText.includes(word))) {
+      if (searchWords.every(word => searchText.includes(word))) {
         return true;
       }
       
-      // 2. Fuzzy match with VERY STRICT rules to avoid false positives like "сибас" matching "соба"
+      // 2. Fuzzy match with VERY STRICT rules
       for (const sw of searchWords) {
-        if (sw.length < 4) continue; // Skip very short words for fuzzy matching
+        if (sw.length < 4) continue;
         
-        const groupWords = group.searchText.split(/\s+/);
+        const groupWords = searchText.split(/\s+/);
         for (const gw of groupWords) {
           if (gw.length < 4) continue;
           
-          // STRICT LENGTH CHECK: lengths must be very similar (within 1 character)
+          // STRICT LENGTH CHECK
           if (Math.abs(sw.length - gw.length) > 1) continue;
           
-          // STRICT PREFIX CHECK: Must start with same 2+ characters
-          if (sw.length >= 3 && gw.length >= 3) {
-            // For longer words (5+ chars), require first 3 chars to match
+          // STRICT PREFIX CHECK
+          if (sw.length >= 5 && gw.length >= 5) {
             const prefixLen = sw.length >= 5 ? 3 : 2;
             if (sw.slice(0, prefixLen) !== gw.slice(0, prefixLen)) continue;
           } else if (sw[0] !== gw[0]) {
-            // For shorter words, at least first char must match
             continue;
           }
           
-          // Substring match (most reliable - one word contains the other)
+          // Substring match
           if (gw.includes(sw) || sw.includes(gw)) return true;
           
-          // Levenshtein-like distance check (ONLY 1 char difference allowed)
+          // Levenshtein-like (1 char diff)
           if (Math.abs(sw.length - gw.length) <= 1) {
             let diff = 0;
             for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
               if (sw[i] !== gw[i]) diff++;
-              if (diff > 1) break;  // Stop if more than 1 error
+              if (diff > 1) break;
             }
-            if (diff === 1) return true;  // Exactly 1 typo
+            if (diff === 1) return true;
           }
         }
       }
