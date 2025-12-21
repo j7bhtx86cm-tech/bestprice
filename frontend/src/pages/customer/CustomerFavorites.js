@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,18 +121,23 @@ export const CustomerFavorites = () => {
     }
   };
 
-  const handleDragEnd = async (result) => {
-    if (!result.destination) return;
-    
-    const sourceIndex = result.source.index;
-    const destIndex = result.destination.index;
-    
-    if (sourceIndex === destIndex) return;
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-    // Reorder locally first for immediate feedback
-    const reordered = Array.from(filteredFavorites);
-    const [removed] = reordered.splice(sourceIndex, 1);
-    reordered.splice(destIndex, 0, removed);
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = filteredFavorites.findIndex(f => f.id === active.id);
+    const newIndex = filteredFavorites.findIndex(f => f.id === over.id);
+    
+    // Reorder locally for immediate feedback
+    const reordered = arrayMove(filteredFavorites, oldIndex, newIndex);
     setFilteredFavorites(reordered);
 
     try {
