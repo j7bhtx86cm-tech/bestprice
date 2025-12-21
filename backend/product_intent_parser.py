@@ -55,6 +55,19 @@ def extract_product_type(name_lower: str) -> str:
     if 'масло' in name_lower:
         return 'масло'
     
+    # Mushrooms - check for specific types
+    if 'гриб' in name_lower or 'mushroom' in name_lower:
+        # Check if it's a mix
+        if ('вешенк' in name_lower or 'oyster' in name_lower) and ('шампиньон' in name_lower or 'белые' in name_lower or 'champignon' in name_lower):
+            return 'грибы_микс'  # Mixed mushrooms - don't match with single type
+        elif 'вешенк' in name_lower or 'oyster' in name_lower:
+            return 'грибы_вешенки'
+        elif 'шампиньон' in name_lower or 'champignon' in name_lower:
+            return 'грибы_шампиньоны'
+        elif 'белые' in name_lower:
+            return 'грибы_белые'
+        return 'грибы'
+    
     # Composites
     if 'порошок' in name_lower and 'куриный' in name_lower:
         return 'порошок_куриный'
@@ -62,6 +75,13 @@ def extract_product_type(name_lower: str) -> str:
         return 'бульон_куриный'
     
     return name_lower.split()[0] if name_lower.split() else "unknown"
+
+def extract_caliber(name: str) -> Optional[str]:
+    """Extract shrimp caliber (size) like 16/20, 31/40, 90/120"""
+    match = re.search(r'\b(\d{1,3})\s*/\s*(\d{1,3})\s*(?:\+)?\b', name)
+    if match:
+        return f"{match.group(1)}/{match.group(2)}"
+    return None
 
 def extract_brand(raw_name: str) -> Optional[str]:
     """Extract brand - exclude generic words"""
