@@ -435,8 +435,8 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.7"
-  test_sequence: 9
+  version: "1.8"
+  test_sequence: 10
   run_ui: true
   last_test_date: "2025-12-21"
 
