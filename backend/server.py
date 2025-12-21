@@ -1986,19 +1986,15 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
     """Get user's favorites with product matching"""
-    from advanced_product_matcher import search_similar_products, extract_features
     
     favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(100)
     
     if not favorites:
         return []
     
-    # Load all features once
-    all_features = await db.supplier_item_features.find({"active": True, "price": {"$gt": 0}}, {"_id": 0}).to_list(10000)
-    
     # Get companies map
-    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
-    companies_map = {c['id']: c for c in all_companies}
+    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1}).to_list(100)
+    companies_map = {c['id']: c.get('companyName', c.get('name', 'Unknown')) for c in all_companies}
     
     enriched = []
     
@@ -2007,144 +2003,73 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
         
         # Get original product info
         original_product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
-        original_pl = await db.pricelists.find_one({"productId": fav['productId']}, {"_id": 0})
+        original_pl = await db.price_lists.find_one({"productId": fav['productId']}, {"_id": 0})
         original_price = fav.get('originalPrice') or (original_pl['price'] if original_pl else None)
         
-        if mode == 'cheapest' and original_product:
-            # Use WORKING advanced_product_matcher
-            matches = search_similar_products(
-                query_text=original_product['name'],
-                all_products=all_features,
-                strict_pack=None,
-                strict_brand=False,  # Ignore brand for best price
-                brand=None,
-                top_n=20
-            )
-            
-            # Sort by price first (cheapest)
-            if matches:
-                matches_sorted = sorted(matches, key=lambda x: (x['price'], -x['score']))
-                best_match = matches_sorted[0]
-                
-                if best_match['price'] < original_price:
-                    supplier = companies_map.get(best_match['supplier_id'])
-                    
-                    enriched.append({
-                        **fav,
-                        "mode": mode,
-                        "originalPrice": original_price,
-                        "bestPrice": best_match['price'],
-                        "bestSupplier": supplier['name'] if supplier else None,
-                        "foundProduct": {
-                            "name": best_match['raw_name'],
-                            "brand": best_match.get('brand'),
-                            "price": best_match['price'],
-                            "score": best_match['score'],
-                            "supplier_item_id": best_match['supplier_item_id']
-                        },
-                        "hasCheaperMatch": True
-                    })
-                else:
-                    enriched.append({
-                        **fav,
-                        "mode": mode,
-                        "bestPrice": original_price,
-                        "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
-                        "fallbackMessage": "Аналоги найдены, но текущая цена уже лучшая",
-                        "hasCheaperMatch": False
-                    })
-            else:
-                enriched.append({
-                    **fav,
-                    "mode": mode,
-                    "bestPrice": original_price,
-                    "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
-                    "fallbackMessage": "Аналоги не найдены",
-                    "hasCheaperMatch": False
-                })
-        else:
-            # EXACT MODE
-            enriched.append({
-                **fav,
-                "mode": mode,
-                "bestPrice": original_price,
-                "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name')
-            })
-    
-    return enriched
-    
-    if not favorites:
-        return []
-    
-    # Load all features once
-    all_features = await db.supplier_item_features.find({"active": True}, {"_id": 0}).to_list(10000)
-    
-    # Get companies map
-    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
-    companies_map = {c['id']: c for c in all_companies}
-    
-    enriched = []
-    
-    for fav in favorites:
-        mode = fav.get('mode', 'exact')
+        if not original_product or not original_price:
+            continue
         
-        # Get original product info
-        original_product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
-        original_pl = await db.pricelists.find_one({"productId": fav['productId']}, {"_id": 0})
-        original_price = fav.get('originalPrice') or (original_pl['price'] if original_pl else None)
-        
-        if mode == 'cheapest' and original_product:
-            # CHEAPEST MODE: Use ENHANCED fuzzy matching
-            logging.info(f"Fuzzy search for: {original_product['name'][:50]}")
+        if mode == 'cheapest':
+            # CHEAPEST MODE: Find all products with same primary type, sort by price
+            from product_intent_parser import extract_product_type
             
-            # Filter valid products (exclude 0 price category headers)
-            valid_features = [f for f in all_features if f.get('price', 0) > 0]
+            original_type = extract_product_type(original_product['name'].lower())
             
-            # Find matches using enhanced algorithm
+            # Find all products with same type
+            all_products = await db.price_lists.find(
+                {"price": {"$gt": 0}},  # Exclude 0 price items
+                {"_id": 0}
+            ).to_list(10000)
+            
             matches = []
-            for feature in valid_features:
-                match_result = enhanced_product_match(
-                    original_product['name'],
-                    feature['raw_name'],
-                    mode='cheapest'
-                )
+            for prod in all_products:
+                prod_type = extract_product_type(prod['productName'].lower())
                 
-                if match_result['match'] and match_result['score'] >= 70:
+                # Match if same primary product type
+                if prod_type == original_type and prod['price'] < original_price:
+                    # Get supplier info
+                    supplier_id = prod.get('supplierId')
+                    supplier_name = companies_map.get(supplier_id, 'Unknown')
+                    
                     matches.append({
-                        **feature,
-                        'fuzzy_score': match_result['score']
+                        'productName': prod['productName'],
+                        'price': prod['price'],
+                        'supplierId': supplier_id,
+                        'supplierName': supplier_name,
+                        'productId': prod.get('productId'),
+                        'article': prod.get('article')
                     })
             
             # Sort by price (cheapest first)
             matches.sort(key=lambda x: x['price'])
             
-            logging.info(f"Fuzzy matching found {len(matches)} results")
-            
-            if matches and matches[0]['price'] < original_price:
+            if matches:
                 best = matches[0]
-                supplier = companies_map.get(best['supplier_id'])
-                
                 enriched.append({
                     **fav,
                     "mode": mode,
                     "originalPrice": original_price,
                     "bestPrice": best['price'],
-                    "bestSupplier": supplier['name'] if supplier else None,
+                    "bestSupplier": best['supplierName'],
+                    "productName": fav.get('productName', original_product['name']),
+                    "productCode": fav.get('productCode', original_product.get('article', '')),
+                    "unit": fav.get('unit', original_product.get('unit', 'шт')),
                     "foundProduct": {
-                        "name": best['raw_name'],
-                        "brand": best.get('brand'),
-                        "price": best['price'],
-                        "score": best['fuzzy_score'],
-                        "supplier_item_id": best['supplier_item_id']
+                        "name": best['productName'],
+                        "price": best['price']
                     },
-                    "hasCheaperMatch": True
+                    "hasCheaperMatch": True,
+                    "matchCount": len(matches)
                 })
             else:
                 enriched.append({
                     **fav,
                     "mode": mode,
                     "bestPrice": original_price,
-                    "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name'),
+                    "bestSupplier": companies_map.get(fav.get('originalSupplierId', ''), 'Unknown'),
+                    "productName": fav.get('productName', original_product['name']),
+                    "productCode": fav.get('productCode', original_product.get('article', '')),
+                    "unit": fav.get('unit', original_product.get('unit', 'шт')),
                     "fallbackMessage": "Аналоги найдены, но текущая цена уже лучшая",
                     "hasCheaperMatch": False
                 })
@@ -2154,29 +2079,13 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
                 **fav,
                 "mode": mode,
                 "bestPrice": original_price,
-                "bestSupplier": companies_map.get(fav.get('originalSupplierId'), {}).get('name')
+                "bestSupplier": companies_map.get(fav.get('originalSupplierId', ''), 'Unknown'),
+                "productName": fav.get('productName', original_product['name']),
+                "productCode": fav.get('productCode', original_product.get('article', '')),
+                "unit": fav.get('unit', original_product.get('unit', 'шт'))
             })
     
     return enriched
-    
-    if not favorites:
-        return []
-    
-    # Load all features once (optimized)
-    all_features = await db.supplier_item_features.find({"active": True}, {"_id": 0}).to_list(10000)
-    
-    # Get companies map
-    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
-    companies_map = {c['id']: c for c in all_companies}
-    
-    enriched = []
-    
-    for fav in favorites:
-        mode = fav.get('mode', 'exact')
-        
-        # Get original product info
-        original_product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
-        original_pl = await db.pricelists.find_one({"productId": fav['productId']}, {"_id": 0})
         
         # Get original price (from favorite or from pricelist)
         original_price = fav.get('originalPrice') or (original_pl['price'] if original_pl else None)
