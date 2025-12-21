@@ -468,6 +468,18 @@ metadata:
         agent: "testing"
         comment: "NOT TESTED (2025-12-20): User requested testing of drag and drop functionality in Favorites page. Code review shows implementation exists (lines 108-151: handleDragStart, handleDragOver, handleDrop handlers; lines 320-323: draggable attributes on Card components). However, per system instructions, drag and drop features cannot be tested due to system limitations. Favorites page is accessible at /customer/favorites with 23 draggable cards present. Main agent should implement alternative testing approach or request manual verification from user."
 
+  - task: "Best Price Toggle Functionality in Favorites"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/customer/CustomerFavorites.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED (2025-12-21): ✅ ALL TESTS PASSED - Best Price toggle functionality working perfectly. INDIVIDUAL TOGGLE TEST: (1) ✅ Searched for 'сибас' and found 1 product (СИБАС тушка непотрошеная 300-400 гр), (2) ✅ Toggle was initially OFF (unchecked), showing price 948.94 ₽, (3) ✅ Clicked toggle to turn ON, waited 4 seconds for API call, (4) ✅ Reloaded page - toggle state persisted as 'checked', (5) ✅ 'Найден дешевле!' green box appeared with cheaper product 'зам. Сибасс мороженый 300/400 5000 г.', (6) ✅ Price changed to 800 ₽ (savings: 148.94 ₽ or 15.7%), (7) ✅ NO 'текущая цена уже лучшая' message (correct behavior), (8) ✅ API call to PUT /api/favorites/{id}/mode successful. GLOBAL TOGGLE TEST: (1) ✅ Found global toggle 'Искать лучшую цену для всех' in top right, (2) ✅ Initial state: 5 out of 24 individual toggles were checked, (3) ✅ Clicked global toggle, (4) ✅ 24 API calls made to PUT /api/favorites/{id}/mode (one for each favorite), (5) ✅ Reloaded page - global toggle state persisted as 'checked', (6) ✅ ALL 24 individual toggles synchronized to 'checked' state, (7) ✅ СИБАС product shows 'Найден дешевле!' box with 800 ₽ price. DATABASE PERSISTENCE: ✅ Both individual and global toggle states persist correctly after page reload. PRICE COMPARISON: ✅ System correctly finds cheaper alternatives (800 ₽ vs 948.94 ₽ for СИБАС). Feature is production-ready and working as designed."
+
   - task: "Fixed Persistent Mini Cart"
     implemented: true
     working: true
