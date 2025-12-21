@@ -273,51 +273,104 @@ export const CustomerCatalog = () => {
     const filtered = groupedProducts.filter(group => {
       const searchText = group.searchText;
       
-      // Special case: When searching for "филе", exclude ONLY pastry dough (not all products with "тесто")
-      // But still show fish/meat products
+      // Special case: When searching for "филе", exclude ONLY pastry dough
       const isFiletSearch = searchWords.includes('филе');
       if (isFiletSearch && (searchText.includes('фило') || (searchText.includes('тесто') && !searchText.includes('рыб') && !searchText.includes('мяс') && !searchText.includes('филе')))) {
-        return false;  // Skip ONLY philo dough and plain dough, not fish/meat
+        return false;  // Skip philo dough and plain dough
       }
       
-      // 1. Exact match with corrected typos
-      if (searchWords.every(word => searchText.includes(word))) {
-        return true;
-      }
-      
-      // 2. Fuzzy match with VERY STRICT rules
-      for (const sw of searchWords) {
-        if (sw.length < 4) continue;
+      // IMPORTANT: When multiple search words, ALL must be present (not just one)
+      // This ensures "минтай филе" only shows POLLOCK fillets, not all fillets
+      if (searchWords.length > 1) {
+        // For multi-word search, require ALL words to be present
+        const allWordsPresent = searchWords.every(word => searchText.includes(word));
+        if (allWordsPresent) {
+          return true;  // All words found - exact match
+        }
         
-        const groupWords = searchText.split(/\s+/);
-        for (const gw of groupWords) {
-          if (gw.length < 4) continue;
-          
-          // STRICT LENGTH CHECK
-          if (Math.abs(sw.length - gw.length) > 1) continue;
-          
-          // STRICT PREFIX CHECK
-          if (sw.length >= 5 && gw.length >= 5) {
-            const prefixLen = 3;
-            if (sw.slice(0, prefixLen) !== gw.slice(0, prefixLen)) continue;
-          } else if (sw.length >= 3 && gw.length >= 3) {
-            if (sw.slice(0, 2) !== gw.slice(0, 2)) continue;
-          } else if (sw[0] !== gw[0]) {
+        // If not all words present, try fuzzy matching for EACH word
+        // But still require ALL words to match (with typo tolerance)
+        let matchedWords = 0;
+        for (const sw of searchWords) {
+          if (sw.length < 3) {
+            if (searchText.includes(sw)) matchedWords++;
             continue;
           }
           
-          // Substring match
-          if (gw.includes(sw) || sw.includes(gw)) return true;
+          // Check if this word matches (exact or fuzzy)
+          let wordMatched = false;
           
-          // Levenshtein-like (1 char diff)
-          if (Math.abs(sw.length - gw.length) <= 1) {
-            let diff = 0;
-            for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
-              if (sw[i] !== gw[i]) diff++;
-              if (diff > 1) break;
+          if (searchText.includes(sw)) {
+            wordMatched = true;
+          } else {
+            // Try fuzzy for this word
+            const groupWords = searchText.split(/\s+/);
+            for (const gw of groupWords) {
+              if (gw.length < 3) continue;
+              
+              // Similar length
+              if (Math.abs(sw.length - gw.length) > 1) continue;
+              
+              // Similar prefix
+              if (sw.length >= 3 && gw.length >= 3) {
+                const prefixLen = sw.length >= 5 ? 3 : 2;
+                if (sw.slice(0, prefixLen) === gw.slice(0, prefixLen)) {
+                  // Substring or 1-char diff
+                  if (gw.includes(sw) || sw.includes(gw)) {
+                    wordMatched = true;
+                    break;
+                  }
+                  
+                  let diff = 0;
+                  for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
+                    if (sw[i] !== gw[i]) diff++;
+                    if (diff > 1) break;
+                  }
+                  if (diff === 1) {
+                    wordMatched = true;
+                    break;
+                  }
+                }
+              }
             }
-            if (diff === 1) return true;
           }
+          
+          if (wordMatched) matchedWords++;
+        }
+        
+        // ALL words must match (with tolerance)
+        return matchedWords === searchWords.length;
+      }
+      
+      // Single word search - use existing fuzzy logic
+      const sw = searchWords[0];
+      if (searchText.includes(sw)) return true;
+      
+      if (sw.length < 4) return false;
+      
+      const groupWords = searchText.split(/\s+/);
+      for (const gw of groupWords) {
+        if (gw.length < 4) continue;
+        
+        if (Math.abs(sw.length - gw.length) > 1) continue;
+        
+        if (sw.length >= 5 && gw.length >= 5) {
+          if (sw.slice(0, 3) !== gw.slice(0, 3)) continue;
+        } else if (sw.length >= 3 && gw.length >= 3) {
+          if (sw.slice(0, 2) !== gw.slice(0, 2)) continue;
+        } else if (sw[0] !== gw[0]) {
+          continue;
+        }
+        
+        if (gw.includes(sw) || sw.includes(gw)) return true;
+        
+        if (Math.abs(sw.length - gw.length) <= 1) {
+          let diff = 0;
+          for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
+            if (sw[i] !== gw[i]) diff++;
+            if (diff > 1) break;
+          }
+          if (diff === 1) return true;
         }
       }
       return false;
