@@ -1983,6 +1983,112 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
     
     return {"message": "Mode updated", "mode": mode}
 
+
+# NEW UNIVERSAL MATCHING ENGINE ENDPOINT
+@api_router.get("/favorites/v2")
+async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
+    """Get favorites with NEW universal matching engine (enterprise-grade)"""
+    from matching.query_builder import build_query_features
+    from matching.gate_filters import apply_gate_filters
+    from matching.scorer import find_matches
+    from matching.best_price_finder import find_best_price
+    
+    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(100)
+    
+    if not favorites:
+        return []
+    
+    # Get companies map
+    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1}).to_list(100)
+    companies_map = {c['id']: c.get('companyName', 'Unknown') for c in all_companies}
+    
+    # Load ALL supplier_items once (NEW collection with price_per_base_unit)
+    all_items = await db.supplier_items.find({"active": True}, {"_id": 0}).to_list(15000)
+    
+    enriched = []
+    
+    for fav in favorites:
+        mode = fav.get('mode', 'exact')
+        
+        # Get original product
+        original_product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
+        original_pl = await db.price_lists.find_one({"productId": fav['productId']}, {"_id": 0})
+        original_price = fav.get('originalPrice') or (original_pl['price'] if original_pl else None)
+        
+        if not original_product or not original_price:
+            continue
+        
+        if mode == 'cheapest':
+            # Build QueryFeatures from favorite product
+            query = build_query_features(
+                query_text=original_product['name'],
+                strict_pack=None,
+                strict_brand=False,  # Ignore brand for best price search
+                brand=None
+            )
+            
+            # Apply gate filters (super_class, base_unit, etc.)
+            candidates = apply_gate_filters(query, all_items)
+            
+            # Score candidates (0-100, MIN_SCORE=70)
+            matches = find_matches(query, candidates, top_n=20)
+            
+            # Find winner: minimal price_per_base_unit
+            winner = find_best_price(matches)
+            
+            if winner and winner['price'] < original_price:
+                enriched.append({
+                    **fav,
+                    "mode": mode,
+                    "originalPrice": original_price,
+                    "bestPrice": winner['price'],
+                    "bestPricePerBaseUnit": winner.get('price_per_base_unit'),
+                    "bestSupplier": companies_map.get(winner['supplier_company_id'], 'Unknown'),
+                    "productName": fav.get('productName', original_product['name']),
+                    "productCode": fav.get('productCode', original_product.get('article', '')),
+                    "unit": fav.get('unit', original_product.get('unit', 'шт')),
+                    "foundProduct": {
+                        "name": winner['name_raw'],
+                        "price": winner['price'],
+                        "pricePerBaseUnit": winner['price_per_base_unit'],
+                        "baseUnit": winner['base_unit'],
+                        "score": winner['match_score'],
+                        "calcRoute": winner.get('calc_route'),
+                        "caliber": winner.get('caliber'),
+                        "netWeight": winner.get('net_weight_kg')
+                    },
+                    "hasCheaperMatch": True,
+                    "matchCount": len(matches),
+                    "engineVersion": "v2_universal"
+                })
+            else:
+                enriched.append({
+                    **fav,
+                    "mode": mode,
+                    "bestPrice": original_price,
+                    "bestSupplier": companies_map.get(fav.get('originalSupplierId', ''), 'Unknown'),
+                    "productName": fav.get('productName', original_product['name']),
+                    "productCode": fav.get('productCode', original_product.get('article', '')),
+                    "unit": fav.get('unit', original_product.get('unit', 'шт')),
+                    "fallbackMessage": "Аналоги найдены, но текущая цена уже лучшая" if matches else "Аналоги не найдены",
+                    "hasCheaperMatch": False,
+                    "engineVersion": "v2_universal"
+                })
+        else:
+            # EXACT MODE
+            enriched.append({
+                **fav,
+                "mode": mode,
+                "bestPrice": original_price,
+                "bestSupplier": companies_map.get(fav.get('originalSupplierId', ''), 'Unknown'),
+                "productName": fav.get('productName', original_product['name']),
+                "productCode": fav.get('productCode', original_product.get('article', '')),
+                "unit": fav.get('unit', original_product.get('unit', 'шт')),
+                "engineVersion": "v2_universal"
+            })
+    
+    return enriched
+
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
     """Get user's favorites with product matching"""
