@@ -108,6 +108,7 @@ def process_price_list_item(raw_item: Dict, supplier_company_id: str, price_list
         'net_volume_l': volume_data.get('net_volume_l'),
         'piece_weight_kg': weight_data.get('piece_weight_kg'),
         'variable_weight': weight_data.get('variable_weight', False),
+        'bulk_package': weight_data.get('bulk_package', False),
         
         # Classification
         'super_class': super_class,
