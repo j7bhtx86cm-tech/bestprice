@@ -202,6 +202,16 @@ def extract_super_class(name_lower: str) -> str:
         return 'meat.pork'
     if 'курица' in name_lower or 'куриц' in name_lower or 'chicken' in name_lower:
         return 'meat.chicken'
+    if 'ягнятина' in name_lower or 'ягнен' in name_lower or 'lamb' in name_lower:
+        return 'meat.lamb'
+    if 'баранин' in name_lower or 'mutton' in name_lower:
+        return 'meat.mutton'
+    if 'телятин' in name_lower or 'veal' in name_lower:
+        return 'meat.veal'
+    if 'утка' in name_lower or 'duck' in name_lower:
+        return 'meat.duck'
+    if 'индейк' in name_lower or 'turkey' in name_lower:
+        return 'meat.turkey'
     
     # Dairy
     if 'молоко' in name_lower and ('кокос' in name_lower or 'coconut' in name_lower):
