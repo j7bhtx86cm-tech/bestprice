@@ -265,6 +265,54 @@ def extract_super_class(name_lower: str) -> str:
         return 'staples.semolina'
     if 'хлопья' in name_lower or 'flakes' in name_lower or 'овсян' in name_lower:
         return 'staples.flakes'
+    if 'булгур' in name_lower or 'bulgur' in name_lower:
+        return 'staples.bulgur'
+    if 'греч' in name_lower or 'buckwheat' in name_lower:
+        return 'staples.buckwheat'
+    
+    # Pasta
+    if any(w in name_lower for w in ['макарон', 'мак. изд', 'паста', 'pasta', 'спагетти', 'spaghetti', 'фузилли', 'пенне', 'penne']):
+        return 'pasta'
+    
+    # Fruits
+    if 'ананас' in name_lower or 'pineapple' in name_lower:
+        return 'fruits.pineapple'
+    if 'яблок' in name_lower or 'apple' in name_lower:
+        return 'fruits.apple'
+    if 'банан' in name_lower or 'banana' in name_lower:
+        return 'fruits.banana'
+    if 'апельсин' in name_lower or 'orange' in name_lower:
+        return 'fruits.orange'
+    if 'лимон' in name_lower or 'lemon' in name_lower:
+        return 'fruits.lemon'
+    
+    # Eggs
+    if 'яйцо' in name_lower or 'яйц' in name_lower or 'egg' in name_lower:
+        if 'перепел' in name_lower or 'quail' in name_lower:
+            return 'eggs.quail'
+        return 'eggs.chicken'
+    
+    # Condiments & Spices
+    if 'горчиц' in name_lower or 'mustard' in name_lower:
+        return 'condiments.mustard'
+    if 'каперс' in name_lower or 'caper' in name_lower:
+        return 'condiments.capers'
+    if 'уксус' in name_lower or 'vinegar' in name_lower:
+        return 'condiments.vinegar'
+    if 'специи' in name_lower or 'spice' in name_lower:
+        return 'condiments.spice'
+    if 'перец' in name_lower and not any(w in name_lower for w in ['болгарск', 'сладк', 'bell']):
+        return 'condiments.pepper'
+    
+    # Non-food items
+    if any(w in name_lower for w in ['трубочк', 'соломка', 'straw']):
+        return 'disposables.straws'
+    if any(w in name_lower for w in ['салфетк', 'napkin']):
+        return 'disposables.napkins'
+    if any(w in name_lower for w in ['контейнер', 'container', 'упаковк']):
+        return 'disposables.containers'
+    if any(w in name_lower for w in ['перчатк', 'glove']):
+        return 'disposables.gloves'
     
     return 'other'
 
