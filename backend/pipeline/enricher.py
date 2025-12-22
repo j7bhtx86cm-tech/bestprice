@@ -246,8 +246,15 @@ def extract_super_class(name_lower: str) -> str:
             return 'condiments.ketchup.portion'
         return 'condiments.ketchup'
     if 'соус' in name_lower:
+        if 'томат' in name_lower:
+            return 'condiments.sauce.tomato'
+        if 'соев' in name_lower or 'soy' in name_lower:
+            return 'condiments.sauce.soy'
         return 'condiments.sauce'
+    if 'паста' in name_lower and 'томат' in name_lower:
+        return 'condiments.tomato_paste'
     if 'масло' in name_lower and 'олив' in name_lower:
+        return 'condiments.oil'
         return 'condiments.oil'
     
     # Staples
