@@ -1996,8 +1996,8 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
         return []
     
     # Get companies map
-    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1}).to_list(100)
-    companies_map = {c['id']: c.get('companyName', 'Unknown') for c in all_companies}
+    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+    companies_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in all_companies}
     
     # Load ALL supplier_items once (NEW collection with price_per_base_unit)
     all_items = await db.supplier_items.find({"active": True}, {"_id": 0}).to_list(15000)
