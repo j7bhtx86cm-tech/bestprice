@@ -238,7 +238,18 @@ def extract_super_class(name_lower: str) -> str:
     if 'огурц' in name_lower or 'cucumber' in name_lower:
         return 'vegetables.cucumber'
     if 'томат' in name_lower or 'помидор' in name_lower:
+        # Check if it's not already classified as tomato paste/ketchup above
         return 'vegetables.tomato'
+    if 'горох' in name_lower or 'pea' in name_lower:
+        return 'vegetables.peas'
+    if 'фасоль' in name_lower or 'bean' in name_lower:
+        return 'vegetables.beans'
+    if 'капуст' in name_lower or 'cabbage' in name_lower:
+        return 'vegetables.cabbage'
+    if 'морков' in name_lower or 'carrot' in name_lower:
+        return 'vegetables.carrot'
+    if 'лук' in name_lower and not any(w in name_lower for w in ['кукуруз', 'corn']):
+        return 'vegetables.onion'
     
     # Condiments
     if 'кетчуп' in name_lower:
