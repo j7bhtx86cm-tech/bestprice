@@ -238,6 +238,10 @@ def extract_super_class(name_lower: str) -> str:
         return 'staples.sugar'
     if 'соль' in name_lower:
         return 'staples.salt'
+    if 'крупа' in name_lower:
+        return 'staples.grain'
+    if 'водоросли' in name_lower or 'seaweed' in name_lower:
+        return 'seafood.seaweed'
     
     return 'other'
 
