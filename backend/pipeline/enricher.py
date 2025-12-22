@@ -163,12 +163,18 @@ def extract_super_class(name_lower: str) -> str:
         return 'seafood.cod'
     if any(w in name_lower for w in ['сибас', 'seabass']):
         return 'seafood.seabass'
+    if any(w in name_lower for w in ['дорадо', 'дорада', 'dorado']):
+        return 'seafood.dorado'
     if any(w in name_lower for w in ['форель', 'trout']):
         return 'seafood.trout'
     if any(w in name_lower for w in ['кальмар', 'squid']):
         return 'seafood.squid'
     if any(w in name_lower for w in ['мидии', 'mussel']):
         return 'seafood.mussel'
+    if any(w in name_lower for w in ['анчоус', 'anchov']):
+        return 'seafood.anchovy'
+    if 'водоросли' in name_lower or 'seaweed' in name_lower:
+        return 'seafood.seaweed'
     
     # Meat
     if 'говядин' in name_lower or 'beef' in name_lower:
@@ -240,8 +246,10 @@ def extract_super_class(name_lower: str) -> str:
         return 'staples.salt'
     if 'крупа' in name_lower:
         return 'staples.grain'
-    if 'водоросли' in name_lower or 'seaweed' in name_lower:
-        return 'seafood.seaweed'
+    if 'манк' in name_lower or 'semolina' in name_lower:
+        return 'staples.semolina'
+    if 'хлопья' in name_lower or 'flakes' in name_lower or 'овсян' in name_lower:
+        return 'staples.flakes'
     
     return 'other'
 
