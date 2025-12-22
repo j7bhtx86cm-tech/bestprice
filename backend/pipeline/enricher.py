@@ -55,14 +55,20 @@ def extract_weights(text: str) -> Dict[str, Any]:
         if ratio >= 5:  # Package is 5x+ larger than piece (e.g., 5kg / 0.35kg = 14x)
             bulk_package = True
     
-    # Rule: Use maximum weight (package weight)
-    net_weight = max(weights_kg)
-    
-    # If range found, use smaller value as piece weight
-    piece_weight = min(weights_kg) if len(weights_kg) > 1 else None
+    # Rule: If bulk package, use PIECE weight as net_weight (for proper comparison)
+    # Otherwise use maximum weight
+    if bulk_package:
+        net_weight = min(weights_kg)  # Piece weight
+        package_weight_kg = max(weights_kg)  # Total package weight
+        piece_weight = min(weights_kg)
+    else:
+        net_weight = max(weights_kg)
+        package_weight_kg = None
+        piece_weight = min(weights_kg) if len(weights_kg) > 1 else None
     
     return {
         'net_weight_kg': net_weight,
+        'package_weight_kg': package_weight_kg,
         'piece_weight_kg': piece_weight,
         'variable_weight': is_variable,
         'bulk_package': bulk_package

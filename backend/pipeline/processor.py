@@ -105,6 +105,7 @@ def process_price_list_item(raw_item: Dict, supplier_company_id: str, price_list
         # Packaging & Weight
         'pack_qty': pack_data.get('pack_qty'),
         'net_weight_kg': weight_data.get('net_weight_kg'),
+        'package_weight_kg': weight_data.get('package_weight_kg'),
         'net_volume_l': volume_data.get('net_volume_l'),
         'piece_weight_kg': weight_data.get('piece_weight_kg'),
         'variable_weight': weight_data.get('variable_weight', False),
