@@ -227,7 +227,7 @@ export const CustomerFavorites = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/favorites`, { headers });
+      const response = await axios.get(`${API}/favorites/v2`, { headers });
       setFavorites(response.data);
       setFilteredFavorites(response.data);
     } catch (error) {
