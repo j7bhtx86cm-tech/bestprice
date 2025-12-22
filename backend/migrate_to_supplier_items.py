@@ -22,6 +22,11 @@ def migrate_price_lists():
     price_lists = list(db.pricelists.find({}, {'_id': 0}))
     logger.info(f"Found {len(price_lists)} price list items")
     
+    # Load all products once for name lookup
+    products = list(db.products.find({}, {'_id': 0, 'id': 1, 'name': 1, 'unit': 1}))
+    products_map = {p['id']: p for p in products}
+    logger.info(f"Loaded {len(products)} products")
+    
     # Process each item through pipeline
     supplier_items = []
     errors = 0
@@ -31,12 +36,18 @@ def migrate_price_lists():
             # Get supplier ID
             supplier_id = pl.get('supplierId', 'unknown')
             
+            # Get product name from products collection
+            product = products_map.get(pl.get('productId'))
+            if not product:
+                logger.warning(f"Product {pl.get('productId')} not found, skipping")
+                continue
+            
             # Build raw_item format
             raw_item = {
-                'productName': pl.get('productName', ''),
+                'productName': product['name'],
                 'price': pl.get('price', 0),
-                'unit': pl.get('unit', 'pcs'),
-                'article': pl.get('article', '')
+                'unit': product.get('unit', 'pcs'),
+                'article': pl.get('supplierItemCode', '')
             }
             
             # Process through pipeline
