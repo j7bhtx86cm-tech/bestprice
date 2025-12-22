@@ -32,7 +32,9 @@ def normalize_name(raw_name: str) -> str:
     
     # Remove stopwords
     words = text.split()
-    filtered = [w for w in words if w not in STOPWORDS and len(w) > 1]\n    \n    return ' '.join(filtered)
+    filtered = [w for w in words if w not in STOPWORDS and len(w) > 1]
+    
+    return ' '.join(filtered)
 
 def normalize_unit(supplier_unit: str) -> str:
     """Universal unit standardization"""
