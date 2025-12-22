@@ -357,6 +357,18 @@ def extract_super_class(name_lower: str) -> str:
     if any(w in name_lower for w in ['перчатк', 'glove']):
         return 'disposables.gloves'
     
+    # Bakery
+    if any(w in name_lower for w in ['тесто', 'dough']):
+        if 'слоен' in name_lower or 'puff' in name_lower:
+            return 'bakery.dough.puff'
+        if 'дрожжев' in name_lower or 'yeast' in name_lower:
+            return 'bakery.dough.yeast'
+        return 'bakery.dough'
+    if 'хлеб' in name_lower or 'bread' in name_lower:
+        return 'bakery.bread'
+    if 'булочк' in name_lower or 'bun' in name_lower or 'roll' in name_lower:
+        return 'bakery.buns'
+    
     return 'other'
 
 def extract_processing_flags(name_lower: str) -> List[str]:
