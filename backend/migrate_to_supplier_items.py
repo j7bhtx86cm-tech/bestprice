@@ -18,8 +18,8 @@ def migrate_price_lists():
     
     logger.info("Starting migration...")
     
-    # Get all price lists
-    price_lists = list(db.price_lists.find({}, {'_id': 0}))
+    # Get all price lists from PRICELISTS collection (not price_lists)
+    price_lists = list(db.pricelists.find({}, {'_id': 0}))
     logger.info(f"Found {len(price_lists)} price list items")
     
     # Process each item through pipeline
