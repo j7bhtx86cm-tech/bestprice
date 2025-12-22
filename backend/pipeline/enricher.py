@@ -45,7 +45,15 @@ def extract_weights(text: str) -> Dict[str, Any]:
             continue
     
     if not weights_kg:
-        return {'net_weight_kg': None, 'piece_weight_kg': None, 'variable_weight': False}
+        return {'net_weight_kg': None, 'piece_weight_kg': None, 'variable_weight': False, 'bulk_package': False}
+    
+    # Detect BULK PACKAGING
+    # If multiple weights and largest is 5x+ bigger than smallest, it's bulk
+    bulk_package = False
+    if len(weights_kg) > 1 and max(weights_kg) >= 2.0:
+        ratio = max(weights_kg) / min(weights_kg)
+        if ratio >= 5:  # Package is 5x+ larger than piece (e.g., 5kg / 0.35kg = 14x)
+            bulk_package = True
     
     # Rule: Use maximum weight (package weight)
     net_weight = max(weights_kg)
@@ -56,7 +64,8 @@ def extract_weights(text: str) -> Dict[str, Any]:
     return {
         'net_weight_kg': net_weight,
         'piece_weight_kg': piece_weight,
-        'variable_weight': is_variable
+        'variable_weight': is_variable,
+        'bulk_package': bulk_package
     }
 
 def extract_volumes(text: str) -> Dict[str, Any]:
