@@ -623,7 +623,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Best Price Matching Logic - Weight Tolerance and Type Matching"
+    - "NEW HYBRID MATCHING ENGINE (v2) - Enterprise-Grade Spec + Simple Logic"
     - "Team Members Feature"
     - "Mini Cart Close Button"
     - "Order History with Date AND Time Display"
