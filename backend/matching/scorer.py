@@ -2,7 +2,7 @@
 from typing import Dict, List
 import difflib
 
-MIN_SCORE = 70
+MIN_SCORE = 50  # Lowered from 70 for better recall
 
 def calculate_name_similarity(query_tokens: set, item_name_norm: str) -> float:
     """Name similarity score (0-60)"""

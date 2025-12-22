@@ -17,15 +17,22 @@ def normalize_name(raw_name: str) -> str:
     text = raw_name.lower()
     text = text.replace('ё', 'е')
     
-    # Remove special characters, keep letters, digits, spaces, /, %
-    text = re.sub(r'[^\w\s\/\%\-]', ' ', text)
+    # Remove item codes (digits 6+)
+    text = re.sub(r'\b\d{6,}\b', '', text)
+    
+    # Remove weights/volumes (they're extracted separately)
+    text = re.sub(r'\d+(?:[.,]\d+)?[-~]?\d*\s*(?:кг|kg|г|гр|g|мл|ml|л|l)\b', '', text, flags=re.IGNORECASE)
+    
+    # Remove calibers (16/20, etc - extracted separately)
+    text = re.sub(r'\b\d{1,3}\s*/\s*\d{1,3}\+?\b', '', text)
+    
+    # Remove special characters, keep letters and spaces
+    text = re.sub(r'[^\w\s]', ' ', text)
     text = ' '.join(text.split())
     
     # Remove stopwords
     words = text.split()
-    filtered = [w for w in words if w not in STOPWORDS and len(w) > 1]
-    
-    return ' '.join(filtered)
+    filtered = [w for w in words if w not in STOPWORDS and len(w) > 1]\n    \n    return ' '.join(filtered)
 
 def normalize_unit(supplier_unit: str) -> str:
     """Universal unit standardization"""
