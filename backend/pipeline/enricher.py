@@ -149,7 +149,7 @@ def extract_brand(text: str) -> Optional[str]:
     return None
 
 def extract_super_class(name_lower: str) -> str:
-    """Classify into super_class"""
+    """Classify into super_class WITH sub-type granularity"""
     # Seafood
     if any(w in name_lower for w in ['креветк', 'shrimp', 'prawn']):
         return 'seafood.shrimp'
@@ -172,13 +172,19 @@ def extract_super_class(name_lower: str) -> str:
     
     # Meat
     if 'говядин' in name_lower or 'beef' in name_lower:
+        if 'фарш' in name_lower or 'ground' in name_lower or 'молот' in name_lower:
+            return 'meat.beef.ground'
         return 'meat.beef'
     if 'свинин' in name_lower or 'pork' in name_lower:
+        if 'фарш' in name_lower:
+            return 'meat.pork.ground'
         return 'meat.pork'
     if 'курица' in name_lower or 'куриц' in name_lower or 'chicken' in name_lower:
         return 'meat.chicken'
     
     # Dairy
+    if 'молоко' in name_lower and ('кокос' in name_lower or 'coconut' in name_lower):
+        return 'dairy.milk.coconut'
     if 'молоко' in name_lower:
         return 'dairy.milk'
     if 'сыр' in name_lower:
@@ -186,16 +192,37 @@ def extract_super_class(name_lower: str) -> str:
     if 'моцарелл' in name_lower:
         return 'dairy.mozzarella'
     
-    # Vegetables
-    if 'гриб' in name_lower:
+    # Vegetables - Mushrooms (CRITICAL - granular types)
+    if 'гриб' in name_lower or 'mushroom' in name_lower:
+        # Check for MIX first
+        has_oyster = 'вешенк' in name_lower or 'oyster' in name_lower
+        has_champignon = 'шампиньон' in name_lower or 'champignon' in name_lower
+        has_white = 'белые' in name_lower or 'белый' in name_lower
+        
+        # If it's a mix, mark as such
+        if (has_oyster and (has_champignon or has_white)) or \
+           (has_champignon and has_oyster):
+            return 'vegetables.mushrooms.mix'
+        
+        # Single types
+        if has_oyster:
+            return 'vegetables.mushrooms.oyster'
+        if has_champignon:
+            return 'vegetables.mushrooms.champignon'
+        if has_white:
+            return 'vegetables.mushrooms.white'
+        
         return 'vegetables.mushrooms'
-    if 'огурц' in name_lower:
+    
+    if 'огурц' in name_lower or 'cucumber' in name_lower:
         return 'vegetables.cucumber'
     if 'томат' in name_lower or 'помидор' in name_lower:
         return 'vegetables.tomato'
     
     # Condiments
     if 'кетчуп' in name_lower:
+        if 'дип' in name_lower or 'порц' in name_lower or 'dip' in name_lower:
+            return 'condiments.ketchup.portion'
         return 'condiments.ketchup'
     if 'соус' in name_lower:
         return 'condiments.sauce'
