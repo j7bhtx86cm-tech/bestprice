@@ -317,6 +317,14 @@ def extract_super_class(name_lower: str) -> str:
         return 'condiments.capers'
     if 'уксус' in name_lower or 'vinegar' in name_lower:
         return 'condiments.vinegar'
+    if 'порошок' in name_lower or 'powder' in name_lower:
+        if 'курин' in name_lower or 'chicken' in name_lower:
+            return 'condiments.powder.chicken'
+        if 'чесно' in name_lower or 'garlic' in name_lower:
+            return 'condiments.powder.garlic'
+        return 'condiments.powder'
+    if 'бульон' in name_lower or 'bouillon' in name_lower or 'broth' in name_lower:
+        return 'condiments.broth'
     if 'специи' in name_lower or 'spice' in name_lower:
         return 'condiments.spice'
     if 'перец' in name_lower and not any(w in name_lower for w in ['болгарск', 'сладк', 'bell']):
