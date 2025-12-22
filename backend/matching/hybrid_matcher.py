@@ -3,6 +3,57 @@ from typing import Dict, List, Optional
 
 WEIGHT_TOLERANCE = 0.20  # ±20%
 
+def extract_key_identifiers(name: str) -> set:
+    """Extract key identifying words from product name
+    
+    These are important words that differentiate products within the same category.
+    Examples:
+    - Sauce types: worcester, unagi, soy, teriyaki, bbq
+    - Seaweed types: dashi, kombu, nori, wakame, onigiri
+    - Meat cuts: fillet, steak, rack, leg, breast
+    """
+    name_lower = name.lower()
+    
+    # Key identifying words (brand names, specific types, flavors)
+    key_words = {
+        # Sauce types
+        'ворчестер', 'worcester', 'унаги', 'unagi', 'соев', 'soy', 'терияки', 'teriyaki',
+        'барбекю', 'bbq', 'чесночн', 'garlic', 'сладк', 'sweet', 'остр', 'hot', 'spicy',
+        'кисло', 'sour', 'кетчуп', 'ketchup',
+        
+        # Seaweed types  
+        'даши', 'dashi', 'комбу', 'kombu', 'нори', 'nori', 'вакаме', 'wakame',
+        'онигири', 'onigiri', 'суши', 'sushi', 'роллы', 'rolls',
+        
+        # Meat cuts
+        'филе', 'fillet', 'стейк', 'steak', 'корейка', 'rack', 'ребер', 'ribs',
+        'ножка', 'leg', 'бедро', 'thigh', 'грудка', 'breast', 'крыло', 'wing',
+        'фарш', 'ground', 'мякоть', 'tenderloin',
+        
+        # Cheese types
+        'моцарелла', 'mozzarella', 'пармезан', 'parmesan', 'чеддер', 'cheddar',
+        'фета', 'feta', 'бри', 'brie', 'рикотта', 'ricotta',
+        
+        # Dairy products
+        'сливки', 'cream', 'сметана', 'sour cream', 'йогурт', 'yogurt',
+        
+        # Pasta types
+        'спагетти', 'spaghetti', 'пенне', 'penne', 'фузилли', 'fusilli',
+        'тальятелле', 'tagliatelle', 'феттучини', 'fettuccine',
+        
+        # Specific flavors/ingredients
+        'маракуйя', 'passion', 'клубника', 'strawberry', 'ваниль', 'vanilla',
+        'шоколад', 'chocolate', 'карамель', 'caramel', 'кокос', 'coconut',
+    }
+    
+    found_identifiers = set()
+    for word in key_words:
+        if word in name_lower:
+            found_identifiers.add(word)
+    
+    return found_identifiers
+
+
 def find_best_match_hybrid(query_product_name: str, original_price: float, 
                            all_items: List[Dict]) -> Optional[Dict]:
     """Hybrid matching: Spec infrastructure + Simple logic
@@ -25,6 +76,7 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
     query_caliber = extract_caliber(query_product_name)
     query_weight_data = extract_weights(query_product_name)
     query_weight = query_weight_data.get('net_weight_kg')
+    query_identifiers = extract_key_identifiers(query_product_name)
     
     # Determine query base_unit
     query_base_unit = 'kg' if query_weight else 'pcs'
@@ -71,6 +123,14 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             # Item is bulk - only match if query is ALSO bulk (>2kg)
             if not query_weight or query_weight < 2.0:
                 continue  # Query is single piece, item is bulk - skip
+        
+        # Gate 8: Key identifying words MUST match
+        # If query has specific identifiers (worcester, unagi, dashi, etc.), item must have at least one
+        if query_identifiers:
+            item_identifiers = extract_key_identifiers(item.get('name_raw', ''))
+            # Check if there's ANY overlap between query and item identifiers
+            if not (query_identifiers & item_identifiers):  # No intersection
+                continue
         
         matches.append(item)
     
