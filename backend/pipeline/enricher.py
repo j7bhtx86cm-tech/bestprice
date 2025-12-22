@@ -324,6 +324,10 @@ def extract_super_class(name_lower: str) -> str:
         return 'eggs.chicken'
     
     # Condiments & Spices
+    if 'майонез' in name_lower or 'mayonnaise' in name_lower:
+        return 'condiments.mayonnaise'
+    if 'топпинг' in name_lower or 'topping' in name_lower:
+        return 'condiments.topping'
     if 'горчиц' in name_lower or 'mustard' in name_lower:
         return 'condiments.mustard'
     if 'каперс' in name_lower or 'caper' in name_lower:
