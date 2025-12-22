@@ -65,6 +65,12 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 # Query has weight but item doesn't - skip
                 continue
         
+        # Gate 7: Skip bulk packages when query is single piece
+        # If item is bulk package (5kg containing 300g pieces), don't match with single 300g piece
+        if item.get('bulk_package') and not query_weight or (query_weight and query_weight < 2.0):
+            # Item is bulk, query is single piece - skip
+            continue
+        
         matches.append(item)
     
     if not matches:
