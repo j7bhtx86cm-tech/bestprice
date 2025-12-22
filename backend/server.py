@@ -1987,11 +1987,8 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
 # NEW UNIVERSAL MATCHING ENGINE ENDPOINT
 @api_router.get("/favorites/v2")
 async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
-    """Get favorites with NEW universal matching engine (enterprise-grade)"""
-    from matching.query_builder import build_query_features
-    from matching.gate_filters import apply_gate_filters
-    from matching.scorer import find_matches
-    from matching.best_price_finder import find_best_price
+    """Get favorites with HYBRID matching engine (best of spec + simple)"""
+    from matching.hybrid_matcher import find_best_match_hybrid
     
     favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(100)
     
@@ -2019,24 +2016,14 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
             continue
         
         if mode == 'cheapest':
-            # Build QueryFeatures from favorite product
-            query = build_query_features(
-                query_text=original_product['name'],
-                strict_pack=None,
-                strict_brand=False,  # Ignore brand for best price search
-                brand=None
+            # Use HYBRID matcher (best of spec + simple)
+            winner = find_best_match_hybrid(
+                query_product_name=original_product['name'],
+                original_price=original_price,
+                all_items=all_items
             )
             
-            # Apply gate filters (super_class, base_unit, etc.)
-            candidates = apply_gate_filters(query, all_items)
-            
-            # Score candidates (0-100, MIN_SCORE=70)
-            matches = find_matches(query, candidates, top_n=20)
-            
-            # Find winner: minimal price_per_base_unit
-            winner = find_best_price(matches)
-            
-            if winner and winner['price'] < original_price:
+            if winner:
                 enriched.append({
                     **fav,
                     "mode": mode,
@@ -2050,16 +2037,12 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
                     "foundProduct": {
                         "name": winner['name_raw'],
                         "price": winner['price'],
-                        "pricePerBaseUnit": winner['price_per_base_unit'],
-                        "baseUnit": winner['base_unit'],
-                        "score": winner['match_score'],
-                        "calcRoute": winner.get('calc_route'),
-                        "caliber": winner.get('caliber'),
-                        "netWeight": winner.get('net_weight_kg')
+                        "pricePerBaseUnit": winner.get('price_per_base_unit'),
+                        "baseUnit": winner.get('base_unit'),
+                        "calcRoute": winner.get('calc_route')
                     },
                     "hasCheaperMatch": True,
-                    "matchCount": len(matches),
-                    "engineVersion": "v2_universal"
+                    "engineVersion": "v2_hybrid"
                 })
             else:
                 enriched.append({
@@ -2070,9 +2053,9 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
                     "productName": fav.get('productName', original_product['name']),
                     "productCode": fav.get('productCode', original_product.get('article', '')),
                     "unit": fav.get('unit', original_product.get('unit', 'шт')),
-                    "fallbackMessage": "Аналоги найдены, но текущая цена уже лучшая" if matches else "Аналоги не найдены",
+                    "fallbackMessage": "Аналоги найдены, но текущая цена уже лучшая",
                     "hasCheaperMatch": False,
-                    "engineVersion": "v2_universal"
+                    "engineVersion": "v2_hybrid"
                 })
         else:
             # EXACT MODE
@@ -2084,11 +2067,10 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
                 "productName": fav.get('productName', original_product['name']),
                 "productCode": fav.get('productCode', original_product.get('article', '')),
                 "unit": fav.get('unit', original_product.get('unit', 'шт')),
-                "engineVersion": "v2_universal"
+                "engineVersion": "v2_hybrid"
             })
     
     return enriched
-
 @api_router.get("/favorites")
 async def get_favorites(current_user: dict = Depends(get_current_user)):
     """Get user's favorites with product matching"""
