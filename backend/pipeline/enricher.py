@@ -238,13 +238,33 @@ def extract_super_class(name_lower: str) -> str:
     """Classify into super_class WITH sub-type granularity
     
     PRIORITY ORDER:
-    1. Prepared/ready-made dishes (гёдза, донат)
-    2. Condiments/Sauces (соус, кетчуп, майонез)
-    3. Contract dictionary rules (142 product types)
-    4. Hardcoded keyword matching (fallback)
+    1. Beverages (сок, напиток) - check FIRST!
+    2. Prepared/ready-made dishes
+    3. Condiments/Sauces
+    4. Contract dictionary rules
+    5. Hardcoded fallback
     """
     
-    # PRIORITY 1: Prepared/Ready-made dishes
+    # PRIORITY 1: Beverages (check BEFORE everything!)
+    if 'сок' in name_lower or 'juice' in name_lower:
+        if 'томат' in name_lower or 'tomato' in name_lower:
+            return 'beverages.juice.tomato'
+        if 'апельсин' in name_lower or 'orange' in name_lower:
+            return 'beverages.juice.orange'
+        if 'яблок' in name_lower or 'apple' in name_lower:
+            return 'beverages.juice.apple'
+        return 'beverages.juice'
+    
+    if any(w in name_lower for w in ['вода', 'water', 'напиток', 'beverage']):
+        return 'beverages.water'
+    
+    if any(w in name_lower for w in ['чай', 'tea']):
+        return 'beverages.tea'
+    
+    if any(w in name_lower for w in ['кофе', 'coffee']):
+        return 'beverages.coffee'
+    
+    # PRIORITY 2: Prepared/Ready-made dishes
     if any(w in name_lower for w in ['гёдза', 'gyoza', 'пельмен', 'dumpling', 'равиол']):
         return 'prepared_food.dumpling'
     if any(w in name_lower for w in ['донат', 'donut', 'пончик']):
