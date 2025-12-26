@@ -237,21 +237,14 @@ def extract_brand(text: str) -> Optional[str]:
 def extract_super_class(name_lower: str) -> str:
     """Classify into super_class WITH sub-type granularity
     
-    PRIORITY 1: Use contract dictionary rules (142 product types from 413 rules)
-    PRIORITY 2: Hardcoded keyword matching (fallback)
+    PRIORITY ORDER:
+    1. Prepared/ready-made dishes (гёдза, донат)
+    2. Condiments/Sauces (соус, кетчуп, майонез)
+    3. Contract dictionary rules (142 product types)
+    4. Hardcoded keyword matching (fallback)
     """
     
-    # PRIORITY 1: Try dictionary-based classification using contract rules
-    try:
-        from contract_rules import contract_rules
-        if contract_rules:
-            dict_result = contract_rules.classify_by_dictionary(name_lower)
-            if dict_result:
-                return dict_result
-    except:
-        pass
-    
-    # PRIORITY 2: Prepared/Ready-made dishes (check FIRST in hardcoded rules!)
+    # PRIORITY 1: Prepared/Ready-made dishes
     if any(w in name_lower for w in ['гёдза', 'gyoza', 'пельмен', 'dumpling', 'равиол']):
         return 'prepared_food.dumpling'
     if any(w in name_lower for w in ['донат', 'donut', 'пончик']):
@@ -261,13 +254,13 @@ def extract_super_class(name_lower: str) -> str:
     if any(w in name_lower for w in ['пирог', 'pie', 'штрудел']):
         return 'prepared_food.pie'
     
-    # PRIORITY 2: Condiments/Sauces (check BEFORE ingredients!)
+    # PRIORITY 2: Condiments/Sauces (MUST check BEFORE dictionary!)
     if 'кетчуп' in name_lower or 'ketchup' in name_lower:
         if 'дип' in name_lower or 'порц' in name_lower or 'dip' in name_lower:
             return 'condiments.ketchup.portion'
         return 'condiments.ketchup'
     
-    # Sauce must be checked BEFORE vegetables (to avoid "лук" in "луковый соус")
+    # Sauce - check BEFORE dictionary (to avoid "луковый соус" → vegetables.лук)
     if 'соус' in name_lower or 'sauce' in name_lower:
         if 'томат' in name_lower or 'tomato' in name_lower:
             return 'condiments.sauce.tomato'
@@ -288,11 +281,23 @@ def extract_super_class(name_lower: str) -> str:
     if 'горчиц' in name_lower or 'mustard' in name_lower:
         return 'condiments.mustard'
     
-    # Spices/Seasonings (приправа/специи check BEFORE сахар!)
+    # Spices/Seasonings (приправа/специи check BEFORE dictionary!)
     if 'приправа' in name_lower or 'seasoning' in name_lower:
         return 'condiments.seasoning'
     if 'специи' in name_lower or 'spice' in name_lower:
         return 'condiments.spice'
+    
+    # PRIORITY 3: Try dictionary-based classification using contract rules
+    try:
+        from contract_rules import contract_rules
+        if contract_rules:
+            dict_result = contract_rules.classify_by_dictionary(name_lower)
+            if dict_result:
+                return dict_result
+    except:
+        pass
+    
+    # PRIORITY 4: Hardcoded fallback rules continue below...
     
     # Other condiments
     if 'топпинг' in name_lower or 'topping' in name_lower:
