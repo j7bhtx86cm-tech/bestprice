@@ -433,10 +433,30 @@ def extract_super_class(name_lower: str) -> str:
     # Staples
     if 'рис' in name_lower:
         return 'staples.rice'
-    if 'мука' in name_lower:
+    
+    # Flour - GRANULAR subcategories (миндальная ≠ ржаная!)
+    if 'мука' in name_lower or 'flour' in name_lower:
+        if 'миндал' in name_lower or 'almond' in name_lower:
+            return 'staples.flour.almond'
+        if 'кокос' in name_lower or 'coconut' in name_lower:
+            return 'staples.flour.coconut'
+        if 'ржан' in name_lower or 'rye' in name_lower:
+            return 'staples.flour.rye'
+        if 'рисов' in name_lower or 'rice' in name_lower:
+            return 'staples.flour.rice'
+        if 'кукуруз' in name_lower or 'corn' in name_lower:
+            return 'staples.flour.corn'
+        if 'пшенич' in name_lower or 'wheat' in name_lower:
+            return 'staples.flour.wheat'
+        # Default flour (if no specific type)
         return 'staples.flour'
-    if 'сахар' in name_lower:
-        return 'staples.sugar'
+    
+    # Sugar - check AFTER приправа/специи (корица-сахар → seasoning, NOT sugar!)
+    if 'сахар' in name_lower or 'sugar' in name_lower:
+        # Skip if it's a seasoning mix
+        if 'приправа' not in name_lower and 'корица' not in name_lower:
+            return 'staples.sugar'
+    
     if 'соль' in name_lower:
         return 'staples.salt'
     if 'крупа' in name_lower:
