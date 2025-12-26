@@ -1106,17 +1106,24 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
 
 @api_router.get("/suppliers")
 async def get_suppliers():
-    suppliers = await db.companies.find({"companyType": "supplier"}, {"_id": 0}).to_list(1000)
+    # Query for suppliers with either field name
+    suppliers = await db.companies.find(
+        {"$or": [{"companyType": "supplier"}, {"type": "supplier"}]},
+        {"_id": 0}
+    ).to_list(1000)
+    
     logging.info(f"Found {len(suppliers)} suppliers in database")
+    
     # Map to expected frontend format
     result = []
     for s in suppliers:
         result.append({
             "id": s['id'],
-            "companyName": s['name'],
+            "companyName": s.get('companyName') or s.get('name', 'Unknown'),
             "type": "supplier",
             "createdAt": s.get('createdAt', datetime.now(timezone.utc).isoformat())
         })
+    
     logging.info(f"Returning {len(result)} suppliers")
     return result
 
