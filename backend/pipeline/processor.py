@@ -8,7 +8,8 @@ from .normalizer import normalize_name, normalize_unit, extract_item_code
 from .enricher import (
     extract_weights, extract_volumes, extract_packaging,
     extract_caliber, extract_fat_pct, extract_brand,
-    extract_super_class, extract_processing_flags
+    extract_super_class, extract_processing_flags,
+    extract_seafood_head_status, extract_cooking_state, extract_trim_grade
 )
 from .calculator import determine_base_unit, calculate_price_per_base_unit, calculate_calc_confidence
 
