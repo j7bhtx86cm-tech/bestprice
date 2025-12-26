@@ -141,11 +141,24 @@ def extract_fat_pct(text: str) -> Optional[int]:
     return None
 
 def extract_brand(text: str) -> Optional[str]:
-    """Extract brand from name"""
+    """Extract brand from name using contract rules"""
+    try:
+        from contract_rules import contract_rules
+        if contract_rules:
+            # Check for brands using contract aliases
+            text_lower = text.lower()
+            for alias, canonical in contract_rules.brand_aliases.items():
+                if alias in text_lower:
+                    return canonical.upper()
+    except:
+        pass
+    
+    # Fallback to basic brand detection
     known_brands = [
         'Heinz', 'Mutti', 'Aroy-D', 'VICI', 'Knorr', 'Hellmann',
         'Балтийский', 'Махеев', 'Царский', 'Пятерочка',
-        'Sunfeel', 'KOTANYI', 'Federici', 'Pomi', 'Bonduelle'
+        'Sunfeel', 'KOTANYI', 'Federici', 'Pomi', 'Bonduelle',
+        'PRB', 'Barko', 'BG', 'Delverde', 'Ajinomoto', 'Kikkoman'
     ]
     
     for brand in known_brands:
@@ -158,7 +171,7 @@ def extract_brand(text: str) -> Optional[str]:
         # Check if it's capitalized and >3 chars
         if (word.isupper() or word.istitle()) and len(word) > 3:
             # Exclude generic words
-            if word.upper() not in ['ФИЛЕ', 'СОУС', 'МАСЛО', 'КРЕВЕТКИ', 'РЫБА']:
+            if word.upper() not in ['ФИЛЕ', 'СОУС', 'МАСЛО', 'КРЕВЕТКИ', 'РЫБА', 'МЯСО', 'ТУШКА']:
                 return word
     
     return None
