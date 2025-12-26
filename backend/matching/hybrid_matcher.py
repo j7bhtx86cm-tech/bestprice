@@ -28,57 +28,117 @@ def extract_brand_from_name(name: str) -> Optional[str]:
     return None
 
 def extract_key_identifiers(name: str) -> set:
-    """Extract key identifying words from product name
+    """Extract key identifying words from product name - COMPREHENSIVE
     
-    These are important words that differentiate products within the same category.
+    These words MUST match for products to be considered equivalent
     """
     name_lower = name.lower()
     
-    # Key identifying words (brand names, specific types, flavors)
+    # Comprehensive key words library
     key_words = {
         # Sauce types
         'ворчестер', 'worcester', 'унаги', 'unagi', 'соев', 'soy', 'терияки', 'teriyaki',
         'барбекю', 'bbq', 'чесночн', 'garlic', 'сладк', 'sweet', 'остр', 'hot', 'spicy',
-        'кисло', 'sour', 'кетчуп', 'ketchup', 'лукdow', 'onion', 'гриб', 'mushroom',
+        'кисло', 'sour', 'кетчуп', 'ketchup', 'луков', 'onion', 'гриб', 'mushroom',
         
         # Seaweed types  
         'даши', 'dashi', 'комбу', 'kombu', 'нори', 'nori', 'вакаме', 'wakame',
-        'онигири', 'onigiri', 'суши', 'sushi', 'роллы', 'rolls',
+        'онигири', 'onigiri', 'суши', 'sushi', 'чука', 'chuka',
         
         # Meat cuts
         'филе', 'fillet', 'стейк', 'steak', 'корейка', 'rack', 'ребер', 'ribs',
         'ножка', 'leg', 'бедро', 'thigh', 'грудка', 'breast', 'крыло', 'wing',
-        'фарш', 'ground', 'мякоть', 'tenderloin', 'вырезка', 'окорок',
+        'фарш', 'ground', 'мякоть', 'tenderloin', 'вырезка', 'окорок', 'пашина', 'flank',
+        
+        # Meat types
+        'курин', 'chicken', 'говяж', 'beef', 'свин', 'pork', 'индейк', 'turkey',
+        'ягнят', 'баран', 'lamb', 'утин', 'duck',
         
         # Meat products
         'сосиск', 'sausage', 'колбас', 'salami', 'сардельк',
         
         # Cheese types
         'моцарелла', 'mozzarella', 'пармезан', 'parmesan', 'чеддер', 'cheddar',
-        'фета', 'feta', 'бри', 'brie', 'рикотта', 'ricotta',
+        'фета', 'feta', 'бри', 'brie', 'рикотта', 'ricotta', 'бонфесто', 'bonfesto',
         
         # Dairy products
-        'сливки', 'cream', 'сметана', 'sour cream', 'йогурт', 'yogurt',
+        'сливки', 'cream', 'сметана', 'sour cream', 'йогурт', 'yogurt', 'сливочн', 'creamy',
         
         # Pasta types
         'спагетти', 'spaghetti', 'пенне', 'penne', 'фузилли', 'fusilli',
         'тальятелле', 'tagliatelle', 'феттучини', 'fettuccine',
         
-        # Flour types (CRITICAL!)
+        # Noodle types (CRITICAL!)
+        'соба', 'soba', 'удон', 'udon', 'рамен', 'ramen', 'фунчоза', 'funchoza',
+        'яичная', 'egg noodle', 'рисов', 'rice noodle',
+        
+        # Flour types
         'миндал', 'almond', 'ржан', 'rye', 'пшенич', 'wheat', 'рисов', 'кокос', 'coconut', 'кукуруз', 'corn',
         
         # Prepared foods
         'гёдза', 'gyoza', 'пельмен', 'dumpling', 'донат', 'donut', 'блинчик', 'pancake',
+        'котлет', 'cutlet', 'наггетс', 'nugget', 'бургер', 'burger',
         
         # Bakery
-        'тортилья', 'tortilla', 'лаваш', 'lavash', 'пита', 'pita',
+        'тортилья', 'tortilla', 'лаваш', 'lavash', 'пита', 'pita', 'чиабатта', 'ciabatta',
         
-        # Seasonings/Spices (CRITICAL!)
+        # Cake/Dessert flavors (CRITICAL!)
+        'медовик', 'honey cake', 'фисташков', 'pistachio', 'наполеон', 'napoleon',
+        'тирамису', 'tiramisu', 'чизкейк', 'cheesecake',
+        
+        # Seasonings/Spices
         'корица', 'cinnamon', 'приправа', 'seasoning', 'ваниль', 'vanilla',
+        'васаби', 'wasabi', 'горчичн', 'mustard',
         
-        # Specific flavors/ingredients
-        'маракуйя', 'passion', 'клубника', 'strawberry', 'шоколад', 'chocolate', 
-        'карамель', 'caramel', 'ананас', 'pineapple',
+        # Broth types (CRITICAL!)
+        'курин', 'chicken', 'овощ', 'vegetable', 'говяж', 'beef', 'рыбн', 'fish',
+        
+        # Donut fillings (CRITICAL!)
+        'лимонн', 'lemon', 'карамель', 'caramel', 'клубник', 'strawberry',
+        'шоколад', 'chocolate', 'ваниль', 'vanilla',
+        
+        # Pepper types (CRITICAL!)
+        'черн', 'black', 'белый', 'white', 'красн', 'red', 'зелен', 'green',
+        '4 перца', '5 перцев', 'смесь перцев',
+        
+        # Bean types (CRITICAL!)
+        'белая', 'white', 'красная', 'red', 'черная', 'black',
+        
+        # Potato types
+        'фри', 'fries', 'дипперы', 'dippers', 'вед жки', 'wedges',
+        
+        # Miso types (CRITICAL!)
+        'темная', 'dark', 'белая', 'white', 'aka miso', 'shiro miso',
+        
+        # Fish types (CRITICAL!)
+        'тилапия', 'tilapia', 'щука', 'pike', 'судак', 'zander', 'сом', 'catfish',
+        
+        # Honey types (CRITICAL!)
+        'цветочн', 'floral', 'липов', 'linden', 'гречишн', 'buckwheat honey',
+        
+        # Puree flavors (CRITICAL!)
+        'лайм', 'lime', 'бергамот', 'bergamot', 'малин', 'raspberry', 'маракуйя', 'passion',
+        'манго', 'mango', 'клубник', 'strawberry', 'ананас', 'pineapple',
+        
+        # Noodle ingredients
+        'агар', 'agar', 'фунчоза', 'cellophane',
+        
+        # Salads
+        'чука', 'chuka', 'вакаме', 'wakame',
+        
+        # Meat cuts (specific)
+        'вегас стрип', 'vegas strip', 'флэнк', 'flank', 'рибай', 'ribeye',
+        
+        # Container sizes  
+        '400', '500', '600', '800',
+        
+        # Potato prep
+        'панировк', 'breaded', 'без панировки', 'unbreaded',
+        'мытый', 'washed', 'не мытый', 'unwashed',
+        
+        # Rice varieties
+        'италика', 'italica', 'басмати', 'basmati', 'жасмин', 'jasmine',
+        'арборио', 'arborio', 'девзира', 'devzira',
     }
     
     found_identifiers = set()
