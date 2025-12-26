@@ -371,34 +371,39 @@ def extract_super_class(name_lower: str) -> str:
     
     # Vegetables - Mushrooms (CRITICAL - granular types)
     if 'гриб' in name_lower or 'mushroom' in name_lower:
-        # Check for MIX first
-        has_oyster = 'вешенк' in name_lower or 'oyster' in name_lower
-        has_champignon = 'шампиньон' in name_lower or 'champignon' in name_lower
-        has_white = 'белые' in name_lower or 'белый' in name_lower
-        
-        # If it's a mix, mark as such
-        if (has_oyster and (has_champignon or has_white)) or \
-           (has_champignon and has_oyster):
-            return 'vegetables.mushrooms.mix'
-        
-        # Single types
-        if has_oyster:
-            return 'vegetables.mushrooms.oyster'
-        if has_champignon:
-            return 'vegetables.mushrooms.champignon'
-        if has_white:
-            return 'vegetables.mushrooms.white'
-        
-        return 'vegetables.mushrooms'
+        # Skip if it's sauce (already classified above)
+        if 'соус' not in name_lower:
+            # Check for MIX first
+            has_oyster = 'вешенк' in name_lower or 'oyster' in name_lower
+            has_champignon = 'шампиньон' in name_lower or 'champignon' in name_lower
+            has_white = 'белые' in name_lower or 'белый' in name_lower
+            
+            # If it's a mix, mark as such
+            if (has_oyster and (has_champignon or has_white)) or \
+               (has_champignon and has_oyster):
+                return 'vegetables.mushrooms.mix'
+            
+            # Single types
+            if has_oyster:
+                return 'vegetables.mushrooms.oyster'
+            if has_champignon:
+                return 'vegetables.mushrooms.champignon'
+            if has_white:
+                return 'vegetables.mushrooms.white'
+            
+            return 'vegetables.mushrooms'
     
     if 'огурц' in name_lower or 'cucumber' in name_lower:
         return 'vegetables.cucumber'
-    if 'томат' in name_lower or 'помидор' in name_lower:
-        # Skip if it's ketchup, paste, or sauce (processed/condiment forms)
-        if any(w in name_lower for w in ['кетчуп', 'ketchup', 'паста', 'paste', 'соус', 'sauce']):
-            pass  # Will be caught by condiments section below
-        else:
-            return 'vegetables.tomato'
+    
+    # Tomato - skip if sauce/paste (already handled)
+    if ('томат' in name_lower or 'помидор' in name_lower) and 'соус' not in name_lower and 'паста' not in name_lower and 'кетчуп' not in name_lower:
+        return 'vegetables.tomato'
+    
+    # Onion - skip if it's sauce (already handled)
+    if ('лук' in name_lower or 'onion' in name_lower) and 'соус' not in name_lower and not any(w in name_lower for w in ['кукуруз', 'corn']):
+        return 'vegetables.onion'
+    
     if 'горох' in name_lower or 'pea' in name_lower:
         return 'vegetables.peas'
     if 'фасоль' in name_lower or 'bean' in name_lower:
@@ -407,8 +412,6 @@ def extract_super_class(name_lower: str) -> str:
         return 'vegetables.cabbage'
     if 'морков' in name_lower or 'carrot' in name_lower:
         return 'vegetables.carrot'
-    if 'лук' in name_lower and not any(w in name_lower for w in ['кукуруз', 'corn']):
-        return 'vegetables.onion'
     
     # Condiments
     if 'кетчуп' in name_lower:
