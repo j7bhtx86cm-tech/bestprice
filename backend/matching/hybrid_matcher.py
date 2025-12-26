@@ -207,14 +207,14 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if item_meat_type != query_meat_type:
                 continue
         
-        # Gate 12: SAUCE/CONDIMENT TYPE STRICT (NEW!)
-        # For sauces, require high similarity in key words
-        if query_super_class.startswith('condiments.sauce'):
-            # Sauce types must match closely
+        # Gate 12: SAUCE/CONDIMENT TYPE STRICT - MANDATORY! (NEW!)
+        # For sauces, sauce keywords MUST overlap
+        if query_super_class.startswith('condiments.sauce') or 'соус' in query_product_name.lower():
             sauce_keywords_query = extract_sauce_keywords(query_product_name)
             sauce_keywords_item = extract_sauce_keywords(item.get('name_raw', ''))
             
-            if sauce_keywords_query and sauce_keywords_item:
+            # BOTH must have keywords AND they must overlap
+            if sauce_keywords_query or sauce_keywords_item:
                 if not (sauce_keywords_query & sauce_keywords_item):
                     continue
         
