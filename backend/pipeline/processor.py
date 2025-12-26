@@ -61,6 +61,11 @@ def process_price_list_item(raw_item: Dict, supplier_company_id: str, price_list
     super_class = extract_super_class(name_norm)
     processing_flags = extract_processing_flags(name_norm)
     
+    # NEW: Seafood-specific attributes (STRICT matching per MVP)
+    seafood_head_status = extract_seafood_head_status(name_raw)
+    cooking_state = extract_cooking_state(name_raw)
+    trim_grade = extract_trim_grade(name_raw)
+    
     # STAGE 4: Determine base_unit
     base_unit = determine_base_unit(
         unit_norm,
