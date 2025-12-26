@@ -252,7 +252,7 @@ def extract_meat_type(name: str) -> Optional[str]:
     
     if 'курин' in name_lower or 'куриц' in name_lower or 'chicken' in name_lower:
         return 'chicken'
-    if 'говяд' in name_lower or 'beef' in name_lower:
+    if 'говяд' in name_lower or 'говяж' in name_lower or 'beef' in name_lower:
         return 'beef'
     if 'свин' in name_lower or 'pork' in name_lower:
         return 'pork'
