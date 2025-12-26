@@ -37,123 +37,71 @@ def extract_brand_from_name(name: str) -> Optional[str]:
     return None
 
 def extract_key_identifiers(name: str) -> set:
-    """Extract key identifying words from product name - COMPREHENSIVE
+    """Extract key identifying words - HYBRID: Manual + Auto-generated
     
-    These words MUST match for products to be considered equivalent
+    Combines:
+    1. Manually curated critical keywords (200+)
+    2. Auto-generated from catalog analysis (1,407)
     """
     name_lower = name.lower()
     
-    # Comprehensive key words library
-    key_words = {
+    # PART 1: Manually curated CRITICAL keywords (high priority)
+    manual_keywords = {
         # Sauce types
         'ворчестер', 'worcester', 'унаги', 'unagi', 'соев', 'soy', 'терияки', 'teriyaki',
-        'барбекю', 'bbq', 'чесночн', 'garlic', 'сладк', 'sweet', 'остр', 'hot', 'spicy',
-        'кисло', 'sour', 'кетчуп', 'ketchup', 'луков', 'onion', 'гриб', 'mushroom',
+        'барбекю', 'bbq', 'чесночн', 'garlic', 'луков', 'onion', 'гриб', 'mushroom',
         
-        # Seaweed types  
-        'даши', 'dashi', 'комбу', 'kombu', 'нори', 'nori', 'вакаме', 'wakame',
-        'онигири', 'onigiri', 'суши', 'sushi', 'чука', 'chuka',
-        
-        # Meat cuts
-        'филе', 'fillet', 'стейк', 'steak', 'корейка', 'rack', 'ребер', 'ribs',
-        'ножка', 'leg', 'бедро', 'thigh', 'грудка', 'breast', 'крыло', 'wing',
-        'фарш', 'ground', 'мякоть', 'tenderloin', 'вырезка', 'окорок', 'пашина', 'flank',
-        
-        # Meat types
-        'курин', 'chicken', 'говяж', 'beef', 'свин', 'pork', 'индейк', 'turkey',
-        'ягнят', 'баран', 'lamb', 'утин', 'duck',
-        
-        # Meat products
-        'сосиск', 'sausage', 'колбас', 'salami', 'сардельк',
-        
-        # Cheese types
-        'моцарелла', 'mozzarella', 'пармезан', 'parmesan', 'чеддер', 'cheddar',
-        'фета', 'feta', 'бри', 'brie', 'рикотта', 'ricotta', 'бонфесто', 'bonfesto',
-        
-        # Dairy products
-        'сливки', 'cream', 'сметана', 'sour cream', 'йогурт', 'yogurt', 'сливочн', 'creamy',
-        
-        # Pasta types
-        'спагетти', 'spaghetti', 'пенне', 'penne', 'фузилли', 'fusilli',
-        'тальятелле', 'tagliatelle', 'феттучини', 'fettuccine',
-        
-        # Noodle types (CRITICAL!)
+        # Noodle types
         'соба', 'soba', 'удон', 'udon', 'рамен', 'ramen', 'фунчоза', 'funchoza',
-        'яичная', 'egg noodle', 'рисов', 'rice noodle',
+        'яичная', 'egg noodle',
         
-        # Flour types
-        'миндал', 'almond', 'ржан', 'rye', 'пшенич', 'wheat', 'рисов', 'кокос', 'coconut', 'кукуруз', 'corn',
-        
-        # Prepared foods
-        'гёдза', 'gyoza', 'пельмен', 'dumpling', 'донат', 'donut', 'блинчик', 'pancake',
-        'котлет', 'cutlet', 'наггетс', 'nugget', 'бургер', 'burger',
-        
-        # Bakery
-        'тортилья', 'tortilla', 'лаваш', 'lavash', 'пита', 'pita', 'чиабатта', 'ciabatta',
-        
-        # Cake/Dessert flavors (CRITICAL!)
+        # Cake flavors
         'медовик', 'honey cake', 'фисташков', 'pistachio', 'наполеон', 'napoleon',
-        'тирамису', 'tiramisu', 'чизкейк', 'cheesecake',
         
-        # Seasonings/Spices
-        'корица', 'cinnamon', 'приправа', 'seasoning', 'ваниль', 'vanilla',
-        'васаби', 'wasabi', 'горчичн', 'mustard',
+        # Broth types
+        'курин', 'chicken', 'овощ', 'vegetable', 'говяж', 'beef', 'рыбн', 'fish', 'грибн',
         
-        # Broth types (CRITICAL!)
-        'курин', 'chicken', 'овощ', 'vegetable', 'говяж', 'beef', 'рыбн', 'fish',
+        # Donut fillings
+        'лимонн', 'lemon', 'карамель', 'caramel',
         
-        # Donut fillings (CRITICAL!)
-        'лимонн', 'lemon', 'карамель', 'caramel', 'клубник', 'strawberry',
-        'шоколад', 'chocolate', 'ваниль', 'vanilla',
+        # Pepper types
+        'черн', 'black', '4 перца', '5 перцев',
         
-        # Pepper types (CRITICAL!)
-        'черн', 'black', 'белый', 'white', 'красн', 'red', 'зелен', 'green',
-        '4 перца', '5 перцев', 'смесь перцев',
+        # Bean types
+        'белая', 'white', 'красная', 'red',
         
-        # Bean types (CRITICAL!)
-        'белая', 'white', 'красная', 'red', 'черная', 'black',
+        # Miso types
+        'aka miso', 'shiro miso',
         
-        # Potato types
-        'фри', 'fries', 'дипперы', 'dippers', 'вед жки', 'wedges',
+        # Fish types
+        'тилапия', 'tilapia', 'щука', 'pike', 'судак', 'zander',
         
-        # Miso types (CRITICAL!)
-        'темная', 'dark', 'белая', 'white', 'aka miso', 'shiro miso',
+        # Honey types
+        'цветочн', 'floral', 'липов', 'linden',
         
-        # Fish types (CRITICAL!)
-        'тилапия', 'tilapia', 'щука', 'pike', 'судак', 'zander', 'сом', 'catfish',
-        
-        # Honey types (CRITICAL!)
-        'цветочн', 'floral', 'липов', 'linden', 'гречишн', 'buckwheat honey',
-        
-        # Puree flavors (CRITICAL!)
-        'лайм', 'lime', 'бергамот', 'bergamot', 'малин', 'raspberry', 'маракуйя', 'passion',
-        'манго', 'mango', 'клубник', 'strawberry', 'ананас', 'pineapple',
-        
-        # Noodle ingredients
-        'агар', 'agar', 'фунчоза', 'cellophane',
-        
-        # Salads
-        'чука', 'chuka', 'вакаме', 'wakame',
-        
-        # Meat cuts (specific)
-        'вегас стрип', 'vegas strip', 'флэнк', 'flank', 'рибай', 'ribeye',
-        
-        # Container sizes  
-        '400', '500', '600', '800',
+        # Puree flavors
+        'лайм', 'lime', 'бергамот', 'bergamot', 'малин', 'raspberry',
         
         # Potato prep
-        'панировк', 'breaded', 'без панировки', 'unbreaded',
+        'панировк', 'breaded', 'без панировки',
         'мытый', 'washed', 'не мытый', 'unwashed',
         
         # Rice varieties
-        'италика', 'italica', 'басмати', 'basmati', 'жасмин', 'jasmine',
-        'арборио', 'arborio', 'девзира', 'devzira',
+        'италика', 'italica', 'арборио', 'arborio',
     }
     
     found_identifiers = set()
-    for word in key_words:
+    
+    # Check manual keywords
+    for word in manual_keywords:
         if word in name_lower:
             found_identifiers.add(word)
+    
+    # PART 2: Check auto-generated keywords (if loaded)
+    if AUTO_KEYWORDS_LOADED:
+        for word in AUTO_KEYWORDS:
+            if word in name_lower:
+                found_identifiers.add(word)
     
     return found_identifiers
 
