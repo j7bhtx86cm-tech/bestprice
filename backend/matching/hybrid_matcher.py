@@ -348,9 +348,10 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             common_words = query_words_clean & item_words_clean
             similarity = len(common_words) / len(query_words_clean)
             
-            # VERY STRICT: Require 70% meaningful word overlap
+            # VERY STRICT: Require 85% meaningful word overlap
             # This prevents "Торт Медовик 1.7кг" from matching "Торт Фисташковый 1.7кг"
-            if similarity < 0.70:
+            # At scale (100K products), only near-identical products should match
+            if similarity < 0.85:
                 continue
         
         matches.append(item)
