@@ -2018,7 +2018,7 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
     """Get favorites with HYBRID matching engine (best of spec + simple)"""
     from matching.hybrid_matcher import find_best_match_hybrid
     
-    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(100)
+    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(500)
     
     if not favorites:
         return []
@@ -2104,7 +2104,7 @@ async def get_favorites(current_user: dict = Depends(get_current_user)):
     """Get user's favorites with product matching"""
     from product_intent_parser import extract_product_type, extract_weight_kg, extract_caliber
     
-    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(100)
+    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(500)
     
     if not favorites:
         return []
