@@ -91,14 +91,16 @@ def extract_key_identifiers(name: str) -> set:
 
 def find_best_match_hybrid(query_product_name: str, original_price: float, 
                            all_items: List[Dict]) -> Optional[Dict]:
-    """Hybrid matching: Spec infrastructure + Simple logic
+    """Hybrid matching: Spec infrastructure + Simple logic + STRICT validation
     
     Rules:
-    1. super_class must match (from spec)
-    2. base_unit must match (from spec)
-    3. caliber must match if present (from spec)
-    4. weight within ±20% (simple)
-    5. Select by price_per_base_unit (from spec)
+    1-7. Base gates (category, weight, caliber, etc.)
+    8. Key identifiers overlap
+    9. STRICT BRAND
+    10. SEAFOOD STRICT
+    11. MEAT TYPE STRICT (NEW!)
+    12. SAUCE TYPE STRICT (NEW!)
+    13. NAME SIMILARITY for broad categories (NEW!)
     
     Returns winner or None
     """
@@ -119,8 +121,14 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
     query_cooking_state = extract_cooking_state(query_product_name)
     query_trim_grade = extract_trim_grade(query_product_name)
     
+    # NEW: Meat type extraction (курин, говяд, свин)
+    query_meat_type = extract_meat_type(query_product_name)
+    
     # Determine query base_unit
     query_base_unit = 'kg' if query_weight else 'pcs'
+    
+    # For broad categories, prepare word set for similarity check
+    query_words = set(query_product_name.lower().split())
     
     matches = []
     
@@ -159,18 +167,16 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 continue
         
         # Gate 7: Skip bulk packages when query is single piece
-        # If item is bulk package (5kg containing 300g pieces), don't match with single 300g piece
         if item.get('bulk_package'):
-            # Item is bulk - only match if query is ALSO bulk (>2kg)
             if not query_weight or query_weight < 2.0:
-                continue  # Query is single piece, item is bulk - skip
+                continue
         
-        # Gate 8: Key identifying words MUST match
-        # If query has specific identifiers (worcester, unagi, dashi, etc.), item must have at least one
-        if query_identifiers:
-            item_identifiers = extract_key_identifiers(item.get('name_raw', ''))
-            # Check if there's ANY overlap between query and item identifiers
-            if not (query_identifiers & item_identifiers):  # No intersection
+        # Gate 8: Key identifying words - STRICTER logic
+        item_identifiers = extract_key_identifiers(item.get('name_raw', ''))
+        
+        # If EITHER side has identifiers, they MUST overlap
+        if query_identifiers or item_identifiers:
+            if not (query_identifiers & item_identifiers):
                 continue
         
         # Gate 9: STRICT BRAND matching (from contract rules)
@@ -178,26 +184,56 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             query_brand = extract_brand_from_name(query_product_name)
             item_brand = item.get('brand')
             
-            # If query has a strict brand, item MUST have the same brand
             if query_brand and contract_rules.is_strict_brand(query_brand):
                 if not item_brand or contract_rules.get_canonical_brand(item_brand) != query_brand:
                     continue
         
-        # Gate 10: SEAFOOD STRICT attributes (per MVP - critical for seafood)
-        # For seafood, head status MUST match exactly
+        # Gate 10: SEAFOOD STRICT attributes
         if query_head_status:
             if item.get('seafood_head_status') != query_head_status:
                 continue
         
-        # Cooking state MUST match (с/м vs в/м is critical difference)
         if query_cooking_state:
             if item.get('cooking_state') != query_cooking_state:
                 continue
         
-        # Trim grade MUST match (trim A ≠ trim C ≠ trim D)
         if query_trim_grade:
             if item.get('trim_grade') != query_trim_grade:
                 continue
+        
+        # Gate 11: MEAT TYPE STRICT (NEW! курин ≠ говяд ≠ свин)
+        if query_meat_type:
+            item_meat_type = extract_meat_type(item.get('name_raw', ''))
+            if item_meat_type != query_meat_type:
+                continue
+        
+        # Gate 12: SAUCE/CONDIMENT TYPE STRICT (NEW!)
+        # For sauces, require high similarity in key words
+        if query_super_class.startswith('condiments.sauce'):
+            # Sauce types must match closely
+            sauce_keywords_query = extract_sauce_keywords(query_product_name)
+            sauce_keywords_item = extract_sauce_keywords(item.get('name_raw', ''))
+            
+            if sauce_keywords_query and sauce_keywords_item:
+                if not (sauce_keywords_query & sauce_keywords_item):
+                    continue
+        
+        # Gate 13: NAME SIMILARITY for broad categories (NEW!)
+        # For categories with many subtypes, require 30%+ word overlap
+        broad_categories = ['condiments.sauce', 'meat.sausages', 'meat.kolbasa', 'staples.flour', 
+                           'condiments.seasoning', 'condiments.spice', 'other']
+        
+        if query_super_class in broad_categories:
+            item_words = set(item.get('name_raw', '').lower().split())
+            
+            # Calculate overlap
+            common_words = query_words & item_words
+            if len(query_words) > 0:
+                similarity = len(common_words) / len(query_words)
+                
+                # Require 30% word overlap
+                if similarity < 0.30:
+                    continue
         
         matches.append(item)
     
