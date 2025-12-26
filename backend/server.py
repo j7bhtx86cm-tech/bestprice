@@ -1094,10 +1094,10 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
     return {
         "totalOrders": total_orders,
         "totalAmount": actual_total,
-        "savings": actual_savings,
+        "savings": savings,
         "savingsPercentage": savings_percentage,
-        "optimalCost": optimal_total,
-        "actualCost": actual_total,
+        "baselineTotal": baseline_total,
+        "actualTotal": actual_total,
         "ordersByStatus": orders_by_status,
         "recentOrders": recent_orders
     }
