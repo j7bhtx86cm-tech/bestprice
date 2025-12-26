@@ -2251,8 +2251,17 @@ async def remove_from_favorites(favorite_id: str, current_user: dict = Depends(g
 
 @api_router.post("/favorites/order")
 async def order_from_favorites(data: dict, current_user: dict = Depends(get_current_user)):
-    """Create orders from favorites with quantities"""
-    # data: { items: [{favoriteId: "...", quantity: 5}, ...], deliveryAddressId: "..." }
+    """Create orders from favorites with HYBRID MATCHER + MVP minimum order logic
+    
+    Per MVP requirements:
+    - Uses Hybrid Matcher for CHEAPEST mode
+    - Enforces supplier minimum orders
+    - Applies +10% top-up if below minimum
+    - Redistributes between suppliers if beneficial
+    - Excludes suppliers if no benefit
+    """
+    from matching.hybrid_matcher import find_best_match_hybrid
+    from order_optimizer import optimize_order_with_minimums
     
     # Get company ID
     company_id = current_user.get('companyId')
@@ -2263,8 +2272,16 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
     if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    # Process items and group by cheapest supplier
+    # Load ALL supplier_items for matching
+    all_supplier_items = await db.supplier_items.find({"active": True}, {"_id": 0}).to_list(15000)
+    
+    # Load company names map
+    all_companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+    supplier_names = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in all_companies}
+    
+    # Process items and find best supplier for each
     orders_by_supplier = {}
+    baseline_total = 0  # For savings calculation
     
     for item in data['items']:
         quantity = float(item.get('quantity', 0))
@@ -2276,84 +2293,69 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
         if not favorite:
             continue
         
-        # Determine which supplier to use based on mode
-        if favorite.get('mode') == 'exact':
-            # EXACT MODE: Use original supplier if available, otherwise use cheapest
-            target_supplier_id = favorite.get('originalSupplierId')
+        # Get original product
+        original_product = await db.products.find_one({"id": favorite['productId']}, {"_id": 0})
+        original_pl = await db.pricelists.find_one({"productId": favorite['productId']}, {"_id": 0})
+        
+        if not original_product or not original_pl:
+            continue
+        
+        original_price = original_pl['price']
+        
+        # Determine best supplier based on mode
+        if favorite.get('mode') == 'cheapest':
+            # Use HYBRID MATCHER (NEW!)
+            winner = find_best_match_hybrid(
+                query_product_name=original_product['name'],
+                original_price=original_price,
+                all_items=all_supplier_items
+            )
             
-            if target_supplier_id:
-                # Try to find pricelist from original supplier
-                exact_pl = await db.pricelists.find_one({
-                    "productId": favorite['productId'],
-                    "supplierId": target_supplier_id
-                }, {"_id": 0})
-                
-                if exact_pl:
-                    best_pl = exact_pl
-                else:
-                    # Original supplier doesn't have it anymore, fallback to cheapest
-                    pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
-                    if not pricelists:
-                        continue
-                    pricelists.sort(key=lambda x: x['price'])
-                    best_pl = pricelists[0]
+            if winner:
+                supplier_id = winner['supplier_company_id']
+                unit_price = winner['price']
+                product_name = winner['name_raw']
+                article = winner.get('supplier_item_code', '')
             else:
-                # No original supplier stored, use cheapest
-                pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
-                if not pricelists:
-                    continue
-                pricelists.sort(key=lambda x: x['price'])
-                best_pl = pricelists[0]
+                # No cheaper match - use original
+                supplier_id = original_pl['supplierId']
+                unit_price = original_price
+                product_name = original_product['name']
+                article = original_pl.get('supplierItemCode', '')
         else:
-            # CHEAPEST MODE: Search for best price using product intent
-            from product_intent_parser import extract_product_intent, find_matching_products
-            
-            # Get product details
-            product = await db.products.find_one({"id": favorite['productId']}, {"_id": 0})
-            if not product:
-                continue
-            
-            # Extract intent
-            intent = extract_product_intent(product['name'], product['unit'])
-            
-            # Get all pricelists (only when ordering, not when viewing)
-            all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(10000)
-            
-            # Enrich with product names
-            for pl in all_pricelists:
-                prod = await db.products.find_one({"id": pl['productId']}, {"_id": 0})
-                if prod:
-                    pl['productName'] = prod['name']
-                    pl['unit'] = prod['unit']
-            
-            # Find matches
-            matching_pls = find_matching_products(intent, all_pricelists)
-            
-            if matching_pls:
-                matching_pls.sort(key=lambda x: x['price'])
-                best_pl = matching_pls[0]
-            else:
-                # Fallback to exact product
-                pricelists = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0}).to_list(100)
-                if not pricelists:
-                    continue
-                pricelists.sort(key=lambda x: x['price'])
-                best_pl = pricelists[0]
+            # EXACT mode - use original supplier
+            supplier_id = favorite.get('originalSupplierId') or original_pl['supplierId']
+            unit_price = original_price
+            product_name = original_product['name']
+            article = original_pl.get('supplierItemCode', '')
         
-        supplier_id = best_pl['supplierId']
-        
+        # Add to supplier's order
         if supplier_id not in orders_by_supplier:
             orders_by_supplier[supplier_id] = {"items": [], "total": 0}
         
-        item_total = quantity * best_pl['price']
+        item_total = quantity * unit_price
         orders_by_supplier[supplier_id]["items"].append({
-            "productName": favorite['productName'],
-            "article": favorite['productCode'],
+            "productName": product_name,
+            "article": article,
             "quantity": quantity,
-            "price": best_pl['price'],
-            "unit": favorite['unit']
+            "price": unit_price,
+            "unit": favorite.get('unit', 'шт')
         })
         orders_by_supplier[supplier_id]["total"] += item_total
+        
+        # Calculate baseline for this item (for savings analytics)
+        all_prices = await db.pricelists.find({"productId": favorite['productId']}, {"_id": 0, "price": 1}).to_list(100)
+        if all_prices:
+            from order_optimizer import calculate_baseline_price
+            baseline_price = calculate_baseline_price([p['price'] for p in all_prices])
+            baseline_total += baseline_price * quantity
+    
+    # OPTIMIZE: Apply minimum order logic with +10% top-up
+    optimized_orders, opt_stats = optimize_order_with_minimums(
+        orders_by_supplier,
+        all_supplier_items,
+        supplier_names
+    )
     
     # Get delivery address
     delivery_address = None
@@ -2361,13 +2363,17 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
         company = await db.companies.find_one({"id": company_id}, {"_id": 0})
         if company and company.get('deliveryAddresses'):
             for addr in company['deliveryAddresses']:
-                if addr.get('id') == data['deliveryAddressId']:
-                    delivery_address = addr
-                    break
+                # Addresses might not have ID, match by address string
+                if isinstance(addr, dict):
+                    if addr.get('address') == data['deliveryAddressId'] or str(addr) == data['deliveryAddressId']:
+                        delivery_address = addr
+                        break
     
-    # Create orders
+    # Create orders (only for suppliers that passed minimum check)
     created_orders = []
-    for supplier_id, order_data in orders_by_supplier.items():
+    actual_total = 0
+    
+    for supplier_id, order_data in optimized_orders.items():
         order = {
             "id": str(uuid.uuid4()),
             "customerCompanyId": company_id,
@@ -2384,12 +2390,23 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
         created_orders.append({
             "orderId": order["id"],
             "supplierId": supplier_id,
+            "supplierName": supplier_names.get(supplier_id, 'Unknown'),
             "amount": order_data["total"]
         })
+        actual_total += order_data["total"]
+    
+    # Calculate savings
+    savings = baseline_total - actual_total if baseline_total > 0 else 0
+    savings_pct = (savings / baseline_total * 100) if baseline_total > 0 else 0
     
     return {
         "message": f"Created {len(created_orders)} order(s)",
-        "orders": created_orders
+        "orders": created_orders,
+        "totalAmount": actual_total,
+        "baselineAmount": baseline_total,
+        "savings": savings,
+        "savingsPercent": round(savings_pct, 2),
+        "optimizationStats": opt_stats
     }
 
 # ==================== SUPPLIER RESTAURANT MANAGEMENT ====================
