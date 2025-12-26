@@ -1049,32 +1049,36 @@ async def get_customer_analytics(current_user: dict = Depends(get_current_user))
     # Get all products and suppliers
     all_products = await db.price_lists.find({}, {"_id": 0}).to_list(10000)
     
-    # Calculate CORRECT BestPrice value: Compare best possible vs actual paid
-    optimal_total = 0  # Best possible if buying each item at cheapest price
-    actual_total = 0   # What customer actually paid
+    # Calculate CORRECT BestPrice value using MVP baseline formula
+    # Baseline = 50% best supplier + 50% third supplier
+    from order_optimizer import calculate_baseline_price
+    
+    baseline_total = 0  # What customer would pay without BestPrice
+    actual_total = 0    # What customer actually paid with BestPrice
     
     for order in orders:
         for item in order.get('orderDetails', []):
             actual_item_cost = item['price'] * item['quantity']
             actual_total += actual_item_cost
             
-            # Find ALL suppliers offering this exact product
-            matching_products = [p for p in all_products 
-                               if p['productName'].lower() == item['productName'].lower() 
-                               and p['unit'].lower() == item['unit'].lower()]
+            # Find ALL suppliers offering this product
+            matching_pricelists = await db.pricelists.find(
+                {"productId": item.get('productId')},
+                {"_id": 0, "price": 1}
+            ).to_list(100)
             
-            if matching_products:
-                # Find CHEAPEST price across ALL suppliers  
-                cheapest_price = min(p['price'] for p in matching_products)
-                optimal_item_cost = cheapest_price * item['quantity']
-                optimal_total += optimal_item_cost
+            if matching_pricelists:
+                prices = [p['price'] for p in matching_pricelists]
+                baseline_price = calculate_baseline_price(prices)
+                baseline_item_cost = baseline_price * item['quantity']
+                baseline_total += baseline_item_cost
             else:
-                # Product not in catalog, use actual price
-                optimal_total += actual_item_cost
+                # Product not in catalog, use actual price as baseline
+                baseline_total += actual_item_cost
     
-    # Calculate savings (should be 0 or positive if BestPrice is working correctly)
-    actual_savings = optimal_total - actual_total
-    savings_percentage = (actual_savings / optimal_total * 100) if optimal_total > 0 else 0
+    # Calculate savings (baseline - actual)
+    savings = baseline_total - actual_total
+    savings_percentage = (savings / baseline_total * 100) if baseline_total > 0 else 0
     
     # Get orders by status
     orders_by_status = {
