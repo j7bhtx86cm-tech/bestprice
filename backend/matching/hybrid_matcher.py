@@ -290,3 +290,29 @@ def extract_sauce_keywords(name: str) -> set:
             found.add(keyword)
     
     return found
+
+
+def extract_rice_type(name: str) -> Optional[str]:
+    """Extract rice type: басмати, жасмин, для суши, круглозерный, etc."""
+    name_lower = name.lower()
+    
+    if 'басмати' in name_lower or 'basmati' in name_lower:
+        return 'basmati'
+    if 'жасмин' in name_lower or 'jasmine' in name_lower:
+        return 'jasmine'
+    if 'суши' in name_lower or 'sushi' in name_lower:
+        return 'sushi'
+    if 'круглозерн' in name_lower or 'round' in name_lower:
+        return 'round_grain'
+    if 'длиннозерн' in name_lower or 'long' in name_lower:
+        return 'long_grain'
+    if 'пропарен' in name_lower or 'parboiled' in name_lower:
+        return 'parboiled'
+    if 'дикий' in name_lower or 'wild' in name_lower:
+        return 'wild'
+    if 'бурый' in name_lower or 'brown' in name_lower:
+        return 'brown'
+    if 'черный' in name_lower or 'black' in name_lower:
+        return 'black'
+    
+    return None
