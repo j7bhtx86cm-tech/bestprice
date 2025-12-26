@@ -1,7 +1,31 @@
-"""Hybrid Matching Engine - Best of Spec + Simple Approach"""
+"""Hybrid Matching Engine - Best of Spec + Simple Approach + Contract Rules"""
 from typing import Dict, List, Optional
+import re
 
 WEIGHT_TOLERANCE = 0.20  # ±20%
+
+# Import contract rules
+try:
+    from contract_rules import contract_rules
+    RULES_LOADED = contract_rules is not None
+except:
+    RULES_LOADED = False
+    contract_rules = None
+
+
+def extract_brand_from_name(name: str) -> Optional[str]:
+    """Extract brand from product name using contract rules"""
+    if not RULES_LOADED:
+        return None
+    
+    name_lower = name.lower()
+    
+    # Check for known brands in the name
+    for alias in contract_rules.brand_aliases.keys():
+        if alias in name_lower:
+            return contract_rules.get_canonical_brand(alias)
+    
+    return None
 
 def extract_key_identifiers(name: str) -> set:
     """Extract key identifying words from product name
