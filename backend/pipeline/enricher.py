@@ -235,7 +235,76 @@ def extract_brand(text: str) -> Optional[str]:
     return None
 
 def extract_super_class(name_lower: str) -> str:
-    """Classify into super_class WITH sub-type granularity"""
+    """Classify into super_class WITH sub-type granularity
+    
+    CRITICAL: Order matters! Check processed/prepared items BEFORE raw ingredients
+    """
+    
+    # PRIORITY 1: Prepared/Ready-made dishes (check FIRST!)
+    if any(w in name_lower for w in ['гёдза', 'gyoza', 'пельмен', 'dumpling', 'равиол']):
+        return 'prepared_food.dumpling'
+    if any(w in name_lower for w in ['донат', 'donut', 'пончик']):
+        return 'prepared_food.donut'
+    if any(w in name_lower for w in ['блинчик', 'pancake', 'оладь']):
+        return 'prepared_food.pancake'
+    if any(w in name_lower for w in ['пирог', 'pie', 'штрудел']):
+        return 'prepared_food.pie'
+    
+    # PRIORITY 2: Condiments/Sauces (check BEFORE ingredients!)
+    if 'кетчуп' in name_lower or 'ketchup' in name_lower:
+        if 'дип' in name_lower or 'порц' in name_lower or 'dip' in name_lower:
+            return 'condiments.ketchup.portion'
+        return 'condiments.ketchup'
+    
+    # Sauce must be checked BEFORE vegetables (to avoid "лук" in "луковый соус")
+    if 'соус' in name_lower or 'sauce' in name_lower:
+        if 'томат' in name_lower or 'tomato' in name_lower:
+            return 'condiments.sauce.tomato'
+        if 'соев' in name_lower or 'soy' in name_lower:
+            return 'condiments.sauce.soy'
+        if 'лук' in name_lower or 'onion' in name_lower:
+            return 'condiments.sauce.onion'
+        if 'гриб' in name_lower or 'mushroom' in name_lower:
+            return 'condiments.sauce.mushroom'
+        return 'condiments.sauce'
+    
+    if 'паста' in name_lower and 'томат' in name_lower:
+        return 'condiments.tomato_paste'
+    
+    # Mayonnaise & mustard
+    if 'майонез' in name_lower or 'mayonnaise' in name_lower:
+        return 'condiments.mayonnaise'
+    if 'горчиц' in name_lower or 'mustard' in name_lower:
+        return 'condiments.mustard'
+    
+    # Spices/Seasonings (приправа/специи check BEFORE сахар!)
+    if 'приправа' in name_lower or 'seasoning' in name_lower:
+        return 'condiments.seasoning'
+    if 'специи' in name_lower or 'spice' in name_lower:
+        return 'condiments.spice'
+    
+    # Other condiments
+    if 'топпинг' in name_lower or 'topping' in name_lower:
+        return 'condiments.topping'
+    if 'каперс' in name_lower or 'caper' in name_lower:
+        return 'condiments.capers'
+    if 'уксус' in name_lower or 'vinegar' in name_lower:
+        return 'condiments.vinegar'
+    if 'порошок' in name_lower or 'powder' in name_lower:
+        if 'курин' in name_lower or 'chicken' in name_lower:
+            return 'condiments.powder.chicken'
+        if 'чесно' in name_lower or 'garlic' in name_lower:
+            return 'condiments.powder.garlic'
+        return 'condiments.powder'
+    if 'бульон' in name_lower or 'bouillon' in name_lower or 'broth' in name_lower:
+        return 'condiments.broth'
+    if 'перец' in name_lower and not any(w in name_lower for w in ['болгарск', 'сладк', 'bell']):
+        return 'condiments.pepper'
+    if 'масло' in name_lower and 'олив' in name_lower:
+        return 'condiments.oil.olive'
+    if 'масло' in name_lower and ('подсол' in name_lower or 'раст' in name_lower):
+        return 'condiments.oil.vegetable'
+    
     # Seafood
     if any(w in name_lower for w in ['креветк', 'shrimp', 'prawn']):
         return 'seafood.shrimp'
