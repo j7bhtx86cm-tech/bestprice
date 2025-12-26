@@ -124,6 +124,9 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
     # NEW: Meat type extraction (курин, говяд, свин)
     query_meat_type = extract_meat_type(query_product_name)
     
+    # NEW: Rice type extraction (басмати, жасмин, для суши)
+    query_rice_type = extract_rice_type(query_product_name)
+    
     # Determine query base_unit
     query_base_unit = 'kg' if query_weight else 'pcs'
     
