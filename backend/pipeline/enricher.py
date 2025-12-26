@@ -445,6 +445,12 @@ def extract_super_class(name_lower: str) -> str:
         return 'bakery.bread'
     if 'булочк' in name_lower or 'bun' in name_lower or 'roll' in name_lower:
         return 'bakery.buns'
+    if 'тортилья' in name_lower or 'tortilla' in name_lower:
+        return 'bakery.tortilla'
+    if 'лаваш' in name_lower or 'lavash' in name_lower:
+        return 'bakery.lavash'
+    if 'пита' in name_lower or 'pita' in name_lower:
+        return 'bakery.pita'
     
     return 'other'
 
