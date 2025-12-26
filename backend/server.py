@@ -959,6 +959,23 @@ async def get_order(order_id: str, current_user: dict = Depends(get_current_user
     
     return order
 
+
+@api_router.get("/orders/{order_id}/details")
+async def get_order_details(order_id: str, current_user: dict = Depends(get_current_user)):
+    """Get order with supplier name and detailed breakdown"""
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Get supplier name
+    supplier = await db.companies.find_one({"id": order['supplierCompanyId']}, {"_id": 0})
+    supplier_name = supplier.get('companyName') or supplier.get('name', 'Unknown') if supplier else 'Unknown'
+    
+    return {
+        **order,
+        "supplierName": supplier_name
+    }
+
 # ==================== ANALYTICS ROUTES ====================
 
 @api_router.delete("/orders/{order_id}")
