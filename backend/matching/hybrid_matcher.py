@@ -102,6 +102,12 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
     query_weight = query_weight_data.get('net_weight_kg')
     query_identifiers = extract_key_identifiers(query_product_name)
     
+    # NEW: Seafood STRICT attributes (per MVP requirements)
+    from pipeline.enricher import extract_seafood_head_status, extract_cooking_state, extract_trim_grade
+    query_head_status = extract_seafood_head_status(query_product_name)
+    query_cooking_state = extract_cooking_state(query_product_name)
+    query_trim_grade = extract_trim_grade(query_product_name)
+    
     # Determine query base_unit
     query_base_unit = 'kg' if query_weight else 'pcs'
     
