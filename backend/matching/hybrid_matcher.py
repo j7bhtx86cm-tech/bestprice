@@ -232,7 +232,17 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 if item_rice_type and item_rice_type != query_rice_type:
                     continue
         
-        # Gate 13: NAME SIMILARITY - VERY STRICT! (NEW!)
+        # Gate 15: PRODUCT SUBTYPE STRICT (NEW! молочный≠горький, льна≠чиа, темная≠светлая)
+        # If query has specific subtypes (chocolate type, seed type, bread color), they MUST overlap
+        if query_subtypes:
+            item_subtypes = extract_product_subtype(item.get('name_raw', ''))
+            
+            # If both have subtypes, they MUST overlap
+            # This prevents: молочный шоколад ≠ горький шоколад
+            if item_subtypes and not (query_subtypes & item_subtypes):
+                continue
+        
+        # Gate 13: NAME SIMILARITY - VERY STRICT! (applied last)
         # Require 50% word overlap for ALL categories to prevent false positives
         item_words = set(item.get('name_raw', '').lower().split())
         
