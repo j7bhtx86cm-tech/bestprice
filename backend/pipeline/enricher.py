@@ -237,10 +237,21 @@ def extract_brand(text: str) -> Optional[str]:
 def extract_super_class(name_lower: str) -> str:
     """Classify into super_class WITH sub-type granularity
     
-    CRITICAL: Order matters! Check processed/prepared items BEFORE raw ingredients
+    PRIORITY 1: Use contract dictionary rules (142 product types from 413 rules)
+    PRIORITY 2: Hardcoded keyword matching (fallback)
     """
     
-    # PRIORITY 1: Prepared/Ready-made dishes (check FIRST!)
+    # PRIORITY 1: Try dictionary-based classification using contract rules
+    try:
+        from contract_rules import contract_rules
+        if contract_rules:
+            dict_result = contract_rules.classify_by_dictionary(name_lower)
+            if dict_result:
+                return dict_result
+    except:
+        pass
+    
+    # PRIORITY 2: Prepared/Ready-made dishes (check FIRST in hardcoded rules!)
     if any(w in name_lower for w in ['гёдза', 'gyoza', 'пельмен', 'dumpling', 'равиол']):
         return 'prepared_food.dumpling'
     if any(w in name_lower for w in ['донат', 'donut', 'пончик']):
