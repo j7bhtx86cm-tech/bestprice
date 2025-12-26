@@ -124,6 +124,11 @@ def process_price_list_item(raw_item: Dict, supplier_company_id: str, price_list
         'caliber': caliber,
         'processing_flags': processing_flags,
         
+        # NEW: Seafood STRICT attributes (per MVP requirements)
+        'seafood_head_status': seafood_head_status,
+        'cooking_state': cooking_state,
+        'trim_grade': trim_grade,
+        
         # Technical
         'calc_route': calc_route,
         'calc_confidence': calc_confidence,
