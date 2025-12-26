@@ -379,6 +379,31 @@ def extract_product_subtype(name: str) -> set:
     return found
 
 
+
+def is_prepared_dish(name: str) -> bool:
+    """Check if product is a prepared/cooked dish vs raw ingredient
+    
+    Prepared dishes: котлета, пельмени, пирог, гёдза, наггетсы, etc.
+    Raw ingredients: сыр, мясо, овощи, etc.
+    """
+    name_lower = name.lower()
+    
+    prepared_markers = [
+        'котлета', 'cutlet', 'пельмен', 'dumpling', 'гёдза', 'gyoza',
+        'наггетс', 'nugget', 'бургер', 'burger', 'пирог', 'pie',
+        'блинчик', 'pancake', 'чебурек', 'донат', 'donut',
+        'голубц', 'тефтел', 'meatball', 'фрикадельк',
+        'колбаск для гриля', 'шашлык', 'kebab',
+        'полуфабрикат', 'п/ф', 'готов',
+    ]
+    
+    for marker in prepared_markers:
+        if marker in name_lower:
+            return True
+    
+    return False
+
+
 def extract_rice_type(name: str) -> Optional[str]:
     """Extract rice type: басмати, жасмин, для суши, круглозерный, etc."""
     name_lower = name.lower()
