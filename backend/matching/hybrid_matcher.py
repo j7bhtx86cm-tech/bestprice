@@ -172,6 +172,22 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 if not item_brand or contract_rules.get_canonical_brand(item_brand) != query_brand:
                     continue
         
+        # Gate 10: SEAFOOD STRICT attributes (per MVP - critical for seafood)
+        # For seafood, head status MUST match exactly
+        if query_head_status:
+            if item.get('seafood_head_status') != query_head_status:
+                continue
+        
+        # Cooking state MUST match (с/м vs в/м is critical difference)
+        if query_cooking_state:
+            if item.get('cooking_state') != query_cooking_state:
+                continue
+        
+        # Trim grade MUST match (trim A ≠ trim C ≠ trim D)
+        if query_trim_grade:
+            if item.get('trim_grade') != query_trim_grade:
+                continue
+        
         matches.append(item)
     
     if not matches:
