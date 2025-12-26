@@ -221,6 +221,14 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 if not (sauce_keywords_query & sauce_keywords_item):
                     continue
         
+        # Gate 14: RICE TYPE STRICT (NEW! басмати ≠ жасмин ≠ для суши)
+        if query_super_class == 'staples.rice' or 'рис' in query_product_name.lower():
+            if query_rice_type:
+                item_rice_type = extract_rice_type(item.get('name_raw', ''))
+                # If query specifies rice type, item MUST match or have no type specified
+                if item_rice_type and item_rice_type != query_rice_type:
+                    continue
+        
         # Gate 13: NAME SIMILARITY - VERY STRICT! (NEW!)
         # Require 50% word overlap for ALL categories to prevent false positives
         item_words = set(item.get('name_raw', '').lower().split())
