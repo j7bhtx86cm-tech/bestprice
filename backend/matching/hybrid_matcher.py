@@ -449,6 +449,12 @@ def extract_rice_type(name: str) -> Optional[str]:
         return 'basmati'
     if 'жасмин' in name_lower or 'jasmine' in name_lower:
         return 'jasmine'
+    if 'италика' in name_lower or 'italica' in name_lower:
+        return 'italica'
+    if 'арборио' in name_lower or 'arborio' in name_lower:
+        return 'arborio'
+    if 'девзира' in name_lower or 'devzira' in name_lower:
+        return 'devzira'
     if 'суши' in name_lower or 'sushi' in name_lower:
         return 'sushi'
     if 'круглозерн' in name_lower or 'round' in name_lower:
