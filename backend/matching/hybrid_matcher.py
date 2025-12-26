@@ -321,7 +321,6 @@ def extract_product_subtype(name: str) -> set:
     
     Uses word boundaries to avoid false matches (чиа ≠ чиабатта)
     """
-    import re
     name_lower = name.lower()
     
     subtypes_patterns = {
