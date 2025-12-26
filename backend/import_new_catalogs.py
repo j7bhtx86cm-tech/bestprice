@@ -1,292 +1,167 @@
-"""
-Import price lists from 5 new suppliers - all prices in rubles
-"""
-import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+#!/usr/bin/env python3
+"""Import new supplier catalogs into MongoDB"""
 import os
-from dotenv import load_dotenv
-from pathlib import Path
-import uuid
-from datetime import datetime, timezone
+import sys
 import pandas as pd
-import requests
-import bcrypt
+from pymongo import MongoClient
+from pathlib import Path
+from datetime import datetime, timezone
+import uuid
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+# Load environment
+from dotenv import load_dotenv
+load_dotenv(Path('/app/backend/.env'))
 
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+client = MongoClient(mongo_url)
+db = client['test_database']
 
-# File URLs and supplier names
-SUPPLIERS = [
-    {
-        'name': 'Алиди',
-        'url': 'https://customer-assets.emergentagent.com/job_resto-supplier/artifacts/sr01y2nb_%D0%90%D0%BB%D0%B8%D0%B4%D0%B8.xlsx',
-        'email': 'alidi@example.com'
-    },
-    {
-        'name': 'ВЗ',
-        'url': 'https://customer-assets.emergentagent.com/job_resto-supplier/artifacts/4wmwfkrq_%D0%92%D0%97%20.xlsx',
-        'email': 'vz@example.com'
-    },
-    {
-        'name': 'Мореодор',
-        'url': 'https://customer-assets.emergentagent.com/job_resto-supplier/artifacts/x2ycd95g_%D0%9C%D0%BE%D1%80%D0%B5%D0%BE%D0%B4%D0%BE%D1%80%20.xlsx',
-        'email': 'moreodor@example.com'
-    },
-    {
-        'name': 'РомановАНИП',
-        'url': 'https://customer-assets.emergentagent.com/job_resto-supplier/artifacts/mbva3mr2_%D0%A0%D0%BE%D0%BC%D0%B0%D0%BD%D0%BE%D0%B2%D0%90%D0%9D%D0%98%D0%9F.xlsx',
-        'email': 'romanov@example.com'
-    },
-    {
-        'name': 'NORDICO',
-        'url': 'https://customer-assets.emergentagent.com/job_resto-supplier/artifacts/fxirzkqr_NORDICO.xlsx',
-        'email': 'nordico@example.com'
-    }
-]
+# Map supplier file names to company IDs
+SUPPLIER_MAPPING = {
+    'Алиди.xlsx': 'Алиди',
+    'Айфрут.xlsx': 'Айфрут', 
+    'Восток-Запад.xlsx': 'Восток-Запад',
+    'Интегрита.xlsx': 'Интегрита',
+    'Нордико.xlsx': 'Нордико',
+}
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-def download_file(url, filename):
-    """Download file from URL"""
-    print(f"📥 Downloading {filename}...")
-    response = requests.get(url)
-    with open(filename, 'wb') as f:
-        f.write(response.content)
-    return filename
-
-def parse_excel_smart(filename, supplier_name):
-    """Smart parser for Excel files - finds headers automatically"""
-    print(f"📊 Parsing {filename}...")
-    
-    try:
-        df = pd.read_excel(filename, header=None)
-        
-        products = []
-        header_row = -1
-        name_col = None
-        price_col = None
-        unit_col = None
-        article_col = None
-        
-        # Find header row
-        for idx, row in df.iterrows():
-            if idx > 20:  # Don't search beyond row 20
-                break
-            
-            row_str = ' '.join([str(x).lower() for x in row if pd.notna(x)])
-            
-            # Look for common header patterns
-            if any(keyword in row_str for keyword in ['наименование', 'название', 'товар', 'продукт', 'name', 'product']):
-                header_row = idx
-                
-                for col_idx, cell in enumerate(row):
-                    if pd.isna(cell):
-                        continue
-                    cell_str = str(cell).lower()
-                    
-                    if ('наименование' in cell_str or 'название' in cell_str or 
-                        'товар' in cell_str or 'продукт' in cell_str or 'name' in cell_str):
-                        name_col = col_idx
-                    elif 'цена' in cell_str or 'price' in cell_str or 'стоимость' in cell_str:
-                        price_col = col_idx
-                    elif ('ед.' in cell_str or 'unit' in cell_str or 'единица' in cell_str or 
-                          'фасовка' in cell_str or 'упаковка' in cell_str):
-                        unit_col = col_idx
-                    elif 'артикул' in cell_str or 'код' in cell_str or 'article' in cell_str or 'арт.' in cell_str:
-                        article_col = col_idx
-                
-                if name_col is not None and price_col is not None:
-                    print(f"✅ Found header at row {idx}")
-                    print(f"   Columns - Name: {name_col}, Price: {price_col}, Unit: {unit_col}, Article: {article_col}")
-                    break
-        
-        # If no header found, use first 4 columns as name, article, unit, price
-        if header_row == -1:
-            print("⚠️  No header found, using default column mapping")
-            header_row = 0
-            name_col = 0
-            article_col = 1
-            unit_col = 2
-            price_col = 3
-        
-        # Parse data rows
-        for idx, row in df.iterrows():
-            if idx <= header_row:
-                continue
-            
-            # Get product name
-            product_name = row[name_col] if name_col is not None and name_col < len(row) else None
-            if pd.isna(product_name) or str(product_name).strip() == '':
-                continue
-            
-            # Get price
-            price_value = row[price_col] if price_col is not None and price_col < len(row) else None
-            if pd.isna(price_value):
-                continue
-            
-            try:
-                price = float(price_value)
-                if price <= 0:
-                    continue
-            except:
-                continue
-            
-            # Get unit
-            unit = 'шт'
-            if unit_col is not None and unit_col < len(row):
-                unit_value = row[unit_col]
-                if not pd.isna(unit_value):
-                    unit = str(unit_value).strip()
-            
-            # Get article
-            article = str(idx)
-            if article_col is not None and article_col < len(row):
-                article_value = row[article_col]
-                if not pd.isna(article_value):
-                    article = str(article_value).strip()
-            
-            products.append({
-                'productName': str(product_name).strip(),
-                'price': price,
-                'unit': unit,
-                'article': article
-            })
-        
-        print(f"✅ Parsed {len(products)} products from {supplier_name}")
-        return products
-        
-    except Exception as e:
-        print(f"❌ Error parsing {filename}: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return []
-
-async def create_or_get_supplier(supplier_info):
-    """Create supplier company and user if they don't exist"""
-    # Check if user exists
-    user = await db.users.find_one({"email": supplier_info['email']}, {"_id": 0})
-    
-    if not user:
-        # Create user
-        user_id = str(uuid.uuid4())
-        user_doc = {
-            'id': user_id,
-            'email': supplier_info['email'],
-            'passwordHash': hash_password('password123'),
-            'role': 'supplier',
-            'createdAt': datetime.now(timezone.utc).isoformat(),
-            'updatedAt': datetime.now(timezone.utc).isoformat()
-        }
-        await db.users.insert_one(user_doc)
-        print(f"  ✅ Created user for {supplier_info['name']}")
-    else:
-        user_id = user['id']
-        print(f"  ℹ️  User already exists for {supplier_info['name']}")
-    
-    # Check if company exists
-    company = await db.companies.find_one({"userId": user_id}, {"_id": 0})
-    
+def get_supplier_company_id(supplier_name: str):
+    """Get company ID for supplier by name"""
+    company = db.companies.find_one({'companyName': supplier_name, 'type': 'supplier'})
     if not company:
-        # Create company
-        company_id = str(uuid.uuid4())
-        company_doc = {
-            'id': company_id,
-            'type': 'supplier',
-            'userId': user_id,
-            'inn': f"{7700000000 + hash(supplier_info['name']) % 1000000}",
-            'ogrn': f"{1027700000000 + hash(supplier_info['name']) % 1000000}",
-            'companyName': supplier_info['name'],
-            'legalAddress': f"г. Москва, ул. {supplier_info['name']}, д. 1",
-            'actualAddress': f"г. Москва, ул. {supplier_info['name']}, д. 1",
-            'phone': '+7 (999) 123-45-67',
-            'email': supplier_info['email'],
-            'contactPersonName': 'Иван Иванов',
-            'contactPersonPosition': 'Менеджер',
-            'contactPersonPhone': '+7 (999) 123-45-67',
-            'deliveryAddresses': [],
-            'contractAccepted': True,
-            'createdAt': datetime.now(timezone.utc).isoformat(),
-            'updatedAt': datetime.now(timezone.utc).isoformat()
-        }
-        await db.companies.insert_one(company_doc)
-        print(f"  ✅ Created company: {supplier_info['name']}")
-        return company_id
-    else:
-        print(f"  ℹ️  Company already exists: {supplier_info['name']}")
-        return company['id']
-
-async def import_all_suppliers():
-    """Import price lists for all 5 suppliers"""
-    print("🌱 Starting import of all supplier price lists...")
-    print(f"📦 Total suppliers to import: {len(SUPPLIERS)}\n")
+        company = db.companies.find_one({'name': supplier_name, 'companyType': 'supplier'})
     
-    # Clear existing price lists
-    print("🗑️  Clearing existing price lists...")
-    await db.price_lists.delete_many({})
+    if company:
+        return company['id']
+    
+    print(f"⚠️  Supplier '{supplier_name}' not found in database!")
+    return None
+
+def import_catalog(file_path: str, supplier_name: str):
+    """Import a single catalog file"""
+    print(f"\n{'='*70}")
+    print(f"📂 Импорт: {supplier_name}")
+    print(f"{'='*70}")
+    
+    # Get supplier company ID
+    supplier_id = get_supplier_company_id(supplier_name)
+    if not supplier_id:
+        print(f"❌ Пропуск файла {file_path} - поставщик не найден")
+        return 0, 0
+    
+    print(f"✅ Supplier ID: {supplier_id}")
+    
+    # Read Excel file
+    df = pd.read_excel(file_path)
+    
+    print(f"📊 Найдено строк в файле: {len(df)}")
+    print(f"📊 Колонки: {list(df.columns)}")
+    
+    products_created = 0
+    pricelists_created = 0
+    skipped = 0
+    
+    for idx, row in df.iterrows():
+        try:
+            product_name = str(row['Название']).strip()
+            price = float(row['Цена за единицу'])
+            unit = str(row['Единица']).strip()
+            article = str(row['Код товара поставщика']).strip() if pd.notna(row['Код товара поставщика']) else ''
+            
+            # Skip category headers (price = 0)
+            if price <= 0 or not product_name or product_name == 'nan':
+                skipped += 1
+                continue
+            
+            # Get package quantity and min order
+            pack_qty = int(row['Количество в упаковки']) if pd.notna(row['Количество в упаковки']) else 1
+            min_qty = int(row['Минимальный заказ']) if pd.notna(row['Минимальный заказ']) else 1
+            
+            # Create or find product in global catalog
+            existing_product = db.products.find_one({
+                'name': product_name,
+                'unit': unit
+            })
+            
+            if existing_product:
+                product_id = existing_product['id']
+            else:
+                # Create new product
+                product_id = str(uuid.uuid4())
+                product_doc = {
+                    'id': product_id,
+                    'name': product_name,
+                    'unit': unit,
+                    'article': article,
+                    'createdAt': datetime.now(timezone.utc).isoformat()
+                }
+                db.products.insert_one(product_doc)
+                products_created += 1
+            
+            # Create pricelist entry
+            pricelist_doc = {
+                'id': str(uuid.uuid4()),
+                'supplierId': supplier_id,
+                'productId': product_id,
+                'price': price,
+                'packQuantity': pack_qty,
+                'minQuantity': min_qty,
+                'minOrderAmount': 0,
+                'supplierItemCode': article,
+                'createdAt': datetime.now(timezone.utc).isoformat(),
+                'availability': True,
+                'active': True
+            }
+            db.pricelists.insert_one(pricelist_doc)
+            pricelists_created += 1
+            
+        except Exception as e:
+            print(f"⚠️  Ошибка в строке {idx}: {e}")
+            skipped += 1
+            continue
+    
+    print(f"\n✅ Результат импорта {supplier_name}:")
+    print(f"   Продуктов создано: {products_created}")
+    print(f"   Прайс-листов создано: {pricelists_created}")
+    print(f"   Пропущено строк: {skipped}")
+    
+    return products_created, pricelists_created
+
+def main():
+    """Import all catalogs"""
+    print("🚀 Начинаю импорт 5 новых каталогов...")
+    
+    catalogs_dir = Path('/app/backend/new_catalogs')
     
     total_products = 0
+    total_pricelists = 0
     
-    for supplier_info in SUPPLIERS:
-        print(f"\n{'='*60}")
-        print(f"📦 Processing: {supplier_info['name']}")
-        print(f"{'='*60}")
+    for file_name, supplier_name in SUPPLIER_MAPPING.items():
+        file_path = catalogs_dir / file_name
         
-        # Create or get supplier company
-        company_id = await create_or_get_supplier(supplier_info)
-        
-        # Download and parse file
-        filename = f"/tmp/{supplier_info['name']}.xlsx"
-        download_file(supplier_info['url'], filename)
-        
-        products = parse_excel_smart(filename, supplier_info['name'])
-        
-        if not products:
-            print(f"⚠️  No products found for {supplier_info['name']}, skipping...")
+        if not file_path.exists():
+            print(f"⚠️  Файл {file_name} не найден, пропуск...")
             continue
         
-        # Import products
-        print(f"💾 Importing {len(products)} products for {supplier_info['name']}...")
-        
-        for i, product in enumerate(products):
-            price_list = {
-                'id': str(uuid.uuid4()),
-                'supplierCompanyId': company_id,
-                'productName': product['productName'],
-                'article': product['article'],
-                'price': product['price'],
-                'unit': product['unit'],
-                'availability': True,
-                'active': True,
-                'createdAt': datetime.now(timezone.utc).isoformat(),
-                'updatedAt': datetime.now(timezone.utc).isoformat()
-            }
-            await db.price_lists.insert_one(price_list)
-            
-            if (i + 1) % 100 == 0:
-                print(f"  Imported {i + 1}/{len(products)} products...")
-        
-        print(f"✅ Imported {len(products)} products for {supplier_info['name']}")
-        total_products += len(products)
+        products, pricelists = import_catalog(str(file_path), supplier_name)
+        total_products += products
+        total_pricelists += pricelists
     
-    print(f"\n{'='*60}")
-    print(f"🎉 Import complete!")
-    print(f"📊 Total products imported: {total_products}")
-    print(f"📦 Total suppliers: {len(SUPPLIERS)}")
-    print(f"{'='*60}")
+    print(f"\n{'='*70}")
+    print(f"📊 ИТОГОВАЯ СТАТИСТИКА ИМПОРТА")
+    print(f"{'='*70}")
+    print(f"Всего продуктов создано: {total_products}")
+    print(f"Всего прайс-листов создано: {total_pricelists}")
     
-    # Show supplier list
-    suppliers = await db.companies.find({"type": "supplier"}, {"_id": 0, "companyName": 1, "email": 1}).to_list(10)
-    print(f"\n📋 Suppliers in database:")
-    for s in suppliers:
-        count = await db.price_lists.count_documents({"supplierCompanyId": s.get('id', '')})
-        print(f"  - {s['companyName']}: {count} products (login: {s['email']} / password123)")
+    # Verify
+    products_count = db.products.count_documents({})
+    pricelists_count = db.pricelists.count_documents({})
     
-    client.close()
+    print(f"\n🔍 Проверка базы данных:")
+    print(f"   products: {products_count} записей")
+    print(f"   pricelists: {pricelists_count} записей")
+    
+    print(f"\n✅ Импорт завершен!")
 
-if __name__ == "__main__":
-    asyncio.run(import_all_suppliers())
+if __name__ == '__main__':
+    main()
