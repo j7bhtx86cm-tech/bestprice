@@ -244,3 +244,44 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
     matches.sort(key=lambda x: (x.get('price_per_base_unit', 999999), x.get('price', 999999)))
     
     return matches[0]
+
+
+def extract_meat_type(name: str) -> Optional[str]:
+    """Extract meat type: курин, говяд, свин, индейк, etc."""
+    name_lower = name.lower()
+    
+    if 'курин' in name_lower or 'куриц' in name_lower or 'chicken' in name_lower:
+        return 'chicken'
+    if 'говяд' in name_lower or 'beef' in name_lower:
+        return 'beef'
+    if 'свин' in name_lower or 'pork' in name_lower:
+        return 'pork'
+    if 'индейк' in name_lower or 'turkey' in name_lower:
+        return 'turkey'
+    if 'ягнят' in name_lower or 'баран' in name_lower or 'lamb' in name_lower:
+        return 'lamb'
+    
+    return None
+
+
+def extract_sauce_keywords(name: str) -> set:
+    """Extract sauce flavor/type keywords"""
+    name_lower = name.lower()
+    
+    sauce_types = {
+        'соев', 'soy', 'терияки', 'teriyaki', 'унаги', 'unagi', 
+        'ворчестер', 'worcester', 'барбекю', 'bbq', 'томат', 'tomato',
+        'чесночн', 'garlic', 'лук', 'onion', 'гриб', 'mushroom',
+        'сладк', 'sweet', 'остр', 'hot', 'кисло', 'sour',
+        'сырн', 'cheese', 'сливочн', 'cream', 'карри', 'curry',
+        'песто', 'pesto', 'цезарь', 'caesar', 'горчичн', 'mustard',
+        'ананас', 'pineapple', 'чили', 'chili', 'перц', 'pepper',
+        'пад тай', 'pad thai', 'кимчи', 'kimchi'
+    }
+    
+    found = set()
+    for keyword in sauce_types:
+        if keyword in name_lower:
+            found.add(keyword)
+    
+    return found
