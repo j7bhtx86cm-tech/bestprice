@@ -12,6 +12,15 @@ except:
     RULES_LOADED = False
     contract_rules = None
 
+# Import auto-generated keywords
+try:
+    from auto_generated_keywords import AUTO_KEYWORDS
+    AUTO_KEYWORDS_LOADED = True
+    print(f"✅ Loaded {len(AUTO_KEYWORDS)} auto-generated keywords")
+except:
+    AUTO_KEYWORDS_LOADED = False
+    AUTO_KEYWORDS = set()
+
 
 def extract_brand_from_name(name: str) -> Optional[str]:
     """Extract brand from product name using contract rules"""
