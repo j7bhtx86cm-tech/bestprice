@@ -31,10 +31,6 @@ def extract_key_identifiers(name: str) -> set:
     """Extract key identifying words from product name
     
     These are important words that differentiate products within the same category.
-    Examples:
-    - Sauce types: worcester, unagi, soy, teriyaki, bbq
-    - Seaweed types: dashi, kombu, nori, wakame, onigiri
-    - Meat cuts: fillet, steak, rack, leg, breast
     """
     name_lower = name.lower()
     
@@ -43,7 +39,7 @@ def extract_key_identifiers(name: str) -> set:
         # Sauce types
         'ворчестер', 'worcester', 'унаги', 'unagi', 'соев', 'soy', 'терияки', 'teriyaki',
         'барбекю', 'bbq', 'чесночн', 'garlic', 'сладк', 'sweet', 'остр', 'hot', 'spicy',
-        'кисло', 'sour', 'кетчуп', 'ketchup',
+        'кисло', 'sour', 'кетчуп', 'ketchup', 'лукdow', 'onion', 'гриб', 'mushroom',
         
         # Seaweed types  
         'даши', 'dashi', 'комбу', 'kombu', 'нори', 'nori', 'вакаме', 'wakame',
@@ -52,7 +48,10 @@ def extract_key_identifiers(name: str) -> set:
         # Meat cuts
         'филе', 'fillet', 'стейк', 'steak', 'корейка', 'rack', 'ребер', 'ribs',
         'ножка', 'leg', 'бедро', 'thigh', 'грудка', 'breast', 'крыло', 'wing',
-        'фарш', 'ground', 'мякоть', 'tenderloin',
+        'фарш', 'ground', 'мякоть', 'tenderloin', 'вырезка', 'окорок',
+        
+        # Meat products
+        'сосиск', 'sausage', 'колбас', 'salami', 'сардельк',
         
         # Cheese types
         'моцарелла', 'mozzarella', 'пармезан', 'parmesan', 'чеддер', 'cheddar',
@@ -65,9 +64,21 @@ def extract_key_identifiers(name: str) -> set:
         'спагетти', 'spaghetti', 'пенне', 'penne', 'фузилли', 'fusilli',
         'тальятелле', 'tagliatelle', 'феттучини', 'fettuccine',
         
+        # Flour types (CRITICAL!)
+        'миндал', 'almond', 'ржан', 'rye', 'пшенич', 'wheat', 'рисов', 'кокос', 'coconut', 'кукуруз', 'corn',
+        
+        # Prepared foods
+        'гёдза', 'gyoza', 'пельмен', 'dumpling', 'донат', 'donut', 'блинчик', 'pancake',
+        
+        # Bakery
+        'тортилья', 'tortilla', 'лаваш', 'lavash', 'пита', 'pita',
+        
+        # Seasonings/Spices (CRITICAL!)
+        'корица', 'cinnamon', 'приправа', 'seasoning', 'ваниль', 'vanilla',
+        
         # Specific flavors/ingredients
-        'маракуйя', 'passion', 'клубника', 'strawberry', 'ваниль', 'vanilla',
-        'шоколад', 'chocolate', 'карамель', 'caramel', 'кокос', 'coconut',
+        'маракуйя', 'passion', 'клубника', 'strawberry', 'шоколад', 'chocolate', 
+        'карамель', 'caramel', 'ананас', 'pineapple',
     }
     
     found_identifiers = set()
