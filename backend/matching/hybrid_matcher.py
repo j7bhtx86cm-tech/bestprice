@@ -242,7 +242,26 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
         
         # If EITHER side has identifiers, they MUST overlap
         if query_identifiers or item_identifiers:
-            if not (query_identifiers & item_identifiers):
+            overlap = query_identifiers & item_identifiers
+            
+            if not overlap:
+                continue
+            
+            # ADDITIONAL CHECK: Overlap must include SPECIFIC identifiers, not just generic
+            # Generic identifiers that don't help: филе, донат, котлета, пельмени, etc.
+            generic_identifiers = {
+                'филе', 'fillet', 'стейк', 'steak', 'донат', 'donut',
+                'котлет', 'cutlet', 'пельмен', 'dumpling', 'гёдза', 'gyoza',
+                'пюре', 'puree', 'салат', 'salad', 'торт', 'cake',
+                'лапша', 'noodle', 'сыр', 'cheese', 'соус', 'sauce',
+                'бульон', 'broth', 'крем', 'cream'
+            }
+            
+            # Check if overlap contains at least one NON-generic identifier
+            specific_overlap = overlap - generic_identifiers
+            
+            # If only generic words overlap (like "филе" or "донат"), block the match
+            if not specific_overlap and len(overlap - generic_identifiers) == 0:
                 continue
         
         # Gate 9: STRICT BRAND matching (from contract rules)
