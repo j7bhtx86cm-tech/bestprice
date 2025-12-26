@@ -218,22 +218,27 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 if not (sauce_keywords_query & sauce_keywords_item):
                     continue
         
-        # Gate 13: NAME SIMILARITY for broad categories (NEW!)
-        # For categories with many subtypes, require 30%+ word overlap
-        broad_categories = ['condiments.sauce', 'meat.sausages', 'meat.kolbasa', 'staples.flour', 
-                           'condiments.seasoning', 'condiments.spice', 'other']
+        # Gate 13: NAME SIMILARITY - VERY STRICT! (NEW!)
+        # Require 50% word overlap for ALL categories to prevent false positives
+        item_words = set(item.get('name_raw', '').lower().split())
         
-        if query_super_class in broad_categories:
-            item_words = set(item.get('name_raw', '').lower().split())
+        # Remove common generic words that don't help with matching
+        generic_words = {'кг', 'гр', 'г', 'л', 'мл', 'шт', 'упак', 'пакет', 'кор', 
+                        'ведро', 'бут', 'bottle', 'pack', 'box', '~', 'вес', 'weight',
+                        'с/м', 'в/м', 'в/у', 'охл', 'зам', 'frozen', 'chilled'}
+        
+        query_words_clean = query_words - generic_words
+        item_words_clean = item_words - generic_words
+        
+        if len(query_words_clean) > 0:
+            # Calculate meaningful word overlap (excluding generic words)
+            common_words = query_words_clean & item_words_clean
+            similarity = len(common_words) / len(query_words_clean)
             
-            # Calculate overlap
-            common_words = query_words & item_words
-            if len(query_words) > 0:
-                similarity = len(common_words) / len(query_words)
-                
-                # Require 30% word overlap
-                if similarity < 0.30:
-                    continue
+            # STRICT: Require 50% meaningful word overlap
+            # This prevents "рис басмати" from matching "рис обычный"
+            if similarity < 0.50:
+                continue
         
         matches.append(item)
     
