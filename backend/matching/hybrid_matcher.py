@@ -303,6 +303,49 @@ def extract_sauce_keywords(name: str) -> set:
     return found
 
 
+def extract_product_subtype(name: str) -> set:
+    """Extract product subtypes that MUST match exactly
+    
+    Examples:
+    - Chocolate: молочный vs горький vs белый
+    - Seeds: льна vs чиа vs кунжут vs подсолнечника
+    - Root vegetables: сельдерей vs хрен vs имбирь
+    - Bread color: темная vs светлая
+    """
+    name_lower = name.lower()
+    
+    subtypes = {
+        # Chocolate types
+        'молочный', 'milk', 'горький', 'dark', 'bitter', 'белый', 'white',
+        
+        # Seed types  
+        'льна', 'flax', 'чиа', 'chia', 'кунжут', 'sesame', 'подсолнечник', 'sunflower',
+        'тыкв', 'pumpkin', 'мака', 'poppy',
+        
+        # Root vegetables
+        'сельдерей', 'celery', 'хрен', 'horseradish', 'имбирь', 'ginger',
+        'свекла', 'beet', 'морков', 'carrot', 'редька', 'radish',
+        
+        # Bread/bun colors
+        'темн', 'dark', 'светл', 'light', 'белый', 'white', 'черн', 'black',
+        'ржан', 'rye', 'пшеничн', 'wheat',
+        
+        # Fish processing
+        'филе', 'fillet', 'стейк', 'steak', 'тушка', 'whole',
+        
+        # Nuts
+        'грецк', 'walnut', 'фундук', 'hazelnut', 'миндаль', 'almond',
+        'кешью', 'cashew', 'фисташк', 'pistachio',
+    }
+    
+    found = set()
+    for subtype in subtypes:
+        if subtype in name_lower:
+            found.add(subtype)
+    
+    return found
+
+
 def extract_rice_type(name: str) -> Optional[str]:
     """Extract rice type: басмати, жасмин, для суши, круглозерный, etc."""
     name_lower = name.lower()
