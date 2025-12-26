@@ -319,42 +319,53 @@ def extract_sauce_keywords(name: str) -> set:
 def extract_product_subtype(name: str) -> set:
     """Extract product subtypes that MUST match exactly
     
-    Examples:
-    - Chocolate: молочный vs горький vs белый
-    - Seeds: льна vs чиа vs кунжут vs подсолнечника
-    - Root vegetables: сельдерей vs хрен vs имбирь
-    - Bread color: темная vs светлая
+    Uses word boundaries to avoid false matches (чиа ≠ чиабатта)
     """
+    import re
     name_lower = name.lower()
     
-    subtypes = {
-        # Chocolate types
-        'молочный', 'milk', 'горький', 'dark', 'bitter', 'белый', 'white',
+    subtypes_patterns = {
+        # Chocolate types (with word boundaries)
+        r'\bмолочный\b': 'молочный',
+        r'\bmilk\b': 'milk',
+        r'\bгорький\b': 'горький',
+        r'\bдарк\b': 'dark',
+        r'\bбелый\b': 'white',
         
-        # Seed types  
-        'льна', 'flax', 'чиа', 'chia', 'кунжут', 'sesame', 'подсолнечник', 'sunflower',
-        'тыкв', 'pumpkin', 'мака', 'poppy',
+        # Seed types (with word boundaries to avoid чиа in чиабатта!)
+        r'\bльна\b': 'льна',
+        r'\bflax\b': 'flax',
+        r'\bчиа\b': 'чиа',  # Only match standalone "чиа", not in "чиабатта"
+        r'\bchia\b': 'chia',
+        r'\bкунжут': 'кунжут',
+        r'\bсезам': 'sesame',
+        r'\bподсолнечник': 'подсолнечник',
         
-        # Root vegetables
-        'сельдерей', 'celery', 'хрен', 'horseradish', 'имбирь', 'ginger',
-        'свекла', 'beet', 'морков', 'carrot', 'редька', 'radish',
+        # Root vegetables (word boundaries)
+        r'\bсельдерей\b': 'сельдерей',
+        r'\bcelery\b': 'celery',
+        r'\bхрен\b': 'хрен',
+        r'\bhorseradish\b': 'horseradish',
+        r'\bимбирь\b': 'имбирь',
+        r'\bginger\b': 'ginger',
         
-        # Bread/bun colors
-        'темн', 'dark', 'светл', 'light', 'белый', 'white', 'черн', 'black',
-        'ржан', 'rye', 'пшеничн', 'wheat',
-        
-        # Fish processing
-        'филе', 'fillet', 'стейк', 'steak', 'тушка', 'whole',
+        # Bread colors (word boundaries)
+        r'\bтемн': 'темная',
+        r'\bсветл': 'светлая',
+        r'\bчерн': 'черная',
         
         # Nuts
-        'грецк', 'walnut', 'фундук', 'hazelnut', 'миндаль', 'almond',
-        'кешью', 'cashew', 'фисташк', 'pistachio',
+        r'\bгрецк': 'грецкий',
+        r'\bwalnut\b': 'walnut',
+        r'\bфундук': 'фундук',
+        r'\bминдаль': 'миндаль',
+        r'\balmond\b': 'almond',
     }
     
     found = set()
-    for subtype in subtypes:
-        if subtype in name_lower:
-            found.add(subtype)
+    for pattern, canonical in subtypes_patterns.items():
+        if re.search(pattern, name_lower):
+            found.add(canonical)
     
     return found
 
