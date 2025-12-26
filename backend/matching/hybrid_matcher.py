@@ -156,6 +156,16 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if not (query_identifiers & item_identifiers):  # No intersection
                 continue
         
+        # Gate 9: STRICT BRAND matching (from contract rules)
+        if RULES_LOADED:
+            query_brand = extract_brand_from_name(query_product_name)
+            item_brand = item.get('brand')
+            
+            # If query has a strict brand, item MUST have the same brand
+            if query_brand and contract_rules.is_strict_brand(query_brand):
+                if not item_brand or contract_rules.get_canonical_brand(item_brand) != query_brand:
+                    continue
+        
         matches.append(item)
     
     if not matches:
