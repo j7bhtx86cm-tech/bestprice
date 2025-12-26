@@ -130,6 +130,64 @@ def extract_caliber(text: str) -> Optional[str]:
         return f"{match.group(1)}/{match.group(2)}"
     return None
 
+def extract_seafood_head_status(text: str) -> Optional[str]:
+    """Extract head-on/headless status for seafood using contract rules
+    
+    Returns: 'с_головой', 'без_головы', or None
+    """
+    text_lower = text.lower()
+    
+    # Using contract rules mapping
+    headless_markers = ['б/г', 'без головы', 'headless', 'hl']
+    head_on_markers = ['с/г', 'с головой', 'head on', 'head-on']
+    
+    for marker in headless_markers:
+        if marker in text_lower:
+            return 'без_головы'
+    
+    for marker in head_on_markers:
+        if marker in text_lower:
+            return 'с_головой'
+    
+    return None
+
+
+def extract_cooking_state(text: str) -> Optional[str]:
+    """Extract cooking state for seafood using contract rules
+    
+    Returns: 'сыроморож', 'варено_морож', 'охлажден', or None
+    """
+    text_lower = text.lower()
+    
+    # Raw frozen (с/м, зам)
+    if any(w in text_lower for w in ['с/м', 'зам', 'сыромороженый', 'сыроморож']):
+        return 'сыроморож'
+    
+    # Cooked frozen (в/м, вар мор)
+    if any(w in text_lower for w in ['в/м', 'вар мор', 'варено-мороженый', 'варено мороженый']):
+        return 'варено_морож'
+    
+    # Chilled (охл)
+    if 'охл' in text_lower or 'охлажденный' in text_lower or 'chilled' in text_lower:
+        return 'охлажден'
+    
+    return None
+
+
+def extract_trim_grade(text: str) -> Optional[str]:
+    """Extract trim grade (A, C, D) for fish fillets"""
+    text_lower = text.lower()
+    
+    if 'трим a' in text_lower or 'trim a' in text_lower:
+        return 'trim_a'
+    if 'трим c' in text_lower or 'trim c' in text_lower:
+        return 'trim_c'
+    if 'трим d' in text_lower or 'trim d' in text_lower:
+        return 'trim_d'
+    
+    return None
+
+
 def extract_fat_pct(text: str) -> Optional[int]:
     """Extract fat percentage: 45%, 2.5%, etc."""
     match = re.search(r'(\d{1,2}(?:[.,]\d+)?)\s*%', text)
