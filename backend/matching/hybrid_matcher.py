@@ -242,6 +242,16 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if item_subtypes and not (query_subtypes & item_subtypes):
                 continue
         
+        # Gate 16: PREPARED vs RAW INGREDIENT (NEW!)
+        # Prepared dishes should NOT match with raw ingredients
+        # Example: котлета с сыром ≠ сыр, пельмени с мясом ≠ мясо
+        query_is_prepared = is_prepared_dish(query_product_name)
+        item_is_prepared = is_prepared_dish(item.get('name_raw', ''))
+        
+        # If one is prepared and other is raw ingredient, block
+        if query_is_prepared != item_is_prepared:
+            continue
+        
         # Gate 13: NAME SIMILARITY - VERY STRICT! (applied last)
         # Require 50% word overlap for ALL categories to prevent false positives
         item_words = set(item.get('name_raw', '').lower().split())
