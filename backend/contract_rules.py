@@ -37,8 +37,43 @@ class ContractRules:
             alias = row['alias'].lower()
             self.brand_aliases[alias] = canonical
         
-        # Load dictionary rules
+        # Load dictionary rules (NEW!)
         dict_df = pd.read_excel(CONTRACT_FILE, sheet_name='SEED_DICT_RULES')
+        
+        # Build product keywords by section (NEW - KEY FIX!)
+        self.product_keywords = {}  # section -> {raw: canonical}
+        self.section_to_category = {}  # section -> super_class prefix
+        
+        # Map sections to super_class categories
+        section_mapping = {
+            'Рыба+морепродукты': 'seafood',
+            'Мясо': 'meat',
+            'Молочка+яйца': 'dairy',
+            'Фрукты/ягоды/заморозка/пф': 'fruits',
+            'Овощи': 'vegetables',
+            'Бакалея': 'staples',
+            'Консервация': 'canned',
+            'Напитки': 'beverages'
+        }
+        
+        for _, row in dict_df.iterrows():
+            section = row.get('РАЗДЕЛ')
+            if pd.isna(section):
+                continue
+            
+            raw = str(row['RAW']).lower()
+            canonical = str(row.get('CANONICAL', raw)).lower() if pd.notna(row.get('CANONICAL')) else raw
+            attr_type = str(row.get('ТИП', '')).lower()
+            
+            # Store product-type keywords
+            if attr_type == 'product':
+                if section not in self.product_keywords:
+                    self.product_keywords[section] = {}
+                self.product_keywords[section][raw] = canonical
+                
+                # Store section category mapping
+                if section in section_mapping:
+                    self.section_to_category[section] = section_mapping[section]
         
         # Build seafood attributes map
         self.seafood_attributes = {}
@@ -68,8 +103,33 @@ class ContractRules:
         
         print(f"✅ Loaded {len(self.strict_brands)} strict brands")
         print(f"✅ Loaded {len(self.brand_aliases)} brand aliases")
+        print(f"✅ Loaded {len(self.product_keywords)} product sections with keywords")
         print(f"✅ Loaded {len(self.seafood_attributes)} seafood attribute types")
         print(f"✅ Loaded {len(self.meat_attributes)} meat attribute types")
+        
+        # Print product keyword counts per section
+        for section, keywords in self.product_keywords.items():
+            print(f"   - {section}: {len(keywords)} product types")
+    
+    def classify_by_dictionary(self, name: str) -> Optional[str]:
+        """Classify product using dictionary rules (NEW!)
+        
+        Returns: super_class category or None if not found
+        """
+        name_lower = name.lower()
+        
+        # Check each section's product keywords
+        for section, keywords in self.product_keywords.items():
+            for raw_keyword, canonical in keywords.items():
+                if raw_keyword in name_lower:
+                    # Found match! Return category based on section
+                    base_category = self.section_to_category.get(section, 'other')
+                    
+                    # Create subcategory from canonical name
+                    canonical_clean = canonical.replace('_', '.')
+                    return f"{base_category}.{canonical_clean}"
+        
+        return None
     
     def is_strict_brand(self, brand_name: str) -> bool:
         """Check if brand requires strict matching"""
