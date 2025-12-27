@@ -2314,6 +2314,66 @@ async def remove_from_favorites(favorite_id: str, current_user: dict = Depends(g
     
     return {"message": "Removed from favorites"}
 
+
+@api_router.post("/cart/resolve-favorite")
+async def resolve_favorite_price(data: dict, current_user: dict = Depends(get_current_user)):
+    """Resolve best price for favorite item when added to cart
+    
+    NEW LOGIC per новая логика.docx:
+    - For branded products with STRICT mode: find cheapest of same brand
+    - For branded products with ANY mode: find cheapest of any brand
+    - For commodity products: always find cheapest
+    """
+    from matching.hybrid_matcher import find_best_match_hybrid
+    
+    product_id = data.get('productId')
+    brand_mode = data.get('brandMode', 'STRICT')
+    is_branded = data.get('isBranded', False)
+    brand = data.get('brand')
+    
+    # Get product
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Get all pricelists for this product
+    pricelists = await db.pricelists.find({"productId": product_id}, {"_id": 0}).to_list(100)
+    
+    if not pricelists:
+        raise HTTPException(status_code=404, detail="No suppliers found for this product")
+    
+    # Apply logic based on brandMode
+    if is_branded and brand_mode == 'STRICT' and brand:
+        # Find cheapest of SAME brand across all suppliers
+        same_brand_pls = [
+            pl for pl in pricelists 
+            if brand.lower() in product['name'].lower()
+        ]
+        
+        if same_brand_pls:
+            same_brand_pls.sort(key=lambda x: x['price'])
+            best = same_brand_pls[0]
+        else:
+            # Fallback to any
+            pricelists.sort(key=lambda x: x['price'])
+            best = pricelists[0]
+    else:
+        # ANY mode or commodity - find cheapest across all
+        pricelists.sort(key=lambda x: x['price'])
+        best = pricelists[0]
+    
+    # Get supplier name
+    supplier = await db.companies.find_one({"id": best['supplierId']}, {"_id": 0})
+    supplier_name = supplier.get('companyName') or supplier.get('name', 'Unknown') if supplier else 'Unknown'
+    
+    return {
+        "price": best['price'],
+        "supplier": supplier_name,
+        "supplierId": best['supplierId'],
+        "productName": product['name']
+    }
+
+
 @api_router.post("/favorites/order")
 async def order_from_favorites(data: dict, current_user: dict = Depends(get_current_user)):
     """Create orders from favorites with HYBRID MATCHER + MVP minimum order logic
