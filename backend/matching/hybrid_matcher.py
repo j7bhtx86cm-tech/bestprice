@@ -179,8 +179,10 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if not item_caliber or item_caliber != query_caliber:
                 continue
         
-        # Gate 6: Weight tolerance (±20%)
-        if query_weight:
+        # Gate 6: Weight tolerance (±20%) - EXEMPT condiments!
+        # For condiments (broths, sauces), package size can vary significantly
+        # They're protected by Gate 12 (flavor match) instead
+        if query_weight and query_super_class not in ['condiments.broth', 'condiments.sauce', 'condiments.spice']:
             item_weight = item.get('net_weight_kg')
             if item_weight:
                 diff = abs(query_weight - item_weight) / max(query_weight, item_weight)
