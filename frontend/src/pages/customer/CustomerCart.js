@@ -18,6 +18,7 @@ export const CustomerCart = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [processingOrder, setProcessingOrder] = useState(false);
+  const [loadingPrices, setLoadingPrices] = useState(false);
 
   useEffect(() => {
     loadCart();
