@@ -305,10 +305,10 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             common_words = query_words_clean & item_words_clean
             similarity = len(common_words) / len(query_words_clean)
             
-            # EXTREMELY STRICT: Require 90% meaningful word overlap
-            # At scale (100K products), only NEARLY IDENTICAL products should match
-            # This prevents even subtle differences like "цветочный мед" vs "липовый мед"
-            if similarity < 0.90:
+            # BALANCED: Require 80% meaningful word overlap
+            # This balances accuracy vs utility
+            # With Gate 17 (conflict detection), even 80% is very safe
+            if similarity < 0.80:
                 continue
         
         # Gate 17: NO CONFLICTING IDENTIFIERS (NEW - FINAL DEFENSE!)
