@@ -298,8 +298,7 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
         if query_is_prepared != item_is_prepared:
             continue
         
-        # Gate 13: NAME SIMILARITY - VERY STRICT! (applied last)
-        # Require 50% word overlap for ALL categories to prevent false positives
+        # Gate 13: NAME SIMILARITY - Category-specific thresholds
         item_words = set(item.get('name_raw', '').lower().split())
         
         # Remove common generic words that don't help with matching
@@ -315,9 +314,18 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             common_words = query_words_clean & item_words_clean
             similarity = len(common_words) / len(query_words_clean)
             
-            # PRACTICAL: 70% similarity allows finding alternatives
-            # Gate 17 (conflicting identifiers) prevents false positives
-            if similarity < 0.70:
+            # CATEGORY-SPECIFIC similarity thresholds
+            # For some categories, lower similarity is OK if they have same key identifiers
+            similarity_threshold = 0.70  # Default
+            
+            # Lower threshold for categories where brand names dominate
+            if query_super_class in ['condiments.broth', 'condiments.sauce', 'condiments.spice']:
+                # For broths/sauces, if they share key identifiers (грибной, куриный, etc.)
+                # Allow lower word overlap since brand names are different
+                similarity_threshold = 0.30  # Much lower for condiments
+            
+            # PRACTICAL: 70% for most, 30% for condiments if key identifiers match
+            if similarity < similarity_threshold:
                 continue
         
         # Gate 17: NO CONFLICTING IDENTIFIERS (NEW - FINAL DEFENSE!)
