@@ -26,6 +26,8 @@ export const CustomerCart = () => {
   }, []);
 
   const loadCart = async () => {
+    setLoadingPrices(true);
+    
     // Load from catalog cart
     const catalogCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
     
@@ -38,13 +40,14 @@ export const CustomerCart = () => {
           return resolved;
         } catch (error) {
           console.error('Failed to resolve price for favorite:', error);
-          return item;  // Return as-is if resolution fails
+          return { ...item, price: 0, supplier: 'Ошибка' };
         }
       }
       return item;  // Catalog items already have price
     }));
     
     setCartItems(resolvedItems);
+    setLoadingPrices(false);
   };
 
   const resolveFavoritePrice = async (favoriteItem) => {
