@@ -33,7 +33,7 @@ export const CustomerCart = () => {
     
     // Resolve prices for items from favorites
     const resolvedItems = await Promise.all(catalogCart.map(async (item) => {
-      if (item.source === 'favorites' && !item.price) {
+      if (item.source === 'favorites' && !item.resolved) {
         // This item is from favorites - need to resolve price
         try {
           const resolved = await resolveFavoritePrice(item);
@@ -43,10 +43,14 @@ export const CustomerCart = () => {
           return { ...item, price: 0, supplier: 'Ошибка' };
         }
       }
-      return item;  // Catalog items already have price
+      return item;  // Catalog items or already resolved
     }));
     
     setCartItems(resolvedItems);
+    
+    // Save resolved items back to localStorage
+    localStorage.setItem('catalogCart', JSON.stringify(resolvedItems));
+    
     setLoadingPrices(false);
   };
 
