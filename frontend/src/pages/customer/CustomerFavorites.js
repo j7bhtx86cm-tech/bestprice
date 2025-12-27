@@ -69,54 +69,31 @@ function SortableItem({ favorite, onRemove, onModeChange, onBrandStrictChange, a
         {/* Main Product Name */}
         <div className="mb-4 ml-6">
           <h3 className="font-semibold text-lg mb-1 pr-8">
-            {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch
-              ? favorite.foundProduct.name
-              : favorite.productName}
+            {favorite.productName}
           </h3>
-          {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
-            <p className="text-xs text-gray-500 mb-1">
-              Оригинал: {favorite.productName}
-            </p>
-          )}
           <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
         </div>
 
-        {/* Mode Toggle Switch */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-3">
-          {/* Search for best price toggle */}
-          <div className="flex items-center justify-between">
-            <label htmlFor={`mode-${favorite.id}`} className="text-sm font-medium text-gray-700">
-              Искать лучшую цену
-            </label>
-            <Switch
-              id={`mode-${favorite.id}`}
-              checked={favorite.mode === 'cheapest'}
-              onCheckedChange={(checked) => onModeChange(favorite.id, checked ? 'cheapest' : 'exact')}
-            />
-          </div>
-          
-          {/* NEW: Strict brand toggle - only show if mode is cheapest */}
-          {favorite.mode === 'cheapest' && (
-            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+        {/* Brand Toggle - only for branded products */}
+        {favorite.isBranded && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
               <label htmlFor={`brand-${favorite.id}`} className="text-sm font-medium text-gray-700">
-                Не учитывать производителя
+                Не учитывать бренд
               </label>
               <Switch
                 id={`brand-${favorite.id}`}
-                checked={favorite.strictBrand || false}
-                onCheckedChange={(checked) => onBrandStrictChange(favorite.id, checked)}
+                checked={favorite.brandMode === 'ANY'}
+                onCheckedChange={(checked) => onBrandModeChange(favorite.id, checked ? 'ANY' : 'STRICT')}
               />
             </div>
-          )}
-          
-          <p className="text-xs text-gray-500">
-            {favorite.mode === 'cheapest' 
-              ? (favorite.strictBrand 
-                  ? 'Поиск среди любых производителей' 
-                  : 'Поиск только у текущего производителя')
-              : 'Всегда этот продукт от выбранного поставщика'}
-          </p>
-        </div>
+            <p className="text-xs text-gray-500">
+              {favorite.brandMode === 'ANY' 
+                ? 'Любой бренд - ищем самый дешёвый' 
+                : `Только ${favorite.brand || 'этот'} бренд`}
+            </p>
+          </div>
+        )}
 
         {/* Found Product Block */}
         {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
