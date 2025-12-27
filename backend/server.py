@@ -1945,8 +1945,8 @@ async def update_my_profile(data: dict, current_user: dict = Depends(get_current
 
 @api_router.post("/favorites")
 async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_user)):
-    """Add product to favorites with AUTO brand detection"""
-    from brand_detector import detect_branded_product
+    """Add product to favorites with BRAND MASTER detection"""
+    from brand_master import brand_master
     
     # Get user's company
     company_id = current_user.get('companyId')
@@ -1959,7 +1959,7 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    # Get product code from pricelist
+    # Get product code
     pricelist = await db.pricelists.find_one({"productId": data['productId']}, {"_id": 0})
     product_code = pricelist.get('supplierItemCode', '') if pricelist else ''
     
@@ -1972,10 +1972,20 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     if existing:
         raise HTTPException(status_code=400, detail="Product already in favorites")
     
-    # AUTO-DETECT if branded or commodity
-    is_branded, brand_name = detect_branded_product(product['name'])
+    # AUTO-DETECT brand using BRAND MASTER (not heuristic!)
+    brand_id = None
+    brand_name = None
+    brand_strict = False
     
-    # Create favorite with NEW logic (no mode, no prices!)
+    if brand_master:
+        brand_id, brand_strict = brand_master.detect_brand(product['name'])
+        if brand_id:
+            brand_info = brand_master.get_brand_info(brand_id)
+            brand_name = brand_info.get('brand_en') if brand_info else None
+    
+    is_branded = brand_id is not None
+    
+    # Create favorite
     favorite = {
         "id": str(uuid.uuid4()),
         "userId": current_user['id'],
@@ -1984,12 +1994,13 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "productName": product['name'],
         "productCode": product_code,
         "unit": product['unit'],
-        "isBranded": is_branded,  # NEW
-        "brandMode": "STRICT" if is_branded else None,  # NEW - default to STRICT for branded
-        "brand": brand_name,  # NEW
+        "isBranded": is_branded,
+        "brandMode": "STRICT" if is_branded and brand_strict else "ANY",
+        "brandId": brand_id,  # NEW: Use brand_id from master
+        "brand": brand_name,
         "originalSupplierId": data.get('supplierId'),
         "addedAt": datetime.now(timezone.utc).isoformat(),
-        "displayOrder": 0  # Will be updated on reorder
+        "displayOrder": 0
     }
     
     await db.favorites.insert_one(favorite)
@@ -1997,8 +2008,6 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     return {
         "id": favorite['id'],
         "productName": favorite['productName'],
-        "productCode": favorite['productCode'],
-        "unit": favorite['unit'],
         "isBranded": favorite['isBranded'],
         "brand": favorite['brand']
     }
