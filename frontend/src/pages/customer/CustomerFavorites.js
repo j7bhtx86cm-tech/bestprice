@@ -204,17 +204,23 @@ export const CustomerFavorites = () => {
   };
 
   const addToCart = (favorite) => {
+    // NEW LOGIC: Add as INTENTION (no price yet)
+    // Cart will resolve best price based on brandMode
     const cartItem = {
       cartId: `fav_${favorite.id}_${Date.now()}`,
+      source: 'favorites',  // Mark as from favorites for cart logic
       favoriteId: favorite.id,
+      productId: favorite.productId,
       productName: favorite.productName,
       quantity: 1,
-      price: favorite.bestPrice || favorite.originalPrice || 0,
       unit: favorite.unit,
-      bestSupplier: favorite.bestSupplier
+      isBranded: favorite.isBranded || false,
+      brandMode: favorite.brandMode || 'STRICT',  // STRICT or ANY
+      brand: favorite.brand || null,
+      // NO price, NO supplier - cart will determine these
     };
 
-    // Add to GENERAL cart (catalogCart), not separate favoriteCart
+    // Add to general cart
     const existingCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
     
     // Check if already in cart
@@ -229,7 +235,7 @@ export const CustomerFavorites = () => {
     existingCart.push(cartItem);
     localStorage.setItem('catalogCart', JSON.stringify(existingCart));
     
-    alert('Товар добавлен в корзину!');
+    alert('Товар добавлен в корзину! Цена будет рассчитана в корзине.');
   };
 
   const handleModeChange = async (favoriteId, newMode) => {
