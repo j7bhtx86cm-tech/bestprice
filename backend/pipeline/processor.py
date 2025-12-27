@@ -13,6 +13,14 @@ from .enricher import (
 )
 from .calculator import determine_base_unit, calculate_price_per_base_unit, calculate_calc_confidence
 
+# Import brand master
+try:
+    from brand_master import brand_master
+    BRAND_MASTER_LOADED = brand_master is not None
+except:
+    BRAND_MASTER_LOADED = False
+    brand_master = None
+
 logger = logging.getLogger(__name__)
 
 def process_price_list_item(raw_item: Dict, supplier_company_id: str, price_list_id: str) -> Dict:
