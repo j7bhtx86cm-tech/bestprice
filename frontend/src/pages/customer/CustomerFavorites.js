@@ -82,8 +82,9 @@ function SortableItem({ favorite, onRemove, onModeChange }) {
         </div>
 
         {/* Mode Toggle Switch */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-3">
+          {/* Search for best price toggle */}
+          <div className="flex items-center justify-between">
             <label htmlFor={`mode-${favorite.id}`} className="text-sm font-medium text-gray-700">
               Искать лучшую цену
             </label>
@@ -93,9 +94,26 @@ function SortableItem({ favorite, onRemove, onModeChange }) {
               onCheckedChange={(checked) => onModeChange(favorite.id, checked ? 'cheapest' : 'exact')}
             />
           </div>
+          
+          {/* NEW: Strict brand toggle - only show if mode is cheapest */}
+          {favorite.mode === 'cheapest' && (
+            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+              <label htmlFor={`brand-${favorite.id}`} className="text-sm font-medium text-gray-700">
+                Сохранить производителя
+              </label>
+              <Switch
+                id={`brand-${favorite.id}`}
+                checked={favorite.strictBrand || false}
+                onCheckedChange={(checked) => onBrandStrictChange(favorite.id, checked)}
+              />
+            </div>
+          )}
+          
           <p className="text-xs text-gray-500">
             {favorite.mode === 'cheapest' 
-              ? 'Система ищет дешевле среди похожих товаров' 
+              ? (favorite.strictBrand 
+                  ? 'Поиск только у текущего производителя' 
+                  : 'Система ищет дешевле среди похожих товаров')
               : 'Всегда этот продукт от выбранного поставщика'}
           </p>
         </div>
