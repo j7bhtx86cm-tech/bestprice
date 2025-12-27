@@ -143,6 +143,8 @@ def process_price_list_item(raw_item: Dict, supplier_company_id: str, price_list
         # Classification
         'super_class': super_class,
         'brand': brand,
+        'brand_id': brand_id,  # NEW: From brand master dictionary
+        'brand_strict': brand_strict,  # NEW: From brand master default_strict
         'fat_pct': fat_pct,
         'caliber': caliber,
         'processing_flags': processing_flags,
