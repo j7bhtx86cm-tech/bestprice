@@ -231,22 +231,26 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if not specific_overlap and len(overlap - generic_identifiers) == 0:
                 continue
         
-        # Gate 9: STRICT BRAND matching - respect user override!
-        # Only enforce if strict_brand_override=True OR contract says brand is strict
+        # Gate 9: BRAND MATCHING using brand_id (from brand master)
+        # Only enforce if strict_brand_override=True
         if strict_brand_override:
-            # User explicitly wants same brand only
-            if RULES_LOADED:
-                query_brand = extract_brand_from_name(query_product_name)
-                item_brand = item.get('brand')
-                
-                if query_brand:
-                    # User wants strict brand - enforce it
-                    canonical_query = contract_rules.get_canonical_brand(query_brand) if contract_rules else query_brand
-                    canonical_item = contract_rules.get_canonical_brand(item_brand) if contract_rules and item_brand else item_brand
-                    
-                    if canonical_item != canonical_query:
-                        continue
-        # If strict_brand_override=False, skip brand check entirely (user wants ANY brand)
+            # User wants same brand only - use brand_id matching
+            query_brand_id = None
+            item_brand_id = item.get('brand_id')
+            
+            # Try to get brand_id from query
+            try:
+                from brand_master import brand_master
+                if brand_master:
+                    query_brand_id, _ = brand_master.detect_brand(query_product_name)
+            except:
+                pass
+            
+            # If query has brand_id, item MUST have same brand_id
+            if query_brand_id:
+                if item_brand_id != query_brand_id:
+                    continue
+        # If strict_brand_override=False, skip brand check (user wants ANY brand)
         
         # Gate 10: SEAFOOD STRICT attributes
         if query_head_status:
