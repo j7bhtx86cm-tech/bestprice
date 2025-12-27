@@ -2061,11 +2061,14 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
             continue
         
         if mode == 'cheapest':
-            # Use HYBRID matcher (best of spec + simple)
+            strict_brand = fav.get('strictBrand', False)
+            
+            # Use HYBRID matcher
             winner = find_best_match_hybrid(
                 query_product_name=original_product['name'],
                 original_price=original_price,
-                all_items=all_items
+                all_items=all_items,
+                strict_brand_override=strict_brand  # NEW: Pass brand strictness
             )
             
             if winner:
