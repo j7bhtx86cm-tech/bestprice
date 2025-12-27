@@ -2014,20 +2014,22 @@ async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict 
     return {"message": "Mode updated", "mode": mode}
 
 
-@api_router.put("/favorites/{favorite_id}/brand-strict")
-async def update_favorite_brand_strict(favorite_id: str, data: dict, current_user: dict = Depends(get_current_user)):
-    """Toggle strict brand matching for a favorite"""
-    strict_brand = data.get('strictBrand', False)
+@api_router.put("/favorites/{favorite_id}/brand-mode")
+async def update_favorite_brand_mode(favorite_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Update brand mode (STRICT/ANY) for a favorite"""
+    brand_mode = data.get('brandMode')
+    if brand_mode not in ['STRICT', 'ANY']:
+        raise HTTPException(status_code=400, detail="Invalid brand mode")
     
     result = await db.favorites.update_one(
         {"id": favorite_id, "userId": current_user['id']},
-        {"$set": {"strictBrand": strict_brand}}
+        {"$set": {"brandMode": brand_mode}}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Favorite not found")
     
-    return {"message": "Brand strictness updated", "strictBrand": strict_brand}
+    return {"message": "Brand mode updated", "brandMode": brand_mode}
 
 
 # NEW UNIVERSAL MATCHING ENGINE ENDPOINT
