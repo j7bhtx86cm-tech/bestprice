@@ -180,8 +180,8 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 continue
         
         # Gate 6: Weight tolerance - FLEXIBLE for condiments
-        # For condiments: allow ±100% (2x difference) instead of ±20%
-        # This allows 2kg to match 1kg or 4kg, but NOT 0.3kg
+        # For condiments: allow ±50% instead of ±20%
+        # This allows 2kg to match 1-3kg, but NOT 0.3kg
         if query_weight:
             item_weight = item.get('net_weight_kg')
             if item_weight:
@@ -189,7 +189,7 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 
                 # Set tolerance based on category
                 if query_super_class in ['condiments.broth', 'condiments.sauce', 'condiments.spice']:
-                    weight_tolerance = 1.00  # ±100% for condiments (2kg can match 1-4kg)
+                    weight_tolerance = 0.50  # ±50% for condiments (2kg can match 1-3kg)
                 else:
                     weight_tolerance = WEIGHT_TOLERANCE  # ±20% for others
                 
