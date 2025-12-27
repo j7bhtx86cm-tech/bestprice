@@ -28,33 +28,40 @@ def detect_branded_product(product_name: str) -> Tuple[bool, Optional[str]]:
                 # Found a brand!
                 return (True, canonical.upper())
     
-    # Fallback: Check for common brand indicators
-    # Products with ALL CAPS words > 3 chars in MIDDLE/END of name are often branded
+    # Fallback: Check for brand indicators (ALL CAPS or Title Case brands > 4 chars)
+    # Skip first word (usually product category)
     words = product_name.split()
     
-    # Skip first word (usually product category)
     for i, word in enumerate(words):
-        if i == 0:  # Skip first word (СУХАРИ, БУЛЬОН, СОУС, etc.)
+        if i == 0:  # Skip first word (category name)
             continue
-            
-        if word.isupper() and len(word) > 3:
-            # Exclude generic words AND commodity product names
+        
+        # Check if it's a potential brand (ALL CAPS or Title Case, >4 chars)
+        is_potential_brand = (word.isupper() or word.istitle()) and len(word) > 4
+        
+        if is_potential_brand:
+            # Exclude generic/commodity words
             excluded = [
                 'ГОСТ', 'РОССИЯ', 'КИТАЙ', 'РФ', 'ТУ', 'КГ', 'ГРАММ', 'ЛИТР',
                 'ЛОСОСЬ', 'КРЕВЕТКИ', 'ТУНЕЦ', 'СИБАС', 'ДОРАДО', 'ФОРЕЛЬ', 'ТРЕСКА', 'МИНТАЙ',
                 'БУЛЬОН', 'СОУС', 'КЕТЧУП', 'МАЙОНЕЗ', 'МАСЛО', 'МУКА', 'ПАСТА',
-                'ГОВЯДИНА', 'СВИНИНА', 'КУРИЦА', 'БАРАНИНА', 'ИНДЕЙКА', 'ЯГНЯТИНА',
+                'ГОВЯДИНА', 'СВИНИНА', 'КУРИЦА', 'БАРАНИНА', 'ИНДЕЙКА', 'ЯГНЯТИНА', 'УТИНА',
                 'КАРТОФЕЛЬ', 'ЛУК', 'МОРКОВЬ', 'КАПУСТА', 'ОГУРЦЫ', 'ТОМАТЫ',
                 'РЫБА', 'МЯСО', 'ОВОЩИ', 'ФИЛЕ', 'СТЕЙК', 'ТУШКА', 'ФАРШ',
                 'СУХАРИ', 'ХЛЕБ', 'БУЛКА', 'БАТОН', 'ЧИАБАТТА', 'БАГЕТ',
                 'РИС', 'ГРЕЧКА', 'ПШЕНО', 'МАНКА', 'БУЛГУР', 'ПЕРЛОВКА',
                 'САХАР', 'СОЛЬ', 'ПЕРЕЦ', 'УКСУС', 'ГОРЧИЦА',
-                'МОЛОКО', 'СМЕТАНА', 'ТВОРОГ', 'КЕФИР', 'ЙОГУРТ',
-                'ГЁДЗА', 'ПЕЛЬМЕНИ', 'ВАРЕНИКИ',  # Готовые блюда
-                'ПРИПРАВА', 'СПЕЦИИ',  # Приправы
-                'БЕФСТРОГАНОВ', 'КОТЛЕТА', 'НАГГЕТСЫ',  # Готовые блюда
+                'МОЛОКО', 'СМЕТАНА', 'ТВОРОГ', 'КЕФИР', 'ЙОГУРТ', 'СЛИВКИ',
+                'ГЁДЗА', 'ПЕЛЬМЕНИ', 'ВАРЕНИКИ', 'РАВИОЛИ',
+                'ПРИПРАВА', 'СПЕЦИИ',
+                'БЕФСТРОГАНОВ', 'КОТЛЕТА', 'КОТЛЕТЫ', 'НАГГЕТСЫ', 'БУРГЕР',
+                'ДОНАТ', 'ПИРОГ', 'ТОРТ',
+                # Generic descriptors
+                'ПРОФИ', 'PROFESSIONAL', 'PREMIUM', 'EXTRA', 'CLASSIC',
+                'Россия', 'Китай', 'Russia', 'China',
             ]
-            if word not in excluded:
+            
+            if word not in excluded and word.upper() not in excluded:
                 return (True, word)
     
     # Check for known commodity keywords (always unbranded)
