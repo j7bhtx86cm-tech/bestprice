@@ -99,7 +99,7 @@ function SortableItem({ favorite, onRemove, onModeChange, onBrandStrictChange, a
           {favorite.mode === 'cheapest' && (
             <div className="flex items-center justify-between pt-2 border-t border-gray-200">
               <label htmlFor={`brand-${favorite.id}`} className="text-sm font-medium text-gray-700">
-                Сохранить производителя
+                Не учитывать производителя
               </label>
               <Switch
                 id={`brand-${favorite.id}`}
@@ -112,8 +112,8 @@ function SortableItem({ favorite, onRemove, onModeChange, onBrandStrictChange, a
           <p className="text-xs text-gray-500">
             {favorite.mode === 'cheapest' 
               ? (favorite.strictBrand 
-                  ? 'Поиск только у текущего производителя' 
-                  : 'Система ищет дешевле среди похожих товаров')
+                  ? 'Поиск среди любых производителей' 
+                  : 'Поиск только у текущего производителя')
               : 'Всегда этот продукт от выбранного поставщика'}
           </p>
         </div>
