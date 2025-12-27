@@ -260,10 +260,10 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if item_meat_type != query_meat_type:
                 continue
         
-        # Gate 12: SAUCE/CONDIMENT TYPE STRICT - MANDATORY! (NEW!)
-        # For broths/sauces/condiments, flavor keywords MUST match EXACTLY
+        # Gate 12: CONDIMENT FLAVOR EXACT MATCH (NEW!)
+        # For broths/sauces/condiments, ONLY flavor type must match (not brands!)
         if query_super_class in ['condiments.sauce', 'condiments.broth', 'condiments.spice']:
-            # Extract flavor-specific keywords
+            # Flavor keywords that MUST match
             flavor_keywords = {
                 'курин', 'chicken', 'овощ', 'vegetable', 'говяж', 'beef', 
                 'рыбн', 'fish', 'грибн', 'mushroom', 'бекон', 'bacon',
@@ -274,11 +274,18 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             }
             
             query_flavors = query_identifiers & flavor_keywords
-            item_flavors = extract_key_identifiers(item.get('name_raw', '')) & flavor_keywords
+            item_identifiers_full = extract_key_identifiers(item.get('name_raw', ''))
+            item_flavors = item_identifiers_full & flavor_keywords
             
-            # For condiments, flavors MUST match exactly (or both have none)
-            if query_flavors != item_flavors:
-                continue
+            # MUST have same flavor (грибной=грибной, куриный=куриный)
+            # If query has flavor, item MUST have SAME flavor (or none)
+            if query_flavors:
+                if not item_flavors:
+                    # Item has no flavor specified - allow (it might be generic)
+                    pass
+                elif query_flavors != item_flavors:
+                    # Different flavors - block
+                    continue
         
         # Gate 14: RICE TYPE STRICT (NEW! басмати ≠ жасмин ≠ для суши)
         if query_super_class == 'staples.rice' or 'рис' in query_product_name.lower():
