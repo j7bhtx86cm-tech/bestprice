@@ -114,11 +114,6 @@ function SortableItem({ favorite, onRemove, onBrandModeChange, addToCart }) {
             Добавить в корзину
           </Button>
         </div>
-                Найдено {favorite.matchCount} похожих товаров
-              </p>
-            </div>
-          )}
-        </div>
       </Card>
     </div>
   );
