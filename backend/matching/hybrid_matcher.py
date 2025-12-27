@@ -338,8 +338,9 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             # Lower threshold for categories where brand names dominate
             if query_super_class in ['condiments.broth', 'condiments.sauce', 'condiments.spice']:
                 # For broths/sauces, if they share key identifiers (грибной, куриный, etc.)
-                # Allow lower word overlap since brand names are different
-                similarity_threshold = 0.30  # Much lower for condiments
+                # Allow much lower word overlap since brand names are different
+                # Gate 12 ensures flavors match exactly
+                similarity_threshold = 0.40  # 40% for condiments (protected by Gate 12)
             
             # PRACTICAL: 70% for most, 30% for condiments if key identifiers match
             if similarity < similarity_threshold:
