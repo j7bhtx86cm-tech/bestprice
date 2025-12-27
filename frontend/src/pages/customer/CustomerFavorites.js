@@ -302,8 +302,8 @@ export const CustomerFavorites = () => {
       bestSupplier: favorite.bestSupplier
     };
 
-    // Get existing cart
-    const existingCart = JSON.parse(localStorage.getItem('favoriteCart') || '[]');
+    // Add to GENERAL cart (catalogCart), not separate favoriteCart
+    const existingCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
     
     // Check if already in cart
     const alreadyInCart = existingCart.some(item => item.favoriteId === favorite.id);
@@ -315,7 +315,7 @@ export const CustomerFavorites = () => {
 
     // Add to cart
     existingCart.push(cartItem);
-    localStorage.setItem('favoriteCart', JSON.stringify(existingCart));
+    localStorage.setItem('catalogCart', JSON.stringify(existingCart));
     
     alert('Товар добавлен в корзину!');
   };
