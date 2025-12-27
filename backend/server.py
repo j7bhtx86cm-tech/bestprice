@@ -2127,11 +2127,21 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
     
     return enriched
 @api_router.get("/favorites")
-async def get_favorites(current_user: dict = Depends(get_current_user)):
-    """Get user's favorites with product matching"""
-    from product_intent_parser import extract_product_type, extract_weight_kg, extract_caliber
+async def get_favorites_simple(current_user: dict = Depends(get_current_user)):
+    """Get favorites WITHOUT matching - just intentions
     
-    favorites = await db.favorites.find({"userId": current_user['id']}, {"_id": 0}).sort("displayOrder", 1).to_list(500)
+    NEW LOGIC per новая логика.docx:
+    - NO prices in favorites
+    - NO matching logic
+    - Only product intentions with brandMode
+    """
+    favorites = await db.favorites.find(
+        {"userId": current_user['id']}, 
+        {"_id": 0}
+    ).sort("displayOrder", 1).to_list(500)
+    
+    # Return simple data - NO matching, NO prices
+    return favorites
     
     if not favorites:
         return []
