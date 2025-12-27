@@ -326,13 +326,18 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 {'мытый', 'не мытый'},  # Washed/unwashed
             ]
             
+            has_conflict = False
             for conflict_set in conflicts:
                 query_has = query_identifiers & conflict_set
                 item_has = item_identifiers & conflict_set
                 
-                # If both have identifiers from same conflict set but they differ → BLOCK
+                # If both have identifiers from same conflict set but they differ → CONFLICT!
                 if query_has and item_has and query_has != item_has:
-                    continue
+                    has_conflict = True
+                    break
+            
+            if has_conflict:
+                continue
         
         matches.append(item)
     
