@@ -305,11 +305,34 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             common_words = query_words_clean & item_words_clean
             similarity = len(common_words) / len(query_words_clean)
             
-            # VERY STRICT: Require 85% meaningful word overlap
-            # This prevents "Торт Медовик 1.7кг" from matching "Торт Фисташковый 1.7кг"
-            # At scale (100K products), only near-identical products should match
-            if similarity < 0.85:
+            # EXTREMELY STRICT: Require 90% meaningful word overlap
+            # At scale (100K products), only NEARLY IDENTICAL products should match
+            # This prevents even subtle differences like "цветочный мед" vs "липовый мед"
+            if similarity < 0.90:
                 continue
+        
+        # Gate 17: NO CONFLICTING IDENTIFIERS (NEW - FINAL DEFENSE!)
+        # If query and item have DIFFERENT specific identifiers, block
+        # Example: query has "липовый", item has "цветочный" → CONFLICT!
+        if query_identifiers and item_identifiers:
+            # Check for known conflicting pairs
+            conflicts = [
+                {'липов', 'цветочн', 'гречишн'},  # Honey types - mutually exclusive
+                {'басмати', 'италика', 'жасмин', 'арборио'},  # Rice types - mutually exclusive
+                {'красный', 'обычный', 'кровавый'},  # Orange types
+                {'с хвост', 'без хвост'},  # With/without tail
+                {'с голов', 'без голов'},  # With/without head
+                {'панировк', 'без панировки'},  # With/without breading
+                {'мытый', 'не мытый'},  # Washed/unwashed
+            ]
+            
+            for conflict_set in conflicts:
+                query_has = query_identifiers & conflict_set
+                item_has = item_identifiers & conflict_set
+                
+                # If both have identifiers from same conflict set but they differ → BLOCK
+                if query_has and item_has and query_has != item_has:
+                    continue
         
         matches.append(item)
     
