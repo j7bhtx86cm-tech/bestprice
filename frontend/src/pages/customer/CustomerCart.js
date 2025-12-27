@@ -33,17 +33,17 @@ export const CustomerCart = () => {
     
     // Resolve prices for items from favorites
     const resolvedItems = await Promise.all(catalogCart.map(async (item) => {
-      if (item.source === 'favorites' && !item.resolved) {
-        // This item is from favorites - need to resolve price
+      // Resolve if: from favorites AND (no price OR not yet resolved)
+      if (item.source === 'favorites' && (!item.price || item.price === 0 || !item.resolved)) {
         try {
           const resolved = await resolveFavoritePrice(item);
           return resolved;
         } catch (error) {
-          console.error('Failed to resolve price for favorite:', error);
-          return { ...item, price: 0, supplier: 'Ошибка' };
+          console.error('Failed to resolve price:', error);
+          return { ...item, price: 0, supplier: 'Ошибка', resolved: false };
         }
       }
-      return item;  // Catalog items or already resolved
+      return item;
     }));
     
     setCartItems(resolvedItems);
