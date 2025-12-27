@@ -167,6 +167,26 @@ function SortableItem({ favorite, onRemove, onModeChange }) {
             </div>
           )}
           
+          {/* NEW: Add to cart button */}
+          <div className="pt-2">
+            <Button
+              onClick={() => addToCart(favorite)}
+              className="w-full"
+              variant="outline"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Добавить в корзину
+            </Button>
+          </div>
+          
+          <div className="text-xs text-gray-500">
+            Ед. изм: {favorite.unit}
+          </div>
+        </div>
+              <span>{favorite.bestSupplier}</span>
+            </div>
+          )}
+          
           <div className="text-xs text-gray-500">
             Ед. изм: {favorite.unit}
           </div>
