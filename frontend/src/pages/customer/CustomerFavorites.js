@@ -192,14 +192,14 @@ export const CustomerFavorites = () => {
     }
   };
 
-  const onBrandStrictChange = async (favoriteId, strictBrand) => {
+  const onBrandModeChange = async (favoriteId, brandMode) => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await axios.put(`${API}/favorites/${favoriteId}/brand-strict`, { strictBrand }, { headers });
-      fetchFavorites(); // Reload to get updated matches
+      await axios.put(`${API}/favorites/${favoriteId}/brand-mode`, { brandMode }, { headers });
+      fetchFavorites();
     } catch (error) {
-      console.error('Failed to update brand strictness:', error);
+      console.error('Failed to update brand mode:', error);
     }
   };
 
