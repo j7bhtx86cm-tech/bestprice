@@ -393,10 +393,11 @@ export const CustomerCatalog = () => {
 
   const addToCart = (offer, group, productKey) => {
     const minQty = offer.minQuantity || 1;
-    const qty = quantities[productKey] || minQty;  // Use minQuantity as default
+    const qty = quantities[productKey] || minQty;
     
     const cartItem = {
       cartId: `${offer.priceListId}_${Date.now()}`,
+      source: 'catalog',  // Mark as from catalog (fixed product)
       priceListId: offer.priceListId,
       supplierId: offer.supplierId,
       supplierName: offer.supplierName,
@@ -409,12 +410,17 @@ export const CustomerCatalog = () => {
       isBestPrice: offer.isBestPrice || false
     };
 
-    setCart([...cart, cartItem]);
+    // Save to localStorage (catalogCart)
+    const existingCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
+    existingCart.push(cartItem);
+    localStorage.setItem('catalogCart', JSON.stringify(existingCart));
     
-    // Reset quantity for this product to its minimum
+    setCart([...cart, cartItem]);  // Also update local state for mini cart
+    
+    // Reset quantity
     setQuantities({ ...quantities, [productKey]: minQty });
     
-    // Note: Mini cart notification will be shown by useEffect watching cart.length
+    alert('Товар добавлен в корзину!');
   };
 
   const setProductQuantity = (productKey, value) => {
