@@ -231,14 +231,12 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if not specific_overlap and len(overlap - generic_identifiers) == 0:
                 continue
         
-        # Gate 9: BRAND MATCHING using brand_id (from brand master)
-        # Only enforce if strict_brand_override=True
+        # Gate 9: BRAND MATCHING using brand_id from BRAND MASTER
+        # Respect user override and item's brand_strict setting
         if strict_brand_override:
-            # User wants same brand only - use brand_id matching
+            # User wants same brand only
             query_brand_id = None
-            item_brand_id = item.get('brand_id')
             
-            # Try to get brand_id from query
             try:
                 from brand_master import brand_master
                 if brand_master:
@@ -246,11 +244,25 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             except:
                 pass
             
-            # If query has brand_id, item MUST have same brand_id
             if query_brand_id:
+                item_brand_id = item.get('brand_id')
+                
+                # Brand IDs must match
                 if item_brand_id != query_brand_id:
                     continue
-        # If strict_brand_override=False, skip brand check (user wants ANY brand)
+        
+        # Additional check: if item has brand_strict=True, enforce brand matching
+        elif item.get('brand_strict') and item.get('brand_id'):
+            # Item is strict brand (like Mutti, Knorr) - check if query matches
+            try:
+                from brand_master import brand_master
+                if brand_master:
+                    query_brand_id, _ = brand_master.detect_brand(query_product_name)
+                    
+                    if query_brand_id != item.get('brand_id'):
+                        continue
+            except:
+                pass
         
         # Gate 10: SEAFOOD STRICT attributes
         if query_head_status:
