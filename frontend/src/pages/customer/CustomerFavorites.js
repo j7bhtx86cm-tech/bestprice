@@ -268,6 +268,46 @@ export const CustomerFavorites = () => {
     }
   };
 
+  const onBrandStrictChange = async (favoriteId, strictBrand) => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.put(`${API}/favorites/${favoriteId}/brand-strict`, { strictBrand }, { headers });
+      fetchFavorites(); // Reload to get updated matches
+    } catch (error) {
+      console.error('Failed to update brand strictness:', error);
+    }
+  };
+
+  const addToCart = (favorite) => {
+    const cartItem = {
+      cartId: `fav_${favorite.id}_${Date.now()}`,
+      favoriteId: favorite.id,
+      productName: favorite.productName,
+      quantity: 1,
+      price: favorite.bestPrice || favorite.originalPrice || 0,
+      unit: favorite.unit,
+      bestSupplier: favorite.bestSupplier
+    };
+
+    // Get existing cart
+    const existingCart = JSON.parse(localStorage.getItem('favoriteCart') || '[]');
+    
+    // Check if already in cart
+    const alreadyInCart = existingCart.some(item => item.favoriteId === favorite.id);
+    
+    if (alreadyInCart) {
+      alert('Этот товар уже в корзине');
+      return;
+    }
+
+    // Add to cart
+    existingCart.push(cartItem);
+    localStorage.setItem('favoriteCart', JSON.stringify(existingCart));
+    
+    alert('Товар добавлен в корзину!');
+  };
+
   const handleModeChange = async (favoriteId, newMode) => {
     try {
       const token = localStorage.getItem('token');
