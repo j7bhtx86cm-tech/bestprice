@@ -107,7 +107,7 @@ def extract_key_identifiers(name: str) -> set:
 
 
 def find_best_match_hybrid(query_product_name: str, original_price: float, 
-                           all_items: List[Dict]) -> Optional[Dict]:
+                           all_items: List[Dict], strict_brand_override: bool = False) -> Optional[Dict]:
     """Hybrid matching: Spec infrastructure + Simple logic + STRICT validation
     
     Rules:
