@@ -2061,14 +2061,18 @@ async def get_favorites_v2(current_user: dict = Depends(get_current_user)):
             continue
         
         if mode == 'cheapest':
-            strict_brand = fav.get('strictBrand', False)
+            # strictBrand flag is INVERTED in UI: 
+            # - UI shows "Не учитывать производителя" (ignore brand)
+            # - When checked: strictBrand=true → IGNORE brand (search all brands)
+            # - When unchecked: strictBrand=false → KEEP brand (search same brand only)
+            ignore_brand = fav.get('strictBrand', False)
             
             # Use HYBRID matcher
             winner = find_best_match_hybrid(
                 query_product_name=original_product['name'],
                 original_price=original_price,
                 all_items=all_items,
-                strict_brand_override=strict_brand  # NEW: Pass brand strictness
+                strict_brand_override=not ignore_brand  # Invert: if ignore=True, strict=False
             )
             
             if winner:
