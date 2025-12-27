@@ -261,6 +261,11 @@ export const CustomerCart = () => {
                   <div key={item.cartId} className="flex items-center gap-4 p-4 border rounded-lg">
                     <div className="flex-1">
                       <p className="font-medium">{item.productName}</p>
+                      {item.source === 'favorites' && (
+                        <p className="text-xs text-blue-600">
+                          {item.brandMode === 'ANY' ? '🔄 Подобран автоматически' : '✓ Выбранный бренд'}
+                        </p>
+                      )}
                       <p className="text-sm text-gray-600">
                         {item.price?.toLocaleString('ru-RU')} ₽ / {item.unit}
                       </p>
