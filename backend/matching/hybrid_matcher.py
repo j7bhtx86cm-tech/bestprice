@@ -318,31 +318,35 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
         # Gate 13: NAME SIMILARITY - Category-specific thresholds
         item_words = set(item.get('name_raw', '').lower().split())
         
-        # Remove common generic words that don't help with matching
+        # Remove common generic words
         generic_words = {'кг', 'гр', 'г', 'л', 'мл', 'шт', 'упак', 'пакет', 'кор', 
                         'ведро', 'бут', 'bottle', 'pack', 'box', '~', 'вес', 'weight',
                         'с/м', 'в/м', 'в/у', 'охл', 'зам', 'frozen', 'chilled'}
+        
+        # For condiments, also remove brand names from similarity check
+        # Since Gate 12 ensures flavor match, brands don't need to match
+        if query_super_class in ['condiments.broth', 'condiments.sauce', 'condiments.spice']:
+            # Remove known brand names
+            brand_words = {'knorr', 'кнорр', 'heinz', 'хайнс', 'tamaki', 'aroy', 'mareven', 
+                          'professional', 'smart', 'chef', 'dinner', 'service', 'рубикон'}
+            generic_words = generic_words | brand_words
         
         query_words_clean = query_words - generic_words
         item_words_clean = item_words - generic_words
         
         if len(query_words_clean) > 0:
-            # Calculate meaningful word overlap (excluding generic words)
+            # Calculate meaningful word overlap
             common_words = query_words_clean & item_words_clean
             similarity = len(common_words) / len(query_words_clean)
             
             # CATEGORY-SPECIFIC similarity thresholds
-            # For some categories, lower similarity is OK if they have same key identifiers
             similarity_threshold = 0.70  # Default
             
-            # Lower threshold for categories where brand names dominate
+            # Lower threshold for condiments (protected by Gate 12)
             if query_super_class in ['condiments.broth', 'condiments.sauce', 'condiments.spice']:
-                # For broths/sauces, if they share key identifiers (грибной, куриный, etc.)
-                # Allow much lower word overlap since brand names are different
-                # Gate 12 ensures flavors match exactly
-                similarity_threshold = 0.40  # 40% for condiments (protected by Gate 12)
+                similarity_threshold = 0.40
             
-            # PRACTICAL: 70% for most, 30% for condiments if key identifiers match
+            # Check threshold
             if similarity < similarity_threshold:
                 continue
         
