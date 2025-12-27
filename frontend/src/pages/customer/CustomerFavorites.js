@@ -223,18 +223,6 @@ export const CustomerFavorites = () => {
     }
   }, [searchTerm, favorites]);
 
-  useEffect(() => {
-    // Filter order items when search term changes
-    if (orderSearchTerm.trim()) {
-      const filtered = orderItems.filter(item =>
-        item.productName.toLowerCase().includes(orderSearchTerm.toLowerCase())
-      );
-      setFilteredOrderItems(filtered);
-    } else {
-      setFilteredOrderItems(orderItems);
-    }
-  }, [orderSearchTerm, orderItems]);
-
   const fetchCompanyInfo = async () => {
     try {
       const token = localStorage.getItem('token');
