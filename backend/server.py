@@ -2002,7 +2002,7 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "isBranded": favorite['isBranded'],
         "brand": favorite['brand']
     }
-    }
+
 
 @api_router.put("/favorites/{favorite_id}/mode")
 async def update_favorite_mode(favorite_id: str, data: dict, current_user: dict = Depends(get_current_user)):
