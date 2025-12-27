@@ -182,14 +182,6 @@ function SortableItem({ favorite, onRemove, onModeChange }) {
           <div className="text-xs text-gray-500">
             Ед. изм: {favorite.unit}
           </div>
-        </div>
-              <span>{favorite.bestSupplier}</span>
-            </div>
-          )}
-          
-          <div className="text-xs text-gray-500">
-            Ед. изм: {favorite.unit}
-          </div>
 
           {favorite.mode === 'cheapest' && favorite.matchCount > 1 && (
             <div className="pt-2 border-t">
