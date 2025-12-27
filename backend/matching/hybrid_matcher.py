@@ -323,6 +323,10 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 {'с голов', 'без голов'},  # With/without head
                 {'панировк', 'без панировки'},  # With/without breading
                 {'мытый', 'не мытый'},  # Washed/unwashed
+                {'курин', 'овощ', 'говяж', 'рыбн', 'грибн'},  # Broth types - CRITICAL!
+                {'соба', 'удон', 'рамен', 'фунчоза', 'яичная'},  # Noodle types
+                {'медовик', 'фисташков', 'наполеон', 'тирамису'},  # Cake flavors
+                {'тилапия', 'щука', 'судак', 'сом'},  # Fish types
             ]
             
             has_conflict = False
