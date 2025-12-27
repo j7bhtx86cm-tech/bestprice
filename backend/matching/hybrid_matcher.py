@@ -305,9 +305,9 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             common_words = query_words_clean & item_words_clean
             similarity = len(common_words) / len(query_words_clean)
             
-            # OPTIMAL BALANCE: 85% similarity + Gate 17 conflict detection
-            # Prevents false positives while allowing legitimate matches
-            if similarity < 0.85:
+            # PRACTICAL BALANCE: 75% similarity + Gate 17
+            # Allows useful matches while Gate 17 blocks all conflicts
+            if similarity < 0.75:
                 continue
         
         # Gate 17: NO CONFLICTING IDENTIFIERS (NEW - FINAL DEFENSE!)
