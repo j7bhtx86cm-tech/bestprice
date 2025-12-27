@@ -224,24 +224,22 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if not specific_overlap and len(overlap - generic_identifiers) == 0:
                 continue
         
-        # Gate 9: STRICT BRAND matching (from contract rules OR user preference)
-        if RULES_LOADED or strict_brand_override:
-            query_brand = extract_brand_from_name(query_product_name)
-            item_brand = item.get('brand')
-            
-            # Check if brand must be strict (either from contract or user choice)
-            brand_must_match = False
-            
-            if strict_brand_override and query_brand:
-                # User explicitly wants this brand only
-                brand_must_match = True
-            elif query_brand and contract_rules and contract_rules.is_strict_brand(query_brand):
-                # Brand is strict per contract (Mutti, Knorr, etc.)
-                brand_must_match = True
-            
-            if brand_must_match:
-                if not item_brand or contract_rules.get_canonical_brand(item_brand) != query_brand:
-                    continue
+        # Gate 9: STRICT BRAND matching - respect user override!
+        # Only enforce if strict_brand_override=True OR contract says brand is strict
+        if strict_brand_override:
+            # User explicitly wants same brand only
+            if RULES_LOADED:
+                query_brand = extract_brand_from_name(query_product_name)
+                item_brand = item.get('brand')
+                
+                if query_brand:
+                    # User wants strict brand - enforce it
+                    canonical_query = contract_rules.get_canonical_brand(query_brand) if contract_rules else query_brand
+                    canonical_item = contract_rules.get_canonical_brand(item_brand) if contract_rules and item_brand else item_brand
+                    
+                    if canonical_item != canonical_query:
+                        continue
+        # If strict_brand_override=False, skip brand check entirely (user wants ANY brand)
         
         # Gate 10: SEAFOOD STRICT attributes
         if query_head_status:
