@@ -120,6 +120,7 @@ class Favorite(BaseModel):
     productCode: str
     unit: str
     mode: str = "cheapest"  # "exact" or "cheapest" - default to cheapest
+    strictBrand: bool = False  # NEW: If true, only match same brand
     originalSupplierId: Optional[str] = None  # Store which supplier user selected it from
     addedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
