@@ -493,12 +493,6 @@ export const CustomerFavorites = () => {
               />
             </div>
           )}
-          {favorites.length > 0 && (
-            <Button onClick={handleCreateOrder}>
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              В корзину
-            </Button>
-          )}
         </div>
       </div>
 
