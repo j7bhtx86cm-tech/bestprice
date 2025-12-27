@@ -238,17 +238,6 @@ export const CustomerFavorites = () => {
     alert('Товар добавлен в корзину! Цена будет рассчитана в корзине.');
   };
 
-  const handleModeChange = async (favoriteId, newMode) => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await axios.put(`${API}/favorites/${favoriteId}/mode`, { mode: newMode }, { headers });
-      fetchFavorites(); // Refresh to show updated mode
-    } catch (error) {
-      console.error('Failed to update mode:', error);
-    }
-  };
-
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
