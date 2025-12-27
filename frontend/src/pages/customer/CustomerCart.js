@@ -64,9 +64,10 @@ export const CustomerCart = () => {
         brand: favoriteItem.brand || null
       }, { headers });
       
-      // Update item with resolved price and supplier
+      // Update item with resolved price, supplier AND product name (actual product found)
       return {
         ...favoriteItem,
+        productName: response.data.productName || favoriteItem.productName,  // Use actual product found
         price: response.data.price,
         supplier: response.data.supplier,
         supplierId: response.data.supplierId,
