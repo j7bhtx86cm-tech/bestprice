@@ -221,12 +221,22 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
             if not specific_overlap and len(overlap - generic_identifiers) == 0:
                 continue
         
-        # Gate 9: STRICT BRAND matching (from contract rules)
-        if RULES_LOADED:
+        # Gate 9: STRICT BRAND matching (from contract rules OR user preference)
+        if RULES_LOADED or strict_brand_override:
             query_brand = extract_brand_from_name(query_product_name)
             item_brand = item.get('brand')
             
-            if query_brand and contract_rules.is_strict_brand(query_brand):
+            # Check if brand must be strict (either from contract or user choice)
+            brand_must_match = False
+            
+            if strict_brand_override and query_brand:
+                # User explicitly wants this brand only
+                brand_must_match = True
+            elif query_brand and contract_rules and contract_rules.is_strict_brand(query_brand):
+                # Brand is strict per contract (Mutti, Knorr, etc.)
+                brand_must_match = True
+            
+            if brand_must_match:
                 if not item_brand or contract_rules.get_canonical_brand(item_brand) != query_brand:
                     continue
         
