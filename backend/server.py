@@ -2325,32 +2325,84 @@ async def remove_from_favorites(favorite_id: str, current_user: dict = Depends(g
 
 @api_router.post("/cart/resolve-favorite")
 async def resolve_favorite_price(data: dict, current_user: dict = Depends(get_current_user)):
-    """Resolve best price for favorite item - SIMPLIFIED
+    """Resolve best price for favorite - uses Hybrid Matcher for alternatives
     
-    NEW LOGIC: Just find cheapest pricelist for this product
+    NEW LOGIC:
+    - If brandMode=STRICT: find cheapest of SAME product (same productId)
+    - If brandMode=ANY: use Hybrid Matcher to find cheapest alternative
     """
+    from matching.hybrid_matcher import find_best_match_hybrid
+    
     product_id = data.get('productId')
+    product_name = data.get('productName')
     brand_mode = data.get('brandMode', 'STRICT')
+    is_branded = data.get('isBranded', False)
     
-    # Get all pricelists for this product
-    pricelists = await db.pricelists.find({"productId": product_id}, {"_id": 0}).to_list(100)
+    # Get product
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
     
-    if not pricelists:
-        raise HTTPException(status_code=404, detail="No suppliers found")
+    # Get original price
+    original_pl = await db.pricelists.find_one({"productId": product_id}, {"_id": 0})
+    if not original_pl:
+        raise HTTPException(status_code=404, detail="Product not available")
     
-    # Sort by price, get cheapest
-    pricelists.sort(key=lambda x: x['price'])
-    best = pricelists[0]
+    original_price = original_pl['price']
     
-    # Get supplier name
-    supplier = await db.companies.find_one({"id": best['supplierId']}, {"_id": 0})
-    supplier_name = supplier.get('companyName') or supplier.get('name', 'Unknown') if supplier else 'Unknown'
+    # Apply logic based on brandMode
+    if brand_mode == 'STRICT' or not is_branded:
+        # STRICT mode or commodity: find cheapest of EXACT product
+        pricelists = await db.pricelists.find({"productId": product_id}, {"_id": 0}).to_list(100)
+        pricelists.sort(key=lambda x: x['price'])
+        best_pl = pricelists[0]
+        
+        supplier = await db.companies.find_one({"id": best_pl['supplierId']}, {"_id": 0})
+        supplier_name = supplier.get('companyName') or supplier.get('name', 'Unknown') if supplier else 'Unknown'
+        
+        return {
+            "price": best_pl['price'],
+            "supplier": supplier_name,
+            "supplierId": best_pl['supplierId'],
+            "productName": product['name']
+        }
     
-    return {
-        "price": best['price'],
-        "supplier": supplier_name,
-        "supplierId": best['supplierId']
-    }
+    else:
+        # ANY mode: use Hybrid Matcher to find alternatives
+        all_items = await db.supplier_items.find({"active": True}, {"_id": 0}).to_list(15000)
+        
+        # Use matcher with strict_brand=False (ignore brand)
+        winner = find_best_match_hybrid(
+            query_product_name=product['name'],
+            original_price=original_price,
+            all_items=all_items,
+            strict_brand_override=False  # Ignore brand
+        )
+        
+        if winner and winner['price'] < original_price:
+            # Found cheaper alternative!
+            companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+            companies_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+            
+            supplier_name = companies_map.get(winner['supplier_company_id'], 'Unknown')
+            
+            return {
+                "price": winner['price'],
+                "supplier": supplier_name,
+                "supplierId": winner['supplier_company_id'],
+                "productName": winner['name_raw']
+            }
+        else:
+            # No cheaper found - use original
+            supplier = await db.companies.find_one({"id": original_pl['supplierId']}, {"_id": 0})
+            supplier_name = supplier.get('companyName') or supplier.get('name', 'Unknown') if supplier else 'Unknown'
+            
+            return {
+                "price": original_price,
+                "supplier": supplier_name,
+                "supplierId": original_pl['supplierId'],
+                "productName": product['name']
+            }
 
 
 @api_router.post("/favorites/order")
