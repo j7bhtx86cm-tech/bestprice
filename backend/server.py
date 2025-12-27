@@ -1945,7 +1945,8 @@ async def update_my_profile(data: dict, current_user: dict = Depends(get_current
 
 @api_router.post("/favorites")
 async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_user)):
-    """Add product to favorites"""
+    """Add product to favorites with AUTO brand detection"""
+    from brand_detector import detect_branded_product
     
     # Get user's company
     company_id = current_user.get('companyId')
@@ -1971,7 +1972,10 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     if existing:
         raise HTTPException(status_code=400, detail="Product already in favorites")
     
-    # Create favorite with default mode "exact" (not cheapest!)
+    # AUTO-DETECT if branded or commodity
+    is_branded, brand_name = detect_branded_product(product['name'])
+    
+    # Create favorite with NEW logic (no mode, no prices!)
     favorite = {
         "id": str(uuid.uuid4()),
         "userId": current_user['id'],
@@ -1980,10 +1984,12 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "productName": product['name'],
         "productCode": product_code,
         "unit": product['unit'],
-        "mode": "exact",  # DEFAULT TO EXACT
+        "isBranded": is_branded,  # NEW
+        "brandMode": "STRICT" if is_branded else None,  # NEW - default to STRICT for branded
+        "brand": brand_name,  # NEW
         "originalSupplierId": data.get('supplierId'),
-        "originalPrice": pricelist['price'] if pricelist else None,  # Store original price
-        "addedAt": datetime.now(timezone.utc).isoformat()
+        "addedAt": datetime.now(timezone.utc).isoformat(),
+        "displayOrder": 0  # Will be updated on reorder
     }
     
     await db.favorites.insert_one(favorite)
@@ -1993,7 +1999,9 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "productName": favorite['productName'],
         "productCode": favorite['productCode'],
         "unit": favorite['unit'],
-        "mode": favorite['mode']
+        "isBranded": favorite['isBranded'],
+        "brand": favorite['brand']
+    }
     }
 
 @api_router.put("/favorites/{favorite_id}/mode")
