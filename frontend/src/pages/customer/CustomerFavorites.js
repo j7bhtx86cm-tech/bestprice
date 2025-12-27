@@ -95,74 +95,25 @@ function SortableItem({ favorite, onRemove, onModeChange, onBrandStrictChange, a
           </div>
         )}
 
-        {/* Found Product Block */}
-        {favorite.mode === 'cheapest' && favorite.foundProduct && favorite.hasCheaperMatch && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 text-sm">
-                <p className="font-medium text-green-900 mb-1">Найден дешевле!</p>
-                <p className="text-gray-700">{favorite.foundProduct.name}</p>
-                {favorite.foundProduct.brand && (
-                  <p className="text-xs text-gray-600">Бренд: {favorite.foundProduct.brand}</p>
-                )}
-                {favorite.foundProduct.pack_weight_kg && (
-                  <p className="text-xs text-gray-600">Фасовка: {favorite.foundProduct.pack_weight_kg} кг</p>
-                )}
-                {favorite.foundProduct.pack_volume_l && (
-                  <p className="text-xs text-gray-600">Объем: {favorite.foundProduct.pack_volume_l} л</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Fallback Message */}
-        {favorite.mode === 'cheapest' && favorite.fallbackMessage && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-              <p className="text-sm text-blue-800">{favorite.fallbackMessage}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-2">
+        {/* Quantity and unit */}
+        <div className="mb-4 p-3 bg-white border rounded-lg">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">
-              {favorite.mode === 'cheapest' ? 'Лучшая цена:' : 'Цена:'}
-            </span>
-            <span className="font-bold text-green-600 text-lg">
-              {favorite.bestPrice?.toLocaleString('ru-RU')} ₽
-            </span>
+            <span className="text-sm text-gray-600">Ед. изм:</span>
+            <span className="text-sm font-medium">{favorite.unit}</span>
           </div>
-          
-          {favorite.bestSupplier && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <TrendingDown className="h-4 w-4 text-green-600" />
-              <span>{favorite.bestSupplier}</span>
-            </div>
-          )}
-          
-          {/* NEW: Add to cart button */}
-          <div className="pt-2">
-            <Button
-              onClick={() => addToCart(favorite)}
-              className="w-full"
-              variant="outline"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Добавить в корзину
-            </Button>
-          </div>
-          
-          <div className="text-xs text-gray-500">
-            Ед. изм: {favorite.unit}
-          </div>
+        </div>
 
-          {favorite.mode === 'cheapest' && favorite.matchCount > 1 && (
-            <div className="pt-2 border-t">
-              <p className="text-xs text-gray-500">
+        {/* Add to cart button */}
+        <div className="pt-2">
+          <Button
+            onClick={() => addToCart(favorite)}
+            className="w-full"
+            variant="default"
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Добавить в корзину
+          </Button>
+        </div>
                 Найдено {favorite.matchCount} похожих товаров
               </p>
             </div>
