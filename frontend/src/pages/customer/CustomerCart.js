@@ -24,13 +24,6 @@ export const CustomerCart = () => {
     fetchCompanyInfo();
   }, []);
 
-  // Sync cart to localStorage whenever it changes
-  useEffect(() => {
-    if (cartItems.length > 0) {
-      saveCart(cartItems);
-    }
-  }, [cartItems]);
-
   const loadCart = async () => {
     // Load from catalog cart
     const catalogCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
