@@ -59,7 +59,7 @@ def extract_key_identifiers(name: str) -> set:
         'медовик', 'honey cake', 'фисташков', 'pistachio', 'наполеон', 'napoleon',
         
         # Broth types
-        'курин', 'chicken', 'овощ', 'vegetable', 'говяж', 'beef', 'рыбн', 'fish', 'грибн',
+        'курин', 'chicken', 'овощ', 'vegetable', 'говяж', 'beef', 'рыбн', 'fish', 'грибн', 'бекон', 'bacon',
         
         # Donut fillings
         'лимонн', 'lemon', 'карамель', 'caramel',
