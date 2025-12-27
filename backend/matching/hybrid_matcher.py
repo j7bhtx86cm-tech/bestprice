@@ -260,15 +260,24 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
                 continue
         
         # Gate 12: SAUCE/CONDIMENT TYPE STRICT - MANDATORY! (NEW!)
-        # For sauces, sauce keywords MUST overlap
-        if query_super_class.startswith('condiments.sauce') or 'соус' in query_product_name.lower():
-            sauce_keywords_query = extract_sauce_keywords(query_product_name)
-            sauce_keywords_item = extract_sauce_keywords(item.get('name_raw', ''))
+        # For broths/sauces/condiments, flavor keywords MUST match EXACTLY
+        if query_super_class in ['condiments.sauce', 'condiments.broth', 'condiments.spice']:
+            # Extract flavor-specific keywords
+            flavor_keywords = {
+                'курин', 'chicken', 'овощ', 'vegetable', 'говяж', 'beef', 
+                'рыбн', 'fish', 'грибн', 'mushroom', 'бекон', 'bacon',
+                'баранин', 'lamb', 'свин', 'pork', 'утин', 'duck',
+                'соев', 'soy', 'терияки', 'teriyaki', 'унаги', 'unagi',
+                'томат', 'tomato', 'чесночн', 'garlic', 'луков', 'onion',
+                'сырн', 'cheese', 'сливочн', 'cream', 'барбекю', 'bbq',
+            }
             
-            # BOTH must have keywords AND they must overlap
-            if sauce_keywords_query or sauce_keywords_item:
-                if not (sauce_keywords_query & sauce_keywords_item):
-                    continue
+            query_flavors = query_identifiers & flavor_keywords
+            item_flavors = extract_key_identifiers(item.get('name_raw', '')) & flavor_keywords
+            
+            # For condiments, flavors MUST match exactly (or both have none)
+            if query_flavors != item_flavors:
+                continue
         
         # Gate 14: RICE TYPE STRICT (NEW! басмати ≠ жасмин ≠ для суши)
         if query_super_class == 'staples.rice' or 'рис' in query_product_name.lower():
