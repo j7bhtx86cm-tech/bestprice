@@ -201,10 +201,6 @@ export const CustomerFavorites = () => {
   const [filteredFavorites, setFilteredFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [orderSearchTerm, setOrderSearchTerm] = useState('');
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [orderItems, setOrderItems] = useState([]);
-  const [filteredOrderItems, setFilteredOrderItems] = useState([]);
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [draggedItem, setDraggedItem] = useState(null);
