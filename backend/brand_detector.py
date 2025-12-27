@@ -33,8 +33,11 @@ def detect_branded_product(product_name: str) -> Tuple[bool, Optional[str]]:
     words = product_name.split()
     for word in words:
         if word.isupper() and len(word) > 3:
-            # Exclude generic words
-            if word not in ['ГОСТ', 'РОССИЯ', 'КИТАЙ', 'РФ', 'ТУ', 'КГ']:
+            # Exclude generic words AND commodity names
+            excluded = ['ГОСТ', 'РОССИЯ', 'КИТАЙ', 'РФ', 'ТУ', 'КГ', 'ЛОСОСЬ', 'КРЕВЕТКИ', 
+                       'БУЛЬОН', 'СОУС', 'ГОВЯДИНА', 'СВИНИНА', 'КУРИЦА', 'КАРТОФЕЛЬ',
+                       'РЫБА', 'МЯСО', 'ФИЛЕ', 'СТЕЙК']
+            if word not in excluded:
                 return (True, word)
     
     # Check for known commodity keywords (always unbranded)
