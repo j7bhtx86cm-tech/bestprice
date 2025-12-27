@@ -95,14 +95,6 @@ function SortableItem({ favorite, onRemove, onBrandModeChange, addToCart }) {
           </div>
         )}
 
-        {/* Quantity and unit */}
-        <div className="mb-4 p-3 bg-white border rounded-lg">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Ед. изм:</span>
-            <span className="text-sm font-medium">{favorite.unit}</span>
-          </div>
-        </div>
-
         {/* Add to cart button */}
         <div className="pt-2">
           <Button
