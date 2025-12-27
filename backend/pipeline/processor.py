@@ -65,7 +65,22 @@ def process_price_list_item(raw_item: Dict, supplier_company_id: str, price_list
     
     caliber = extract_caliber(name_raw)
     fat_pct = extract_fat_pct(name_raw)
-    brand = extract_brand(name_raw)
+    
+    # NEW: Brand detection using BRAND MASTER (not heuristic!)
+    brand = None
+    brand_id = None
+    brand_strict = False
+    
+    if BRAND_MASTER_LOADED:
+        brand_id, brand_strict = brand_master.detect_brand(name_raw)
+        if brand_id:
+            brand_info = brand_master.get_brand_info(brand_id)
+            brand = brand_info.get('brand_en') if brand_info else None
+    
+    # Fallback to old method only if brand_master not loaded
+    if not brand and not BRAND_MASTER_LOADED:
+        brand = extract_brand(name_raw)
+    
     super_class = extract_super_class(name_norm)
     processing_flags = extract_processing_flags(name_norm)
     
