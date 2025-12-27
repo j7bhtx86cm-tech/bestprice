@@ -549,6 +549,8 @@ export const CustomerFavorites = () => {
                   favorite={favorite}
                   onRemove={handleRemoveFavorite}
                   onModeChange={handleModeChange}
+                  onBrandStrictChange={onBrandStrictChange}
+                  addToCart={addToCart}
                 />
               ))}
             </div>
