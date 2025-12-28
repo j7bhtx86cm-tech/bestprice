@@ -700,8 +700,11 @@ agent_communication:
     file: "/app/frontend/src/pages/customer/CustomerFavorites.js, /app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "IMPLEMENTED (2025-12-28): New automatic best price search feature. Changes: (1) Removed global toggle 'Искать лучшую цену для всех', (2) Changed toggle from 'Не учитывать бренд' to 'Бренд критичен' with inverted logic, (3) When clicking 'Добавить в корзину' - backend automatically finds best price with ≥85% match, (4) Item is added to cart already optimized with price and supplier. Frontend verified: toggle shows correctly for branded items (BORGES, Aroy-D), cart shows item with price. Backend endpoint /cart/resolve-favorite updated to use similarity_threshold=0.85."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE BACKEND TESTING COMPLETED (2025-12-28): ✅ ALL TESTS PASSED - Automatic best price search feature working perfectly. BACKEND API TESTING: (1) ✅ Login successful as customer@bestprice.ru, (2) ✅ Retrieved 90 favorites for testing, (3) ✅ POST /api/cart/resolve-favorite with brandCritical=false: Successfully resolved price 490.05 ₽ from supplier 'Алиди' for product 'СОУС грибной соевый 1,8 л. ТяньХэ QIANHE', (4) ✅ POST /api/cart/resolve-favorite with brandCritical=true: Successfully resolved price 805.38 ₽ from supplier 'Алиди' for branded product 'BORGES Масло оливковое Extra Virgin нерафинированное высшего качества 1 л ПЭТ', (5) ✅ Error handling: Correctly returned 404 for invalid product ID, (6) ✅ Performance: All 3 requests successful with avg time 0.09s per request. API response includes all required fields: price, supplier, supplierId, productId, productName. Feature is production-ready and working as designed."
