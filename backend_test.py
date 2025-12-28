@@ -968,17 +968,11 @@ def main():
     """Run all tests"""
     print("\n" + "="*80)
     print("BESTPRICE B2B MARKETPLACE - BACKEND API TESTING")
-    print("Testing 4 User Portals + NEW /api/cart/select-offer Endpoint")
+    print("Testing FIXED /api/cart/select-offer Endpoint - Bug Fix Verification")
     print("="*80)
     
-    # Test all portals
-    test_restaurant_admin()
-    test_staff()
-    test_chef()
-    test_supplier()
-    
-    # Test NEW /api/cart/select-offer endpoint
-    test_new_select_offer_endpoint()
+    # Test FIXED /api/cart/select-offer endpoint (focus on the bug fix)
+    test_fixed_select_offer_endpoint()
     
     # Print summary
     result.print_summary()
