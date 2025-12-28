@@ -2736,6 +2736,7 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
         top.append({
             'supplier_item_id': c['item']['id'],
             'name_raw': c['item']['name_raw'],
+            'price': c['item'].get('price'),
             'price_per_base_unit': c['item'].get('price_per_base_unit'),
             'score': c['score'],
             'supplier': company_map.get(c['item']['supplier_company_id'], 'Unknown')
