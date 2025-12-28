@@ -2522,23 +2522,6 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
         score += 0.10
     
     return round(score, 4)
-            tolerance_score = 1.0 - abs(1.0 - ratio) / 0.2
-            score += tolerance_score * 0.15
-    elif not ref_weight:
-        # No reference weight - give partial credit
-        score += 0.08
-    
-    # 5. Brand match - 5%
-    ref_brand = reference.get('brand_id')
-    cand_brand = candidate.get('brand_id')
-    
-    if ref_brand and cand_brand and ref_brand.lower() == cand_brand.lower():
-        score += 0.05
-    elif not ref_brand:
-        # No brand requirement - partial credit
-        score += 0.02
-    
-    return round(score, 4)
 
 
 @api_router.post("/cart/select-offer", response_model=SelectOfferResponse)
