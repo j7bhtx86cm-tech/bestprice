@@ -363,8 +363,9 @@ export const CustomerFavorites = () => {
                   key={favorite.id}
                   favorite={favorite}
                   onRemove={handleRemoveFavorite}
-                  onBrandModeChange={onBrandModeChange}
+                  onBrandCriticalChange={onBrandCriticalChange}
                   addToCart={addToCart}
+                  isAdding={addingToCart}
                 />
               ))}
             </div>
