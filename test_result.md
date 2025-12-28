@@ -650,6 +650,8 @@ test_plan:
     - "Drag and Drop in Favorites"
     - "Fuzzy/Typo Search in Catalog"
     - "Best Price Toggle Functionality in Favorites"
+    - "Automatic Best Price Search from Favorites"
+    - "NEW /api/cart/select-offer Endpoint"
 
 agent_communication:
   - agent: "testing"
