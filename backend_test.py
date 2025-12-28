@@ -642,11 +642,228 @@ def test_supplier():
     except Exception as e:
         result.add_fail("Supplier Orders", f"Error accessing orders: {str(e)}")
 
+def test_automatic_best_price_search():
+    """Test NEW automatic best price search feature from favorites"""
+    print("\n" + "="*80)
+    print("TESTING: NEW AUTOMATIC BEST PRICE SEARCH FEATURE")
+    print("="*80)
+    
+    # Login as customer
+    print(f"\n[1] Testing login for customer@bestprice.ru...")
+    auth_data = login("customer@bestprice.ru", "password123")
+    
+    if not auth_data:
+        result.add_fail("Auto Price Search Login", "Login failed - cannot test feature")
+        return
+    
+    result.add_pass("Auto Price Search Login", "Successfully logged in as customer@bestprice.ru")
+    
+    token = auth_data["token"]
+    headers = get_headers(token)
+    
+    # Test 2: Get favorites to find products to test
+    print("\n[2] Getting favorites to test automatic price search...")
+    try:
+        favorites_response = requests.get(f"{BACKEND_URL}/favorites/v2", headers=headers, timeout=10)
+        
+        if favorites_response.status_code != 200:
+            result.add_fail("Auto Price Search Favorites", f"Failed to get favorites: {favorites_response.status_code}")
+            return
+        
+        favorites = favorites_response.json()
+        print(f"   Found {len(favorites)} favorites")
+        
+        if len(favorites) == 0:
+            result.add_warning("Auto Price Search Favorites", "No favorites found to test automatic price search")
+            return
+        
+        result.add_pass("Auto Price Search Favorites", f"Retrieved {len(favorites)} favorites for testing")
+        
+    except Exception as e:
+        result.add_fail("Auto Price Search Favorites", f"Error getting favorites: {str(e)}")
+        return
+    
+    # Test 3: Test automatic price resolution with brandCritical=false
+    print("\n[3] Testing automatic price resolution with brandCritical=false...")
+    try:
+        # Find a favorite to test with
+        test_favorite = None
+        for fav in favorites:
+            if fav.get('productId'):
+                test_favorite = fav
+                break
+        
+        if not test_favorite:
+            result.add_warning("Auto Price Search Test", "No suitable favorite found with productId")
+            return
+        
+        product_id = test_favorite['productId']
+        product_name = test_favorite.get('productName', 'Unknown')
+        print(f"   Testing with product: {product_name} (ID: {product_id})")
+        
+        # Test with brandCritical=false (allow brand flexibility)
+        resolve_response = requests.post(
+            f"{BACKEND_URL}/cart/resolve-favorite",
+            headers=headers,
+            json={
+                "productId": product_id,
+                "brandCritical": False
+            },
+            timeout=15
+        )
+        
+        if resolve_response.status_code != 200:
+            result.add_fail("Auto Price Search (Brand Flexible)", f"Failed to resolve price: {resolve_response.status_code} - {resolve_response.text}")
+        else:
+            resolved_data = resolve_response.json()
+            
+            # Verify response structure
+            required_fields = ["price", "supplier", "supplierId", "productId", "productName"]
+            missing_fields = [field for field in required_fields if field not in resolved_data]
+            
+            if missing_fields:
+                result.add_fail("Auto Price Search (Brand Flexible)", f"Missing required fields: {missing_fields}")
+            else:
+                price = resolved_data.get("price")
+                supplier = resolved_data.get("supplier")
+                supplier_id = resolved_data.get("supplierId")
+                resolved_product_name = resolved_data.get("productName")
+                
+                print(f"   ✓ Resolved price: {price} ₽")
+                print(f"   ✓ Supplier: {supplier}")
+                print(f"   ✓ Product: {resolved_product_name}")
+                
+                result.add_pass("Auto Price Search (Brand Flexible)", 
+                               f"Successfully resolved price {price} ₽ from supplier '{supplier}' for product '{resolved_product_name}'")
+        
+    except Exception as e:
+        result.add_fail("Auto Price Search (Brand Flexible)", f"Error testing price resolution: {str(e)}")
+    
+    # Test 4: Test automatic price resolution with brandCritical=true
+    print("\n[4] Testing automatic price resolution with brandCritical=true...")
+    try:
+        # Find a branded product to test with
+        branded_favorite = None
+        for fav in favorites:
+            if fav.get('productId') and fav.get('isBranded', False):
+                branded_favorite = fav
+                break
+        
+        if not branded_favorite:
+            # Use the same product but with brandCritical=true
+            branded_favorite = test_favorite
+            print(f"   No explicitly branded favorite found, testing with same product but brandCritical=true")
+        
+        product_id = branded_favorite['productId']
+        product_name = branded_favorite.get('productName', 'Unknown')
+        print(f"   Testing branded search with product: {product_name} (ID: {product_id})")
+        
+        # Test with brandCritical=true (strict brand matching)
+        resolve_response = requests.post(
+            f"{BACKEND_URL}/cart/resolve-favorite",
+            headers=headers,
+            json={
+                "productId": product_id,
+                "brandCritical": True
+            },
+            timeout=15
+        )
+        
+        if resolve_response.status_code != 200:
+            result.add_fail("Auto Price Search (Brand Critical)", f"Failed to resolve price: {resolve_response.status_code} - {resolve_response.text}")
+        else:
+            resolved_data = resolve_response.json()
+            
+            # Verify response structure
+            required_fields = ["price", "supplier", "supplierId", "productId", "productName"]
+            missing_fields = [field for field in required_fields if field not in resolved_data]
+            
+            if missing_fields:
+                result.add_fail("Auto Price Search (Brand Critical)", f"Missing required fields: {missing_fields}")
+            else:
+                price = resolved_data.get("price")
+                supplier = resolved_data.get("supplier")
+                supplier_id = resolved_data.get("supplierId")
+                resolved_product_name = resolved_data.get("productName")
+                
+                print(f"   ✓ Resolved price: {price} ₽")
+                print(f"   ✓ Supplier: {supplier}")
+                print(f"   ✓ Product: {resolved_product_name}")
+                
+                result.add_pass("Auto Price Search (Brand Critical)", 
+                               f"Successfully resolved price {price} ₽ from supplier '{supplier}' for branded product '{resolved_product_name}'")
+        
+    except Exception as e:
+        result.add_fail("Auto Price Search (Brand Critical)", f"Error testing branded price resolution: {str(e)}")
+    
+    # Test 5: Test with invalid product ID
+    print("\n[5] Testing error handling with invalid product ID...")
+    try:
+        resolve_response = requests.post(
+            f"{BACKEND_URL}/cart/resolve-favorite",
+            headers=headers,
+            json={
+                "productId": "invalid-product-id",
+                "brandCritical": False
+            },
+            timeout=10
+        )
+        
+        if resolve_response.status_code == 404:
+            result.add_pass("Auto Price Search Error Handling", "Correctly returned 404 for invalid product ID")
+        else:
+            result.add_warning("Auto Price Search Error Handling", f"Expected 404 for invalid product, got {resolve_response.status_code}")
+        
+    except Exception as e:
+        result.add_fail("Auto Price Search Error Handling", f"Error testing invalid product ID: {str(e)}")
+    
+    # Test 6: Test performance with multiple requests
+    print("\n[6] Testing performance with multiple price resolution requests...")
+    try:
+        import time
+        
+        # Test with first 3 favorites (or all if less than 3)
+        test_favorites = favorites[:3]
+        start_time = time.time()
+        successful_requests = 0
+        
+        for i, fav in enumerate(test_favorites):
+            if not fav.get('productId'):
+                continue
+                
+            resolve_response = requests.post(
+                f"{BACKEND_URL}/cart/resolve-favorite",
+                headers=headers,
+                json={
+                    "productId": fav['productId'],
+                    "brandCritical": False
+                },
+                timeout=15
+            )
+            
+            if resolve_response.status_code == 200:
+                successful_requests += 1
+        
+        end_time = time.time()
+        total_time = end_time - start_time
+        avg_time = total_time / len(test_favorites) if test_favorites else 0
+        
+        print(f"   Processed {len(test_favorites)} requests in {total_time:.2f}s (avg: {avg_time:.2f}s per request)")
+        print(f"   Successful requests: {successful_requests}/{len(test_favorites)}")
+        
+        if successful_requests == len(test_favorites):
+            result.add_pass("Auto Price Search Performance", f"All {successful_requests} requests successful, avg time: {avg_time:.2f}s")
+        else:
+            result.add_warning("Auto Price Search Performance", f"Only {successful_requests}/{len(test_favorites)} requests successful")
+        
+    except Exception as e:
+        result.add_fail("Auto Price Search Performance", f"Error testing performance: {str(e)}")
+
 def main():
     """Run all tests"""
     print("\n" + "="*80)
     print("BESTPRICE B2B MARKETPLACE - BACKEND API TESTING")
-    print("Testing 4 User Portals: Restaurant Admin, Staff, Chef, Supplier")
+    print("Testing 4 User Portals + NEW Automatic Best Price Search Feature")
     print("="*80)
     
     # Test all portals
@@ -654,6 +871,9 @@ def main():
     test_staff()
     test_chef()
     test_supplier()
+    
+    # Test NEW automatic best price search feature
+    test_automatic_best_price_search()
     
     # Print summary
     result.print_summary()
