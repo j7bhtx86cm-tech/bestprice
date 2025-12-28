@@ -205,7 +205,7 @@ export const CustomerFavorites = () => {
     }
   };
 
-  // NEW: Automatic best price search when adding to cart
+  // NEW: Automatic best price search when adding to cart using select-offer endpoint
   const addToCart = async (favorite) => {
     // Check if already in cart
     const existingCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
@@ -222,38 +222,76 @@ export const CustomerFavorites = () => {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Call backend to automatically find best price
-      const response = await axios.post(`${API}/cart/resolve-favorite`, {
-        productId: favorite.productId,
-        productName: favorite.productName,
-        brandCritical: favorite.brandMode === 'STRICT',  // NEW: use brandCritical
-        isBranded: favorite.isBranded || false,
-        brand: favorite.brand || null
+      // Build reference_item from favorite (эталон)
+      const referenceItem = {
+        name_raw: favorite.productName,
+        brand_id: favorite.brand || null,
+        brand_critical: favorite.brandMode === 'STRICT'
+      };
+
+      // Call NEW endpoint to select best offer
+      const response = await axios.post(`${API}/cart/select-offer`, {
+        reference_item: referenceItem,
+        qty: 1,
+        match_threshold: 0.85
       }, { headers });
 
-      // Create cart item with ALREADY RESOLVED price and supplier
+      // Check if match found
+      if (!response.data.selected_offer) {
+        alert(`❌ Не найдено совпадений ≥ 85% по прайсам\n\nТовар: ${favorite.productName}`);
+        return;
+      }
+
+      const offer = response.data.selected_offer;
+
+      // Create cart item with NEW structure (reference_item + selected_offer)
       const cartItem = {
         cartId: `fav_${favorite.id}_${Date.now()}`,
         source: 'favorites',
         favoriteId: favorite.id,
-        productId: response.data.productId || favorite.productId,
-        productName: response.data.productName,  // Use resolved product name
-        quantity: 1,
-        unit: favorite.unit,
-        price: response.data.price,  // Already have price!
-        supplier: response.data.supplier,  // Already have supplier!
-        supplierId: response.data.supplierId,
-        resolved: true,  // Mark as already resolved
-        brandCritical: favorite.brandMode === 'STRICT'
+        qty: 1,
+        
+        // Reference item (what user wanted)
+        reference_item: {
+          name_raw: favorite.productName,
+          productId: favorite.productId,
+          brand_id: favorite.brand || null,
+          brand_critical: favorite.brandMode === 'STRICT',
+          unit: favorite.unit
+        },
+        
+        // Selected offer (what system found - best price)
+        selected_offer: {
+          supplier_id: offer.supplier_id,
+          supplier_name: offer.supplier_name,
+          supplier_item_id: offer.supplier_item_id,
+          name_raw: offer.name_raw,
+          price: offer.price,
+          price_per_base_unit: offer.price_per_base_unit,
+          unit_norm: offer.unit_norm,
+          pack_value: offer.pack_value,
+          pack_unit: offer.pack_unit,
+          score: offer.score
+        },
+        
+        // Flattened fields for backwards compatibility
+        productName: offer.name_raw,
+        price: offer.price,
+        supplier: offer.supplier_name,
+        supplierId: offer.supplier_id,
+        unit: offer.unit_norm,
+        resolved: true
       };
 
       // Add to cart
       existingCart.push(cartItem);
       localStorage.setItem('catalogCart', JSON.stringify(existingCart));
       
-      alert(`✓ Добавлено: ${response.data.productName}\nЦена: ${response.data.price.toLocaleString('ru-RU')} ₽\nПоставщик: ${response.data.supplier}`);
+      // Show success with score
+      const scorePercent = Math.round(offer.score * 100);
+      alert(`✓ Добавлено в корзину!\n\n📦 ${offer.name_raw}\n💰 ${offer.price.toLocaleString('ru-RU')} ₽\n🏢 ${offer.supplier_name}\n📊 Совпадение: ${scorePercent}%`);
     } catch (error) {
-      console.error('Failed to resolve best price:', error);
+      console.error('Failed to select best offer:', error);
       alert('Ошибка при поиске лучшей цены. Попробуйте еще раз.');
     } finally {
       setAddingToCart(null);
