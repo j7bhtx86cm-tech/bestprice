@@ -710,3 +710,15 @@ agent_communication:
       - working: true
         agent: "testing"
         comment: "COMPREHENSIVE BACKEND TESTING COMPLETED (2025-12-28): ✅ ALL TESTS PASSED - Automatic best price search feature working perfectly. BACKEND API TESTING: (1) ✅ Login successful as customer@bestprice.ru, (2) ✅ Retrieved 90 favorites for testing, (3) ✅ POST /api/cart/resolve-favorite with brandCritical=false: Successfully resolved price 490.05 ₽ from supplier 'Алиди' for product 'СОУС грибной соевый 1,8 л. ТяньХэ QIANHE', (4) ✅ POST /api/cart/resolve-favorite with brandCritical=true: Successfully resolved price 805.38 ₽ from supplier 'Алиди' for branded product 'BORGES Масло оливковое Extra Virgin нерафинированное высшего качества 1 л ПЭТ', (5) ✅ Error handling: Correctly returned 404 for invalid product ID, (6) ✅ Performance: All 3 requests successful with avg time 0.09s per request. API response includes all required fields: price, supplier, supplierId, productId, productName. Feature is production-ready and working as designed."
+
+  - task: "NEW /api/cart/select-offer Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED (2025-12-28): ✅ ALL TESTS PASSED - New /api/cart/select-offer endpoint working perfectly. DETAILED TEST RESULTS: (1) ✅ Basic offer selection (brand_critical=false): Successfully selected cheapest offer 'Сибас целый непотрошеный с/г 5% инд. зам. 400-600 гр ~5 кг/кор. Турция' with score 0.878 from supplier 'Ромакс' at price 990.6 ₽, (2) ✅ Brand critical selection (brand_critical=true): Successfully selected HEINZ branded product 'КЕТЧУП томатный 2 кг балк с коннектором, HEINZ, РОССИЯ (-F-)' with score 0.86 from supplier 'Восток-Запад' at price 447.5 ₽, (3) ✅ No match scenario: Correctly returned no match for non-existent product 'Несуществующий продукт XYZ123' with reason 'NO_MATCH_OVER_THRESHOLD', (4) ✅ Response structure validation: All required fields present (supplier_id, supplier_name, supplier_item_id, name_raw, price, price_per_base_unit, score), data types correct, currency is RUB, top_candidates array with 5 alternatives, (5) ✅ Threshold testing: Tested thresholds 0.70, 0.85, 0.95 - lower thresholds more permissive as expected, (6) ✅ Performance: Processed 5 requests in 0.51s (avg: 0.10s per request), all successful. Endpoint correctly implements core logic: finds candidates among all supplier_items, filters by super_class and unit_norm, scores each candidate, applies threshold, enforces brand_critical filtering, selects cheapest by price_per_base_unit. Feature is production-ready."
