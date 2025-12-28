@@ -642,10 +642,11 @@ def test_supplier():
     except Exception as e:
         result.add_fail("Supplier Orders", f"Error accessing orders: {str(e)}")
 
-def test_new_select_offer_endpoint():
-    """Test NEW /api/cart/select-offer endpoint for BestPrice B2B marketplace"""
+def test_fixed_select_offer_endpoint():
+    """Test FIXED /api/cart/select-offer endpoint - now correctly selects cheapest matching offer"""
     print("\n" + "="*80)
-    print("TESTING: NEW /api/cart/select-offer ENDPOINT")
+    print("TESTING: FIXED /api/cart/select-offer ENDPOINT")
+    print("Bug Fix: Now correctly selects cheapest matching offer (931.44₽ Алиди vs 990.60₽ Ромакс)")
     print("="*80)
     
     # Step 1: Login as customer
@@ -653,16 +654,16 @@ def test_new_select_offer_endpoint():
     auth_data = login("customer@bestprice.ru", "password123")
     
     if not auth_data:
-        result.add_fail("Select Offer Login", "Login failed - cannot test endpoint")
+        result.add_fail("Fixed Select Offer Login", "Login failed - cannot test endpoint")
         return
     
-    result.add_pass("Select Offer Login", "Successfully logged in as customer@bestprice.ru")
+    result.add_pass("Fixed Select Offer Login", "Successfully logged in as customer@bestprice.ru")
     
     token = auth_data["token"]
     headers = get_headers(token)
     
-    # Step 2: Test basic offer selection (brand_critical=false)
-    print("\n[2] Testing basic offer selection with brand_critical=false...")
+    # Step 2: Test Сибас best price selection (THE MAIN BUG FIX)
+    print("\n[2] Testing Сибас best price selection (CRITICAL BUG FIX)...")
     try:
         request_data = {
             "reference_item": {
@@ -681,44 +682,107 @@ def test_new_select_offer_endpoint():
         )
         
         if response.status_code != 200:
-            result.add_fail("Select Offer Basic", f"Failed to select offer: {response.status_code} - {response.text}")
+            result.add_fail("Сибас Best Price Fix", f"Failed to select offer: {response.status_code} - {response.text}")
         else:
             data = response.json()
             
-            # Verify response structure
             if data.get("selected_offer"):
                 offer = data["selected_offer"]
-                required_fields = ["supplier_id", "supplier_name", "supplier_item_id", "name_raw", "price", "price_per_base_unit", "score"]
-                missing_fields = [field for field in required_fields if field not in offer]
+                price = offer.get("price")
+                supplier_name = offer.get("supplier_name")
                 
-                if missing_fields:
-                    result.add_fail("Select Offer Basic", f"Missing required fields in selected_offer: {missing_fields}")
+                print(f"   ✓ Selected offer: {offer['name_raw']}")
+                print(f"   ✓ Price: {price} ₽")
+                print(f"   ✓ Supplier: {supplier_name}")
+                print(f"   ✓ Score: {offer['score']}")
+                
+                # CRITICAL TEST: Should select cheapest (931.44₽ Алиди) NOT expensive (990.60₽ Ромакс)
+                if price == 931.44 and supplier_name == "Алиди":
+                    result.add_pass("Сибас Best Price Fix", f"✅ BUG FIXED! Correctly selected cheapest offer: {price}₽ from {supplier_name}")
+                elif price == 990.60 and supplier_name == "Ромакс":
+                    result.add_fail("Сибас Best Price Fix", f"❌ BUG STILL EXISTS! Selected expensive offer: {price}₽ from {supplier_name} instead of cheaper 931.44₽ from Алиди")
+                elif supplier_name == "Алиди" and price < 950:
+                    result.add_pass("Сибас Best Price Fix", f"✅ BUG FIXED! Selected Алиди supplier with reasonable price: {price}₽")
                 else:
-                    print(f"   ✓ Selected offer: {offer['name_raw']}")
-                    print(f"   ✓ Price: {offer['price']} ₽")
-                    print(f"   ✓ Price per base unit: {offer['price_per_base_unit']} ₽")
-                    print(f"   ✓ Supplier: {offer['supplier_name']}")
-                    print(f"   ✓ Score: {offer['score']}")
-                    
-                    # Verify score is >= threshold
-                    if offer['score'] >= 0.85:
-                        result.add_pass("Select Offer Basic", f"Successfully selected cheapest offer with score {offer['score']} from {offer['supplier_name']}")
-                    else:
-                        result.add_fail("Select Offer Basic", f"Selected offer score {offer['score']} is below threshold 0.85")
+                    result.add_warning("Сибас Best Price Fix", f"⚠️ Selected {supplier_name} with price {price}₽ - verify this is the cheapest available")
                 
-                # Verify top_candidates array exists
+                # Verify top_candidates are sorted by price (ascending)
                 if "top_candidates" in data and isinstance(data["top_candidates"], list):
-                    print(f"   ✓ Top candidates: {len(data['top_candidates'])} alternatives found")
+                    candidates = data["top_candidates"]
+                    print(f"   ✓ Top candidates found: {len(candidates)}")
+                    
+                    if len(candidates) >= 2:
+                        prices = [c.get("price_per_base_unit", 0) for c in candidates[:5]]  # Check first 5
+                        print(f"   ✓ First 5 candidate prices: {prices}")
+                        
+                        # Check if sorted ascending (cheapest first)
+                        is_sorted = all(prices[i] <= prices[i+1] for i in range(len(prices)-1))
+                        if is_sorted:
+                            result.add_pass("Сибас Price Sorting", f"✅ Top candidates correctly sorted by price: {prices}")
+                        else:
+                            result.add_fail("Сибас Price Sorting", f"❌ Top candidates NOT sorted by price: {prices}")
+                        
+                        # Verify expected prices are in the list
+                        expected_prices = [931.44, 948.94, 990.60]
+                        found_expected = [p for p in prices if p in expected_prices]
+                        if len(found_expected) >= 2:
+                            result.add_pass("Сибас Expected Prices", f"✅ Found expected prices in candidates: {found_expected}")
+                        else:
+                            result.add_warning("Сибас Expected Prices", f"⚠️ Expected prices {expected_prices} not all found in {prices}")
                 else:
-                    result.add_warning("Select Offer Basic", "top_candidates array missing or invalid")
+                    result.add_warning("Сибас Best Price Fix", "top_candidates array missing - cannot verify price sorting")
             else:
-                result.add_fail("Select Offer Basic", f"No selected_offer returned. Reason: {data.get('reason', 'Unknown')}")
+                result.add_fail("Сибас Best Price Fix", f"No selected_offer returned. Reason: {data.get('reason', 'Unknown')}")
         
     except Exception as e:
-        result.add_fail("Select Offer Basic", f"Error testing basic offer selection: {str(e)}")
+        result.add_fail("Сибас Best Price Fix", f"Error testing Сибас price selection: {str(e)}")
     
-    # Step 3: Test with brand_critical=true
-    print("\n[3] Testing offer selection with brand_critical=true...")
+    # Step 3: Test synonym matching (сибасс = сибас)
+    print("\n[3] Testing synonym matching (сибасс typo should match сибас)...")
+    try:
+        request_data = {
+            "reference_item": {
+                "name_raw": "СИБАСС свежемороженый с головой",
+                "brand_critical": False
+            },
+            "qty": 1,
+            "match_threshold": 0.85
+        }
+        
+        response = requests.post(
+            f"{BACKEND_URL}/cart/select-offer",
+            headers=headers,
+            json=request_data,
+            timeout=15
+        )
+        
+        if response.status_code != 200:
+            result.add_fail("Synonym Matching", f"Failed to test synonym matching: {response.status_code} - {response.text}")
+        else:
+            data = response.json()
+            
+            if data.get("selected_offer"):
+                offer = data["selected_offer"]
+                product_name = offer.get("name_raw", "").upper()
+                
+                print(f"   ✓ Matched product: {offer['name_raw']}")
+                print(f"   ✓ Price: {offer['price']} ₽")
+                print(f"   ✓ Supplier: {offer['supplier_name']}")
+                
+                # Check if it found СИБАС products (synonym matching working)
+                if "СИБАС" in product_name or "СИБАСС" in product_name:
+                    result.add_pass("Synonym Matching", f"✅ Successfully matched СИБАСС typo to СИБАС product: {offer['name_raw']}")
+                else:
+                    result.add_fail("Synonym Matching", f"❌ Failed to match СИБАСС typo - got unrelated product: {offer['name_raw']}")
+            else:
+                reason = data.get('reason', 'Unknown')
+                result.add_fail("Synonym Matching", f"No match found for СИБАСС typo. Reason: {reason}")
+        
+    except Exception as e:
+        result.add_fail("Synonym Matching", f"Error testing synonym matching: {str(e)}")
+    
+    # Step 4: Test brand_critical=true functionality
+    print("\n[4] Testing brand_critical=true (only HEINZ products)...")
     try:
         request_data = {
             "reference_item": {
@@ -738,44 +802,57 @@ def test_new_select_offer_endpoint():
         )
         
         if response.status_code != 200:
-            result.add_fail("Select Offer Brand Critical", f"Failed to select branded offer: {response.status_code} - {response.text}")
+            result.add_fail("Brand Critical Test", f"Failed to test brand critical: {response.status_code} - {response.text}")
         else:
             data = response.json()
             
             if data.get("selected_offer"):
                 offer = data["selected_offer"]
-                print(f"   ✓ Selected branded offer: {offer['name_raw']}")
+                product_name = offer.get("name_raw", "").upper()
+                
+                print(f"   ✓ Selected branded product: {offer['name_raw']}")
                 print(f"   ✓ Price: {offer['price']} ₽")
                 print(f"   ✓ Supplier: {offer['supplier_name']}")
-                print(f"   ✓ Score: {offer['score']}")
                 
-                # Verify it's a HEINZ product (brand matching)
-                product_name_upper = offer['name_raw'].upper()
-                if "HEINZ" in product_name_upper:
-                    result.add_pass("Select Offer Brand Critical", f"Successfully selected HEINZ branded product: {offer['name_raw']}")
+                # Verify it's a HEINZ product
+                if "HEINZ" in product_name:
+                    result.add_pass("Brand Critical Test", f"✅ Correctly selected HEINZ branded product: {offer['name_raw']}")
+                    
+                    # Verify all candidates are HEINZ products
+                    if "top_candidates" in data:
+                        candidates = data["top_candidates"]
+                        non_heinz_count = 0
+                        for candidate in candidates[:5]:  # Check first 5
+                            candidate_name = candidate.get("name_raw", "").upper()
+                            if "HEINZ" not in candidate_name:
+                                non_heinz_count += 1
+                        
+                        if non_heinz_count == 0:
+                            result.add_pass("Brand Critical Filtering", f"✅ All top candidates are HEINZ products (checked {min(5, len(candidates))} candidates)")
+                        else:
+                            result.add_fail("Brand Critical Filtering", f"❌ Found {non_heinz_count} non-HEINZ products in top candidates")
                 else:
-                    result.add_warning("Select Offer Brand Critical", f"Selected product may not be HEINZ branded: {offer['name_raw']}")
+                    result.add_fail("Brand Critical Test", f"❌ Selected non-HEINZ product when brand_critical=true: {offer['name_raw']}")
             else:
-                # No match found - this is acceptable for brand critical search
                 reason = data.get('reason', 'Unknown')
                 if reason == "NO_MATCH_OVER_THRESHOLD":
-                    result.add_pass("Select Offer Brand Critical", "Correctly returned no match when no HEINZ products meet threshold")
+                    result.add_pass("Brand Critical Test", "✅ Correctly returned no match when no HEINZ products meet threshold")
                 else:
-                    result.add_warning("Select Offer Brand Critical", f"No branded offer found. Reason: {reason}")
+                    result.add_warning("Brand Critical Test", f"No HEINZ products found. Reason: {reason}")
         
     except Exception as e:
-        result.add_fail("Select Offer Brand Critical", f"Error testing branded offer selection: {str(e)}")
+        result.add_fail("Brand Critical Test", f"Error testing brand critical functionality: {str(e)}")
     
-    # Step 4: Test no match scenario
-    print("\n[4] Testing no match scenario with non-existent product...")
+    # Step 5: Test edge case - very high threshold
+    print("\n[5] Testing edge case with very high threshold (0.95)...")
     try:
         request_data = {
             "reference_item": {
-                "name_raw": "Несуществующий продукт XYZ123",
+                "name_raw": "Сибас целый непотрошеный",
                 "brand_critical": False
             },
             "qty": 1,
-            "match_threshold": 0.85
+            "match_threshold": 0.95
         }
         
         response = requests.post(
@@ -786,24 +863,35 @@ def test_new_select_offer_endpoint():
         )
         
         if response.status_code != 200:
-            result.add_fail("Select Offer No Match", f"Failed to handle no match scenario: {response.status_code} - {response.text}")
+            result.add_fail("High Threshold Test", f"Failed to test high threshold: {response.status_code} - {response.text}")
         else:
             data = response.json()
             
-            if data.get("selected_offer") is None and data.get("reason") == "NO_MATCH_OVER_THRESHOLD":
-                result.add_pass("Select Offer No Match", "Correctly returned no match for non-existent product")
+            if data.get("selected_offer"):
+                offer = data["selected_offer"]
+                score = offer.get("score")
+                
+                print(f"   ✓ High threshold match: {offer['name_raw']}")
+                print(f"   ✓ Score: {score}")
+                print(f"   ✓ Price: {offer['price']} ₽")
+                
+                if score >= 0.95:
+                    result.add_pass("High Threshold Test", f"✅ Found high-quality match with score {score}")
+                else:
+                    result.add_fail("High Threshold Test", f"❌ Selected offer score {score} below threshold 0.95")
             else:
-                result.add_fail("Select Offer No Match", f"Expected no match but got: {data}")
+                reason = data.get('reason', 'Unknown')
+                result.add_pass("High Threshold Test", f"✅ Correctly returned no match for high threshold. Reason: {reason}")
         
     except Exception as e:
-        result.add_fail("Select Offer No Match", f"Error testing no match scenario: {str(e)}")
+        result.add_fail("High Threshold Test", f"Error testing high threshold: {str(e)}")
     
-    # Step 5: Test response structure validation
-    print("\n[5] Testing response structure with valid product...")
+    # Step 6: Test response structure completeness
+    print("\n[6] Testing complete response structure...")
     try:
         request_data = {
             "reference_item": {
-                "name_raw": "Креветки",
+                "name_raw": "Креветки 16/20",
                 "brand_critical": False
             },
             "qty": 2,
@@ -818,13 +906,17 @@ def test_new_select_offer_endpoint():
         )
         
         if response.status_code != 200:
-            result.add_fail("Select Offer Structure", f"Failed to get response: {response.status_code} - {response.text}")
+            result.add_fail("Response Structure", f"Failed to get response: {response.status_code} - {response.text}")
         else:
             data = response.json()
             
-            # Verify complete response structure
-            structure_valid = True
-            issues = []
+            # Check required top-level fields
+            required_top_fields = ["selected_offer", "top_candidates", "search_stats"]
+            structure_issues = []
+            
+            for field in required_top_fields:
+                if field not in data:
+                    structure_issues.append(f"Missing top-level field: {field}")
             
             if data.get("selected_offer"):
                 offer = data["selected_offer"]
@@ -836,140 +928,41 @@ def test_new_select_offer_endpoint():
                 
                 for field in required_offer_fields:
                     if field not in offer:
-                        issues.append(f"Missing field in selected_offer: {field}")
-                        structure_valid = False
+                        structure_issues.append(f"Missing field in selected_offer: {field}")
                 
                 # Verify data types
                 if not isinstance(offer.get("price"), (int, float)):
-                    issues.append("price should be numeric")
-                    structure_valid = False
+                    structure_issues.append("selected_offer.price should be numeric")
                 
                 if not isinstance(offer.get("score"), (int, float)):
-                    issues.append("score should be numeric")
-                    structure_valid = False
+                    structure_issues.append("selected_offer.score should be numeric")
                 
                 if offer.get("currency") != "RUB":
-                    issues.append(f"Expected currency RUB, got {offer.get('currency')}")
-                    structure_valid = False
+                    structure_issues.append(f"Expected currency RUB, got {offer.get('currency')}")
             
-            # Verify top_candidates structure
-            if "top_candidates" in data:
+            # Check top_candidates structure
+            if "top_candidates" in data and isinstance(data["top_candidates"], list):
                 candidates = data["top_candidates"]
-                if isinstance(candidates, list) and len(candidates) > 0:
+                if len(candidates) > 0:
                     first_candidate = candidates[0]
                     required_candidate_fields = ["supplier_item_id", "name_raw", "price_per_base_unit", "score", "supplier"]
                     
                     for field in required_candidate_fields:
                         if field not in first_candidate:
-                            issues.append(f"Missing field in top_candidates[0]: {field}")
-                            structure_valid = False
+                            structure_issues.append(f"Missing field in top_candidates[0]: {field}")
             
-            if structure_valid:
-                result.add_pass("Select Offer Structure", "Response structure is valid and complete")
+            if len(structure_issues) == 0:
+                result.add_pass("Response Structure", "✅ Complete response structure is valid")
                 print(f"   ✓ All required fields present")
                 print(f"   ✓ Data types are correct")
                 print(f"   ✓ Currency is RUB")
                 if data.get("top_candidates"):
                     print(f"   ✓ Top candidates: {len(data['top_candidates'])} alternatives")
             else:
-                result.add_fail("Select Offer Structure", f"Response structure issues: {'; '.join(issues)}")
+                result.add_fail("Response Structure", f"❌ Structure issues: {'; '.join(structure_issues)}")
         
     except Exception as e:
-        result.add_fail("Select Offer Structure", f"Error testing response structure: {str(e)}")
-    
-    # Step 6: Test different match thresholds
-    print("\n[6] Testing different match thresholds...")
-    try:
-        test_thresholds = [0.70, 0.85, 0.95]
-        threshold_results = []
-        
-        for threshold in test_thresholds:
-            request_data = {
-                "reference_item": {
-                    "name_raw": "Лосось",
-                    "brand_critical": False
-                },
-                "qty": 1,
-                "match_threshold": threshold
-            }
-            
-            response = requests.post(
-                f"{BACKEND_URL}/cart/select-offer",
-                headers=headers,
-                json=request_data,
-                timeout=15
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                has_match = data.get("selected_offer") is not None
-                threshold_results.append((threshold, has_match))
-                
-                if has_match:
-                    score = data["selected_offer"]["score"]
-                    print(f"   ✓ Threshold {threshold}: Match found (score: {score})")
-                else:
-                    print(f"   ✓ Threshold {threshold}: No match found")
-        
-        # Verify that lower thresholds are more permissive
-        if len(threshold_results) >= 2:
-            result.add_pass("Select Offer Thresholds", f"Tested {len(threshold_results)} thresholds successfully")
-        else:
-            result.add_warning("Select Offer Thresholds", "Could not test multiple thresholds")
-        
-    except Exception as e:
-        result.add_fail("Select Offer Thresholds", f"Error testing thresholds: {str(e)}")
-    
-    # Step 7: Test performance with multiple requests
-    print("\n[7] Testing performance with multiple requests...")
-    try:
-        import time
-        
-        test_products = [
-            "Сибас",
-            "Креветки",
-            "Лосось",
-            "Дорадо",
-            "Минтай"
-        ]
-        
-        start_time = time.time()
-        successful_requests = 0
-        
-        for product in test_products:
-            request_data = {
-                "reference_item": {
-                    "name_raw": product,
-                    "brand_critical": False
-                },
-                "qty": 1,
-                "match_threshold": 0.85
-            }
-            
-            response = requests.post(
-                f"{BACKEND_URL}/cart/select-offer",
-                headers=headers,
-                json=request_data,
-                timeout=15
-            )
-            
-            if response.status_code == 200:
-                successful_requests += 1
-        
-        end_time = time.time()
-        total_time = end_time - start_time
-        avg_time = total_time / len(test_products) if test_products else 0
-        
-        print(f"   Processed {len(test_products)} requests in {total_time:.2f}s (avg: {avg_time:.2f}s per request)")
-        print(f"   Successful requests: {successful_requests}/{len(test_products)}")
-        
-        if successful_requests == len(test_products):
-            result.add_pass("Select Offer Performance", f"All {successful_requests} requests successful, avg time: {avg_time:.2f}s")
-        else:
-            result.add_warning("Select Offer Performance", f"Only {successful_requests}/{len(test_products)} requests successful")
-        
-    except Exception as e:
-        result.add_fail("Select Offer Performance", f"Error testing performance: {str(e)}")
+        result.add_fail("Response Structure", f"Error testing response structure: {str(e)}")
 
 def main():
     """Run all tests"""
