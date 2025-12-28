@@ -2452,7 +2452,7 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
     """Calculate match score between reference item and candidate
     
     Score components:
-    - Name similarity (with synonyms): 60%
+    - Name similarity (with synonyms + fuzzy): 60%
     - Super class match: 15%
     - Weight/volume tolerance: 15%
     - Brand match bonus: 10%
@@ -2460,7 +2460,7 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
     SYNONYMS (equivalents):
     - неразделанный = непотрошеный = целый = тушка
     - с/м = с/г = зам = свежемороженый = frozen
-    - инд.зам. = индивид.заморозка (not a conflict)
+    - сибас = сибасс (typo correction)
     """
     score = 0.0
     
@@ -2472,25 +2472,25 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
         {'охл', 'охлажд', 'chilled'},  # Chilled
         {'филе', 'fillet'},  # Fillet
         {'стейк', 'steak'},  # Steak
+        {'сибас', 'сибасс'},  # Typo: сибас/сибасс
+        {'лосось', 'лососс'},  # Typo
+        {'кетчуп', 'кечуп'},  # Typo
     ]
     
-    def normalize_with_synonyms(tokens: set) -> set:
-        """Replace synonyms with canonical form (first in group)"""
+    def get_canonical(token: str) -> str:
+        """Get canonical form (first in group) for a token"""
+        token_lower = token.lower()
+        for group in SYNONYM_GROUPS:
+            for syn in group:
+                if syn in token_lower:
+                    return list(group)[0]
+        return token_lower
+    
+    def normalize_tokens(tokens: set) -> set:
+        """Replace synonyms with canonical form"""
         result = set()
         for token in tokens:
-            token_lower = token.lower()
-            found = False
-            for group in SYNONYM_GROUPS:
-                for syn in group:
-                    if syn in token_lower:
-                        # Use first synonym in group as canonical
-                        result.add(list(group)[0])
-                        found = True
-                        break
-                if found:
-                    break
-            if not found:
-                result.add(token_lower)
+            result.add(get_canonical(token))
         return result
     
     # 1. Name similarity (with synonyms) - 60%
@@ -2501,25 +2501,40 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
     ref_tokens = set(ref_name.split())
     cand_tokens = set(cand_name.split())
     
-    # Remove common filler words
+    # Remove common filler words  
     fillers = {'кг', 'кг/кор.', 'кг/кор', 'гр', 'гр.', 'г', 'г.', 'л', 'л.', 'мл', 'мл.', 
                'шт', 'шт.', 'упак', 'упак.', 'пакет', 'вес', '~', 'и', 'в', 'с', 'на', 'к',
-               'инд.', 'зам.', 'охл.', '%', '5%', '23-0095', 'tr', 'tr-09-0036', '(-c-)'}
+               'инд.', 'зам.', 'охл.', '%', '5%', '23-0095', 'tr', 'tr-09-0036', '(-c-)',
+               '23', '0095', '09', '0036', 'инд'}
     ref_tokens = ref_tokens - fillers
     cand_tokens = cand_tokens - fillers
     
     # Normalize with synonyms
-    ref_normalized = normalize_with_synonyms(ref_tokens)
-    cand_normalized = normalize_with_synonyms(cand_tokens)
+    ref_normalized = normalize_tokens(ref_tokens)
+    cand_normalized = normalize_tokens(cand_tokens)
     
     if ref_normalized and cand_normalized:
         intersection = len(ref_normalized & cand_normalized)
-        # Use reference as base for coverage
+        
+        # KEY WORD BONUS: If the main product name matches (first significant word)
+        # Give extra credit because "сибас" matching "сибас" is very important
+        main_word_bonus = 0.0
+        for ref_token in ref_normalized:
+            if len(ref_token) >= 4:  # Significant word (not 'инд', 'зам', etc)
+                for cand_token in cand_normalized:
+                    if ref_token == cand_token:
+                        main_word_bonus = 0.15  # Bonus for main product name match
+                        break
+                if main_word_bonus > 0:
+                    break
+        
+        # Coverage: what % of reference words found in candidate
         coverage = intersection / len(ref_normalized) if ref_normalized else 0
         jaccard = intersection / len(ref_normalized | cand_normalized) if (ref_normalized | cand_normalized) else 0
-        # Blend coverage and jaccard
-        name_score = coverage * 0.7 + jaccard * 0.3
-        score += name_score * 0.60
+        
+        # Blend coverage and jaccard + main word bonus
+        name_score = coverage * 0.5 + jaccard * 0.2 + main_word_bonus
+        score += min(name_score, 0.60)  # Cap at 60%
     
     # 2. Super class match - 15%
     ref_class = reference.get('super_class')
