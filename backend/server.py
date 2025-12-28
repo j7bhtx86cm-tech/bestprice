@@ -2451,16 +2451,17 @@ class SelectOfferResponse(BaseModel):
 def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool) -> float:
     """Calculate match score between reference item and candidate
     
-    Score components:
-    - Name similarity (Jaccard): 40%
-    - Super class match: 25%
-    - Unit match: 15%
+    Score components (NEW WEIGHTS):
+    - Name similarity (Jaccard): 60% (increased - main factor)
+    - Super class match: 15%
     - Weight/volume tolerance: 15%
-    - Brand match bonus: 5%
+    - Brand match bonus: 10%
+    
+    Minimum score for missing data: gives partial credit when info unavailable
     """
     score = 0.0
     
-    # 1. Name similarity (Jaccard on tokens) - 40%
+    # 1. Name similarity (Jaccard on tokens) - 60%
     ref_name = reference.get('name_norm') or reference.get('name_raw', '').lower()
     cand_name = (candidate.get('name_norm') or candidate.get('name_raw', '')).lower()
     
@@ -2469,44 +2470,58 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
     cand_tokens = set(cand_name.split())
     
     # Remove common filler words
-    fillers = {'кг', 'гр', 'г', 'л', 'мл', 'шт', 'упак', 'пакет', 'вес', '~', 'и', 'в', 'с'}
+    fillers = {'кг', 'кг/кор.', 'кг/кор', 'гр', 'гр.', 'г', 'г.', 'л', 'л.', 'мл', 'мл.', 
+               'шт', 'шт.', 'упак', 'упак.', 'пакет', 'вес', '~', 'и', 'в', 'с', 'на',
+               'инд.', 'зам.', 'охл.', 'с/м', 'с/г', '%'}
     ref_tokens = ref_tokens - fillers
     cand_tokens = cand_tokens - fillers
     
     if ref_tokens and cand_tokens:
         intersection = len(ref_tokens & cand_tokens)
-        union = len(ref_tokens | cand_tokens)
-        jaccard = intersection / union if union > 0 else 0
-        score += jaccard * 0.40
+        # Use reference as base for coverage (what % of reference words found)
+        coverage = intersection / len(ref_tokens) if ref_tokens else 0
+        jaccard = intersection / len(ref_tokens | cand_tokens) if (ref_tokens | cand_tokens) else 0
+        # Blend coverage and jaccard (coverage more important)
+        name_score = coverage * 0.7 + jaccard * 0.3
+        score += name_score * 0.60
     
-    # 2. Super class match - 25%
+    # 2. Super class match - 15%
     ref_class = reference.get('super_class')
     cand_class = candidate.get('super_class')
     if ref_class and cand_class:
         if ref_class == cand_class:
-            score += 0.25
-        elif ref_class.split('.')[0] == cand_class.split('.')[0]:
-            # Partial match (same main category)
-            score += 0.10
-    
-    # 3. Unit match - 15%
-    ref_unit = reference.get('unit_norm') or reference.get('pack_unit')
-    cand_unit = candidate.get('unit_norm') or candidate.get('base_unit')
-    if ref_unit and cand_unit:
-        if ref_unit == cand_unit:
             score += 0.15
-        elif (ref_unit in ['kg', 'g'] and cand_unit in ['kg', 'g']) or \
-             (ref_unit in ['l', 'ml'] and cand_unit in ['l', 'ml']):
-            score += 0.10
+        elif ref_class.split('.')[0] == cand_class.split('.')[0]:
+            score += 0.08
+    elif not ref_class:
+        # No reference class - assume match OK, give partial credit
+        score += 0.10
     
-    # 4. Weight/volume tolerance (±20%) - 15%
+    # 3. Weight/volume tolerance (±20%) - 15%
     ref_weight = reference.get('pack_value') or reference.get('net_weight_kg')
     cand_weight = candidate.get('net_weight_kg') or candidate.get('net_volume_l')
     
     if ref_weight and cand_weight and ref_weight > 0:
         ratio = cand_weight / ref_weight
         if 0.8 <= ratio <= 1.2:  # Within 20%
-            # Perfect weight match = full points, edge = less
+            tolerance_score = 1.0 - abs(1.0 - ratio) / 0.2
+            score += tolerance_score * 0.15
+    elif not ref_weight:
+        # No reference weight - give partial credit
+        score += 0.10
+    
+    # 4. Brand match - 10%
+    ref_brand = reference.get('brand_id')
+    cand_brand = candidate.get('brand_id')
+    
+    if ref_brand and cand_brand:
+        if ref_brand.lower() == cand_brand.lower():
+            score += 0.10
+    elif not ref_brand:
+        # No brand requirement - full credit
+        score += 0.10
+    
+    return round(score, 4)
             tolerance_score = 1.0 - abs(1.0 - ratio) / 0.2
             score += tolerance_score * 0.15
     elif not ref_weight:
