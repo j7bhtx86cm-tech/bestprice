@@ -94,11 +94,7 @@ function SortableItem({ favorite, onRemove, onBrandCriticalChange, addToCart, is
               ? `Только ${favorite.brand || 'этот'} бренд, поставщик может меняться` 
               : 'Допускаются аналоги — выбор по максимальному совпадению + минимальной цене'}
           </p>
-        </div> 
-                : 'Допускаются аналоги — выбор по максимальному совпадению + минимальной цене'}
-            </p>
-          </div>
-        )}
+        </div>
 
         {/* Add to cart button */}
         <div className="pt-2">
