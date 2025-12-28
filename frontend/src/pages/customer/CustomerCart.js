@@ -25,68 +25,11 @@ export const CustomerCart = () => {
     fetchCompanyInfo();
   }, []);
 
-  const loadCart = async () => {
-    setLoadingPrices(true);
-    
-    // Load from catalog cart
+  const loadCart = () => {
+    // Load from catalog cart - items from favorites are ALREADY resolved with price
     const catalogCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
-    
-    // Resolve prices for items from favorites
-    const resolvedItems = await Promise.all(catalogCart.map(async (item) => {
-      // Resolve if: from favorites AND (no price OR not yet resolved)
-      if (item.source === 'favorites' && (!item.price || item.price === 0 || !item.resolved)) {
-        try {
-          const resolved = await resolveFavoritePrice(item);
-          return resolved;
-        } catch (error) {
-          console.error('Failed to resolve price:', error);
-          return { ...item, price: 0, supplier: 'Ошибка', resolved: false };
-        }
-      }
-      return item;
-    }));
-    
-    setCartItems(resolvedItems);
-    
-    // Save resolved items back to localStorage
-    localStorage.setItem('catalogCart', JSON.stringify(resolvedItems));
-    
+    setCartItems(catalogCart);
     setLoadingPrices(false);
-  };
-
-  const resolveFavoritePrice = async (favoriteItem) => {
-    // Call backend to resolve best price based on brandMode
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
-      const response = await axios.post(`${API}/cart/resolve-favorite`, {
-        productId: favoriteItem.productId,
-        productName: favoriteItem.productName,
-        brandMode: favoriteItem.brandMode || 'STRICT',
-        isBranded: favoriteItem.isBranded || false,
-        brand: favoriteItem.brand || null
-      }, { headers });
-      
-      // Update item with resolved price, supplier AND product name (actual product found)
-      return {
-        ...favoriteItem,
-        productName: response.data.productName || favoriteItem.productName,  // Use actual product found
-        price: response.data.price,
-        supplier: response.data.supplier,
-        supplierId: response.data.supplierId,
-        resolved: true
-      };
-    } catch (error) {
-      console.error('Failed to resolve:', error);
-      // Return with placeholder
-      return {
-        ...favoriteItem,
-        price: 0,
-        supplier: 'Определяется...',
-        resolved: false
-      };
-    }
   };
 
   const fetchCompanyInfo = async () => {
