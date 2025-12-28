@@ -368,17 +368,22 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
         if len(query_words_clean) > 0:
             # Calculate meaningful word overlap
             common_words = query_words_clean & item_words_clean
-            similarity = len(common_words) / len(query_words_clean)
+            sim_score = len(common_words) / len(query_words_clean)
             
-            # CATEGORY-SPECIFIC similarity thresholds
-            similarity_threshold = 0.70  # Default
-            
-            # Lower threshold for condiments (protected by Gate 12)
-            if query_super_class in ['condiments.broth', 'condiments.sauce', 'condiments.spice']:
-                similarity_threshold = 0.40
+            # Use provided threshold or default category-specific thresholds
+            if similarity_threshold is not None:
+                # Use explicitly provided threshold (e.g., 0.85 for 85%)
+                threshold = similarity_threshold
+            else:
+                # CATEGORY-SPECIFIC similarity thresholds (default behavior)
+                threshold = 0.70  # Default
+                
+                # Lower threshold for condiments (protected by Gate 12)
+                if query_super_class in ['condiments.broth', 'condiments.sauce', 'condiments.spice']:
+                    threshold = 0.40
             
             # Check threshold
-            if similarity < similarity_threshold:
+            if sim_score < threshold:
                 continue
         
         # Gate 17: NO CONFLICTING IDENTIFIERS (NEW - FINAL DEFENSE!)
