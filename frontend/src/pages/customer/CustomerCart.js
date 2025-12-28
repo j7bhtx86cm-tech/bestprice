@@ -191,7 +191,10 @@ export const CustomerCart = () => {
               </div>
 
               <div className="space-y-3">
-                {items.map((item) => (
+                {items.map((item) => {
+                  // Support both qty and quantity fields
+                  const quantity = item.quantity || item.qty || 1;
+                  return (
                   <div key={item.cartId} className="flex items-center gap-4 p-4 border rounded-lg">
                     <div className="flex-1">
                       <p className="font-medium">{item.productName}</p>
@@ -217,10 +220,10 @@ export const CustomerCart = () => {
                         type="number"
                         min="1"
                         step="1"
-                        value={item.quantity}
+                        value={quantity}
                         onChange={(e) => {
                           const val = parseInt(e.target.value) || 1;
-                          updateQuantity(item.cartId, val - item.quantity);
+                          updateQuantity(item.cartId, val - quantity);
                         }}
                         className="w-20 text-center"
                       />
@@ -235,7 +238,7 @@ export const CustomerCart = () => {
 
                     <div className="text-right w-24">
                       <p className="font-semibold">
-                        {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                        {(item.price * quantity).toLocaleString('ru-RU')} ₽
                       </p>
                     </div>
 
@@ -248,7 +251,8 @@ export const CustomerCart = () => {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="mt-4 pt-4 border-t flex justify-between items-center">
