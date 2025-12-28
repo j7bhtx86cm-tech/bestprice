@@ -156,19 +156,10 @@ export const CustomerCart = () => {
           </p>
         </div>
         {cartItems.length > 0 && (
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => loadCart()} 
-              disabled={loadingPrices}
-              variant="outline"
-            >
-              {loadingPrices ? 'Обновление...' : 'Обновить цены'}
-            </Button>
-            <Button onClick={handleCheckout} disabled={processingOrder} size="lg">
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Оформить заказ ({cartItems.length})
-            </Button>
-          </div>
+          <Button onClick={handleCheckout} disabled={processingOrder} size="lg">
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Оформить заказ ({cartItems.length})
+          </Button>
         )}
       </div>
 
