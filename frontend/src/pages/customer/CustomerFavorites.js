@@ -27,7 +27,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // Sortable Item Component
-function SortableItem({ favorite, onRemove, onBrandModeChange, addToCart }) {
+function SortableItem({ favorite, onRemove, onBrandCriticalChange, addToCart, isAdding }) {
   const {
     attributes,
     listeners,
@@ -42,6 +42,9 @@ function SortableItem({ favorite, onRemove, onBrandModeChange, addToCart }) {
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  // brandCritical: true means STRICT brand matching, false means ANY brand
+  const brandCritical = favorite.brandMode === 'STRICT';
 
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? 'z-50' : ''}>
@@ -74,23 +77,23 @@ function SortableItem({ favorite, onRemove, onBrandModeChange, addToCart }) {
           <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
         </div>
 
-        {/* Brand Toggle - only for branded products */}
+        {/* Brand Critical Toggle - only for branded products */}
         {favorite.isBranded && (
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <label htmlFor={`brand-${favorite.id}`} className="text-sm font-medium text-gray-700">
-                Не учитывать бренд
+                ☑ Бренд критичен
               </label>
               <Switch
                 id={`brand-${favorite.id}`}
-                checked={favorite.brandMode === 'ANY'}
-                onCheckedChange={(checked) => onBrandModeChange(favorite.id, checked ? 'ANY' : 'STRICT')}
+                checked={brandCritical}
+                onCheckedChange={(checked) => onBrandCriticalChange(favorite.id, checked)}
               />
             </div>
             <p className="text-xs text-gray-500">
-              {favorite.brandMode === 'ANY' 
-                ? 'Любой бренд - ищем самый дешёвый' 
-                : `Только ${favorite.brand || 'этот'} бренд`}
+              {brandCritical 
+                ? `Только ${favorite.brand || 'этот'} бренд, поставщик может меняться` 
+                : 'Допускаются аналоги — выбор по максимальному совпадению + минимальной цене'}
             </p>
           </div>
         )}
@@ -101,9 +104,19 @@ function SortableItem({ favorite, onRemove, onBrandModeChange, addToCart }) {
             onClick={() => addToCart(favorite)}
             className="w-full"
             variant="default"
+            disabled={isAdding === favorite.id}
           >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Добавить в корзину
+            {isAdding === favorite.id ? (
+              <>
+                <span className="animate-spin mr-2">⏳</span>
+                Поиск лучшей цены...
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Добавить в корзину
+              </>
+            )}
           </Button>
         </div>
       </Card>
