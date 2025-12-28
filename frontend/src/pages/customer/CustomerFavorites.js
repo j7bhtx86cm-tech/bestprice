@@ -77,22 +77,24 @@ function SortableItem({ favorite, onRemove, onBrandCriticalChange, addToCart, is
           <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
         </div>
 
-        {/* Brand Critical Toggle - only for branded products */}
-        {favorite.isBranded && (
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor={`brand-${favorite.id}`} className="text-sm font-medium text-gray-700">
-                ☑ Бренд критичен
-              </label>
-              <Switch
-                id={`brand-${favorite.id}`}
-                checked={brandCritical}
-                onCheckedChange={(checked) => onBrandCriticalChange(favorite.id, checked)}
-              />
-            </div>
-            <p className="text-xs text-gray-500">
-              {brandCritical 
-                ? `Только ${favorite.brand || 'этот'} бренд, поставщик может меняться` 
+        {/* Brand Critical Toggle - for ALL products */}
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor={`brand-${favorite.id}`} className="text-sm font-medium text-gray-700">
+              ☑ Бренд критичен
+            </label>
+            <Switch
+              id={`brand-${favorite.id}`}
+              checked={brandCritical}
+              onCheckedChange={(checked) => onBrandCriticalChange(favorite.id, checked)}
+            />
+          </div>
+          <p className="text-xs text-gray-500">
+            {brandCritical 
+              ? `Только ${favorite.brand || 'этот'} бренд, поставщик может меняться` 
+              : 'Допускаются аналоги — выбор по максимальному совпадению + минимальной цене'}
+          </p>
+        </div> 
                 : 'Допускаются аналоги — выбор по максимальному совпадению + минимальной цене'}
             </p>
           </div>
