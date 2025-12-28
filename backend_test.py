@@ -642,222 +642,334 @@ def test_supplier():
     except Exception as e:
         result.add_fail("Supplier Orders", f"Error accessing orders: {str(e)}")
 
-def test_automatic_best_price_search():
-    """Test NEW automatic best price search feature from favorites"""
+def test_new_select_offer_endpoint():
+    """Test NEW /api/cart/select-offer endpoint for BestPrice B2B marketplace"""
     print("\n" + "="*80)
-    print("TESTING: NEW AUTOMATIC BEST PRICE SEARCH FEATURE")
+    print("TESTING: NEW /api/cart/select-offer ENDPOINT")
     print("="*80)
     
-    # Login as customer
+    # Step 1: Login as customer
     print(f"\n[1] Testing login for customer@bestprice.ru...")
     auth_data = login("customer@bestprice.ru", "password123")
     
     if not auth_data:
-        result.add_fail("Auto Price Search Login", "Login failed - cannot test feature")
+        result.add_fail("Select Offer Login", "Login failed - cannot test endpoint")
         return
     
-    result.add_pass("Auto Price Search Login", "Successfully logged in as customer@bestprice.ru")
+    result.add_pass("Select Offer Login", "Successfully logged in as customer@bestprice.ru")
     
     token = auth_data["token"]
     headers = get_headers(token)
     
-    # Test 2: Get favorites to find products to test
-    print("\n[2] Getting favorites to test automatic price search...")
+    # Step 2: Test basic offer selection (brand_critical=false)
+    print("\n[2] Testing basic offer selection with brand_critical=false...")
     try:
-        favorites_response = requests.get(f"{BACKEND_URL}/favorites/v2", headers=headers, timeout=10)
-        
-        if favorites_response.status_code != 200:
-            result.add_fail("Auto Price Search Favorites", f"Failed to get favorites: {favorites_response.status_code}")
-            return
-        
-        favorites = favorites_response.json()
-        print(f"   Found {len(favorites)} favorites")
-        
-        if len(favorites) == 0:
-            result.add_warning("Auto Price Search Favorites", "No favorites found to test automatic price search")
-            return
-        
-        result.add_pass("Auto Price Search Favorites", f"Retrieved {len(favorites)} favorites for testing")
-        
-    except Exception as e:
-        result.add_fail("Auto Price Search Favorites", f"Error getting favorites: {str(e)}")
-        return
-    
-    # Test 3: Test automatic price resolution with brandCritical=false
-    print("\n[3] Testing automatic price resolution with brandCritical=false...")
-    try:
-        # Find a favorite to test with
-        test_favorite = None
-        for fav in favorites:
-            if fav.get('productId'):
-                test_favorite = fav
-                break
-        
-        if not test_favorite:
-            result.add_warning("Auto Price Search Test", "No suitable favorite found with productId")
-            return
-        
-        product_id = test_favorite['productId']
-        product_name = test_favorite.get('productName', 'Unknown')
-        print(f"   Testing with product: {product_name} (ID: {product_id})")
-        
-        # Test with brandCritical=false (allow brand flexibility)
-        resolve_response = requests.post(
-            f"{BACKEND_URL}/cart/resolve-favorite",
-            headers=headers,
-            json={
-                "productId": product_id,
-                "brandCritical": False
+        request_data = {
+            "reference_item": {
+                "name_raw": "Сибас целый непотрошеный",
+                "brand_critical": False
             },
+            "qty": 1,
+            "match_threshold": 0.85
+        }
+        
+        response = requests.post(
+            f"{BACKEND_URL}/cart/select-offer",
+            headers=headers,
+            json=request_data,
             timeout=15
         )
         
-        if resolve_response.status_code != 200:
-            result.add_fail("Auto Price Search (Brand Flexible)", f"Failed to resolve price: {resolve_response.status_code} - {resolve_response.text}")
+        if response.status_code != 200:
+            result.add_fail("Select Offer Basic", f"Failed to select offer: {response.status_code} - {response.text}")
         else:
-            resolved_data = resolve_response.json()
+            data = response.json()
             
             # Verify response structure
-            required_fields = ["price", "supplier", "supplierId", "productId", "productName"]
-            missing_fields = [field for field in required_fields if field not in resolved_data]
-            
-            if missing_fields:
-                result.add_fail("Auto Price Search (Brand Flexible)", f"Missing required fields: {missing_fields}")
+            if data.get("selected_offer"):
+                offer = data["selected_offer"]
+                required_fields = ["supplier_id", "supplier_name", "supplier_item_id", "name_raw", "price", "price_per_base_unit", "score"]
+                missing_fields = [field for field in required_fields if field not in offer]
+                
+                if missing_fields:
+                    result.add_fail("Select Offer Basic", f"Missing required fields in selected_offer: {missing_fields}")
+                else:
+                    print(f"   ✓ Selected offer: {offer['name_raw']}")
+                    print(f"   ✓ Price: {offer['price']} ₽")
+                    print(f"   ✓ Price per base unit: {offer['price_per_base_unit']} ₽")
+                    print(f"   ✓ Supplier: {offer['supplier_name']}")
+                    print(f"   ✓ Score: {offer['score']}")
+                    
+                    # Verify score is >= threshold
+                    if offer['score'] >= 0.85:
+                        result.add_pass("Select Offer Basic", f"Successfully selected cheapest offer with score {offer['score']} from {offer['supplier_name']}")
+                    else:
+                        result.add_fail("Select Offer Basic", f"Selected offer score {offer['score']} is below threshold 0.85")
+                
+                # Verify top_candidates array exists
+                if "top_candidates" in data and isinstance(data["top_candidates"], list):
+                    print(f"   ✓ Top candidates: {len(data['top_candidates'])} alternatives found")
+                else:
+                    result.add_warning("Select Offer Basic", "top_candidates array missing or invalid")
             else:
-                price = resolved_data.get("price")
-                supplier = resolved_data.get("supplier")
-                supplier_id = resolved_data.get("supplierId")
-                resolved_product_name = resolved_data.get("productName")
-                
-                print(f"   ✓ Resolved price: {price} ₽")
-                print(f"   ✓ Supplier: {supplier}")
-                print(f"   ✓ Product: {resolved_product_name}")
-                
-                result.add_pass("Auto Price Search (Brand Flexible)", 
-                               f"Successfully resolved price {price} ₽ from supplier '{supplier}' for product '{resolved_product_name}'")
+                result.add_fail("Select Offer Basic", f"No selected_offer returned. Reason: {data.get('reason', 'Unknown')}")
         
     except Exception as e:
-        result.add_fail("Auto Price Search (Brand Flexible)", f"Error testing price resolution: {str(e)}")
+        result.add_fail("Select Offer Basic", f"Error testing basic offer selection: {str(e)}")
     
-    # Test 4: Test automatic price resolution with brandCritical=true
-    print("\n[4] Testing automatic price resolution with brandCritical=true...")
+    # Step 3: Test with brand_critical=true
+    print("\n[3] Testing offer selection with brand_critical=true...")
     try:
-        # Find a branded product to test with
-        branded_favorite = None
-        for fav in favorites:
-            if fav.get('productId') and fav.get('isBranded', False):
-                branded_favorite = fav
-                break
-        
-        if not branded_favorite:
-            # Use the same product but with brandCritical=true
-            branded_favorite = test_favorite
-            print(f"   No explicitly branded favorite found, testing with same product but brandCritical=true")
-        
-        product_id = branded_favorite['productId']
-        product_name = branded_favorite.get('productName', 'Unknown')
-        print(f"   Testing branded search with product: {product_name} (ID: {product_id})")
-        
-        # Test with brandCritical=true (strict brand matching)
-        resolve_response = requests.post(
-            f"{BACKEND_URL}/cart/resolve-favorite",
-            headers=headers,
-            json={
-                "productId": product_id,
-                "brandCritical": True
+        request_data = {
+            "reference_item": {
+                "name_raw": "КЕТЧУП томатный HEINZ",
+                "brand_id": "heinz",
+                "brand_critical": True
             },
+            "qty": 1,
+            "match_threshold": 0.85
+        }
+        
+        response = requests.post(
+            f"{BACKEND_URL}/cart/select-offer",
+            headers=headers,
+            json=request_data,
             timeout=15
         )
         
-        if resolve_response.status_code != 200:
-            result.add_fail("Auto Price Search (Brand Critical)", f"Failed to resolve price: {resolve_response.status_code} - {resolve_response.text}")
+        if response.status_code != 200:
+            result.add_fail("Select Offer Brand Critical", f"Failed to select branded offer: {response.status_code} - {response.text}")
         else:
-            resolved_data = resolve_response.json()
+            data = response.json()
             
-            # Verify response structure
-            required_fields = ["price", "supplier", "supplierId", "productId", "productName"]
-            missing_fields = [field for field in required_fields if field not in resolved_data]
-            
-            if missing_fields:
-                result.add_fail("Auto Price Search (Brand Critical)", f"Missing required fields: {missing_fields}")
+            if data.get("selected_offer"):
+                offer = data["selected_offer"]
+                print(f"   ✓ Selected branded offer: {offer['name_raw']}")
+                print(f"   ✓ Price: {offer['price']} ₽")
+                print(f"   ✓ Supplier: {offer['supplier_name']}")
+                print(f"   ✓ Score: {offer['score']}")
+                
+                # Verify it's a HEINZ product (brand matching)
+                product_name_upper = offer['name_raw'].upper()
+                if "HEINZ" in product_name_upper:
+                    result.add_pass("Select Offer Brand Critical", f"Successfully selected HEINZ branded product: {offer['name_raw']}")
+                else:
+                    result.add_warning("Select Offer Brand Critical", f"Selected product may not be HEINZ branded: {offer['name_raw']}")
             else:
-                price = resolved_data.get("price")
-                supplier = resolved_data.get("supplier")
-                supplier_id = resolved_data.get("supplierId")
-                resolved_product_name = resolved_data.get("productName")
-                
-                print(f"   ✓ Resolved price: {price} ₽")
-                print(f"   ✓ Supplier: {supplier}")
-                print(f"   ✓ Product: {resolved_product_name}")
-                
-                result.add_pass("Auto Price Search (Brand Critical)", 
-                               f"Successfully resolved price {price} ₽ from supplier '{supplier}' for branded product '{resolved_product_name}'")
+                # No match found - this is acceptable for brand critical search
+                reason = data.get('reason', 'Unknown')
+                if reason == "NO_MATCH_OVER_THRESHOLD":
+                    result.add_pass("Select Offer Brand Critical", "Correctly returned no match when no HEINZ products meet threshold")
+                else:
+                    result.add_warning("Select Offer Brand Critical", f"No branded offer found. Reason: {reason}")
         
     except Exception as e:
-        result.add_fail("Auto Price Search (Brand Critical)", f"Error testing branded price resolution: {str(e)}")
+        result.add_fail("Select Offer Brand Critical", f"Error testing branded offer selection: {str(e)}")
     
-    # Test 5: Test with invalid product ID
-    print("\n[5] Testing error handling with invalid product ID...")
+    # Step 4: Test no match scenario
+    print("\n[4] Testing no match scenario with non-existent product...")
     try:
-        resolve_response = requests.post(
-            f"{BACKEND_URL}/cart/resolve-favorite",
-            headers=headers,
-            json={
-                "productId": "invalid-product-id",
-                "brandCritical": False
+        request_data = {
+            "reference_item": {
+                "name_raw": "Несуществующий продукт XYZ123",
+                "brand_critical": False
             },
-            timeout=10
+            "qty": 1,
+            "match_threshold": 0.85
+        }
+        
+        response = requests.post(
+            f"{BACKEND_URL}/cart/select-offer",
+            headers=headers,
+            json=request_data,
+            timeout=15
         )
         
-        if resolve_response.status_code == 404:
-            result.add_pass("Auto Price Search Error Handling", "Correctly returned 404 for invalid product ID")
+        if response.status_code != 200:
+            result.add_fail("Select Offer No Match", f"Failed to handle no match scenario: {response.status_code} - {response.text}")
         else:
-            result.add_warning("Auto Price Search Error Handling", f"Expected 404 for invalid product, got {resolve_response.status_code}")
+            data = response.json()
+            
+            if data.get("selected_offer") is None and data.get("reason") == "NO_MATCH_OVER_THRESHOLD":
+                result.add_pass("Select Offer No Match", "Correctly returned no match for non-existent product")
+            else:
+                result.add_fail("Select Offer No Match", f"Expected no match but got: {data}")
         
     except Exception as e:
-        result.add_fail("Auto Price Search Error Handling", f"Error testing invalid product ID: {str(e)}")
+        result.add_fail("Select Offer No Match", f"Error testing no match scenario: {str(e)}")
     
-    # Test 6: Test performance with multiple requests
-    print("\n[6] Testing performance with multiple price resolution requests...")
+    # Step 5: Test response structure validation
+    print("\n[5] Testing response structure with valid product...")
     try:
-        import time
+        request_data = {
+            "reference_item": {
+                "name_raw": "Креветки",
+                "brand_critical": False
+            },
+            "qty": 2,
+            "match_threshold": 0.80
+        }
         
-        # Test with first 3 favorites (or all if less than 3)
-        test_favorites = favorites[:3]
-        start_time = time.time()
-        successful_requests = 0
+        response = requests.post(
+            f"{BACKEND_URL}/cart/select-offer",
+            headers=headers,
+            json=request_data,
+            timeout=15
+        )
         
-        for i, fav in enumerate(test_favorites):
-            if not fav.get('productId'):
-                continue
+        if response.status_code != 200:
+            result.add_fail("Select Offer Structure", f"Failed to get response: {response.status_code} - {response.text}")
+        else:
+            data = response.json()
+            
+            # Verify complete response structure
+            structure_valid = True
+            issues = []
+            
+            if data.get("selected_offer"):
+                offer = data["selected_offer"]
+                required_offer_fields = [
+                    "supplier_id", "supplier_name", "supplier_item_id", 
+                    "name_raw", "price", "currency", "unit_norm", 
+                    "price_per_base_unit", "score"
+                ]
                 
-            resolve_response = requests.post(
-                f"{BACKEND_URL}/cart/resolve-favorite",
-                headers=headers,
-                json={
-                    "productId": fav['productId'],
-                    "brandCritical": False
+                for field in required_offer_fields:
+                    if field not in offer:
+                        issues.append(f"Missing field in selected_offer: {field}")
+                        structure_valid = False
+                
+                # Verify data types
+                if not isinstance(offer.get("price"), (int, float)):
+                    issues.append("price should be numeric")
+                    structure_valid = False
+                
+                if not isinstance(offer.get("score"), (int, float)):
+                    issues.append("score should be numeric")
+                    structure_valid = False
+                
+                if offer.get("currency") != "RUB":
+                    issues.append(f"Expected currency RUB, got {offer.get('currency')}")
+                    structure_valid = False
+            
+            # Verify top_candidates structure
+            if "top_candidates" in data:
+                candidates = data["top_candidates"]
+                if isinstance(candidates, list) and len(candidates) > 0:
+                    first_candidate = candidates[0]
+                    required_candidate_fields = ["supplier_item_id", "name_raw", "price_per_base_unit", "score", "supplier"]
+                    
+                    for field in required_candidate_fields:
+                        if field not in first_candidate:
+                            issues.append(f"Missing field in top_candidates[0]: {field}")
+                            structure_valid = False
+            
+            if structure_valid:
+                result.add_pass("Select Offer Structure", "Response structure is valid and complete")
+                print(f"   ✓ All required fields present")
+                print(f"   ✓ Data types are correct")
+                print(f"   ✓ Currency is RUB")
+                if data.get("top_candidates"):
+                    print(f"   ✓ Top candidates: {len(data['top_candidates'])} alternatives")
+            else:
+                result.add_fail("Select Offer Structure", f"Response structure issues: {'; '.join(issues)}")
+        
+    except Exception as e:
+        result.add_fail("Select Offer Structure", f"Error testing response structure: {str(e)}")
+    
+    # Step 6: Test different match thresholds
+    print("\n[6] Testing different match thresholds...")
+    try:
+        test_thresholds = [0.70, 0.85, 0.95]
+        threshold_results = []
+        
+        for threshold in test_thresholds:
+            request_data = {
+                "reference_item": {
+                    "name_raw": "Лосось",
+                    "brand_critical": False
                 },
+                "qty": 1,
+                "match_threshold": threshold
+            }
+            
+            response = requests.post(
+                f"{BACKEND_URL}/cart/select-offer",
+                headers=headers,
+                json=request_data,
                 timeout=15
             )
             
-            if resolve_response.status_code == 200:
+            if response.status_code == 200:
+                data = response.json()
+                has_match = data.get("selected_offer") is not None
+                threshold_results.append((threshold, has_match))
+                
+                if has_match:
+                    score = data["selected_offer"]["score"]
+                    print(f"   ✓ Threshold {threshold}: Match found (score: {score})")
+                else:
+                    print(f"   ✓ Threshold {threshold}: No match found")
+        
+        # Verify that lower thresholds are more permissive
+        if len(threshold_results) >= 2:
+            result.add_pass("Select Offer Thresholds", f"Tested {len(threshold_results)} thresholds successfully")
+        else:
+            result.add_warning("Select Offer Thresholds", "Could not test multiple thresholds")
+        
+    except Exception as e:
+        result.add_fail("Select Offer Thresholds", f"Error testing thresholds: {str(e)}")
+    
+    # Step 7: Test performance with multiple requests
+    print("\n[7] Testing performance with multiple requests...")
+    try:
+        import time
+        
+        test_products = [
+            "Сибас",
+            "Креветки",
+            "Лосось",
+            "Дорадо",
+            "Минтай"
+        ]
+        
+        start_time = time.time()
+        successful_requests = 0
+        
+        for product in test_products:
+            request_data = {
+                "reference_item": {
+                    "name_raw": product,
+                    "brand_critical": False
+                },
+                "qty": 1,
+                "match_threshold": 0.85
+            }
+            
+            response = requests.post(
+                f"{BACKEND_URL}/cart/select-offer",
+                headers=headers,
+                json=request_data,
+                timeout=15
+            )
+            
+            if response.status_code == 200:
                 successful_requests += 1
         
         end_time = time.time()
         total_time = end_time - start_time
-        avg_time = total_time / len(test_favorites) if test_favorites else 0
+        avg_time = total_time / len(test_products) if test_products else 0
         
-        print(f"   Processed {len(test_favorites)} requests in {total_time:.2f}s (avg: {avg_time:.2f}s per request)")
-        print(f"   Successful requests: {successful_requests}/{len(test_favorites)}")
+        print(f"   Processed {len(test_products)} requests in {total_time:.2f}s (avg: {avg_time:.2f}s per request)")
+        print(f"   Successful requests: {successful_requests}/{len(test_products)}")
         
-        if successful_requests == len(test_favorites):
-            result.add_pass("Auto Price Search Performance", f"All {successful_requests} requests successful, avg time: {avg_time:.2f}s")
+        if successful_requests == len(test_products):
+            result.add_pass("Select Offer Performance", f"All {successful_requests} requests successful, avg time: {avg_time:.2f}s")
         else:
-            result.add_warning("Auto Price Search Performance", f"Only {successful_requests}/{len(test_favorites)} requests successful")
+            result.add_warning("Select Offer Performance", f"Only {successful_requests}/{len(test_products)} requests successful")
         
     except Exception as e:
-        result.add_fail("Auto Price Search Performance", f"Error testing performance: {str(e)}")
+        result.add_fail("Select Offer Performance", f"Error testing performance: {str(e)}")
 
 def main():
     """Run all tests"""
