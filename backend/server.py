@@ -2373,7 +2373,7 @@ async def resolve_favorite_price(data: dict, current_user: dict = Depends(get_cu
         original_price=float('inf'),  # No price limit - find cheapest overall
         all_items=all_items,
         strict_brand_override=brand_critical,  # Respect brandCritical flag
-        similarity_threshold=0.85  # NEW: 85% threshold as per requirements
+        similarity_threshold=0.65  # 65% threshold as per requirements
     )
     
     if winner:
