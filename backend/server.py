@@ -2351,21 +2351,17 @@ async def resolve_favorite_price(data: dict, current_user: dict = Depends(get_cu
     from matching.hybrid_matcher import find_best_match_hybrid
     
     product_id = data.get('productId')
-    product_name = data.get('productName')
     brand_critical = data.get('brandCritical', False)  # NEW: use brandCritical instead of brandMode
-    is_branded = data.get('isBranded', False)
     
     # Get product
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    # Get original price for reference
+    # Get original pricelist for reference (needed for fallback)
     original_pl = await db.pricelists.find_one({"productId": product_id}, {"_id": 0})
     if not original_pl:
         raise HTTPException(status_code=404, detail="Product not available")
-    
-    original_price = original_pl['price']
     
     # ALWAYS use hybrid matcher to find best price!
     # Even for same product - different suppliers may have different prices
