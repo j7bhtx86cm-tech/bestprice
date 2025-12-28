@@ -74,7 +74,7 @@ export const CustomerCart = () => {
   };
 
   const getCartTotal = () => {
-    return cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return cartItems.reduce((sum, item) => sum + (item.price * (item.quantity || item.qty || 1)), 0);
   };
 
   const groupBySupplier = () => {
