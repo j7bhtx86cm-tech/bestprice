@@ -108,7 +108,8 @@ def extract_key_identifiers(name: str) -> set:
 
 
 def find_best_match_hybrid(query_product_name: str, original_price: float, 
-                           all_items: List[Dict], strict_brand_override: bool = False) -> Optional[Dict]:
+                           all_items: List[Dict], strict_brand_override: bool = False,
+                           similarity_threshold: float = None) -> Optional[Dict]:
     """Hybrid matching: Spec infrastructure + Simple logic + STRICT validation
     
     Rules:
@@ -119,6 +120,13 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
     11. MEAT TYPE STRICT (NEW!)
     12. SAUCE TYPE STRICT (NEW!)
     13. NAME SIMILARITY for broad categories (NEW!)
+    
+    Args:
+        query_product_name: Product name to match
+        original_price: Maximum price to consider (use float('inf') for no limit)
+        all_items: List of supplier items to search
+        strict_brand_override: If True, only match same brand
+        similarity_threshold: Override default similarity threshold (0.85 = 85%)
     
     Returns winner or None
     """
@@ -169,8 +177,8 @@ def find_best_match_hybrid(query_product_name: str, original_price: float,
         if item.get('base_price_unknown'):
             continue
         
-        # Gate 4: Must be cheaper
-        if item.get('price', 999999) >= original_price:
+        # Gate 4: Must be cheaper (or equal if no price limit)
+        if original_price != float('inf') and item.get('price', 999999) >= original_price:
             continue
         
         # Gate 5: Caliber MUST match (if query has caliber)
