@@ -2334,17 +2334,25 @@ async def remove_from_favorites(favorite_id: str, current_user: dict = Depends(g
 
 @api_router.post("/cart/resolve-favorite")
 async def resolve_favorite_price(data: dict, current_user: dict = Depends(get_current_user)):
-    """Resolve best price for favorite - uses Hybrid Matcher for alternatives
+    """AUTOMATIC best price search when adding from favorites to cart
     
-    NEW LOGIC:
-    - If brandMode=STRICT: find cheapest of SAME product (same productId)
-    - If brandMode=ANY: use Hybrid Matcher to find cheapest alternative
+    NEW LOGIC (Per user requirements):
+    1. Product is used as reference (эталон)
+    2. System automatically analyzes ALL supplier prices
+    3. Finds products with ≥85% match using BestPrice logic
+    4. Converts price to base unit (kg/l/pcs)
+    5. Selects lowest price from matching products
+    6. Returns OPTIMIZED product (not specific supplier's item)
+    
+    brandCritical parameter:
+    - If TRUE: search only same brand (supplier can change)
+    - If FALSE: brand is not a constraint, allow analogs, choose by max match + min price
     """
     from matching.hybrid_matcher import find_best_match_hybrid
     
     product_id = data.get('productId')
     product_name = data.get('productName')
-    brand_mode = data.get('brandMode', 'STRICT')
+    brand_critical = data.get('brandCritical', False)  # NEW: use brandCritical instead of brandMode
     is_branded = data.get('isBranded', False)
     
     # Get product
@@ -2352,17 +2360,46 @@ async def resolve_favorite_price(data: dict, current_user: dict = Depends(get_cu
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    # Get original price
+    # Get original price for reference
     original_pl = await db.pricelists.find_one({"productId": product_id}, {"_id": 0})
     if not original_pl:
         raise HTTPException(status_code=404, detail="Product not available")
     
     original_price = original_pl['price']
     
-    # Apply logic based on brandMode
-    if brand_mode == 'STRICT' or not is_branded:
-        # STRICT mode or commodity: find cheapest of EXACT product
+    # ALWAYS use hybrid matcher to find best price!
+    # Even for same product - different suppliers may have different prices
+    all_items = await db.supplier_items.find({"active": True}, {"_id": 0}).to_list(15000)
+    
+    # Use matcher with strict_brand based on brandCritical flag
+    winner = find_best_match_hybrid(
+        query_product_name=product['name'],
+        original_price=float('inf'),  # No price limit - find cheapest overall
+        all_items=all_items,
+        strict_brand_override=brand_critical,  # Respect brandCritical flag
+        similarity_threshold=0.85  # NEW: 85% threshold as per requirements
+    )
+    
+    if winner:
+        # Found match - use winner's price and supplier
+        companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+        companies_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+        
+        supplier_name = companies_map.get(winner['supplier_company_id'], 'Unknown')
+        
+        return {
+            "price": winner['price'],
+            "supplier": supplier_name,
+            "supplierId": winner['supplier_company_id'],
+            "productId": winner.get('product_id', product_id),
+            "productName": winner['name_raw']
+        }
+    else:
+        # No match found - fall back to cheapest of exact same product
         pricelists = await db.pricelists.find({"productId": product_id}, {"_id": 0}).to_list(100)
+        if not pricelists:
+            raise HTTPException(status_code=404, detail="No suppliers found for this product")
+        
         pricelists.sort(key=lambda x: x['price'])
         best_pl = pricelists[0]
         
@@ -2373,45 +2410,9 @@ async def resolve_favorite_price(data: dict, current_user: dict = Depends(get_cu
             "price": best_pl['price'],
             "supplier": supplier_name,
             "supplierId": best_pl['supplierId'],
+            "productId": product_id,
             "productName": product['name']
         }
-    
-    else:
-        # ANY mode: use Hybrid Matcher to find alternatives
-        all_items = await db.supplier_items.find({"active": True}, {"_id": 0}).to_list(15000)
-        
-        # Use matcher with strict_brand=False (ignore brand)
-        winner = find_best_match_hybrid(
-            query_product_name=product['name'],
-            original_price=original_price,
-            all_items=all_items,
-            strict_brand_override=False  # Ignore brand
-        )
-        
-        if winner and winner['price'] < original_price:
-            # Found cheaper alternative!
-            companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
-            companies_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
-            
-            supplier_name = companies_map.get(winner['supplier_company_id'], 'Unknown')
-            
-            return {
-                "price": winner['price'],
-                "supplier": supplier_name,
-                "supplierId": winner['supplier_company_id'],
-                "productName": winner['name_raw']
-            }
-        else:
-            # No cheaper found - use original
-            supplier = await db.companies.find_one({"id": original_pl['supplierId']}, {"_id": 0})
-            supplier_name = supplier.get('companyName') or supplier.get('name', 'Unknown') if supplier else 'Unknown'
-            
-            return {
-                "price": original_price,
-                "supplier": supplier_name,
-                "supplierId": original_pl['supplierId'],
-                "productName": product['name']
-            }
 
 
 @api_router.post("/favorites/order")
