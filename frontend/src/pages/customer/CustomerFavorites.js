@@ -131,6 +131,7 @@ export const CustomerFavorites = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [addingToCart, setAddingToCart] = useState(null); // Track which item is being added
   const [draggedItem, setDraggedItem] = useState(null);
 
   useEffect(() => {
