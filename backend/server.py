@@ -2451,17 +2451,49 @@ class SelectOfferResponse(BaseModel):
 def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool) -> float:
     """Calculate match score between reference item and candidate
     
-    Score components (NEW WEIGHTS):
-    - Name similarity (Jaccard): 60% (increased - main factor)
+    Score components:
+    - Name similarity (with synonyms): 60%
     - Super class match: 15%
     - Weight/volume tolerance: 15%
     - Brand match bonus: 10%
     
-    Minimum score for missing data: gives partial credit when info unavailable
+    SYNONYMS (equivalents):
+    - неразделанный = непотрошеный = целый = тушка
+    - с/м = с/г = зам = свежемороженый = frozen
+    - инд.зам. = индивид.заморозка (not a conflict)
     """
     score = 0.0
     
-    # 1. Name similarity (Jaccard on tokens) - 60%
+    # SYNONYMS - groups of equivalent terms
+    SYNONYM_GROUPS = [
+        {'неразделан', 'непотрош', 'целый', 'тушка', 'целик'},  # Fish state
+        {'с/м', 'с/г', 'зам', 'свежеморож', 'мороженый', 'frozen', 'заморож'},  # Frozen states
+        {'инд', 'индивид'},  # Individual
+        {'охл', 'охлажд', 'chilled'},  # Chilled
+        {'филе', 'fillet'},  # Fillet
+        {'стейк', 'steak'},  # Steak
+    ]
+    
+    def normalize_with_synonyms(tokens: set) -> set:
+        """Replace synonyms with canonical form (first in group)"""
+        result = set()
+        for token in tokens:
+            token_lower = token.lower()
+            found = False
+            for group in SYNONYM_GROUPS:
+                for syn in group:
+                    if syn in token_lower:
+                        # Use first synonym in group as canonical
+                        result.add(list(group)[0])
+                        found = True
+                        break
+                if found:
+                    break
+            if not found:
+                result.add(token_lower)
+        return result
+    
+    # 1. Name similarity (with synonyms) - 60%
     ref_name = reference.get('name_norm') or reference.get('name_raw', '').lower()
     cand_name = (candidate.get('name_norm') or candidate.get('name_raw', '')).lower()
     
@@ -2471,17 +2503,21 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
     
     # Remove common filler words
     fillers = {'кг', 'кг/кор.', 'кг/кор', 'гр', 'гр.', 'г', 'г.', 'л', 'л.', 'мл', 'мл.', 
-               'шт', 'шт.', 'упак', 'упак.', 'пакет', 'вес', '~', 'и', 'в', 'с', 'на',
-               'инд.', 'зам.', 'охл.', 'с/м', 'с/г', '%'}
+               'шт', 'шт.', 'упак', 'упак.', 'пакет', 'вес', '~', 'и', 'в', 'с', 'на', 'к',
+               'инд.', 'зам.', 'охл.', '%', '5%', '23-0095', 'tr', 'tr-09-0036', '(-c-)'}
     ref_tokens = ref_tokens - fillers
     cand_tokens = cand_tokens - fillers
     
-    if ref_tokens and cand_tokens:
-        intersection = len(ref_tokens & cand_tokens)
-        # Use reference as base for coverage (what % of reference words found)
-        coverage = intersection / len(ref_tokens) if ref_tokens else 0
-        jaccard = intersection / len(ref_tokens | cand_tokens) if (ref_tokens | cand_tokens) else 0
-        # Blend coverage and jaccard (coverage more important)
+    # Normalize with synonyms
+    ref_normalized = normalize_with_synonyms(ref_tokens)
+    cand_normalized = normalize_with_synonyms(cand_tokens)
+    
+    if ref_normalized and cand_normalized:
+        intersection = len(ref_normalized & cand_normalized)
+        # Use reference as base for coverage
+        coverage = intersection / len(ref_normalized) if ref_normalized else 0
+        jaccard = intersection / len(ref_normalized | cand_normalized) if (ref_normalized | cand_normalized) else 0
+        # Blend coverage and jaccard
         name_score = coverage * 0.7 + jaccard * 0.3
         score += name_score * 0.60
     
@@ -2494,7 +2530,6 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
         elif ref_class.split('.')[0] == cand_class.split('.')[0]:
             score += 0.08
     elif not ref_class:
-        # No reference class - assume match OK, give partial credit
         score += 0.10
     
     # 3. Weight/volume tolerance (±20%) - 15%
@@ -2507,7 +2542,6 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
             tolerance_score = 1.0 - abs(1.0 - ratio) / 0.2
             score += tolerance_score * 0.15
     elif not ref_weight:
-        # No reference weight - give partial credit
         score += 0.10
     
     # 4. Brand match - 10%
@@ -2518,10 +2552,10 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
         if ref_brand.lower() == cand_brand.lower():
             score += 0.10
     elif not ref_brand:
-        # No brand requirement - full credit
         score += 0.10
     
     return round(score, 4)
+
 
 
 @api_router.post("/cart/select-offer", response_model=SelectOfferResponse)
