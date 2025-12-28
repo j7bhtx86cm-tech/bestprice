@@ -664,6 +664,7 @@ test_plan:
     - "Best Price Toggle Functionality in Favorites"
     - "Automatic Best Price Search from Favorites"
     - "NEW /api/cart/select-offer Endpoint"
+    - "FIXED /api/cart/select-offer Endpoint - Cheapest Offer Selection"
 
 agent_communication:
   - agent: "testing"
