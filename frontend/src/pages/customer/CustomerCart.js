@@ -258,7 +258,7 @@ export const CustomerCart = () => {
               <div className="mt-4 pt-4 border-t flex justify-between items-center">
                 <span className="font-medium">Итого у {supplier}:</span>
                 <span className="text-xl font-bold">
-                  {items.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString('ru-RU')} ₽
+                  {items.reduce((sum, i) => sum + (i.price * (i.quantity || i.qty || 1)), 0).toLocaleString('ru-RU')} ₽
                 </span>
               </div>
             </Card>
