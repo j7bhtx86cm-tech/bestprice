@@ -49,8 +49,9 @@ export const CustomerCart = () => {
   const updateQuantity = (cartId, delta) => {
     const updated = cartItems.map(item => {
       if (item.cartId === cartId) {
-        const newQty = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQty };
+        const currentQty = item.quantity || item.qty || 1;
+        const newQty = Math.max(1, currentQty + delta);
+        return { ...item, quantity: newQty, qty: newQty };  // Update both fields
       }
       return item;
     });
