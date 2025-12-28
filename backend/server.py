@@ -2654,16 +2654,16 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             selected_offer=None,
             reason="NO_MATCH_OVER_THRESHOLD"
         )
-            reason="NO_MATCH_OVER_THRESHOLD"
-        )
     
-    # Sort by price_per_base_unit (cheapest first), then by score (highest first)
+    # Sort by price (cheapest first), then by score (highest first)
     candidates.sort(key=lambda x: (
-        x['item'].get('price_per_base_unit') or float('inf'),
+        x['item'].get('price') or float('inf'),
         -x['score']
     ))
     
-    # Select winner
+    logger.info(f"✅ Found {len(candidates)} candidates, cheapest: {candidates[0]['item']['price']:.2f}₽")
+    
+    # Select winner (ALWAYS cheapest!)
     winner = candidates[0]
     winner_item = winner['item']
     
@@ -2674,7 +2674,7 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
         name_raw=winner_item['name_raw'],
         price=winner_item['price'],
         currency="RUB",
-        unit_norm=winner_item.get('unit_norm', 'pcs'),
+        unit_norm=winner_item.get('unit_norm', 'kg'),
         pack_value=winner_item.get('net_weight_kg') or winner_item.get('net_volume_l'),
         pack_unit=winner_item.get('base_unit', 'kg'),
         price_per_base_unit=winner_item.get('price_per_base_unit'),
