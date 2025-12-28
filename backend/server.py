@@ -2531,20 +2531,26 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
     This is the CORE endpoint for automatic best price selection.
     
     Logic:
-    1. Find candidates among all supplier_items
-    2. Filter by super_class and unit_norm (fast filter)
-    3. Score each candidate against reference_item
-    4. Apply threshold (default 0.85)
-    5. If brand_critical=true: only keep same brand_id
-    6. Select cheapest by price_per_base_unit
+    1. Find candidates among all products + pricelists
+    2. Score each candidate against reference_item
+    3. Apply threshold (default 0.85)
+    4. If brand_critical=true: only keep same brand_id
+    5. Select cheapest by price
+    
+    DEBUG: Logs scoring details for troubleshooting
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     ref = request.reference_item.model_dump()
     threshold = request.match_threshold
     brand_critical = ref.get('brand_critical', False)
     
+    logger.info(f"🔍 SELECT_BEST_OFFER: ref='{ref.get('name_raw')[:50]}', threshold={threshold}, brand_critical={brand_critical}")
+    
     # Enrich reference item if needed
     from pipeline.normalizer import normalize_name
-    from pipeline.enricher import extract_super_class, extract_weights
+    from pipeline.enricher import extract_super_class, extract_weights, extract_brand
     
     if not ref.get('name_norm'):
         ref['name_norm'] = normalize_name(ref['name_raw'])
@@ -2556,30 +2562,70 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
         weight_data = extract_weights(ref['name_raw'])
         ref['pack_value'] = weight_data.get('net_weight_kg')
     
-    # Load all supplier items
-    all_items = await db.supplier_items.find({"active": True}, {"_id": 0}).to_list(15000)
-    
     # Load company names map
     companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
     company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
     
-    # Filter and score candidates
-    candidates = []
+    # Load ALL products and pricelists (actual data source)
+    all_products = await db.products.find({}, {"_id": 0}).to_list(10000)
+    all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(20000)
     
-    for item in all_items:
-        # Skip items with unknown base price
-        if item.get('base_price_unknown'):
+    # Build product lookup
+    product_map = {p['id']: p for p in all_products}
+    
+    # Build items list with price info (products + pricelists joined)
+    all_items = []
+    for pl in all_pricelists:
+        product = product_map.get(pl['productId'])
+        if not product:
             continue
         
-        # Fast filter: super_class match (if known)
-        if ref.get('super_class') and item.get('super_class'):
-            if ref['super_class'] != item['super_class']:
-                # Allow partial category match
-                if ref['super_class'].split('.')[0] != item['super_class'].split('.')[0]:
-                    continue
+        # Enrich product with pricelist data
+        item = {
+            'id': pl['id'],
+            'product_id': product['id'],
+            'name_raw': product.get('name', ''),
+            'name_norm': normalize_name(product.get('name', '')),
+            'price': pl['price'],
+            'price_per_base_unit': pl['price'],  # Default - will be recalculated if weight found
+            'supplier_company_id': pl['supplierId'],
+            'unit_norm': product.get('unit', 'kg'),
+            'super_class': extract_super_class(normalize_name(product.get('name', ''))),
+            'brand_id': None,  # Will extract below
+        }
         
+        # Extract weight for price_per_base_unit calculation
+        weight_data = extract_weights(product.get('name', ''))
+        net_weight = weight_data.get('net_weight_kg')
+        if net_weight and net_weight > 0:
+            item['net_weight_kg'] = net_weight
+            item['price_per_base_unit'] = pl['price'] / net_weight
+        
+        # Extract brand
+        brand = extract_brand(product.get('name', ''))
+        if brand:
+            item['brand_id'] = brand.lower()
+        
+        all_items.append(item)
+    
+    logger.info(f"📊 Loaded {len(all_items)} items from products+pricelists")
+    
+    # Filter and score candidates
+    candidates = []
+    debug_scores = []  # For logging
+    
+    for item in all_items:
         # Calculate score
         score = calculate_match_score(ref, item, brand_critical)
+        
+        # Log high scores for debugging
+        if score >= 0.5:
+            debug_scores.append({
+                'name': item['name_raw'][:50],
+                'score': score,
+                'price': item['price'],
+                'supplier': company_map.get(item['supplier_company_id'], 'Unknown')
+            })
         
         # Apply threshold
         if score < threshold:
@@ -2595,9 +2641,19 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             'score': score
         })
     
+    # Log debug info
+    if debug_scores:
+        debug_scores.sort(key=lambda x: -x['score'])
+        logger.info(f"🎯 Top scores for '{ref.get('name_raw')[:30]}':")
+        for d in debug_scores[:5]:
+            logger.info(f"   {d['score']:.2f} | {d['price']:>8.2f}₽ | {d['supplier'][:12]} | {d['name']}")
+    
     if not candidates:
+        logger.warning(f"❌ NO MATCH for '{ref.get('name_raw')[:50]}' with threshold {threshold}")
         return SelectOfferResponse(
             selected_offer=None,
+            reason="NO_MATCH_OVER_THRESHOLD"
+        )
             reason="NO_MATCH_OVER_THRESHOLD"
         )
     
