@@ -65,12 +65,8 @@ export const CustomerCart = () => {
   };
 
   const saveCart = (items) => {
-    // Split back into catalog and favorite carts
-    const catalogItems = items.filter(i => !i.favoriteId);
-    const favoriteItems = items.filter(i => i.favoriteId);
-    
-    localStorage.setItem('catalogCart', JSON.stringify(catalogItems));
-    localStorage.setItem('favoriteCart', JSON.stringify(favoriteItems));
+    // Save all items to catalogCart (unified cart)
+    localStorage.setItem('catalogCart', JSON.stringify(items));
   };
 
   const getCartTotal = () => {
