@@ -2411,6 +2411,239 @@ async def resolve_favorite_price(data: dict, current_user: dict = Depends(get_cu
         }
 
 
+# ==================== NEW: SELECT BEST OFFER ENDPOINT ====================
+class ReferenceItem(BaseModel):
+    """Reference item (эталон) from favorites"""
+    name_raw: str
+    name_norm: Optional[str] = None
+    tokens: Optional[List[str]] = None
+    super_class: Optional[str] = None
+    unit_norm: Optional[str] = None  # kg, l, pcs, box
+    pack_value: Optional[float] = None
+    pack_unit: Optional[str] = None  # kg, l, pcs
+    brand_id: Optional[str] = None
+    brand_critical: bool = False
+
+class SelectOfferRequest(BaseModel):
+    reference_item: ReferenceItem
+    qty: int = 1
+    match_threshold: float = 0.85
+
+class SelectedOffer(BaseModel):
+    supplier_id: str
+    supplier_name: str
+    supplier_item_id: str
+    name_raw: str  # Actual product name
+    price: float
+    currency: str = "RUB"
+    unit_norm: str
+    pack_value: Optional[float] = None
+    pack_unit: Optional[str] = None
+    price_per_base_unit: Optional[float] = None
+    score: float
+
+class SelectOfferResponse(BaseModel):
+    selected_offer: Optional[SelectedOffer] = None
+    top_candidates: Optional[List[dict]] = None
+    reason: Optional[str] = None
+
+
+def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool) -> float:
+    """Calculate match score between reference item and candidate
+    
+    Score components:
+    - Name similarity (Jaccard): 40%
+    - Super class match: 25%
+    - Unit match: 15%
+    - Weight/volume tolerance: 15%
+    - Brand match bonus: 5%
+    """
+    score = 0.0
+    
+    # 1. Name similarity (Jaccard on tokens) - 40%
+    ref_name = reference.get('name_norm') or reference.get('name_raw', '').lower()
+    cand_name = (candidate.get('name_norm') or candidate.get('name_raw', '')).lower()
+    
+    # Tokenize
+    ref_tokens = set(ref_name.split())
+    cand_tokens = set(cand_name.split())
+    
+    # Remove common filler words
+    fillers = {'кг', 'гр', 'г', 'л', 'мл', 'шт', 'упак', 'пакет', 'вес', '~', 'и', 'в', 'с'}
+    ref_tokens = ref_tokens - fillers
+    cand_tokens = cand_tokens - fillers
+    
+    if ref_tokens and cand_tokens:
+        intersection = len(ref_tokens & cand_tokens)
+        union = len(ref_tokens | cand_tokens)
+        jaccard = intersection / union if union > 0 else 0
+        score += jaccard * 0.40
+    
+    # 2. Super class match - 25%
+    ref_class = reference.get('super_class')
+    cand_class = candidate.get('super_class')
+    if ref_class and cand_class:
+        if ref_class == cand_class:
+            score += 0.25
+        elif ref_class.split('.')[0] == cand_class.split('.')[0]:
+            # Partial match (same main category)
+            score += 0.10
+    
+    # 3. Unit match - 15%
+    ref_unit = reference.get('unit_norm') or reference.get('pack_unit')
+    cand_unit = candidate.get('unit_norm') or candidate.get('base_unit')
+    if ref_unit and cand_unit:
+        if ref_unit == cand_unit:
+            score += 0.15
+        elif (ref_unit in ['kg', 'g'] and cand_unit in ['kg', 'g']) or \
+             (ref_unit in ['l', 'ml'] and cand_unit in ['l', 'ml']):
+            score += 0.10
+    
+    # 4. Weight/volume tolerance (±20%) - 15%
+    ref_weight = reference.get('pack_value') or reference.get('net_weight_kg')
+    cand_weight = candidate.get('net_weight_kg') or candidate.get('net_volume_l')
+    
+    if ref_weight and cand_weight and ref_weight > 0:
+        ratio = cand_weight / ref_weight
+        if 0.8 <= ratio <= 1.2:  # Within 20%
+            # Perfect weight match = full points, edge = less
+            tolerance_score = 1.0 - abs(1.0 - ratio) / 0.2
+            score += tolerance_score * 0.15
+    elif not ref_weight:
+        # No reference weight - give partial credit
+        score += 0.08
+    
+    # 5. Brand match - 5%
+    ref_brand = reference.get('brand_id')
+    cand_brand = candidate.get('brand_id')
+    
+    if ref_brand and cand_brand and ref_brand.lower() == cand_brand.lower():
+        score += 0.05
+    elif not ref_brand:
+        # No brand requirement - partial credit
+        score += 0.02
+    
+    return round(score, 4)
+
+
+@api_router.post("/cart/select-offer", response_model=SelectOfferResponse)
+async def select_best_offer(request: SelectOfferRequest, current_user: dict = Depends(get_current_user)):
+    """Select best offer (cheapest matching item) from all suppliers
+    
+    This is the CORE endpoint for automatic best price selection.
+    
+    Logic:
+    1. Find candidates among all supplier_items
+    2. Filter by super_class and unit_norm (fast filter)
+    3. Score each candidate against reference_item
+    4. Apply threshold (default 0.85)
+    5. If brand_critical=true: only keep same brand_id
+    6. Select cheapest by price_per_base_unit
+    """
+    ref = request.reference_item.model_dump()
+    threshold = request.match_threshold
+    brand_critical = ref.get('brand_critical', False)
+    
+    # Enrich reference item if needed
+    from pipeline.normalizer import normalize_name
+    from pipeline.enricher import extract_super_class, extract_weights
+    
+    if not ref.get('name_norm'):
+        ref['name_norm'] = normalize_name(ref['name_raw'])
+    
+    if not ref.get('super_class'):
+        ref['super_class'] = extract_super_class(ref['name_norm'])
+    
+    if not ref.get('pack_value'):
+        weight_data = extract_weights(ref['name_raw'])
+        ref['pack_value'] = weight_data.get('net_weight_kg')
+    
+    # Load all supplier items
+    all_items = await db.supplier_items.find({"active": True}, {"_id": 0}).to_list(15000)
+    
+    # Load company names map
+    companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+    company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+    
+    # Filter and score candidates
+    candidates = []
+    
+    for item in all_items:
+        # Skip items with unknown base price
+        if item.get('base_price_unknown'):
+            continue
+        
+        # Fast filter: super_class match (if known)
+        if ref.get('super_class') and item.get('super_class'):
+            if ref['super_class'] != item['super_class']:
+                # Allow partial category match
+                if ref['super_class'].split('.')[0] != item['super_class'].split('.')[0]:
+                    continue
+        
+        # Calculate score
+        score = calculate_match_score(ref, item, brand_critical)
+        
+        # Apply threshold
+        if score < threshold:
+            continue
+        
+        # Brand critical filter
+        if brand_critical and ref.get('brand_id'):
+            if not item.get('brand_id') or item['brand_id'].lower() != ref['brand_id'].lower():
+                continue
+        
+        candidates.append({
+            'item': item,
+            'score': score
+        })
+    
+    if not candidates:
+        return SelectOfferResponse(
+            selected_offer=None,
+            reason="NO_MATCH_OVER_THRESHOLD"
+        )
+    
+    # Sort by price_per_base_unit (cheapest first), then by score (highest first)
+    candidates.sort(key=lambda x: (
+        x['item'].get('price_per_base_unit') or float('inf'),
+        -x['score']
+    ))
+    
+    # Select winner
+    winner = candidates[0]
+    winner_item = winner['item']
+    
+    selected = SelectedOffer(
+        supplier_id=winner_item['supplier_company_id'],
+        supplier_name=company_map.get(winner_item['supplier_company_id'], 'Unknown'),
+        supplier_item_id=winner_item['id'],
+        name_raw=winner_item['name_raw'],
+        price=winner_item['price'],
+        currency="RUB",
+        unit_norm=winner_item.get('unit_norm', 'pcs'),
+        pack_value=winner_item.get('net_weight_kg') or winner_item.get('net_volume_l'),
+        pack_unit=winner_item.get('base_unit', 'kg'),
+        price_per_base_unit=winner_item.get('price_per_base_unit'),
+        score=winner['score']
+    )
+    
+    # Top candidates (max 5)
+    top = []
+    for c in candidates[:5]:
+        top.append({
+            'supplier_item_id': c['item']['id'],
+            'name_raw': c['item']['name_raw'],
+            'price_per_base_unit': c['item'].get('price_per_base_unit'),
+            'score': c['score'],
+            'supplier': company_map.get(c['item']['supplier_company_id'], 'Unknown')
+        })
+    
+    return SelectOfferResponse(
+        selected_offer=selected,
+        top_candidates=top
+    )
+
+
 @api_router.post("/favorites/order")
 async def order_from_favorites(data: dict, current_user: dict = Depends(get_current_user)):
     """Create orders from favorites with HYBRID MATCHER + MVP minimum order logic
