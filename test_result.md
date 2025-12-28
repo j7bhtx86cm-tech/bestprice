@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the complete 'Best Price' catalog and order placement flow for the BestPrice B2B marketplace"
+user_problem_statement: "Test the complete 'Best Price' catalog and order placement flow for the BestPrice B2B marketplace. NEW: Test automatic best price search when adding from favorites to cart."
 
 frontend:
   - task: "Customer Login Flow"
