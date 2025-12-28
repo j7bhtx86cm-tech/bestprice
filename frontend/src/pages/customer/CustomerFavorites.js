@@ -312,39 +312,8 @@ export const CustomerFavorites = () => {
         <div>
           <h2 className="text-4xl font-bold mb-2">Избранное</h2>
           <p className="text-base text-muted-foreground">
-            Быстрый заказ часто используемых товаров
+            Быстрый заказ часто используемых товаров • При добавлении автоматически ищется лучшая цена
           </p>
-        </div>
-        <div className="flex items-center gap-4">
-          {/* Global Best Price Toggle */}
-          {favorites.length > 0 && (
-            <div className="flex items-center gap-3 p-3 border rounded-lg bg-white">
-              <div className="text-right">
-                <p className="text-sm font-medium">Искать лучшую цену для всех</p>
-                <p className="text-xs text-gray-500">Включить для всех товаров</p>
-              </div>
-              <Switch
-                checked={favorites.every(f => f.mode === 'cheapest')}
-                onCheckedChange={async (checked) => {
-                  const mode = checked ? 'cheapest' : 'exact';
-                  const token = localStorage.getItem('token');
-                  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                  
-                  // Update all favorites
-                  for (const fav of favorites) {
-                    try {
-                      await axios.put(`${API}/favorites/${fav.id}/mode`, { mode }, { headers });
-                    } catch (err) {
-                      console.error('Failed to update mode:', err);
-                    }
-                  }
-                  
-                  // Refresh
-                  fetchFavorites();
-                }}
-              />
-            </div>
-          )}
         </div>
       </div>
 
