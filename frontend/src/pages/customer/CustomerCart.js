@@ -196,8 +196,8 @@ export const CustomerCart = () => {
                     <div className="flex-1">
                       <p className="font-medium">{item.productName}</p>
                       {item.source === 'favorites' && (
-                        <p className="text-xs text-blue-600">
-                          {item.brandMode === 'ANY' ? '🔄 Подобран автоматически' : '✓ Выбранный бренд'}
+                        <p className="text-xs text-green-600">
+                          ✓ Оптимизировано автоматически
                         </p>
                       )}
                       <p className="text-sm text-gray-600">
