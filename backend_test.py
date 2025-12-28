@@ -975,7 +975,7 @@ def main():
     """Run all tests"""
     print("\n" + "="*80)
     print("BESTPRICE B2B MARKETPLACE - BACKEND API TESTING")
-    print("Testing 4 User Portals + NEW Automatic Best Price Search Feature")
+    print("Testing 4 User Portals + NEW /api/cart/select-offer Endpoint")
     print("="*80)
     
     # Test all portals
@@ -984,8 +984,8 @@ def main():
     test_chef()
     test_supplier()
     
-    # Test NEW automatic best price search feature
-    test_automatic_best_price_search()
+    # Test NEW /api/cart/select-offer endpoint
+    test_new_select_offer_endpoint()
     
     # Print summary
     result.print_summary()
