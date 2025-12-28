@@ -193,10 +193,13 @@ export const CustomerFavorites = () => {
     }
   };
 
-  const onBrandModeChange = async (favoriteId, brandMode) => {
+  // NEW: Handler for brand critical toggle (inverted logic from old brandMode)
+  const onBrandCriticalChange = async (favoriteId, brandCritical) => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      // brandCritical=true means STRICT, brandCritical=false means ANY
+      const brandMode = brandCritical ? 'STRICT' : 'ANY';
       await axios.put(`${API}/favorites/${favoriteId}/brand-mode`, { brandMode }, { headers });
       fetchFavorites();
     } catch (error) {
@@ -204,27 +207,10 @@ export const CustomerFavorites = () => {
     }
   };
 
-  const addToCart = (favorite) => {
-    // NEW LOGIC: Add as INTENTION (no price yet)
-    // Cart will resolve best price based on brandMode
-    const cartItem = {
-      cartId: `fav_${favorite.id}_${Date.now()}`,
-      source: 'favorites',  // Mark as from favorites for cart logic
-      favoriteId: favorite.id,
-      productId: favorite.productId,
-      productName: favorite.productName,
-      quantity: 1,
-      unit: favorite.unit,
-      isBranded: favorite.isBranded || false,
-      brandMode: favorite.brandMode || 'STRICT',  // STRICT or ANY
-      brand: favorite.brand || null,
-      // NO price, NO supplier - cart will determine these
-    };
-
-    // Add to general cart
-    const existingCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
-    
+  // NEW: Automatic best price search when adding to cart
+  const addToCart = async (favorite) => {
     // Check if already in cart
+    const existingCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
     const alreadyInCart = existingCart.some(item => item.favoriteId === favorite.id);
     
     if (alreadyInCart) {
@@ -232,11 +218,48 @@ export const CustomerFavorites = () => {
       return;
     }
 
-    // Add to cart
-    existingCart.push(cartItem);
-    localStorage.setItem('catalogCart', JSON.stringify(existingCart));
-    
-    alert('Товар добавлен в корзину! Цена будет рассчитана в корзине.');
+    setAddingToCart(favorite.id);
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // Call backend to automatically find best price
+      const response = await axios.post(`${API}/cart/resolve-favorite`, {
+        productId: favorite.productId,
+        productName: favorite.productName,
+        brandCritical: favorite.brandMode === 'STRICT',  // NEW: use brandCritical
+        isBranded: favorite.isBranded || false,
+        brand: favorite.brand || null
+      }, { headers });
+
+      // Create cart item with ALREADY RESOLVED price and supplier
+      const cartItem = {
+        cartId: `fav_${favorite.id}_${Date.now()}`,
+        source: 'favorites',
+        favoriteId: favorite.id,
+        productId: response.data.productId || favorite.productId,
+        productName: response.data.productName,  // Use resolved product name
+        quantity: 1,
+        unit: favorite.unit,
+        price: response.data.price,  // Already have price!
+        supplier: response.data.supplier,  // Already have supplier!
+        supplierId: response.data.supplierId,
+        resolved: true,  // Mark as already resolved
+        brandCritical: favorite.brandMode === 'STRICT'
+      };
+
+      // Add to cart
+      existingCart.push(cartItem);
+      localStorage.setItem('catalogCart', JSON.stringify(existingCart));
+      
+      alert(`✓ Добавлено: ${response.data.productName}\nЦена: ${response.data.price.toLocaleString('ru-RU')} ₽\nПоставщик: ${response.data.supplier}`);
+    } catch (error) {
+      console.error('Failed to resolve best price:', error);
+      alert('Ошибка при поиске лучшей цены. Попробуйте еще раз.');
+    } finally {
+      setAddingToCart(null);
+    }
   };
 
   const sensors = useSensors(
