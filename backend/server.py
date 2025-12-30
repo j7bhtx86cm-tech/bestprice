@@ -2652,11 +2652,6 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             item['net_weight_kg'] = net_weight
             item['price_per_base_unit'] = pl['price'] / net_weight
         
-        # Extract brand
-        brand = extract_brand(product.get('name', ''))
-        if brand:
-            item['brand_id'] = brand.lower()
-        
         all_items.append(item)
     
     logger.info(f"📊 Loaded {len(all_items)} items from products+pricelists")
