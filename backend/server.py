@@ -2656,6 +2656,12 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
     
     logger.info(f"📊 Loaded {len(all_items)} items from products+pricelists")
     
+    # DEBUG: Check barco items
+    barco_items = [i for i in all_items if i.get('brand_id') == 'barco']
+    logger.info(f"🏷️ DEBUG: Found {len(barco_items)} items with brand_id='barco'")
+    for bi in barco_items[:3]:
+        logger.info(f"   - {bi['name_raw'][:40]}: price={bi['price']}")
+    
     # Filter and score candidates
     candidates = []
     debug_scores = []  # For logging
