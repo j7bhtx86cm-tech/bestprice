@@ -222,15 +222,25 @@ export const CustomerFavorites = () => {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Extract pack_value from product name (e.g., "1,8л" -> 1.8, "5 кг" -> 5)
-      const packValueMatch = favorite.productName.match(/(\d+[,.]?\d*)\s*(кг|л|г|мл)/i);
+      // Extract pack_value from product name
+      // Priority: ~5 кг (box weight) > 1,8л (volume) > last kg/l occurrence
       let packValue = null;
-      if (packValueMatch) {
-        packValue = parseFloat(packValueMatch[1].replace(',', '.'));
-        // Convert grams to kg, ml to liters
-        const unit = packValueMatch[2].toLowerCase();
-        if (unit === 'г') packValue = packValue / 1000;
-        if (unit === 'мл') packValue = packValue / 1000;
+      
+      // First try to find box weight (~5 кг, вес 5 кг, 5кг/кор)
+      const boxMatch = favorite.productName.match(/[~≈]?\s*(\d+[,.]?\d*)\s*(кг|л)\s*(\/кор|кор)?/i);
+      if (boxMatch) {
+        packValue = parseFloat(boxMatch[1].replace(',', '.'));
+      } else {
+        // Fallback: find last kg/l/g/ml occurrence
+        const allMatches = [...favorite.productName.matchAll(/(\d+[,.]?\d*)\s*(кг|л|г|мл)/gi)];
+        if (allMatches.length > 0) {
+          const lastMatch = allMatches[allMatches.length - 1];
+          packValue = parseFloat(lastMatch[1].replace(',', '.'));
+          const unit = lastMatch[2].toLowerCase();
+          // Convert grams to kg, ml to liters
+          if (unit === 'г') packValue = packValue / 1000;
+          if (unit === 'мл') packValue = packValue / 1000;
+        }
       }
 
       // Build reference_item from favorite (эталон)
