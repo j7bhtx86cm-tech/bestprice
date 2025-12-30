@@ -2640,7 +2640,9 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             'supplier_company_id': pl['supplierId'],
             'unit_norm': product.get('unit', 'kg'),
             'super_class': extract_super_class(normalize_name(product.get('name', ''))),
-            'brand_id': None,  # Will extract below
+            # USE brand_id from product (set by backfill from new brand master)
+            'brand_id': product.get('brand_id'),
+            'brand_strict': product.get('brand_strict', False),
         }
         
         # Extract weight for price_per_base_unit calculation
