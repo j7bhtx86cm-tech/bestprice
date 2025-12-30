@@ -222,17 +222,31 @@ export const CustomerFavorites = () => {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+      // Extract pack_value from product name (e.g., "1,8л" -> 1.8, "5 кг" -> 5)
+      const packValueMatch = favorite.productName.match(/(\d+[,.]?\d*)\s*(кг|л|г|мл)/i);
+      let packValue = null;
+      if (packValueMatch) {
+        packValue = parseFloat(packValueMatch[1].replace(',', '.'));
+        // Convert grams to kg, ml to liters
+        const unit = packValueMatch[2].toLowerCase();
+        if (unit === 'г') packValue = packValue / 1000;
+        if (unit === 'мл') packValue = packValue / 1000;
+      }
+
       // Build reference_item from favorite (эталон)
       const referenceItem = {
         name_raw: favorite.productName,
+        pack_value: packValue,  // Weight/volume from card
         brand_id: favorite.brand || null,
         brand_critical: favorite.brandMode === 'STRICT'
       };
 
       // Call NEW endpoint to select best offer
+      // Pass required_volume = pack_value from card for total cost calculation
       const response = await axios.post(`${API}/cart/select-offer`, {
         reference_item: referenceItem,
         qty: 1,
+        required_volume: packValue,  // For total cost calculation
         match_threshold: 0.85
       }, { headers });
 
