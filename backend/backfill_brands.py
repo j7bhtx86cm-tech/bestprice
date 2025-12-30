@@ -23,10 +23,13 @@ async def backfill_brands():
     bm = BrandMaster.reload()
     print(f"\n📋 Brand dictionary loaded: {len(bm.brands_by_id)} brands, {len(bm.alias_to_id)} aliases")
     
-    # Connect to MongoDB
+    # Connect to MongoDB - USE SAME DB AS SERVER!
     mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+    db_name = os.environ.get('DB_NAME', 'test_database')  # IMPORTANT: use same DB as server
     client = AsyncIOMotorClient(mongo_url)
-    db = client['bestprice']
+    db = client[db_name]
+    
+    print(f"📊 Using database: {db_name}")
     
     # Get all products
     products = await db.products.find({}, {"_id": 0}).to_list(20000)
