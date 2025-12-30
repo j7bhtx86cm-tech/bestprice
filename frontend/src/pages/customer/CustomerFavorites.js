@@ -285,6 +285,8 @@ export const CustomerFavorites = () => {
           unit_norm: offer.unit_norm,
           pack_value: offer.pack_value,
           pack_unit: offer.pack_unit,
+          total_cost: offer.total_cost,
+          units_needed: offer.units_needed,
           score: offer.score
         },
         
@@ -301,9 +303,20 @@ export const CustomerFavorites = () => {
       existingCart.push(cartItem);
       localStorage.setItem('catalogCart', JSON.stringify(existingCart));
       
-      // Show success with score
+      // Show success with total cost
       const scorePercent = Math.round(offer.score * 100);
-      alert(`✓ Добавлено в корзину!\n\n📦 ${offer.name_raw}\n💰 ${offer.price.toLocaleString('ru-RU')} ₽\n🏢 ${offer.supplier_name}\n📊 Совпадение: ${scorePercent}%`);
+      let message = `✓ Добавлено в корзину!\n\n📦 ${offer.name_raw}\n💰 ${offer.price.toLocaleString('ru-RU')} ₽`;
+      
+      // Show total cost if calculated
+      if (offer.total_cost && offer.units_needed) {
+        message += `\n📊 Итого за объём: ${offer.total_cost.toLocaleString('ru-RU')} ₽`;
+        if (offer.units_needed > 1) {
+          message += ` (${offer.units_needed.toFixed(1)} ед.)`;
+        }
+      }
+      
+      message += `\n🏢 ${offer.supplier_name}\n✅ Совпадение: ${scorePercent}%`;
+      alert(message);
     } catch (error) {
       console.error('Failed to select best offer:', error);
       alert('Ошибка при поиске лучшей цены. Попробуйте еще раз.');
