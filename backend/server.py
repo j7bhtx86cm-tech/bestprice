@@ -2694,15 +2694,16 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
     debug_scores = []  # For logging
     
     for item in all_items:
-        # Calculate score
+        # Calculate score (brand_weight=0 when brand_critical=false!)
         score = calculate_match_score(ref, item, brand_critical)
         
-        # Log high scores for debugging
+        # Log high scores for debugging (include brand_id!)
         if score >= 0.5:
             debug_scores.append({
                 'name': item['name_raw'][:50],
                 'score': score,
                 'price': item['price'],
+                'brand_id': item.get('brand_id', 'none'),  # DEBUG: include brand_id
                 'supplier': company_map.get(item['supplier_company_id'], 'Unknown')
             })
         
@@ -2710,10 +2711,11 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
         if score < threshold:
             continue
         
-        # Brand critical filter
+        # Brand critical filter - ONLY when brand_critical=true!
         if brand_critical and ref.get('brand_id'):
             if not item.get('brand_id') or item['brand_id'].lower() != ref['brand_id'].lower():
                 continue
+        # NOTE: When brand_critical=false, NO filtering by brand!
         
         candidates.append({
             'item': item,
