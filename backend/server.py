@@ -2419,7 +2419,7 @@ class ReferenceItem(BaseModel):
     tokens: Optional[List[str]] = None
     super_class: Optional[str] = None
     unit_norm: Optional[str] = None  # kg, l, pcs, box
-    pack_value: Optional[float] = None
+    pack_value: Optional[float] = None  # Weight/volume from card (e.g., 1.8 for 1.8kg)
     pack_unit: Optional[str] = None  # kg, l, pcs
     brand_id: Optional[str] = None
     brand_critical: bool = False
@@ -2427,6 +2427,7 @@ class ReferenceItem(BaseModel):
 class SelectOfferRequest(BaseModel):
     reference_item: ReferenceItem
     qty: int = 1
+    required_volume: Optional[float] = None  # Required volume/weight (e.g., 5 for 5kg)
     match_threshold: float = 0.85
 
 class SelectedOffer(BaseModel):
@@ -2440,6 +2441,8 @@ class SelectedOffer(BaseModel):
     pack_value: Optional[float] = None
     pack_unit: Optional[str] = None
     price_per_base_unit: Optional[float] = None
+    total_cost: Optional[float] = None  # Total cost for required volume
+    units_needed: Optional[float] = None  # How many units needed for required volume
     score: float
 
 class SelectOfferResponse(BaseModel):
