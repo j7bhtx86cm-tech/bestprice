@@ -2454,16 +2454,22 @@ class SelectOfferResponse(BaseModel):
 def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool) -> float:
     """Calculate match score between reference item and candidate
     
-    Score components:
-    - Name similarity (with synonyms + fuzzy): 60%
+    Score components (when brand_critical=false):
+    - Name similarity (with synonyms + fuzzy): 70%
     - Super class match: 15%
     - Weight/volume tolerance: 15%
-    - Brand match bonus: 10%
+    - Brand: 0% (IGNORED!)
     
-    SYNONYMS (equivalents):
-    - неразделанный = непотрошеный = целый = тушка
-    - с/м = с/г = зам = свежемороженый = frozen
-    - сибас = сибасс (typo correction)
+    Score components (when brand_critical=true):
+    - Name similarity: 60%
+    - Super class match: 15%
+    - Weight/volume tolerance: 15%
+    - Brand match: 10%
+    
+    IMPORTANT: When brand_critical=false, brand is COMPLETELY NEUTRAL:
+    - No filtering by brand
+    - No bonus/penalty in score
+    - default_strict from dictionary is IGNORED
     """
     score = 0.0
     
@@ -2496,7 +2502,16 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
             result.add(get_canonical(token))
         return result
     
-    # 1. Name similarity (with synonyms) - 60%
+    # Determine weights based on brand_critical
+    # When brand_critical=false, brand weight is 0, redistribute to name similarity
+    if brand_critical:
+        name_weight = 0.60
+        brand_weight = 0.10
+    else:
+        name_weight = 0.70  # Brand weight redistributed to name
+        brand_weight = 0.0   # BRAND IS NEUTRAL!
+    
+    # 1. Name similarity (with synonyms)
     ref_name = reference.get('name_norm') or reference.get('name_raw', '').lower()
     cand_name = (candidate.get('name_norm') or candidate.get('name_raw', '')).lower()
     
@@ -2520,13 +2535,12 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
         intersection = len(ref_normalized & cand_normalized)
         
         # KEY WORD BONUS: If the main product name matches (first significant word)
-        # Give extra credit because "сибас" matching "сибас" is very important
         main_word_bonus = 0.0
         for ref_token in ref_normalized:
-            if len(ref_token) >= 4:  # Significant word (not 'инд', 'зам', etc)
+            if len(ref_token) >= 4:  # Significant word
                 for cand_token in cand_normalized:
                     if ref_token == cand_token:
-                        main_word_bonus = 0.15  # Bonus for main product name match
+                        main_word_bonus = 0.15
                         break
                 if main_word_bonus > 0:
                     break
@@ -2537,7 +2551,7 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
         
         # Blend coverage and jaccard + main word bonus
         name_score = coverage * 0.5 + jaccard * 0.2 + main_word_bonus
-        score += min(name_score, 0.60)  # Cap at 60%
+        score += min(name_score, name_weight)  # Cap at name_weight
     
     # 2. Super class match - 15%
     ref_class = reference.get('super_class')
@@ -2562,15 +2576,17 @@ def calculate_match_score(reference: dict, candidate: dict, brand_critical: bool
     elif not ref_weight:
         score += 0.10
     
-    # 4. Brand match - 10%
-    ref_brand = reference.get('brand_id')
-    cand_brand = candidate.get('brand_id')
-    
-    if ref_brand and cand_brand:
-        if ref_brand.lower() == cand_brand.lower():
-            score += 0.10
-    elif not ref_brand:
-        score += 0.10
+    # 4. Brand match - ONLY when brand_critical=true
+    if brand_weight > 0:
+        ref_brand = reference.get('brand_id')
+        cand_brand = candidate.get('brand_id')
+        
+        if ref_brand and cand_brand:
+            if ref_brand.lower() == cand_brand.lower():
+                score += brand_weight
+        elif not ref_brand:
+            score += brand_weight
+    # When brand_critical=false: brand_weight=0, NO bonus/penalty for brand!
     
     return round(score, 4)
 
