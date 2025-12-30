@@ -20,12 +20,16 @@ def normalize_alias(text: str) -> str:
     - ё → е
     - trim whitespace
     - remove special chars (except letters, numbers, spaces)
+    - remove quotes
     """
     if not text or pd.isna(text):
         return ""
     
     text = str(text).lower().strip()
     text = text.replace('ё', 'е')  # ё → е
+    
+    # Remove quotes
+    text = text.replace('"', '').replace("'", '').replace('«', '').replace('»', '')
     
     # Remove special chars except letters (RU/EN), numbers, spaces
     text = re.sub(r'[^\w\s]', '', text, flags=re.UNICODE)
