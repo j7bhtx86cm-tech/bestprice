@@ -2710,16 +2710,42 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             reason="NO_MATCH_OVER_THRESHOLD"
         )
     
-    # Sort by price (cheapest first), then by score (highest first)
+    # Get required volume from request or reference item
+    required_volume = request.required_volume or ref.get('pack_value') or 1.0
+    
+    # Calculate total cost for each candidate
+    # total_cost = how much it costs to get required_volume
+    for c in candidates:
+        item = c['item']
+        item_volume = item.get('net_weight_kg') or item.get('net_volume_l') or 1.0
+        item_price = item.get('price') or 0
+        
+        if item_volume > 0:
+            # How many units needed to cover required volume
+            units_needed = required_volume / item_volume
+            # Round up if partial units
+            units_needed = max(1, units_needed)
+            total_cost = item_price * units_needed
+        else:
+            # Fallback: use item price directly
+            units_needed = 1
+            total_cost = item_price
+        
+        c['total_cost'] = total_cost
+        c['units_needed'] = units_needed
+        c['item_volume'] = item_volume
+    
+    # Sort by TOTAL COST (cheapest first), then by score (highest first)
+    # This selects the best deal for the required volume, not just cheapest unit price
     candidates.sort(key=lambda x: (
-        x['item'].get('price') or float('inf'),
+        x.get('total_cost') or float('inf'),
         -x['score']
     ))
     
-    logger.info(f"✅ Found {len(candidates)} candidates, cheapest: {candidates[0]['item']['price']:.2f}₽")
-    
-    # Select winner (ALWAYS cheapest!)
     winner = candidates[0]
+    logger.info(f"✅ Found {len(candidates)} candidates. Winner: {winner['item']['price']:.2f}₽ x {winner['units_needed']:.1f} = {winner['total_cost']:.2f}₽ total for {required_volume} units")
+    
+    # Select winner
     winner_item = winner['item']
     
     selected = SelectedOffer(
@@ -2733,6 +2759,8 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
         pack_value=winner_item.get('net_weight_kg') or winner_item.get('net_volume_l'),
         pack_unit=winner_item.get('base_unit', 'kg'),
         price_per_base_unit=winner_item.get('price_per_base_unit'),
+        total_cost=winner['total_cost'],
+        units_needed=winner['units_needed'],
         score=winner['score']
     )
     
@@ -2743,6 +2771,9 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             'supplier_item_id': c['item']['id'],
             'name_raw': c['item']['name_raw'],
             'price': c['item'].get('price'),
+            'pack_value': c.get('item_volume'),
+            'total_cost': c.get('total_cost'),
+            'units_needed': c.get('units_needed'),
             'price_per_base_unit': c['item'].get('price_per_base_unit'),
             'score': c['score'],
             'supplier': company_map.get(c['item']['supplier_company_id'], 'Unknown')
