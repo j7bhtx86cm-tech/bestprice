@@ -2600,12 +2600,14 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
     
     Logic:
     1. Find candidates among all products + pricelists
-    2. Score each candidate against reference_item
+    2. Score each candidate (brand_weight=0 when brand_critical=false!)
     3. Apply threshold (default 0.85)
-    4. If brand_critical=true: only keep same brand_id
-    5. Select cheapest by price
+    4. If brand_critical=true: filter by brand_id
+    5. Select cheapest by total_cost
     
-    DEBUG: Logs scoring details for troubleshooting
+    IMPORTANT (brand_critical rule):
+    - brand_critical=false: brand is COMPLETELY NEUTRAL (no filter, no score bonus)
+    - brand_critical=true: brand is required (filter + bonus)
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -2614,11 +2616,17 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
     threshold = request.match_threshold
     brand_critical = ref.get('brand_critical', False)
     
-    logger.info(f"🔍 SELECT_BEST_OFFER: ref='{ref.get('name_raw')[:50]}', threshold={threshold}, brand_critical={brand_critical}")
+    # DEBUG: Log brand_critical status
+    brand_weight = 0.10 if brand_critical else 0.0
+    logger.info(f"🔍 SELECT_BEST_OFFER:")
+    logger.info(f"   ref='{ref.get('name_raw')[:50]}'")
+    logger.info(f"   brand_critical={brand_critical}, brand_weight={brand_weight}")
+    logger.info(f"   brand_id filter applied: {'YES' if brand_critical else 'NO'}")
+    logger.info(f"   threshold={threshold}")
     
     # Enrich reference item if needed
     from pipeline.normalizer import normalize_name
-    from pipeline.enricher import extract_super_class, extract_weights, extract_brand
+    from pipeline.enricher import extract_super_class, extract_weights
     
     if not ref.get('name_norm'):
         ref['name_norm'] = normalize_name(ref['name_raw'])
