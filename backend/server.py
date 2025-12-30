@@ -2722,12 +2722,18 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             'score': score
         })
     
-    # Log debug info
+    # Log debug info - TOP 10 with brand_id
     if debug_scores:
         debug_scores.sort(key=lambda x: -x['score'])
-        logger.info(f"🎯 Top scores for '{ref.get('name_raw')[:30]}':")
-        for d in debug_scores[:5]:
-            logger.info(f"   {d['score']:.2f} | {d['price']:>8.2f}₽ | {d['supplier'][:12]} | {d['name']}")
+        logger.info(f"🎯 Top-10 candidates for '{ref.get('name_raw')[:30]}' (brand_critical={brand_critical}):")
+        
+        # Count unique brands in top scores
+        brands_in_top = set()
+        for d in debug_scores[:10]:
+            brands_in_top.add(d.get('brand_id', 'none'))
+            logger.info(f"   {d['score']:.2f} | {d['price']:>8.2f}₽ | brand={d.get('brand_id', 'none'):12} | {d['name'][:35]}")
+        
+        logger.info(f"📊 Unique brands in top-10: {len(brands_in_top)} ({', '.join(brands_in_top)})")
     
     if not candidates:
         logger.warning(f"❌ NO MATCH for '{ref.get('name_raw')[:50]}' with threshold {threshold}")
