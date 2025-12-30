@@ -140,24 +140,29 @@ class BrandMaster:
             return (None, False)
         
         name_norm = normalize_alias(product_name)
+        name_words = set(name_norm.split())
         
         # Sort aliases by length (longest first) for better matching
         sorted_aliases = sorted(self.alias_to_id.keys(), key=len, reverse=True)
         
         for alias in sorted_aliases:
-            # Check if alias is a word in the product name
-            # Use word boundary matching to avoid partial matches
-            if alias in name_norm:
-                # Extra check: ensure it's a word boundary (not part of another word)
-                # For short aliases (< 3 chars), require exact word match
-                if len(alias) < 3:
-                    words = name_norm.split()
-                    if alias not in words:
-                        continue
-                
-                brand_id = self.alias_to_id[alias]
-                brand_info = self.brands_by_id.get(brand_id, {})
-                return (brand_id, brand_info.get('default_strict', False))
+            # For short aliases (< 4 chars), require exact word match
+            if len(alias) < 4:
+                if alias in name_words:
+                    brand_id = self.alias_to_id[alias]
+                    brand_info = self.brands_by_id.get(brand_id, {})
+                    return (brand_id, brand_info.get('default_strict', False))
+            else:
+                # For longer aliases, check substring match
+                # But ensure it's at word boundary
+                if alias in name_norm:
+                    # Check it's not part of another word
+                    # Pattern: alias at start/end of string or surrounded by spaces
+                    pattern = r'(^|\\s)' + re.escape(alias) + r'($|\\s)'
+                    if re.search(pattern, name_norm) or alias in name_words:
+                        brand_id = self.alias_to_id[alias]
+                        brand_info = self.brands_by_id.get(brand_id, {})
+                        return (brand_id, brand_info.get('default_strict', False))
         
         # NOT FOUND - return None (DO NOT guess!)
         return (None, False)
