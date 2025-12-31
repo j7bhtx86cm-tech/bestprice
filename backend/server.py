@@ -1945,8 +1945,9 @@ async def update_my_profile(data: dict, current_user: dict = Depends(get_current
 
 @api_router.post("/favorites")
 async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_user)):
-    """Add product to favorites with BRAND MASTER detection"""
+    """Add product to favorites with SCHEMA V2 (brand_critical)"""
     from brand_master import brand_master
+    from search_engine import extract_tokens, extract_pack_value
     
     # Get user's company
     company_id = current_user.get('companyId')
@@ -1972,7 +1973,7 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     if existing:
         raise HTTPException(status_code=400, detail="Product already in favorites")
     
-    # AUTO-DETECT brand using BRAND MASTER (not heuristic!)
+    # AUTO-DETECT brand using BRAND MASTER
     brand_id = None
     brand_name = None
     brand_strict = False
@@ -1985,18 +1986,36 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     
     is_branded = brand_id is not None
     
-    # Create favorite
+    # Extract pack_size and tokens (for schema v2)
+    pack_size = extract_pack_value(product['name'], product['unit'])
+    tokens_norm = list(extract_tokens(product['name']))
+    
+    # Normalize unit
+    unit_map = {'кг': 'kg', 'л': 'l', 'шт': 'pcs', 'г': 'g', 'мл': 'ml'}
+    unit_norm = unit_map.get(product['unit'].lower(), product['unit'].lower())
+    
+    # Create favorite with SCHEMA V2
     favorite = {
         "id": str(uuid.uuid4()),
         "userId": current_user['id'],
         "companyId": company_id,
         "productId": data['productId'],
+        
+        # Schema v2 fields
+        "reference_name": product['name'],  # Эталонное имя
+        "brand_id": brand_id,               # ID бренда (может быть null)
+        "brand_critical": False,            # По умолчанию OFF
+        "unit_norm": unit_norm,             # kg, l, pcs
+        "pack_size": pack_size,             # Число в unit_norm
+        "tokens_norm": tokens_norm,         # Нормализованные токены
+        "schema_version": 2,                # Версия схемы
+        
+        # Legacy fields (для обратной совместимости)
         "productName": product['name'],
         "productCode": product_code,
         "unit": product['unit'],
         "isBranded": is_branded,
         "brandMode": "STRICT" if is_branded and brand_strict else "ANY",
-        "brandId": brand_id,  # NEW: Use brand_id from master
         "brand": brand_name,
         "originalSupplierId": data.get('supplierId'),
         "addedAt": datetime.now(timezone.utc).isoformat(),
@@ -2009,7 +2028,8 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "id": favorite['id'],
         "productName": favorite['productName'],
         "isBranded": favorite['isBranded'],
-        "brand": favorite['brand']
+        "brand": favorite['brand'],
+        "schema_version": 2
     }
 
 
