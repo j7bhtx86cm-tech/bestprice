@@ -3469,6 +3469,80 @@ async def get_enriched_favorite(favorite_id: str, current_user: dict = Depends(g
     }
 
 
+# ==================== SEARCH QUALITY REPORTS ====================
+
+@api_router.get("/admin/search/quality-report")
+async def get_search_quality_report(current_user: dict = Depends(get_current_user)):
+    """Generate search quality report
+    
+    Returns:
+    - Brand coverage by supplier
+    - Overall brand statistics
+    - Sample products without brand
+    """
+    from search_engine import generate_brand_quality_report
+    
+    # Load data
+    all_products = await db.products.find({}, {"_id": 0}).to_list(20000)
+    all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(30000)
+    
+    # Get supplier names
+    companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+    company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+    
+    # Generate report
+    report = generate_brand_quality_report(all_products, all_pricelists)
+    
+    # Add supplier names to by_supplier stats
+    by_supplier_with_names = {}
+    for supplier_id, stats in report['by_supplier'].items():
+        by_supplier_with_names[supplier_id] = {
+            **stats,
+            'supplier_name': company_map.get(supplier_id, 'Unknown')
+        }
+    
+    report['by_supplier'] = by_supplier_with_names
+    
+    return report
+
+
+@api_router.get("/admin/brands/families")
+async def get_brand_families(current_user: dict = Depends(get_current_user)):
+    """Get brand family information
+    
+    Returns:
+    - List of brand families and their members
+    - Statistics about family coverage
+    """
+    from brand_master import get_brand_master
+    
+    bm = get_brand_master()
+    
+    families = []
+    for family_id, members in bm.family_to_members.items():
+        family_info = bm.get_brand_info(family_id)
+        families.append({
+            'family_id': family_id,
+            'family_name': family_info.get('brand_ru') if family_info else family_id,
+            'members': members,
+            'member_count': len(members)
+        })
+    
+    # Sort by member count
+    families.sort(key=lambda x: -x['member_count'])
+    
+    stats = bm.get_stats()
+    
+    return {
+        'families': families,
+        'stats': {
+            'total_families': len(families),
+            'brands_with_family': stats.get('brands_with_family', 0),
+            'total_brands': stats.get('total_brands', 0)
+        }
+    }
+
+
 # ==================== ADMIN BRAND MANAGEMENT ====================
 
 @api_router.post("/test/create-fixtures")
