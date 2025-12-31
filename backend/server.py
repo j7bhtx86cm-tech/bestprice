@@ -3062,10 +3062,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             status="error",
             message=f"Error: {str(e)}"
         )
-    
-    try:
-        # Step 1: Get favorite from DB
-        favorite = await db.favorites.find_one({"id": request.favorite_id, "userId": current_user['id']}, {"_id": 0})
+
+
+@api_router.post("/favorites/order")
         
         if not favorite:
             logger.warning(f"❌ ADD_FROM_FAVORITE: Favorite not found: {request.favorite_id}")
