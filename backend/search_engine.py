@@ -394,29 +394,29 @@ class EnhancedSearchEngine:
             logger.info(f"   brand_critical={brand_critical}, score_threshold={score_threshold:.2f}")
             logger.info(f"   tokens={list(ref_tokens)[:5]}")
             
-            # === FILTER 1: BRAND ===
-            if brand_critical and ref_brand:
-                brand_filtered = self._filter_by_brand(candidates, ref_brand, debug)
-                debug.filters_applied.append(f"brand_filter: brand_id={ref_brand}")
+            # === FILTER 1: BRAND OR ORIGIN (only if brand_critical=true) ===
+            if brand_critical:
+                filtered = self._filter_by_brand_or_origin(candidates, reference_item, debug)
+                debug.filters_applied.append(f"brand_or_origin_filter: ENABLED (brand_critical=true)")
             else:
-                brand_filtered = candidates
-                debug.filters_applied.append("brand_filter: DISABLED (brand_critical=false)")
+                filtered = candidates
+                debug.filters_applied.append("brand_or_origin_filter: DISABLED (brand_critical=false)")
             
-            debug.candidates_after_brand_filter = len(brand_filtered)
+            debug.candidates_after_brand_filter = len(filtered)
             
-            if brand_critical and len(brand_filtered) == 0:
+            if brand_critical and len(filtered) == 0:
                 debug.status = "not_found"
-                debug.failure_reason = "no_candidates_for_brand"
+                debug.failure_reason = "no_candidates_for_brand_or_origin"
                 debug.duration_ms = (time.time() - start_time) * 1000
                 return SearchResult(
                     status="not_found",
                     debug_event=debug,
-                    message=f"Нет товаров бренда {ref_brand}"
+                    message=f"Нет товаров с требуемым брендом/происхождением"
                 )
             
             # === FILTER 2: UNIT ===
             unit_filtered = [
-                c for c in brand_filtered
+                c for c in filtered
                 if units_compatible(ref_unit, c.get('unit_norm', 'kg'))
             ]
             debug.candidates_after_unit_filter = len(unit_filtered)
@@ -602,6 +602,72 @@ class EnhancedSearchEngine:
                 debug_event=debug,
                 message=f"Ошибка поиска: {str(e)}"
             )
+    
+    def _filter_by_brand_or_origin(
+        self,
+        candidates: List[Dict[str, Any]],
+        reference_item: Dict[str, Any],
+        debug: SearchDebugEvent
+    ) -> List[Dict[str, Any]]:
+        """Filter candidates by brand_id OR origin (for non-branded items)
+        
+        Logic:
+        - If reference has brand_id → filter by brand_id (with family fallback)
+        - If reference has NO brand but has origin → filter by origin
+        - Origin matching: country (required) + region/city (if present in reference)
+        """
+        brand_id = reference_item.get('brand_id')
+        
+        # Case 1: Has brand_id → filter by brand
+        if brand_id:
+            return self._filter_by_brand(candidates, brand_id, debug)
+        
+        # Case 2: No brand, check origin
+        origin_country = reference_item.get('origin_country')
+        origin_region = reference_item.get('origin_region')
+        origin_city = reference_item.get('origin_city')
+        
+        if not origin_country:
+            # No brand and no origin → cannot apply strict filter
+            debug.filters_applied.append("origin_filter: SKIPPED (no brand_id and no origin)")
+            return []
+        
+        # Filter by origin
+        origin_filtered = []
+        for c in candidates:
+            cand_country = c.get('origin_country', '').lower().strip()
+            cand_region = c.get('origin_region', '').lower().strip()
+            cand_city = c.get('origin_city', '').lower().strip()
+            
+            ref_country_norm = origin_country.lower().strip()
+            
+            # Country must match
+            if cand_country != ref_country_norm:
+                continue
+            
+            # If reference has region, it must match
+            if origin_region:
+                ref_region_norm = origin_region.lower().strip()
+                if cand_region != ref_region_norm:
+                    continue
+            
+            # If reference has city, it must match
+            if origin_city:
+                ref_city_norm = origin_city.lower().strip()
+                if cand_city != ref_city_norm:
+                    continue
+            
+            origin_filtered.append(c)
+        
+        origin_spec = origin_country
+        if origin_region:
+            origin_spec += f"/{origin_region}"
+        if origin_city:
+            origin_spec += f"/{origin_city}"
+        
+        debug.filters_applied.append(f"origin_filter: {origin_spec} → {len(origin_filtered)} matches")
+        
+        return origin_filtered
     
     def _filter_by_brand(
         self,
