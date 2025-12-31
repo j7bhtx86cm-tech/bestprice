@@ -2673,39 +2673,39 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
         # Build product lookup
         product_map = {p['id']: p for p in all_products}
     
-    # Build items list with price info (products + pricelists joined)
-    all_items = []
-    for pl in all_pricelists:
-        product = product_map.get(pl['productId'])
-        if not product:
-            continue
+        # Build items list with price info (products + pricelists joined)
+        all_items = []
+        for pl in all_pricelists:
+            product = product_map.get(pl['productId'])
+            if not product:
+                continue
+            
+            # Enrich product with pricelist data
+            item = {
+                'id': pl['id'],
+                'product_id': product['id'],
+                'name_raw': product.get('name', ''),
+                'name_norm': normalize_name(product.get('name', '')),
+                'price': pl['price'],
+                'price_per_base_unit': pl['price'],  # Default - will be recalculated if weight found
+                'supplier_company_id': pl['supplierId'],
+                'unit_norm': product.get('unit', 'kg'),
+                'super_class': extract_super_class(normalize_name(product.get('name', ''))),
+                # USE brand_id from product (set by backfill from new brand master)
+                'brand_id': product.get('brand_id'),
+                'brand_strict': product.get('brand_strict', False),
+            }
+            
+            # Extract weight for price_per_base_unit calculation
+            weight_data = extract_weights(product.get('name', ''))
+            net_weight = weight_data.get('net_weight_kg')
+            if net_weight and net_weight > 0:
+                item['net_weight_kg'] = net_weight
+                item['price_per_base_unit'] = pl['price'] / net_weight
+            
+            all_items.append(item)
         
-        # Enrich product with pricelist data
-        item = {
-            'id': pl['id'],
-            'product_id': product['id'],
-            'name_raw': product.get('name', ''),
-            'name_norm': normalize_name(product.get('name', '')),
-            'price': pl['price'],
-            'price_per_base_unit': pl['price'],  # Default - will be recalculated if weight found
-            'supplier_company_id': pl['supplierId'],
-            'unit_norm': product.get('unit', 'kg'),
-            'super_class': extract_super_class(normalize_name(product.get('name', ''))),
-            # USE brand_id from product (set by backfill from new brand master)
-            'brand_id': product.get('brand_id'),
-            'brand_strict': product.get('brand_strict', False),
-        }
-        
-        # Extract weight for price_per_base_unit calculation
-        weight_data = extract_weights(product.get('name', ''))
-        net_weight = weight_data.get('net_weight_kg')
-        if net_weight and net_weight > 0:
-            item['net_weight_kg'] = net_weight
-            item['price_per_base_unit'] = pl['price'] / net_weight
-        
-        all_items.append(item)
-    
-    logger.info(f"📊 Loaded {len(all_items)} items from products+pricelists")
+        logger.info(f"📊 Loaded {len(all_items)} items from products+pricelists")
     
     # DEBUG: Check barco items
     barco_items = [i for i in all_items if i.get('brand_id') == 'barco']
