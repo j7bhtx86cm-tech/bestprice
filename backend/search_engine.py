@@ -321,9 +321,10 @@ class EnhancedSearchEngine:
         candidates: List[Dict[str, Any]],
         brand_critical: bool = False,
         requested_qty: float = 1.0,
-        company_map: Optional[Dict[str, str]] = None
+        company_map: Optional[Dict[str, str]] = None,
+        score_threshold: Optional[float] = None
     ) -> SearchResult:
-        """Run enhanced search with pack range filtering
+        """Run enhanced search with pack range filtering and score thresholds
         
         Args:
             reference_item: Reference product with name_raw, pack, unit_norm, brand_id
@@ -331,12 +332,17 @@ class EnhancedSearchEngine:
             brand_critical: If True, filter by brand; if False, ignore brand completely
             requested_qty: Requested quantity for total_cost calculation
             company_map: Mapping of company_id -> company_name
+            score_threshold: Minimum score threshold (defaults: 0.85 for brand_critical, 0.70 otherwise)
         """
         import time
         import uuid
         
         start_time = time.time()
         company_map = company_map or {}
+        
+        # Determine score threshold based on brand_critical
+        if score_threshold is None:
+            score_threshold = 0.85 if brand_critical else 0.70
         
         # Extract reference data
         ref_name = reference_item.get('name_raw', '')
@@ -382,7 +388,8 @@ class EnhancedSearchEngine:
             logger.info(f"🔍 ENHANCED SEARCH:")
             logger.info(f"   ref='{ref_name[:50]}'")
             logger.info(f"   pack={ref_pack}, unit={ref_unit}, brand={ref_brand}")
-            logger.info(f"   brand_critical={brand_critical}, tokens={list(ref_tokens)[:5]}")
+            logger.info(f"   brand_critical={brand_critical}, score_threshold={score_threshold:.2f}")
+            logger.info(f"   tokens={list(ref_tokens)[:5]}")
             
             # === FILTER 1: BRAND ===
             if brand_critical and ref_brand:
@@ -439,20 +446,26 @@ class EnhancedSearchEngine:
             else:
                 debug.filters_applied.append("pack_filter: DISABLED (ref_pack unknown)")
             
-            # === FILTER 4: TOKEN MATCHING ===
+            # === FILTER 4: TOKEN MATCHING WITH SCORE THRESHOLD ===
             token_filtered = []
             for c in pack_filtered:
                 cand_tokens = extract_tokens(c.get('name_raw', ''))
                 
-                # Require at least 1 meaningful token match
+                # Calculate token score
                 common_tokens = ref_tokens & cand_tokens
                 if len(common_tokens) >= 1:
-                    c['_common_tokens'] = common_tokens
-                    c['_token_score'] = len(common_tokens) / max(len(ref_tokens), 1)
-                    token_filtered.append(c)
+                    # Simple token-based score: Jaccard similarity
+                    union_tokens = ref_tokens | cand_tokens
+                    token_score = len(common_tokens) / len(union_tokens) if union_tokens else 0
+                    
+                    # Apply score threshold
+                    if token_score >= score_threshold:
+                        c['_common_tokens'] = common_tokens
+                        c['_token_score'] = token_score
+                        token_filtered.append(c)
             
             debug.candidates_after_token_filter = len(token_filtered)
-            debug.filters_applied.append(f"token_filter: min_match=1")
+            debug.filters_applied.append(f"token_filter: min_score={score_threshold:.2f}")
             
             # === FILTER 5: GUARD RULES ===
             guard_filtered = []
