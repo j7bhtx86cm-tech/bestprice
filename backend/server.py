@@ -3398,6 +3398,175 @@ async def update_restaurant_availability(
         "ordersEnabled": data.ordersEnabled
     }
 
+# ==================== FAVORITES V2 MIGRATION ====================
+
+@api_router.post("/admin/favorites/migrate-v2")
+async def migrate_favorites_to_v2(current_user: dict = Depends(get_current_user)):
+    """Migrate all favorites to v2 schema
+    
+    V2 schema adds:
+    - source_item_id (from productId -> pricelist lookup)
+    - brand_id (from product.brand_id)
+    - unit_norm
+    - pack (extracted from name)
+    - tokens (normalized name words)
+    - brand_critical (from brandMode)
+    - schema_version = 2
+    - broken (true if migration failed)
+    
+    Does NOT delete old data, only enriches.
+    """
+    import logging
+    from pipeline.normalizer import normalize_name
+    from pipeline.enricher import extract_weights
+    from brand_master import get_brand_master
+    
+    logger = logging.getLogger(__name__)
+    
+    bm = get_brand_master()
+    
+    # Get all favorites
+    favorites = await db.favorites.find({}, {"_id": 0}).to_list(10000)
+    logger.info(f"📋 Migrating {len(favorites)} favorites to v2 schema")
+    
+    stats = {
+        "total": len(favorites),
+        "migrated": 0,
+        "already_v2": 0,
+        "broken": 0,
+        "errors": 0
+    }
+    
+    for fav in favorites:
+        try:
+            # Skip if already v2
+            if fav.get('schema_version') == 2:
+                stats["already_v2"] += 1
+                continue
+            
+            # Try to enrich
+            update_data = {"schema_version": 2}
+            broken = False
+            
+            # Get product
+            product = None
+            if fav.get('productId'):
+                product = await db.products.find_one({"id": fav['productId']}, {"_id": 0})
+            
+            if product:
+                # Get source_item_id from pricelist
+                pricelist = await db.pricelists.find_one({"productId": product['id']}, {"_id": 0})
+                if pricelist:
+                    update_data["source_item_id"] = pricelist['id']
+                
+                # Get brand_id from product
+                update_data["brand_id"] = product.get('brand_id')
+                
+                # Get unit_norm
+                update_data["unit_norm"] = product.get('unit', 'kg')
+                
+                # Extract pack from name
+                weight_data = extract_weights(product.get('name', ''))
+                update_data["pack"] = weight_data.get('net_weight_kg')
+                
+                # Generate tokens
+                name_norm = normalize_name(product.get('name', ''))
+                update_data["tokens"] = name_norm.split()[:10]  # Max 10 tokens
+                
+            else:
+                # Product not found - try to extract from productName
+                if fav.get('productName'):
+                    # Detect brand from name
+                    if bm:
+                        brand_id, _ = bm.detect_brand(fav['productName'])
+                        update_data["brand_id"] = brand_id
+                    
+                    # Extract weight
+                    weight_data = extract_weights(fav['productName'])
+                    update_data["pack"] = weight_data.get('net_weight_kg')
+                    
+                    # Generate tokens
+                    name_norm = normalize_name(fav['productName'])
+                    update_data["tokens"] = name_norm.split()[:10]
+                    
+                    update_data["unit_norm"] = fav.get('unit', 'kg')
+                else:
+                    broken = True
+            
+            # Set brand_critical from brandMode
+            update_data["brand_critical"] = fav.get('brandMode') == 'STRICT'
+            
+            # Mark as broken if no essential data
+            if broken or not update_data.get("tokens"):
+                update_data["broken"] = True
+                stats["broken"] += 1
+            else:
+                update_data["broken"] = False
+                stats["migrated"] += 1
+            
+            # Update favorite
+            await db.favorites.update_one(
+                {"id": fav['id']},
+                {"$set": update_data}
+            )
+            
+        except Exception as e:
+            logger.error(f"Error migrating favorite {fav.get('id')}: {e}")
+            stats["errors"] += 1
+            # Mark as broken
+            await db.favorites.update_one(
+                {"id": fav['id']},
+                {"$set": {"schema_version": 2, "broken": True}}
+            )
+    
+    logger.info(f"✅ Migration complete: {stats['migrated']} migrated, {stats['broken']} broken")
+    
+    return {
+        "success": True,
+        "message": f"Migrated {stats['migrated']} favorites to v2",
+        "stats": stats
+    }
+
+
+@api_router.get("/favorites/{favorite_id}/enriched")
+async def get_enriched_favorite(favorite_id: str, current_user: dict = Depends(get_current_user)):
+    """Get favorite with enriched data for debugging
+    
+    Returns all fields including v2 fields and original product/pricelist data.
+    """
+    favorite = await db.favorites.find_one(
+        {"id": favorite_id, "userId": current_user['id']}, 
+        {"_id": 0}
+    )
+    
+    if not favorite:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    
+    # Enrich with product data
+    product = None
+    pricelist = None
+    
+    if favorite.get('productId'):
+        product = await db.products.find_one({"id": favorite['productId']}, {"_id": 0})
+        pricelist = await db.pricelists.find_one({"productId": favorite['productId']}, {"_id": 0})
+    
+    return {
+        "favorite": favorite,
+        "product": product,
+        "pricelist": pricelist,
+        "v2_fields": {
+            "schema_version": favorite.get('schema_version'),
+            "source_item_id": favorite.get('source_item_id'),
+            "brand_id": favorite.get('brand_id') or favorite.get('brandId'),
+            "brand_critical": favorite.get('brand_critical') or (favorite.get('brandMode') == 'STRICT'),
+            "unit_norm": favorite.get('unit_norm') or favorite.get('unit'),
+            "pack": favorite.get('pack'),
+            "tokens": favorite.get('tokens'),
+            "broken": favorite.get('broken', False)
+        }
+    }
+
+
 # ==================== ADMIN BRAND MANAGEMENT ====================
 
 @api_router.post("/admin/brands/backfill")
