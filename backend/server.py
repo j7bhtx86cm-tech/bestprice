@@ -2863,9 +2863,8 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
 class AddFromFavoriteRequest(BaseModel):
     """Request to add item from favorite to cart"""
     favorite_id: str
-    qty: int = 1
-    match_threshold: float = 0.6  # Legacy - now uses two-phase engine
-
+    qty: float = 1.0  # Requested quantity in base units (kg/l)
+    
 class AddFromFavoriteResponse(BaseModel):
     """Response for add-from-favorite"""
     status: str  # "ok", "not_found", "insufficient_data", "error"
@@ -2877,29 +2876,24 @@ class AddFromFavoriteResponse(BaseModel):
 
 @api_router.post("/cart/add-from-favorite", response_model=AddFromFavoriteResponse)
 async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_user: dict = Depends(get_current_user)):
-    """Add item from favorites to cart with TWO-PHASE BEST PRICE SEARCH
+    """Add item from favorites to cart with ENHANCED BEST PRICE SEARCH
     
-    NEW in v2.0:
-    - Phase 1 (STRICT): MIN_SCORE=0.70, exact matching
-    - Phase 2 (RESCUE): MIN_SCORE=0.60, penalties instead of filters
-    - Brand family support: if brand_id not found, search by brand_family_id
+    VERSION 2.0 (MVP Safe-Mode):
+    - Pack range filter: 0.5x - 2x of reference pack
+    - Guard rules: кетчуп ≠ соус, паста ≠ соус
+    - Economics: total_cost = requested_qty × price_per_base_unit
+    - Selection by total_cost, token match is tie-breaker
     
     CRITICAL RULES:
     1. NEVER use supplier_item_id from favorite directly
-    2. ALWAYS run full two-phase search
-    3. When brand_critical=false: brand is COMPLETELY IGNORED
-    4. When brand_critical=true: filter by brand_id, then brand_family_id
-    5. Return structured response (never 500)
-    
-    DEBUG LOG (SearchDebugEvent) includes:
-    - search_id, timestamp
-    - phase (strict/rescue)
-    - counters (before/after filters)
-    - filters_applied
-    - failure_reason (if any)
+    2. ALWAYS run full search
+    3. brand_critical=false: brand COMPLETELY IGNORED
+    4. brand_critical=true: filter by brand_id only
+    5. Pack must be in range: 0.5x - 2x of reference
+    6. Return structured response (never 500)
     """
     import logging
-    from search_engine import TwoPhaseSearchEngine, SearchDebugEvent
+    from search_engine import EnhancedSearchEngine, extract_pack_value
     from pipeline.normalizer import normalize_name
     from pipeline.enricher import extract_super_class, extract_weights
     
@@ -2934,20 +2928,31 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         # Build reference_item
         product_name = favorite.get('productName', '')
+        unit_norm = favorite.get('unit', 'kg')
+        
+        # Extract pack from name if not provided
+        pack_value = favorite.get('pack')
+        if not pack_value:
+            weight_data = extract_weights(product_name)
+            pack_value = weight_data.get('net_weight_kg')
+        if not pack_value:
+            pack_value = extract_pack_value(product_name, unit_norm)
+        
+        # Requested quantity - use pack_value as default if not provided
+        requested_qty = request.qty
+        if requested_qty <= 0:
+            requested_qty = pack_value or 1.0
+        
         reference_item = {
             "name_raw": product_name,
-            "name_norm": normalize_name(product_name),
+            "pack": pack_value,
+            "pack_value": pack_value,  # Alias
+            "unit_norm": unit_norm,
             "brand_id": brand_id,
             "brand_critical": brand_critical,
-            "unit_norm": favorite.get('unit', 'kg'),
-            "pack_value": None,
+            "requested_qty": requested_qty,
             "source_favorite_id": request.favorite_id
         }
-        
-        # Enrich reference_item
-        reference_item['super_class'] = extract_super_class(reference_item['name_norm'])
-        weight_data = extract_weights(product_name)
-        reference_item['pack_value'] = weight_data.get('net_weight_kg')
         
         logger.info(f"   name_raw='{product_name[:50]}'")
         logger.info(f"   brand_id={brand_id}, brand_critical={brand_critical}")
