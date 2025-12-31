@@ -506,6 +506,14 @@ def test_5_pack_range_20_percent(token: str):
         result.add_warning("Pack Range", "No favorites with pack_size found to test")
         return
     
+    # Ensure brand_critical is OFF for this test
+    update_response = requests.put(
+        f"{BACKEND_URL}/favorites/{test_fav['id']}/brand-mode",
+        headers=headers,
+        json={"brandMode": "ANY"},
+        timeout=10
+    )
+    
     pack_size = test_fav.get('pack_size', 0)
     print(f"\n   Testing with: {test_fav.get('productName')[:50]}")
     print(f"   Pack size: {pack_size} {test_fav.get('unit', '')}")
