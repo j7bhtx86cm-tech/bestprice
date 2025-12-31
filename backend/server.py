@@ -2955,7 +2955,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         }
         
         logger.info(f"   name_raw='{product_name[:50]}'")
-        logger.info(f"   brand_id={brand_id}, brand_critical={brand_critical}")
+        logger.info(f"   pack={pack_value}, unit={unit_norm}, brand={brand_id}")
+        logger.info(f"   brand_critical={brand_critical}, requested_qty={requested_qty}")
         
         # Step 3: Load candidates (products + pricelists)
         companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
@@ -2982,38 +2983,44 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             if not product:
                 continue
             
+            # Extract weight/volume from product name
+            weight_data = extract_weights(product.get('name', ''))
+            net_weight = weight_data.get('net_weight_kg')
+            
+            # Also try extract_pack_value for better extraction
+            if not net_weight:
+                net_weight = extract_pack_value(product.get('name', ''), product.get('unit', 'kg'))
+            
             item = {
                 'id': pl['id'],
                 'product_id': product['id'],
                 'name_raw': product.get('name', ''),
-                'name_norm': normalize_name(product.get('name', '')),
                 'price': pl['price'],
-                'price_per_base_unit': pl['price'],
                 'supplier_company_id': pl['supplierId'],
                 'unit_norm': product.get('unit', 'kg'),
-                'super_class': extract_super_class(normalize_name(product.get('name', ''))),
                 'brand_id': product.get('brand_id'),
                 'brand_strict': product.get('brand_strict', False),
+                'net_weight_kg': net_weight,
+                'pack_value': net_weight,
             }
             
-            # Extract weight
-            weight_data = extract_weights(product.get('name', ''))
-            net_weight = weight_data.get('net_weight_kg')
+            # Calculate price_per_base_unit
             if net_weight and net_weight > 0:
-                item['net_weight_kg'] = net_weight
                 item['price_per_base_unit'] = pl['price'] / net_weight
+            else:
+                item['price_per_base_unit'] = pl['price']
             
             candidates.append(item)
         
         logger.info(f"   Total candidates: {len(candidates)}")
         
-        # Step 4: Run two-phase search
-        engine = TwoPhaseSearchEngine()
+        # Step 4: Run enhanced search with pack range filtering
+        engine = EnhancedSearchEngine()
         result = engine.search(
             reference_item=reference_item,
             candidates=candidates,
             brand_critical=brand_critical,
-            required_volume=reference_item.get('pack_value'),
+            requested_qty=requested_qty,
             company_map=company_map
         )
         
