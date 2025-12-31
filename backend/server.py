@@ -3054,6 +3054,139 @@ async def update_restaurant_availability(
         "ordersEnabled": data.ordersEnabled
     }
 
+# ==================== ADMIN BRAND MANAGEMENT ====================
+
+@api_router.post("/admin/brands/backfill")
+async def backfill_brands_endpoint(current_user: dict = Depends(get_current_user)):
+    """Backfill brand_id for all products using the new brand dictionary
+    
+    Part B of the brand overhaul:
+    - Uses BESTPRICE_BRANDS_MASTER_UNIFIED_RF_HORECA_ULTRA_SAFE.xlsx
+    - Updates brand_id and brand_strict in products collection
+    - Does NOT reload pricelists
+    
+    Returns statistics about the backfill.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Force reload brand master to use new file
+    from brand_master import BrandMaster
+    bm = BrandMaster.reload()
+    
+    stats = bm.get_stats()
+    logger.info(f"📋 Brand dictionary: {stats['total_brands']} brands, {stats['total_aliases']} aliases")
+    
+    # Get all products
+    products = await db.products.find({}, {"_id": 0}).to_list(20000)
+    logger.info(f"📦 Found {len(products)} products to process")
+    
+    # Statistics
+    result_stats = {
+        'total_products': len(products),
+        'branded': 0,
+        'strict': 0,
+        'no_brand': 0,
+        'updated': 0,
+        'errors': 0,
+        'brand_counts': {}
+    }
+    
+    # Process each product
+    for i, product in enumerate(products):
+        product_id = product.get('id')
+        product_name = product.get('name', '')
+        
+        # Detect brand using new master
+        brand_id, brand_strict = bm.detect_brand(product_name)
+        
+        if brand_id:
+            result_stats['branded'] += 1
+            if brand_strict:
+                result_stats['strict'] += 1
+            # Track brand counts
+            result_stats['brand_counts'][brand_id] = result_stats['brand_counts'].get(brand_id, 0) + 1
+        else:
+            result_stats['no_brand'] += 1
+        
+        # Update if changed
+        old_brand = product.get('brand_id')
+        if brand_id != old_brand or product.get('brand_strict') != brand_strict:
+            try:
+                await db.products.update_one(
+                    {"id": product_id},
+                    {"$set": {
+                        "brand_id": brand_id,
+                        "brand_strict": brand_strict
+                    }}
+                )
+                result_stats['updated'] += 1
+            except Exception as e:
+                result_stats['errors'] += 1
+                logger.error(f"Error updating {product_id}: {e}")
+    
+    # Get top 20 brands by count
+    top_brands = sorted(
+        result_stats['brand_counts'].items(),
+        key=lambda x: -x[1]
+    )[:20]
+    
+    logger.info(f"✅ Backfill complete: {result_stats['updated']} updated, {result_stats['branded']} branded")
+    
+    return {
+        "success": True,
+        "message": f"Backfill complete. Updated {result_stats['updated']} products.",
+        "stats": {
+            "total_products": result_stats['total_products'],
+            "branded": result_stats['branded'],
+            "strict_branded": result_stats['strict'],
+            "no_brand": result_stats['no_brand'],
+            "updated": result_stats['updated'],
+            "errors": result_stats['errors'],
+            "brand_dictionary": stats
+        },
+        "top_brands": [{"brand_id": b[0], "count": b[1]} for b in top_brands]
+    }
+
+
+@api_router.get("/admin/brands/stats")
+async def get_brand_stats(current_user: dict = Depends(get_current_user)):
+    """Get statistics about brand dictionary and product brands"""
+    from brand_master import get_brand_master
+    
+    bm = get_brand_master()
+    dict_stats = bm.get_stats()
+    
+    # Get product brand stats from DB
+    pipeline = [
+        {"$group": {
+            "_id": "$brand_id",
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": 30}
+    ]
+    brand_agg = await db.products.aggregate(pipeline).to_list(30)
+    
+    # Count branded vs non-branded
+    branded_count = await db.products.count_documents({"brand_id": {"$ne": None}})
+    total_count = await db.products.count_documents({})
+    
+    return {
+        "dictionary": dict_stats,
+        "products": {
+            "total": total_count,
+            "branded": branded_count,
+            "unbranded": total_count - branded_count,
+            "branded_percent": round(100 * branded_count / max(total_count, 1), 1)
+        },
+        "top_brands_in_products": [
+            {"brand_id": b["_id"] or "NO_BRAND", "count": b["count"]}
+            for b in brand_agg
+        ]
+    }
+
+
 # ==================== ADVANCED PRODUCT SEARCH ====================
 
 @api_router.post("/search/similar")
