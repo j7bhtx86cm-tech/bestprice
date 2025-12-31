@@ -2864,7 +2864,7 @@ class AddFromFavoriteRequest(BaseModel):
     """Request to add item from favorite to cart"""
     favorite_id: str
     qty: int = 1
-    match_threshold: float = 0.6  # Lower threshold for better matching
+    match_threshold: float = 0.6  # Legacy - now uses two-phase engine
 
 class AddFromFavoriteResponse(BaseModel):
     """Response for add-from-favorite"""
@@ -2877,39 +2877,33 @@ class AddFromFavoriteResponse(BaseModel):
 
 @api_router.post("/cart/add-from-favorite", response_model=AddFromFavoriteResponse)
 async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_user: dict = Depends(get_current_user)):
-    """Add item from favorites to cart with FULL BEST PRICE SEARCH
+    """Add item from favorites to cart with TWO-PHASE BEST PRICE SEARCH
+    
+    NEW in v2.0:
+    - Phase 1 (STRICT): MIN_SCORE=0.70, exact matching
+    - Phase 2 (RESCUE): MIN_SCORE=0.60, penalties instead of filters
+    - Brand family support: if brand_id not found, search by brand_family_id
     
     CRITICAL RULES:
     1. NEVER use supplier_item_id from favorite directly
-    2. ALWAYS run full select_best_offer search
-    3. When brand_critical=false: brand is COMPLETELY IGNORED in filtering AND scoring
-    4. When brand_critical=true: filter by brand_id only
+    2. ALWAYS run full two-phase search
+    3. When brand_critical=false: brand is COMPLETELY IGNORED
+    4. When brand_critical=true: filter by brand_id, then brand_family_id
     5. Return structured response (never 500)
     
-    DEBUG LOG includes:
-    - favorite_id
-    - brand_critical
-    - reference_item (key fields)
-    - candidates_before_filters
+    DEBUG LOG (SearchDebugEvent) includes:
+    - search_id, timestamp
+    - phase (strict/rescue)
+    - counters (before/after filters)
     - filters_applied
-    - selected_supplier_item_id
-    - selected_price
-    - reason for selection
+    - failure_reason (if any)
     """
     import logging
-    logger = logging.getLogger(__name__)
+    from search_engine import TwoPhaseSearchEngine, SearchDebugEvent
+    from pipeline.normalizer import normalize_name
+    from pipeline.enricher import extract_super_class, extract_weights
     
-    # Initialize debug log
-    debug_log = {
-        "favorite_id": request.favorite_id,
-        "brand_critical": None,
-        "reference_item": {},
-        "candidates_before_filters": 0,
-        "filters_applied": [],
-        "selected_supplier_item_id": None,
-        "selected_price": None,
-        "selection_reason": None
-    }
+    logger = logging.getLogger(__name__)
     
     try:
         # Step 1: Get favorite from DB
@@ -2917,7 +2911,156 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         if not favorite:
             logger.warning(f"❌ ADD_FROM_FAVORITE: Favorite not found: {request.favorite_id}")
-            debug_log["selection_reason"] = "favorite_not_found"
+            return AddFromFavoriteResponse(
+                status="not_found",
+                debug_log={"favorite_id": request.favorite_id, "failure_reason": "favorite_not_found"},
+                message="Избранное не найдено"
+            )
+        
+        # Step 2: Build reference_item from favorite
+        logger.info(f"📋 ADD_FROM_FAVORITE: Processing favorite {request.favorite_id}")
+        
+        # Get brand_critical from favorite
+        brand_critical = favorite.get('brandMode') == 'STRICT'
+        
+        # Get brand_id from favorite (use brandId field, NOT brand which is name)
+        brand_id = favorite.get('brandId') or favorite.get('brand_id')
+        
+        # If brand_id not in favorite, try to detect from product
+        if not brand_id and favorite.get('productId'):
+            product = await db.products.find_one({"id": favorite['productId']}, {"_id": 0})
+            if product:
+                brand_id = product.get('brand_id')
+        
+        # Build reference_item
+        product_name = favorite.get('productName', '')
+        reference_item = {
+            "name_raw": product_name,
+            "name_norm": normalize_name(product_name),
+            "brand_id": brand_id,
+            "brand_critical": brand_critical,
+            "unit_norm": favorite.get('unit', 'kg'),
+            "pack_value": None,
+            "source_favorite_id": request.favorite_id
+        }
+        
+        # Enrich reference_item
+        reference_item['super_class'] = extract_super_class(reference_item['name_norm'])
+        weight_data = extract_weights(product_name)
+        reference_item['pack_value'] = weight_data.get('net_weight_kg')
+        
+        logger.info(f"   name_raw='{product_name[:50]}'")
+        logger.info(f"   brand_id={brand_id}, brand_critical={brand_critical}")
+        
+        # Step 3: Load candidates (products + pricelists)
+        companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+        company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+        
+        all_products = await db.products.find({}, {"_id": 0}).to_list(10000)
+        all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(20000)
+        
+        if not all_products or not all_pricelists:
+            logger.warning(f"❌ ADD_FROM_FAVORITE: No products/pricelists in DB")
+            return AddFromFavoriteResponse(
+                status="not_found",
+                debug_log={"favorite_id": request.favorite_id, "failure_reason": "no_data_in_db"},
+                message="Нет данных в базе"
+            )
+        
+        # Build product lookup
+        product_map = {p['id']: p for p in all_products}
+        
+        # Build candidates list
+        candidates = []
+        for pl in all_pricelists:
+            product = product_map.get(pl['productId'])
+            if not product:
+                continue
+            
+            item = {
+                'id': pl['id'],
+                'product_id': product['id'],
+                'name_raw': product.get('name', ''),
+                'name_norm': normalize_name(product.get('name', '')),
+                'price': pl['price'],
+                'price_per_base_unit': pl['price'],
+                'supplier_company_id': pl['supplierId'],
+                'unit_norm': product.get('unit', 'kg'),
+                'super_class': extract_super_class(normalize_name(product.get('name', ''))),
+                'brand_id': product.get('brand_id'),
+                'brand_strict': product.get('brand_strict', False),
+            }
+            
+            # Extract weight
+            weight_data = extract_weights(product.get('name', ''))
+            net_weight = weight_data.get('net_weight_kg')
+            if net_weight and net_weight > 0:
+                item['net_weight_kg'] = net_weight
+                item['price_per_base_unit'] = pl['price'] / net_weight
+            
+            candidates.append(item)
+        
+        logger.info(f"   Total candidates: {len(candidates)}")
+        
+        # Step 4: Run two-phase search
+        engine = TwoPhaseSearchEngine()
+        result = engine.search(
+            reference_item=reference_item,
+            candidates=candidates,
+            brand_critical=brand_critical,
+            required_volume=reference_item.get('pack_value'),
+            company_map=company_map
+        )
+        
+        # Step 5: Build response
+        debug_log = result.debug_event.to_dict()
+        
+        if result.status == "ok" and result.selected_offer:
+            offer = result.selected_offer
+            logger.info(f"✅ ADD_FROM_FAVORITE: Selected {offer['name_raw'][:40]} @ {offer['price']}₽")
+            logger.info(f"   Phase: {result.debug_event.phase}, Score: {offer['score']:.2f}")
+            
+            # Convert to SelectedOffer model
+            selected = SelectedOffer(
+                supplier_id=offer['supplier_id'],
+                supplier_name=offer['supplier_name'],
+                supplier_item_id=offer['supplier_item_id'],
+                name_raw=offer['name_raw'],
+                price=offer['price'],
+                currency=offer['currency'],
+                unit_norm=offer['unit_norm'],
+                pack_value=offer['pack_value'],
+                pack_unit=offer['pack_unit'],
+                price_per_base_unit=offer['price_per_base_unit'],
+                total_cost=offer['total_cost'],
+                units_needed=offer['units_needed'],
+                score=offer['score']
+            )
+            
+            return AddFromFavoriteResponse(
+                status="ok",
+                selected_offer=selected,
+                top_candidates=result.top_candidates,
+                debug_log=debug_log
+            )
+        else:
+            logger.warning(f"❌ ADD_FROM_FAVORITE: {result.status} - {result.debug_event.failure_reason}")
+            return AddFromFavoriteResponse(
+                status=result.status,
+                debug_log=debug_log,
+                message=result.message
+            )
+    
+    except Exception as e:
+        import traceback
+        logger.error(f"❌ ADD_FROM_FAVORITE error: {str(e)}")
+        logger.error(traceback.format_exc())
+        
+        return AddFromFavoriteResponse(
+            status="error",
+            debug_log={"failure_reason": f"exception: {str(e)}"},
+            message=f"Ошибка: {str(e)}"
+        )
             return AddFromFavoriteResponse(
                 status="not_found",
                 debug_log=debug_log,
