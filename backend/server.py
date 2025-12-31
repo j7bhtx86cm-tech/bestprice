@@ -1945,7 +1945,7 @@ async def update_my_profile(data: dict, current_user: dict = Depends(get_current
 
 @api_router.post("/favorites")
 async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_user)):
-    """Add product to favorites with SCHEMA V2 (brand_critical)"""
+    """Add product to favorites with SCHEMA V2 (brand_critical + origin support)"""
     from brand_master import brand_master
     from search_engine import extract_tokens, extract_pack_value
     
@@ -1994,6 +1994,22 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     unit_map = {'кг': 'kg', 'л': 'l', 'шт': 'pcs', 'г': 'g', 'мл': 'ml'}
     unit_norm = unit_map.get(product['unit'].lower(), product['unit'].lower())
     
+    # Extract origin (country/region/city) from pricelist or product
+    # This is for non-branded items like salmon (лосось Норвегия)
+    origin_country = pricelist.get('origin_country') or product.get('origin_country')
+    origin_region = pricelist.get('origin_region') or product.get('origin_region')
+    origin_city = pricelist.get('origin_city') or product.get('origin_city')
+    
+    # Try to extract from name if not in DB
+    if not origin_country:
+        # Simple extraction from name (e.g., "Лосось Норвегия" → Norway)
+        name_lower = product['name'].lower()
+        countries = ['норвегия', 'чили', 'россия', 'турция', 'китай', 'испания', 'франция']
+        for country in countries:
+            if country in name_lower:
+                origin_country = country.capitalize()
+                break
+    
     # Create favorite with SCHEMA V2
     favorite = {
         "id": str(uuid.uuid4()),
@@ -2005,6 +2021,9 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "reference_name": product['name'],  # Эталонное имя
         "brand_id": brand_id,               # ID бренда (может быть null)
         "brand_critical": False,            # По умолчанию OFF
+        "origin_country": origin_country,   # Страна происхождения (для лосося и т.д.)
+        "origin_region": origin_region,     # Регион (опционально)
+        "origin_city": origin_city,         # Город (опционально)
         "unit_norm": unit_norm,             # kg, l, pcs
         "pack_size": pack_size,             # Число в unit_norm
         "tokens_norm": tokens_norm,         # Нормализованные токены
@@ -2029,6 +2048,7 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         "productName": favorite['productName'],
         "isBranded": favorite['isBranded'],
         "brand": favorite['brand'],
+        "origin_country": origin_country,
         "schema_version": 2
     }
 
