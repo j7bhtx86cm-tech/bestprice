@@ -222,29 +222,9 @@ export const CustomerFavorites = () => {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Extract pack_value from product name
-      // Priority: ~5 кг (box weight) > 1,8л (volume) > last kg/l occurrence
-      let packValue = null;
-      
-      // First try to find box weight (~5 кг, вес 5 кг, 5кг/кор)
-      const boxMatch = favorite.productName.match(/[~≈]?\s*(\d+[,.]?\d*)\s*(кг|л)\s*(\/кор|кор)?/i);
-      if (boxMatch) {
-        packValue = parseFloat(boxMatch[1].replace(',', '.'));
-      } else {
-        // Fallback: find last kg/l/g/ml occurrence
-        const allMatches = [...favorite.productName.matchAll(/(\d+[,.]?\d*)\s*(кг|л|г|мл)/gi)];
-        if (allMatches.length > 0) {
-          const lastMatch = allMatches[allMatches.length - 1];
-          packValue = parseFloat(lastMatch[1].replace(',', '.'));
-          const unit = lastMatch[2].toLowerCase();
-          // Convert grams to kg, ml to liters
-          if (unit === 'г') packValue = packValue / 1000;
-          if (unit === 'мл') packValue = packValue / 1000;
-        }
-      }
-
       // Call NEW endpoint: add-from-favorite (ALWAYS runs full search)
       // CRITICAL: This endpoint gets brand_id from DB, not from frontend
+      // Pack value is extracted on backend from product name
       const response = await axios.post(`${API}/cart/add-from-favorite`, {
         favorite_id: favorite.id,
         qty: 1,
