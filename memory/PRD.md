@@ -11,112 +11,100 @@ B2B marketplace platform for HoReCa (Hotels, Restaurants, Cafes) that connects s
 
 ## Current Status (December 2025)
 
-### ✅ Completed
+### ✅ Completed - Enhanced Search Engine (MVP Safe-Mode)
 
-#### Part A - Brand Dictionary Replacement
-- [x] Replaced old brand file with `BESTPRICE_BRANDS_MASTER_UNIFIED_RF_HORECA_ULTRA_SAFE.xlsx`
-- [x] 1502 brands, 1603 aliases across 23 categories
-- [x] Updated `brand_master.py` with brand_family_id support
+#### Pack Range Filter (0.5x - 2x)
+- [x] Reference pack of 800г → valid range: 400г - 1600г
+- [x] 340г rejected (too_small_0.340<0.400)
+- [x] 5кг rejected (too_large_5.000>1.600)
+- [x] 1кг selected (in range)
 
-#### Part B - Brand Backfill
-- [x] Created endpoint `/api/admin/brands/backfill`
-- [x] Created endpoint `/api/admin/brands/stats`
-- [x] 76.6% brand coverage (5854 of 7645 products)
+#### Guard Rules (кетчуп ≠ соус)
+- [x] Conflicting product types cannot substitute each other
+- [x] Guard conflicts: кетчуп≠соус, паста≠соус, майонез≠кетчуп, etc.
+- [x] 5 sauce products rejected for ketchup search
 
-#### Part C - Favorites v2 + Migration
-- [x] Created endpoint `/api/admin/favorites/migrate-v2`
-- [x] Created endpoint `/api/favorites/{id}/enriched`
-- [x] Old favorites work without crashing
+#### brand_critical Logic Fixed
+- [x] `brand_critical=false` → brand COMPLETELY IGNORED (no filter, no score bonus)
+  - Result: PIKADOR PRO Кетчуп (199.2₽/кг) - cheapest across ALL brands
+- [x] `brand_critical=true` → filter by brand_id only
+  - Result: SI_KETCHUP_HEINZ_1KG (280₽/кг) - cheapest Heinz in pack range
 
-#### Part D - Null-safe Matching Engine
-- [x] Never returns 500 error
-- [x] Returns structured responses: `ok`, `not_found`, `insufficient_data`, `error`
+#### Economics (total_cost selection)
+- [x] price_per_base_unit = price / pack_value
+- [x] total_cost = requested_qty × price_per_base_unit
+- [x] Selection by total_cost, token_score is tie-breaker
 
-#### Part E - Brand Critical Logic Fix
-- [x] When `brand_critical=false`: brand COMPLETELY IGNORED (no filter, no score bonus)
-- [x] When `brand_critical=true`: filter by brand_id, 10% bonus
+#### Comprehensive Debug Logging
+- [x] SearchDebugEvent with:
+  - counters (total, after_brand, after_unit, after_pack, after_token, after_guard, final)
+  - pack_rejections_sample
+  - guard_rejections_sample
+  - filters_applied
+  - failure_reason
 
-#### NEW: Two-Phase Search Engine (search_engine.py)
-- [x] **Phase 1 (STRICT)**: MIN_SCORE=0.70, exact matching rules
-- [x] **Phase 2 (RESCUE)**: MIN_SCORE=0.60, penalties instead of filters
-  - Pack missing: -10% penalty
-  - Unit mismatch: -5% penalty
-  - Only triggered if Phase 1 returns 0 results
-- [x] Comprehensive SearchDebugEvent logging
-
-#### NEW: Brand Family Support
-- [x] brand_family_id in brand_master.py (27 families, 29 brands with family)
-- [x] Mappings: miratorg_chef → miratorg, hochland professional → hochland, etc.
-- [x] Brand critical fallback: if brand_id=0 results → search by brand_family_id
-- [x] Endpoint `/api/admin/brands/families`
-
-#### NEW: Search Quality Reports
-- [x] Endpoint `/api/admin/search/quality-report`
-- [x] Brand coverage by supplier
-- [x] Sample products without brand
-- [x] Overall statistics (75.2% brand coverage)
-
-## Verified Test Results (11/11 PASSED)
+### Verified Test Results (10/10 PASSED)
 
 | Test | Description | Result |
 |------|-------------|--------|
-| 1 | FAV_TEST_1 (brand_critical=false) → SI_TEST_2 (931.44₽ BRAND_B) | ✅ PASSED |
-| 2 | FAV_TEST_2 (brand_critical=true) → SI_TEST_1 (990.60₽ BRAND_A) | ✅ PASSED |
-| 3 | FAV_TEST_FAMILY → miratorg_chef finds via family | ✅ PASSED |
-| 4 | FAV_TEST_PACK_MISSING → found with penalty | ✅ PASSED |
-| 5 | FAV_TEST_OLD → no 500 error | ✅ PASSED |
-| 6 | /api/admin/search/quality-report | ✅ PASSED |
-| 7 | /api/admin/brands/families | ✅ PASSED |
-| 8 | debug_log contains all fields | ✅ PASSED |
-| 9 | brand_critical comparison | ✅ PASSED |
-| 10 | non-existent favorite | ✅ PASSED |
-| 11 | fixtures creation | ✅ PASSED |
+| 1 | FAV_KETCHUP_ANY (brand_critical=false) | ✅ 199.2₽/кг PIKADOR PRO |
+| 2 | FAV_KETCHUP_HEINZ (brand_critical=true) | ✅ 280₽/кг Heinz 1кг |
+| 3 | Pack range rejects 340г, 5кг | ✅ too_small, too_large |
+| 4 | Economics total_cost selection | ✅ 212.21₽/кг cheapest |
+| 5 | Old format favorite no crash | ✅ status=ok |
+| 6 | Guard rules reject sauce | ✅ 5 rejected |
+| 7 | debug_log counters complete | ✅ all counters |
+| 8 | brand_critical comparison | ✅ different results |
+| 9 | Fixtures created | ✅ 9 products |
+| 10 | Non-existent favorite | ✅ not_found |
 
 ## Key API Endpoints
 
-### Add From Favorite (Two-Phase Search)
+### Add From Favorite (Enhanced Search)
 ```
 POST /api/cart/add-from-favorite
 {
-  "favorite_id": "FAV_TEST_1",
-  "qty": 1
+  "favorite_id": "FAV_KETCHUP_ANY",
+  "qty": 0.8  // requested qty in base units (kg/l)
 }
 
-Response (SearchDebugEvent):
+Response:
 {
   "status": "ok",
-  "selected_offer": {...},
+  "selected_offer": {
+    "supplier_item_id": "...",
+    "name_raw": "КЕТЧУП томатный пакет 1 кг. PIKADOR PRO",
+    "price": 199.2,
+    "price_per_base_unit": 199.2,
+    "total_cost": 159.36,
+    "pack_value": 1.0
+  },
   "debug_log": {
-    "search_id": "abc123",
-    "phase": "strict",  // or "rescue"
     "counters": {
-      "total": 8224,
-      "after_brand_filter": 1500,
-      "after_score_filter": 50
+      "total": 8233,
+      "after_brand_filter": 8233,
+      "after_unit_filter": 1958,
+      "after_pack_filter": 546,
+      "after_token_filter": 10,
+      "after_guard_filter": 5,
+      "final": 5
     },
-    "filters_applied": ["brand_filter: DISABLED", "score_filter: >= 0.7"],
-    "result": {
-      "status": "ok",
-      "failure_reason": null,
-      "selected_item_id": "SI_TEST_2",
-      "selected_price": 931.44
-    }
+    "filters_applied": [
+      "brand_filter: DISABLED (brand_critical=false)",
+      "pack_filter: 0.40-1.60",
+      "guard_filter: applied"
+    ],
+    "pack_rejections_sample": [...],
+    "guard_rejections_sample": [...]
   }
 }
-```
-
-### Quality Reports
-```
-GET /api/admin/search/quality-report  # Brand coverage by supplier
-GET /api/admin/brands/families        # Brand family list
 ```
 
 ## Tech Stack
 - **Backend**: FastAPI (Python 3.11)
 - **Frontend**: React with Shadcn/UI
 - **Database**: MongoDB (`test_database`)
-- **Search Engine**: TwoPhaseSearchEngine (search_engine.py)
-- **Key Libraries**: pandas, openpyxl, thefuzz
+- **Search Engine**: EnhancedSearchEngine (search_engine.py)
 
 ## Test Credentials
 - **Customer**: `customer@bestprice.ru` / `password123`
@@ -129,11 +117,10 @@ GET /api/admin/brands/families        # Brand family list
 
 ### P2 - Medium Priority
 - [ ] Telegram Bot integration
-- [ ] Advanced user permissions (presets, approval workflows)
+- [ ] Advanced user permissions
 
 ## Files Reference
 - `/app/backend/server.py` - Main API server
-- `/app/backend/search_engine.py` - TwoPhaseSearchEngine, SearchDebugEvent
+- `/app/backend/search_engine.py` - EnhancedSearchEngine with pack range filter
 - `/app/backend/brand_master.py` - Brand dictionary with family support
-- `/app/frontend/src/pages/customer/CustomerFavorites.js` - Favorites UI
-- `/app/tests/test_two_phase_search.py` - Acceptance tests (11 tests)
+- `/app/tests/test_enhanced_search_mvp.py` - 10 acceptance tests
