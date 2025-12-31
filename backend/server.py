@@ -3620,8 +3620,9 @@ async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
         }
     ]
     
-    # Create test pricelists (SI_1, SI_2, SI_3)
+    # Create test pricelists
     test_pricelists = [
+        # СИБАС tests
         {
             "id": "SI_TEST_1",
             "productId": "TEST_PROD_A1",
@@ -3642,6 +3643,29 @@ async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
             "supplierId": supplier_id,
             "price": 1020.00,
             "supplierItemCode": "TEST-A2"
+        },
+        # Brand family tests (Miratorg)
+        {
+            "id": "SI_TEST_MIRATORG",
+            "productId": "TEST_PROD_MIRATORG",
+            "supplierId": supplier_id,
+            "price": 450.00,  # Cheaper than Chef
+            "supplierItemCode": "TEST-MIRATORG"
+        },
+        {
+            "id": "SI_TEST_MIRATORG_CHEF",
+            "productId": "TEST_PROD_MIRATORG_CHEF",
+            "supplierId": supplier_id,
+            "price": 520.00,  # More expensive
+            "supplierItemCode": "TEST-MIRATORG-CHEF"
+        },
+        # Pack missing test
+        {
+            "id": "SI_TEST_NO_PACK",
+            "productId": "TEST_PROD_NO_PACK",
+            "supplierId": supplier_id,
+            "price": 890.00,
+            "supplierItemCode": "TEST-OLIVE"
         }
     ]
     
@@ -3690,6 +3714,52 @@ async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
             "tokens": ["сибас", "охлажденный", "тест", "бренд", "а"],
             "broken": False,
             "displayOrder": 1
+        },
+        # Brand family test: Miratorg Chef should find Miratorg through family
+        {
+            "id": "FAV_TEST_FAMILY",
+            "userId": current_user['id'],
+            "companyId": current_user.get('companyId'),
+            "productId": "TEST_PROD_MIRATORG_CHEF",
+            "productName": "Говядина фарш премиум 500г Мираторг Chef",
+            "productCode": "TEST-MIRATORG-CHEF",
+            "unit": "kg",
+            "isBranded": True,
+            "brandMode": "STRICT",  # brand_critical = TRUE - should use family fallback
+            "brandId": "miratorg_chef",
+            "brand": "Мираторг Chef",
+            "schema_version": 2,
+            "source_item_id": "SI_TEST_MIRATORG_CHEF",
+            "brand_id": "miratorg_chef",
+            "brand_critical": True,
+            "unit_norm": "kg",
+            "pack": 0.5,
+            "tokens": ["говядина", "фарш", "премиум", "мираторг", "chef"],
+            "broken": False,
+            "displayOrder": 2
+        },
+        # Pack missing test
+        {
+            "id": "FAV_TEST_PACK_MISSING",
+            "userId": current_user['id'],
+            "companyId": current_user.get('companyId'),
+            "productId": "TEST_PROD_NO_PACK",
+            "productName": "Масло оливковое Extra Virgin",
+            "productCode": "TEST-OLIVE",
+            "unit": "л",
+            "isBranded": True,
+            "brandMode": "ANY",
+            "brandId": "test_olive",
+            "brand": "TEST_OLIVE",
+            "schema_version": 2,
+            "source_item_id": "SI_TEST_NO_PACK",
+            "brand_id": "test_olive",
+            "brand_critical": False,
+            "unit_norm": "л",
+            "pack": None,  # PACK MISSING
+            "tokens": ["масло", "оливковое", "extra", "virgin"],
+            "broken": False,
+            "displayOrder": 3
         },
         {
             "id": "FAV_TEST_OLD",
