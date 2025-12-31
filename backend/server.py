@@ -3065,8 +3065,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
 
 
 @api_router.post("/favorites/order")
-        
-        if not favorite:
+async def order_from_favorites(data: dict, current_user: dict = Depends(get_current_user)):
             logger.warning(f"❌ ADD_FROM_FAVORITE: Favorite not found: {request.favorite_id}")
             return AddFromFavoriteResponse(
                 status="not_found",
