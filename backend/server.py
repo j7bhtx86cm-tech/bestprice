@@ -2755,8 +2755,11 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             # Count unique brands in top scores
             brands_in_top = set()
             for d in debug_scores[:10]:
-                brands_in_top.add(d.get('brand_id', 'none'))
-                logger.info(f"   {d['score']:.2f} | {d['price']:>8.2f}₽ | brand={d.get('brand_id', 'none'):12} | {d['name'][:35]}")
+                brands_in_top.add(d.get('brand_id') or 'none')
+                price_str = f"{d['price']:>8.2f}" if d.get('price') is not None else "     N/A"
+                brand_str = str(d.get('brand_id') or 'none')[:12]
+                name_str = str(d.get('name') or '')[:35]
+                logger.info(f"   {d['score']:.2f} | {price_str}₽ | brand={brand_str:12} | {name_str}")
             
             logger.info(f"📊 Unique brands in top-10: {len(brands_in_top)} ({', '.join(str(b) for b in brands_in_top)})")
         
