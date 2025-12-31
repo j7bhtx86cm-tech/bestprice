@@ -243,26 +243,23 @@ export const CustomerFavorites = () => {
         }
       }
 
-      // Build reference_item from favorite (эталон)
-      const referenceItem = {
-        name_raw: favorite.productName,
-        pack_value: packValue,  // Weight/volume from card
-        brand_id: favorite.brand || null,
-        brand_critical: favorite.brandMode === 'STRICT'
-      };
-
-      // Call NEW endpoint to select best offer
-      // Pass required_volume = pack_value from card for total cost calculation
-      const response = await axios.post(`${API}/cart/select-offer`, {
-        reference_item: referenceItem,
+      // Call NEW endpoint: add-from-favorite (ALWAYS runs full search)
+      // CRITICAL: This endpoint gets brand_id from DB, not from frontend
+      const response = await axios.post(`${API}/cart/add-from-favorite`, {
+        favorite_id: favorite.id,
         qty: 1,
-        required_volume: packValue,  // For total cost calculation
-        match_threshold: 0.85
+        match_threshold: 0.6  // Lower threshold for better matching
       }, { headers });
 
-      // Check if match found
-      if (!response.data.selected_offer) {
-        alert(`❌ Не найдено совпадений ≥ 85% по прайсам\n\nТовар: ${favorite.productName}`);
+      // Check response status
+      if (response.data.status !== 'ok' || !response.data.selected_offer) {
+        const reason = response.data.message || response.data.status || 'Unknown error';
+        alert(`❌ Не найдено совпадений\n\nТовар: ${favorite.productName}\nПричина: ${reason}`);
+        
+        // Log debug info if available
+        if (response.data.debug_log) {
+          console.log('🔍 Debug log:', response.data.debug_log);
+        }
         return;
       }
 
@@ -279,7 +276,7 @@ export const CustomerFavorites = () => {
         reference_item: {
           name_raw: favorite.productName,
           productId: favorite.productId,
-          brand_id: favorite.brand || null,
+          brand_id: favorite.brandId || null,  // Use brandId (correct field!)
           brand_critical: favorite.brandMode === 'STRICT',
           unit: favorite.unit
         },
@@ -326,9 +323,15 @@ export const CustomerFavorites = () => {
       }
       
       message += `\n🏢 ${offer.supplier_name}\n✅ Совпадение: ${scorePercent}%`;
+      
+      // Log debug info
+      if (response.data.debug_log) {
+        console.log('🔍 Selection debug:', response.data.debug_log);
+      }
+      
       alert(message);
     } catch (error) {
-      console.error('Failed to select best offer:', error);
+      console.error('Failed to add from favorite:', error);
       alert('Ошибка при поиске лучшей цены. Попробуйте еще раз.');
     } finally {
       setAddingToCart(null);
