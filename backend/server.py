@@ -3061,63 +3061,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             debug_log={"failure_reason": f"exception: {str(e)}"},
             message=f"Ошибка: {str(e)}"
         )
-            return AddFromFavoriteResponse(
-                status="not_found",
-                debug_log=debug_log,
-                message="Избранное не найдено"
-            )
-        
-        # Step 2: Enrich favorite - build reference_item from DB data
-        logger.info(f"📋 ADD_FROM_FAVORITE: Enriching favorite {request.favorite_id}")
-        
-        # Get brand_critical from favorite (brandMode: STRICT = true, ANY = false)
-        brand_critical = favorite.get('brandMode') == 'STRICT'
-        debug_log["brand_critical"] = brand_critical
-        
-        # Get brand_id from favorite (use brandId field, NOT brand which is name)
-        brand_id = favorite.get('brandId')  # This is the correct field!
-        
-        # If brand_id not in favorite, try to detect from product
-        if not brand_id and favorite.get('productId'):
-            product = await db.products.find_one({"id": favorite['productId']}, {"_id": 0})
-            if product:
-                brand_id = product.get('brand_id')
-        
-        # Build reference_item
-        reference_item = {
-            "name_raw": favorite.get('productName', ''),
-            "brand_id": brand_id,
-            "brand_critical": brand_critical,
-            "unit_norm": favorite.get('unit', 'kg'),
-            "pack_value": None,  # Will be extracted from name
-            "source_favorite_id": request.favorite_id
-        }
-        
-        debug_log["reference_item"] = {
-            "name_raw": reference_item["name_raw"][:50] if reference_item["name_raw"] else "N/A",
-            "brand_id": reference_item["brand_id"],
-            "brand_critical": reference_item["brand_critical"],
-            "unit_norm": reference_item["unit_norm"]
-        }
-        
-        # Check for required data
-        if not reference_item["name_raw"].strip():
-            logger.warning(f"❌ ADD_FROM_FAVORITE: No product name in favorite")
-            debug_log["selection_reason"] = "no_product_name"
-            return AddFromFavoriteResponse(
-                status="insufficient_data",
-                debug_log=debug_log,
-                message="Недостаточно данных для поиска"
-            )
-        
-        logger.info(f"   name_raw='{reference_item['name_raw'][:50]}'")
-        logger.info(f"   brand_id={brand_id}, brand_critical={brand_critical}")
-        
-        # Step 3: Run FULL select_best_offer search
-        from pipeline.normalizer import normalize_name
-        from pipeline.enricher import extract_super_class, extract_weights
-        
-        # Enrich reference_item
+
+
+@api_router.post("/favorites/order")
         reference_item['name_norm'] = normalize_name(reference_item['name_raw'])
         reference_item['super_class'] = extract_super_class(reference_item['name_norm'])
         
