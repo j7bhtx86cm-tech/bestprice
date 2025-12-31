@@ -2608,46 +2608,70 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
     IMPORTANT (brand_critical rule):
     - brand_critical=false: brand is COMPLETELY NEUTRAL (no filter, no score bonus)
     - brand_critical=true: brand is required (filter + bonus)
+    
+    NULL-SAFE: Returns structured response, never 500 error.
+    Possible statuses in 'reason' field:
+    - None (success)
+    - NO_MATCH_OVER_THRESHOLD
+    - INSUFFICIENT_DATA
+    - NOT_FOUND
     """
     import logging
     logger = logging.getLogger(__name__)
     
-    ref = request.reference_item.model_dump()
-    threshold = request.match_threshold
-    brand_critical = ref.get('brand_critical', False)
-    
-    # DEBUG: Log brand_critical status
-    brand_weight = 0.10 if brand_critical else 0.0
-    logger.info(f"🔍 SELECT_BEST_OFFER:")
-    logger.info(f"   ref='{ref.get('name_raw')[:50]}'")
-    logger.info(f"   brand_critical={brand_critical}, brand_weight={brand_weight}")
-    logger.info(f"   brand_id filter applied: {'YES' if brand_critical else 'NO'}")
-    logger.info(f"   threshold={threshold}")
-    
-    # Enrich reference item if needed
-    from pipeline.normalizer import normalize_name
-    from pipeline.enricher import extract_super_class, extract_weights
-    
-    if not ref.get('name_norm'):
-        ref['name_norm'] = normalize_name(ref['name_raw'])
-    
-    if not ref.get('super_class'):
-        ref['super_class'] = extract_super_class(ref['name_norm'])
-    
-    if not ref.get('pack_value'):
-        weight_data = extract_weights(ref['name_raw'])
-        ref['pack_value'] = weight_data.get('net_weight_kg')
-    
-    # Load company names map
-    companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
-    company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
-    
-    # Load ALL products and pricelists (actual data source)
-    all_products = await db.products.find({}, {"_id": 0}).to_list(10000)
-    all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(20000)
-    
-    # Build product lookup
-    product_map = {p['id']: p for p in all_products}
+    try:
+        ref = request.reference_item.model_dump()
+        threshold = request.match_threshold
+        brand_critical = ref.get('brand_critical', False)
+        
+        # NULL-SAFE: Check for required data
+        ref_name = ref.get('name_raw') or ''
+        if not ref_name.strip():
+            logger.warning("❌ SELECT_BEST_OFFER: No name_raw provided")
+            return SelectOfferResponse(
+                selected_offer=None,
+                reason="INSUFFICIENT_DATA"
+            )
+        
+        # DEBUG: Log brand_critical status (null-safe)
+        brand_weight = 0.10 if brand_critical else 0.0
+        logger.info(f"🔍 SELECT_BEST_OFFER:")
+        logger.info(f"   ref='{ref_name[:50] if ref_name else 'N/A'}'")
+        logger.info(f"   brand_critical={brand_critical}, brand_weight={brand_weight}")
+        logger.info(f"   brand_id filter applied: {'YES' if brand_critical else 'NO'}")
+        logger.info(f"   threshold={threshold}")
+        
+        # Enrich reference item if needed
+        from pipeline.normalizer import normalize_name
+        from pipeline.enricher import extract_super_class, extract_weights
+        
+        if not ref.get('name_norm'):
+            ref['name_norm'] = normalize_name(ref_name)
+        
+        if not ref.get('super_class'):
+            ref['super_class'] = extract_super_class(ref.get('name_norm') or '')
+        
+        if not ref.get('pack_value'):
+            weight_data = extract_weights(ref_name)
+            ref['pack_value'] = weight_data.get('net_weight_kg')
+        
+        # Load company names map
+        companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+        company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+        
+        # Load ALL products and pricelists (actual data source)
+        all_products = await db.products.find({}, {"_id": 0}).to_list(10000)
+        all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(20000)
+        
+        if not all_products or not all_pricelists:
+            logger.warning("❌ SELECT_BEST_OFFER: No products or pricelists in database")
+            return SelectOfferResponse(
+                selected_offer=None,
+                reason="NOT_FOUND"
+            )
+        
+        # Build product lookup
+        product_map = {p['id']: p for p in all_products}
     
     # Build items list with price info (products + pricelists joined)
     all_items = []
