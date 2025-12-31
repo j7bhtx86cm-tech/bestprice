@@ -3547,17 +3547,19 @@ async def get_brand_families(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/test/create-fixtures")
 async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
-    """Create test fixtures for brand_critical testing
+    """Create test fixtures for brand_critical and brand_family testing
     
     Creates:
     - Test products: СИБАС охлажденный with different brands
+    - Test products: Говядина Мираторг/Мираторг Chef for brand family testing
     - Test pricelists: Different prices for each brand
-    - Test favorites: FAV_1 (brand_critical=false), FAV_2 (brand_critical=true), FAV_OLD (v1)
+    - Test favorites
     
     EXPECTED BEHAVIOR:
-    - FAV_1 (brand_critical=false): Should select SI_2 (BRAND_B, 931.44₽) - CHEAPEST
-    - FAV_2 (brand_critical=true): Should select SI_1 (BRAND_A, 990.60₽) - cheapest of BRAND_A
-    - FAV_OLD: Should return insufficient_data or broken=true
+    - FAV_TEST_1 (brand_critical=false): Should select cheapest across ALL brands
+    - FAV_TEST_2 (brand_critical=true): Should select cheapest of specified brand
+    - FAV_TEST_FAMILY: Should find Miratorg through Miratorg Chef family
+    - FAV_TEST_PACK_MISSING: Strict may fail, rescue should find with penalty
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -3571,6 +3573,7 @@ async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
     
     # Create test products
     test_products = [
+        # Test case: brand_critical true/false
         {
             "id": "TEST_PROD_A1",
             "name": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А",
@@ -3590,6 +3593,29 @@ async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
             "name": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А премиум",
             "unit": "kg",
             "brand_id": "test_brand_a",
+            "brand_strict": False
+        },
+        # Test case: brand family (Miratorg Chef -> Miratorg)
+        {
+            "id": "TEST_PROD_MIRATORG",
+            "name": "Говядина фарш 500г Мираторг",
+            "unit": "kg",
+            "brand_id": "miratorg",
+            "brand_strict": False
+        },
+        {
+            "id": "TEST_PROD_MIRATORG_CHEF",
+            "name": "Говядина фарш премиум 500г Мираторг Chef",
+            "unit": "kg",
+            "brand_id": "miratorg_chef",
+            "brand_strict": False
+        },
+        # Test case: pack missing (no weight in name)
+        {
+            "id": "TEST_PROD_NO_PACK",
+            "name": "Масло оливковое Extra Virgin",
+            "unit": "л",
+            "brand_id": "test_olive",
             "brand_strict": False
         }
     ]
