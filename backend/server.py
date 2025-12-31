@@ -2078,15 +2078,18 @@ async def update_favorite_brand_mode(favorite_id: str, data: dict, current_user:
     if brand_mode not in ['STRICT', 'ANY']:
         raise HTTPException(status_code=400, detail="Invalid brand mode")
     
+    # Update BOTH legacy brandMode AND schema v2 brand_critical
+    brand_critical = (brand_mode == 'STRICT')
+    
     result = await db.favorites.update_one(
         {"id": favorite_id, "userId": current_user['id']},
-        {"$set": {"brandMode": brand_mode}}
+        {"$set": {"brandMode": brand_mode, "brand_critical": brand_critical}}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Favorite not found")
     
-    return {"message": "Brand mode updated", "brandMode": brand_mode}
+    return {"message": "Brand mode updated", "brandMode": brand_mode, "brand_critical": brand_critical}
 
 
 # NEW UNIVERSAL MATCHING ENGINE ENDPOINT
