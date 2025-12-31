@@ -40,7 +40,7 @@ async def run_brand_backfill():
     # Load Brand Master
     logger.info("📋 Loading Brand Master Dictionary...")
     brand_master = BrandMaster()
-    logger.info(f"   Loaded {len(brand_master.brand_aliases)} brand aliases")
+    logger.info(f"   Brand Master loaded successfully")
     
     # Get all pricelists
     logger.info("🔍 Fetching all pricelists...")
