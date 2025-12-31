@@ -1,31 +1,197 @@
-"""Two-Phase Search Engine with Brand Family Support
+"""Enhanced Search Engine with Pack Range Filtering (MVP Safe-Mode)
 
-VERSION 1.0 (December 2025):
-- Phase 1 (STRICT): Current rules, MIN_SCORE=0.70
-- Phase 2 (RESCUE): Relaxed rules, MIN_SCORE=0.60, pack/unit penalties instead of filters
-- Brand family support: if brand_id not found, search by brand_family_id
-- Comprehensive debug logging with SearchDebugEvent
+VERSION 2.0 (December 2025):
+- Pack range filter: 0.5x - 2x of reference pack
+- Category + unit_norm + tokens matching (базовый matching)
+- Guard rules: кетчуп ≠ соус, паста ≠ соус
+- brand_critical logic fixed
+- Economics: price_per_base_unit → total_cost → selection
+- Comprehensive SearchDebugEvent logging
 
-Usage:
-    from search_engine import TwoPhaseSearchEngine, SearchDebugEvent
-    
-    engine = TwoPhaseSearchEngine()
-    result = engine.search(
-        reference_item=ref,
-        candidates=items,
-        brand_critical=True,
-        required_volume=1.0
-    )
-    
-    # Access debug info
-    print(result.debug_event.to_dict())
+CRITICAL RULES:
+1. brand_critical=false → brand COMPLETELY IGNORED (no filter, no score)
+2. brand_critical=true → only same brand_id
+3. Pack range: 0.5 * ref_pack <= candidate_pack <= 2 * ref_pack
+4. Selection by total_cost, score is tie-breaker only
 """
 import logging
-from typing import Optional, List, Dict, Any
+import re
+from typing import Optional, List, Dict, Any, Set, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+
+# Guard rules - conflicting product types
+GUARD_CONFLICTS = {
+    'кетчуп': {'соус', 'паста', 'майонез', 'горчица'},
+    'соус': {'кетчуп', 'паста', 'майонез'},
+    'паста': {'соус', 'кетчуп'},
+    'майонез': {'кетчуп', 'соус', 'горчица'},
+    'горчица': {'майонез', 'кетчуп'},
+    'масло': {'маргарин', 'спред'},
+    'маргарин': {'масло', 'спред'},
+    'молоко': {'сливки', 'кефир', 'йогурт'},
+    'сливки': {'молоко', 'кефир'},
+    'томатный': {'острый', 'сырный', 'грибной'},
+    'острый': {'томатный', 'сырный'},
+}
+
+# Category synonyms for matching
+CATEGORY_SYNONYMS = {
+    'fish': {'рыба', 'морепродукты', 'seafood'},
+    'meat': {'мясо', 'птица', 'poultry'},
+    'dairy': {'молочные', 'молоко', 'сыр'},
+    'sauce': {'соусы', 'кетчуп', 'майонез'},
+    'oil': {'масла', 'жиры'},
+    'grocery': {'бакалея', 'крупы'},
+}
+
+# Unit normalization
+UNIT_NORM_MAP = {
+    'кг': 'kg', 'kg': 'kg', 'килограмм': 'kg',
+    'г': 'g', 'g': 'g', 'грамм': 'g', 'гр': 'g',
+    'л': 'l', 'l': 'l', 'литр': 'l', 'литра': 'l',
+    'мл': 'ml', 'ml': 'ml', 'миллилитр': 'ml',
+    'шт': 'pcs', 'pcs': 'pcs', 'штук': 'pcs', 'штука': 'pcs',
+}
+
+
+def normalize_unit(unit: str) -> str:
+    """Normalize unit to standard form"""
+    if not unit:
+        return 'kg'  # default
+    return UNIT_NORM_MAP.get(unit.lower().strip(), unit.lower())
+
+
+def extract_pack_value(name: str, unit: str = None) -> Optional[float]:
+    """Extract pack value from product name
+    
+    Examples:
+    - "Кетчуп 800г" → 0.8 (kg)
+    - "Соус 1л" → 1.0 (l)
+    - "Масло ~5кг/кор" → 5.0 (kg)
+    """
+    if not name:
+        return None
+    
+    name_lower = name.lower()
+    
+    # Pattern for box weight first (~5 кг, вес 5кг, 5кг/кор)
+    box_match = re.search(r'[~≈]?\s*(\d+[,.]?\d*)\s*(кг|л)\s*(\/кор|кор)?', name_lower)
+    if box_match:
+        value = float(box_match.group(1).replace(',', '.'))
+        unit_found = box_match.group(2)
+        return value
+    
+    # Pattern for grams/ml
+    gram_match = re.search(r'(\d+[,.]?\d*)\s*(г|гр|мл)\b', name_lower)
+    if gram_match:
+        value = float(gram_match.group(1).replace(',', '.'))
+        unit_found = gram_match.group(2)
+        # Convert g to kg, ml to l
+        if unit_found in ('г', 'гр'):
+            return value / 1000
+        elif unit_found == 'мл':
+            return value / 1000
+    
+    # Pattern for kg/l
+    kg_match = re.search(r'(\d+[,.]?\d*)\s*(кг|л)\b', name_lower)
+    if kg_match:
+        value = float(kg_match.group(1).replace(',', '.'))
+        return value
+    
+    return None
+
+
+def extract_tokens(name: str) -> Set[str]:
+    """Extract meaningful tokens from product name"""
+    if not name:
+        return set()
+    
+    # Normalize
+    name_lower = name.lower().replace('ё', 'е')
+    
+    # Remove numbers and special chars
+    name_clean = re.sub(r'[\d.,/\\~≈%×x*]+', ' ', name_lower)
+    name_clean = re.sub(r'[^\w\s]', ' ', name_clean)
+    
+    # Split and filter
+    tokens = set(name_clean.split())
+    
+    # Remove filler words
+    fillers = {
+        'кг', 'г', 'гр', 'л', 'мл', 'шт', 'упак', 'упаковка', 'пакет',
+        'вес', 'нетто', 'брутто', 'кор', 'коробка', 'ящик',
+        'и', 'в', 'с', 'на', 'к', 'из', 'для', 'по', 'от', 'до',
+        'инд', 'индивидуальный', 'порционный', 'порция',
+        'тр', 'tr', 'prb', 'rf', 'professional', 'pro', 'chef',
+    }
+    tokens = tokens - fillers
+    
+    # Remove very short tokens
+    tokens = {t for t in tokens if len(t) >= 2}
+    
+    return tokens
+
+
+def check_guard_conflict(ref_tokens: Set[str], cand_tokens: Set[str]) -> bool:
+    """Check if there's a guard conflict between reference and candidate
+    
+    Returns True if CONFLICT (should reject candidate)
+    """
+    for ref_token in ref_tokens:
+        if ref_token in GUARD_CONFLICTS:
+            conflicts = GUARD_CONFLICTS[ref_token]
+            # Check if any candidate token is in conflicts
+            if cand_tokens & conflicts:
+                return True
+    return False
+
+
+def is_pack_in_range(ref_pack: Optional[float], cand_pack: Optional[float]) -> Tuple[bool, str]:
+    """Check if candidate pack is in acceptable range (0.5x - 2x of reference)
+    
+    Returns: (is_valid, reason)
+    """
+    # If reference has no pack, accept any
+    if not ref_pack or ref_pack <= 0:
+        return (True, "ref_pack_unknown")
+    
+    # If candidate has no pack, we need to decide
+    if not cand_pack or cand_pack <= 0:
+        return (False, "cand_pack_unknown")
+    
+    min_pack = ref_pack * 0.5
+    max_pack = ref_pack * 2.0
+    
+    if min_pack <= cand_pack <= max_pack:
+        return (True, f"in_range_{min_pack:.3f}-{max_pack:.3f}")
+    elif cand_pack < min_pack:
+        return (False, f"too_small_{cand_pack:.3f}<{min_pack:.3f}")
+    else:
+        return (False, f"too_large_{cand_pack:.3f}>{max_pack:.3f}")
+
+
+def units_compatible(ref_unit: str, cand_unit: str) -> bool:
+    """Check if units are compatible"""
+    ref_norm = normalize_unit(ref_unit)
+    cand_norm = normalize_unit(cand_unit)
+    
+    # Direct match
+    if ref_norm == cand_norm:
+        return True
+    
+    # kg and g are compatible
+    if {ref_norm, cand_norm} <= {'kg', 'g'}:
+        return True
+    
+    # l and ml are compatible
+    if {ref_norm, cand_norm} <= {'l', 'ml'}:
+        return True
+    
+    return False
 
 
 @dataclass
@@ -36,33 +202,40 @@ class SearchDebugEvent:
     search_id: str = ""
     timestamp: str = ""
     reference_name: str = ""
+    reference_pack: Optional[float] = None
+    reference_unit: Optional[str] = None
+    reference_tokens: List[str] = field(default_factory=list)
     brand_id: Optional[str] = None
     brand_family_id: Optional[str] = None
     brand_critical: bool = False
-    required_volume: Optional[float] = None
+    requested_qty: Optional[float] = None
     
     # Phase info
-    phase: str = "strict"  # "strict" or "rescue"
-    min_score_threshold: float = 0.70
+    phase: str = "main"
     
-    # Counters
+    # Counters (before/after each filter)
     total_candidates: int = 0
     candidates_after_brand_filter: int = 0
-    candidates_after_family_filter: int = 0
-    candidates_after_score_filter: int = 0
-    candidates_with_pack: int = 0
-    candidates_without_pack: int = 0
+    candidates_after_unit_filter: int = 0
+    candidates_after_pack_filter: int = 0
+    candidates_after_token_filter: int = 0
+    candidates_after_guard_filter: int = 0
+    final_candidates: int = 0
     
-    # Filters applied
+    # Filter details
     filters_applied: List[str] = field(default_factory=list)
+    pack_rejections: List[dict] = field(default_factory=list)
+    guard_rejections: List[str] = field(default_factory=list)
     
     # Result
     status: str = "not_found"  # "ok", "not_found", "insufficient_data", "error"
     failure_reason: Optional[str] = None
     selected_item_id: Optional[str] = None
     selected_price: Optional[float] = None
+    selected_pack: Optional[float] = None
     selected_brand_id: Optional[str] = None
-    selected_score: Optional[float] = None
+    selected_total_cost: Optional[float] = None
+    selected_price_per_unit: Optional[float] = None
     
     # Timing
     duration_ms: Optional[float] = None
@@ -74,29 +247,36 @@ class SearchDebugEvent:
             "timestamp": self.timestamp,
             "reference": {
                 "name": self.reference_name[:50] if self.reference_name else None,
+                "pack": self.reference_pack,
+                "unit": self.reference_unit,
+                "tokens": self.reference_tokens[:10] if self.reference_tokens else [],
                 "brand_id": self.brand_id,
                 "brand_family_id": self.brand_family_id,
                 "brand_critical": self.brand_critical,
-                "required_volume": self.required_volume
+                "requested_qty": self.requested_qty
             },
             "phase": self.phase,
-            "min_score_threshold": self.min_score_threshold,
             "counters": {
                 "total": self.total_candidates,
                 "after_brand_filter": self.candidates_after_brand_filter,
-                "after_family_filter": self.candidates_after_family_filter,
-                "after_score_filter": self.candidates_after_score_filter,
-                "with_pack": self.candidates_with_pack,
-                "without_pack": self.candidates_without_pack
+                "after_unit_filter": self.candidates_after_unit_filter,
+                "after_pack_filter": self.candidates_after_pack_filter,
+                "after_token_filter": self.candidates_after_token_filter,
+                "after_guard_filter": self.candidates_after_guard_filter,
+                "final": self.final_candidates
             },
             "filters_applied": self.filters_applied,
+            "pack_rejections_sample": self.pack_rejections[:5],
+            "guard_rejections_sample": self.guard_rejections[:5],
             "result": {
                 "status": self.status,
                 "failure_reason": self.failure_reason,
                 "selected_item_id": self.selected_item_id,
                 "selected_price": self.selected_price,
+                "selected_pack": self.selected_pack,
                 "selected_brand_id": self.selected_brand_id,
-                "selected_score": self.selected_score
+                "selected_total_cost": self.selected_total_cost,
+                "selected_price_per_unit": self.selected_price_per_unit
             },
             "duration_ms": self.duration_ms
         }
@@ -104,7 +284,7 @@ class SearchDebugEvent:
 
 @dataclass
 class SearchResult:
-    """Result of two-phase search"""
+    """Result of search"""
     status: str  # "ok", "not_found", "insufficient_data", "error"
     selected_offer: Optional[Dict[str, Any]] = None
     top_candidates: List[Dict[str, Any]] = field(default_factory=list)
@@ -112,58 +292,45 @@ class SearchResult:
     message: Optional[str] = None
 
 
-class TwoPhaseSearchEngine:
-    """Two-phase search engine with brand family support
+class EnhancedSearchEngine:
+    """Enhanced search engine with pack range filtering and guard rules
     
-    Phase 1 (STRICT):
-    - MIN_SCORE = 0.70
-    - pack/unit matching required
-    - brand_critical=true: filter by brand_id, then brand_family_id if 0 results
-    
-    Phase 2 (RESCUE):
-    - MIN_SCORE = 0.60
-    - pack/unit missing: apply penalty (-0.10) instead of filtering
-    - Only triggered if Phase 1 returns 0 results
+    Matching Flow:
+    1. Brand filter (only if brand_critical=true)
+    2. Unit filter (kg/l/pcs compatibility)
+    3. Pack range filter (0.5x - 2x)
+    4. Token filter (meaningful tokens match)
+    5. Guard filter (кетчуп ≠ соус)
+    6. Economics: sort by total_cost, score is tie-breaker
     """
     
-    # Thresholds
-    STRICT_MIN_SCORE = 0.70
-    RESCUE_MIN_SCORE = 0.60
-    
-    # Penalties for rescue phase
-    PACK_MISSING_PENALTY = 0.10
-    UNIT_MISMATCH_PENALTY = 0.05
-    
     def __init__(self, brand_master=None):
-        """Initialize search engine
-        
-        Args:
-            brand_master: BrandMaster instance (optional, will create if None)
-        """
+        """Initialize search engine"""
         self.brand_master = brand_master
         if self.brand_master is None:
-            from brand_master import get_brand_master
-            self.brand_master = get_brand_master()
+            try:
+                from brand_master import get_brand_master
+                self.brand_master = get_brand_master()
+            except Exception as e:
+                logger.warning(f"Could not load brand master: {e}")
+                self.brand_master = None
     
     def search(
         self,
         reference_item: Dict[str, Any],
         candidates: List[Dict[str, Any]],
         brand_critical: bool = False,
-        required_volume: Optional[float] = None,
+        requested_qty: float = 1.0,
         company_map: Optional[Dict[str, str]] = None
     ) -> SearchResult:
-        """Run two-phase search
+        """Run enhanced search with pack range filtering
         
         Args:
-            reference_item: Reference product to match
-            candidates: List of candidate items to search
-            brand_critical: If True, filter by brand; if False, ignore brand
-            required_volume: Required volume for total cost calculation
+            reference_item: Reference product with name_raw, pack, unit_norm, brand_id
+            candidates: List of candidate items
+            brand_critical: If True, filter by brand; if False, ignore brand completely
+            requested_qty: Requested quantity for total_cost calculation
             company_map: Mapping of company_id -> company_name
-        
-        Returns:
-            SearchResult with selected offer, candidates, and debug info
         """
         import time
         import uuid
@@ -171,24 +338,38 @@ class TwoPhaseSearchEngine:
         start_time = time.time()
         company_map = company_map or {}
         
+        # Extract reference data
+        ref_name = reference_item.get('name_raw', '')
+        ref_pack = reference_item.get('pack') or reference_item.get('pack_value')
+        ref_unit = reference_item.get('unit_norm', 'kg')
+        ref_brand = reference_item.get('brand_id')
+        ref_tokens = extract_tokens(ref_name)
+        
+        # If pack not provided, try to extract from name
+        if not ref_pack:
+            ref_pack = extract_pack_value(ref_name, ref_unit)
+        
         # Initialize debug event
         debug = SearchDebugEvent(
             search_id=str(uuid.uuid4())[:8],
             timestamp=datetime.now().isoformat(),
-            reference_name=reference_item.get('name_raw', ''),
-            brand_id=reference_item.get('brand_id'),
+            reference_name=ref_name,
+            reference_pack=ref_pack,
+            reference_unit=ref_unit,
+            reference_tokens=list(ref_tokens)[:10],
+            brand_id=ref_brand,
             brand_critical=brand_critical,
-            required_volume=required_volume,
+            requested_qty=requested_qty,
             total_candidates=len(candidates)
         )
         
         # Get brand family info
-        if debug.brand_id:
-            debug.brand_family_id = self.brand_master.get_brand_family_id(debug.brand_id)
+        if ref_brand and self.brand_master:
+            debug.brand_family_id = self.brand_master.get_brand_family_id(ref_brand)
         
         try:
             # Check for required data
-            if not reference_item.get('name_raw', '').strip():
+            if not ref_name.strip():
                 debug.status = "insufficient_data"
                 debug.failure_reason = "no_product_name"
                 debug.duration_ms = (time.time() - start_time) * 1000
@@ -198,367 +379,258 @@ class TwoPhaseSearchEngine:
                     message="Недостаточно данных: нет названия товара"
                 )
             
-            # Phase 1: STRICT search
-            debug.phase = "strict"
-            debug.min_score_threshold = self.STRICT_MIN_SCORE
+            logger.info(f"🔍 ENHANCED SEARCH:")
+            logger.info(f"   ref='{ref_name[:50]}'")
+            logger.info(f"   pack={ref_pack}, unit={ref_unit}, brand={ref_brand}")
+            logger.info(f"   brand_critical={brand_critical}, tokens={list(ref_tokens)[:5]}")
             
-            result = self._search_phase(
-                reference_item=reference_item,
-                candidates=candidates,
-                brand_critical=brand_critical,
-                required_volume=required_volume,
-                company_map=company_map,
-                debug=debug,
-                phase="strict"
-            )
+            # === FILTER 1: BRAND ===
+            if brand_critical and ref_brand:
+                brand_filtered = self._filter_by_brand(candidates, ref_brand, debug)
+                debug.filters_applied.append(f"brand_filter: brand_id={ref_brand}")
+            else:
+                brand_filtered = candidates
+                debug.filters_applied.append("brand_filter: DISABLED (brand_critical=false)")
             
-            # If Phase 1 found results, return them
-            if result.status == "ok" and result.selected_offer:
+            debug.candidates_after_brand_filter = len(brand_filtered)
+            
+            if brand_critical and len(brand_filtered) == 0:
+                debug.status = "not_found"
+                debug.failure_reason = "no_candidates_for_brand"
                 debug.duration_ms = (time.time() - start_time) * 1000
-                return result
+                return SearchResult(
+                    status="not_found",
+                    debug_event=debug,
+                    message=f"Нет товаров бренда {ref_brand}"
+                )
             
-            # Phase 2: RESCUE search (only if Phase 1 failed)
-            logger.info(f"🔄 RESCUE PHASE: Phase 1 returned 0 results, trying rescue...")
+            # === FILTER 2: UNIT ===
+            unit_filtered = [
+                c for c in brand_filtered
+                if units_compatible(ref_unit, c.get('unit_norm', 'kg'))
+            ]
+            debug.candidates_after_unit_filter = len(unit_filtered)
+            debug.filters_applied.append(f"unit_filter: {ref_unit}")
             
-            debug.phase = "rescue"
-            debug.min_score_threshold = self.RESCUE_MIN_SCORE
-            debug.filters_applied.append("PHASE_SWITCH: strict -> rescue")
+            # === FILTER 3: PACK RANGE (0.5x - 2x) ===
+            pack_filtered = []
+            for c in unit_filtered:
+                cand_pack = c.get('net_weight_kg') or c.get('net_volume_l') or c.get('pack_value')
+                if not cand_pack:
+                    cand_pack = extract_pack_value(c.get('name_raw', ''), c.get('unit_norm'))
+                
+                is_valid, reason = is_pack_in_range(ref_pack, cand_pack)
+                
+                if is_valid:
+                    c['_pack_value'] = cand_pack  # Store for later
+                    pack_filtered.append(c)
+                else:
+                    # Track rejections for debug
+                    if len(debug.pack_rejections) < 10:
+                        debug.pack_rejections.append({
+                            'name': c.get('name_raw', '')[:40],
+                            'pack': cand_pack,
+                            'reason': reason
+                        })
             
-            result = self._search_phase(
-                reference_item=reference_item,
-                candidates=candidates,
-                brand_critical=brand_critical,
-                required_volume=required_volume,
-                company_map=company_map,
-                debug=debug,
-                phase="rescue"
-            )
+            debug.candidates_after_pack_filter = len(pack_filtered)
+            if ref_pack:
+                debug.filters_applied.append(f"pack_filter: {ref_pack*0.5:.2f}-{ref_pack*2:.2f}")
+            else:
+                debug.filters_applied.append("pack_filter: DISABLED (ref_pack unknown)")
+            
+            # === FILTER 4: TOKEN MATCHING ===
+            token_filtered = []
+            for c in pack_filtered:
+                cand_tokens = extract_tokens(c.get('name_raw', ''))
+                
+                # Require at least 1 meaningful token match
+                common_tokens = ref_tokens & cand_tokens
+                if len(common_tokens) >= 1:
+                    c['_common_tokens'] = common_tokens
+                    c['_token_score'] = len(common_tokens) / max(len(ref_tokens), 1)
+                    token_filtered.append(c)
+            
+            debug.candidates_after_token_filter = len(token_filtered)
+            debug.filters_applied.append(f"token_filter: min_match=1")
+            
+            # === FILTER 5: GUARD RULES ===
+            guard_filtered = []
+            for c in token_filtered:
+                cand_tokens = extract_tokens(c.get('name_raw', ''))
+                
+                if check_guard_conflict(ref_tokens, cand_tokens):
+                    debug.guard_rejections.append(c.get('name_raw', '')[:40])
+                else:
+                    guard_filtered.append(c)
+            
+            debug.candidates_after_guard_filter = len(guard_filtered)
+            debug.filters_applied.append("guard_filter: applied")
+            
+            # Final candidates
+            final_candidates = guard_filtered
+            debug.final_candidates = len(final_candidates)
+            
+            if not final_candidates:
+                debug.status = "not_found"
+                debug.failure_reason = "no_candidates_after_filters"
+                debug.duration_ms = (time.time() - start_time) * 1000
+                return SearchResult(
+                    status="not_found",
+                    debug_event=debug,
+                    message="Не найдено подходящих товаров"
+                )
+            
+            # === ECONOMICS: Calculate price_per_base_unit and total_cost ===
+            scored = []
+            for c in final_candidates:
+                item = c
+                item_pack = c.get('_pack_value') or 1.0
+                item_price = c.get('price') or 0
+                
+                # Price per base unit (per kg or per l)
+                if item_pack > 0:
+                    price_per_unit = item_price / item_pack
+                else:
+                    price_per_unit = item_price
+                
+                # Total cost = requested_qty * price_per_unit
+                # (requested_qty is in base units: kg or l)
+                total_cost = requested_qty * price_per_unit
+                
+                # Token score as tie-breaker
+                token_score = c.get('_token_score', 0)
+                
+                scored.append({
+                    'item': item,
+                    'price_per_unit': price_per_unit,
+                    'total_cost': total_cost,
+                    'token_score': token_score,
+                    'pack_value': item_pack
+                })
+            
+            # Sort by total_cost (cheapest first), then by token_score (tie-breaker)
+            scored.sort(key=lambda x: (x['total_cost'], -x['token_score']))
+            
+            # Select winner
+            winner = scored[0]
+            winner_item = winner['item']
+            
+            logger.info(f"✅ FOUND {len(scored)} candidates")
+            logger.info(f"   Winner: {winner_item.get('name_raw', '')[:40]}")
+            logger.info(f"   Price: {winner_item.get('price')}₽, Pack: {winner['pack_value']}")
+            logger.info(f"   Total cost: {winner['total_cost']:.2f}₽ for {requested_qty} units")
+            
+            # Update debug
+            debug.status = "ok"
+            debug.selected_item_id = winner_item.get('id')
+            debug.selected_price = winner_item.get('price')
+            debug.selected_pack = winner['pack_value']
+            debug.selected_brand_id = winner_item.get('brand_id')
+            debug.selected_total_cost = winner['total_cost']
+            debug.selected_price_per_unit = winner['price_per_unit']
+            
+            # Build selected offer
+            selected_offer = {
+                'supplier_id': winner_item.get('supplier_company_id'),
+                'supplier_name': company_map.get(winner_item.get('supplier_company_id'), 'Unknown'),
+                'supplier_item_id': winner_item.get('id'),
+                'name_raw': winner_item.get('name_raw'),
+                'price': winner_item.get('price'),
+                'currency': 'RUB',
+                'unit_norm': winner_item.get('unit_norm', 'kg'),
+                'pack_value': winner['pack_value'],
+                'pack_unit': winner_item.get('base_unit', 'kg'),
+                'price_per_base_unit': winner['price_per_unit'],
+                'total_cost': winner['total_cost'],
+                'units_needed': requested_qty / winner['pack_value'] if winner['pack_value'] > 0 else 1,
+                'score': winner['token_score'],
+                'brand_id': winner_item.get('brand_id')
+            }
+            
+            # Build top candidates
+            top = []
+            for s in scored[:5]:
+                top.append({
+                    'supplier_item_id': s['item'].get('id'),
+                    'name_raw': s['item'].get('name_raw'),
+                    'price': s['item'].get('price'),
+                    'brand_id': s['item'].get('brand_id'),
+                    'pack_value': s['pack_value'],
+                    'price_per_unit': s['price_per_unit'],
+                    'total_cost': s['total_cost'],
+                    'token_score': s['token_score'],
+                    'supplier': company_map.get(s['item'].get('supplier_company_id'), 'Unknown')
+                })
             
             debug.duration_ms = (time.time() - start_time) * 1000
-            return result
+            
+            return SearchResult(
+                status="ok",
+                selected_offer=selected_offer,
+                top_candidates=top,
+                debug_event=debug
+            )
             
         except Exception as e:
             logger.error(f"❌ SEARCH ERROR: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            
             debug.status = "error"
             debug.failure_reason = f"exception: {str(e)}"
             debug.duration_ms = (time.time() - start_time) * 1000
+            
             return SearchResult(
                 status="error",
                 debug_event=debug,
                 message=f"Ошибка поиска: {str(e)}"
             )
     
-    def _search_phase(
+    def _filter_by_brand(
         self,
-        reference_item: Dict[str, Any],
         candidates: List[Dict[str, Any]],
-        brand_critical: bool,
-        required_volume: Optional[float],
-        company_map: Dict[str, str],
-        debug: SearchDebugEvent,
-        phase: str
-    ) -> SearchResult:
-        """Execute a single search phase
+        brand_id: str,
+        debug: SearchDebugEvent
+    ) -> List[Dict[str, Any]]:
+        """Filter candidates by brand_id with family fallback"""
+        brand_lower = brand_id.lower()
         
-        Args:
-            phase: "strict" or "rescue"
-        """
-        min_score = self.STRICT_MIN_SCORE if phase == "strict" else self.RESCUE_MIN_SCORE
+        # First try exact brand_id match
+        brand_filtered = [
+            c for c in candidates
+            if c.get('brand_id') and c['brand_id'].lower() == brand_lower
+        ]
         
-        # Brand filter logic
-        filtered_candidates = candidates
-        
-        if brand_critical and reference_item.get('brand_id'):
-            brand_id = reference_item['brand_id'].lower()
+        # If 0 results and has family, try family filter
+        if len(brand_filtered) == 0 and self.brand_master:
             brand_family_id = self.brand_master.get_brand_family_id(brand_id)
             
-            # First try exact brand_id match
-            brand_filtered = [
-                c for c in candidates
-                if c.get('brand_id') and c['brand_id'].lower() == brand_id
-            ]
-            debug.candidates_after_brand_filter = len(brand_filtered)
-            debug.filters_applied.append(f"brand_filter: brand_id={brand_id}")
-            
-            # If 0 results and has family, try family filter
-            if len(brand_filtered) == 0 and brand_family_id:
+            if brand_family_id:
                 logger.info(f"🔗 BRAND FAMILY FALLBACK: {brand_id} -> {brand_family_id}")
                 
-                # Get all family members
                 family_members = self.brand_master.get_family_members(brand_family_id)
                 family_members_set = set(m.lower() for m in family_members)
-                
-                # Also include the family brand itself
                 family_members_set.add(brand_family_id.lower())
                 
                 brand_filtered = [
                     c for c in candidates
                     if c.get('brand_id') and c['brand_id'].lower() in family_members_set
                 ]
-                debug.candidates_after_family_filter = len(brand_filtered)
-                debug.filters_applied.append(f"brand_family_filter: family={brand_family_id}, members={list(family_members_set)}")
-            
-            filtered_candidates = brand_filtered
-        else:
-            # brand_critical=false: NO brand filtering
-            debug.filters_applied.append("brand_filter: DISABLED (brand_critical=false)")
-            debug.candidates_after_brand_filter = len(candidates)
+                
+                debug.filters_applied.append(
+                    f"brand_family_fallback: {brand_family_id}, members={list(family_members_set)}"
+                )
         
-        # Score candidates
-        scored = []
-        for item in filtered_candidates:
-            score = self._calculate_score(reference_item, item, brand_critical, phase)
-            
-            # Apply threshold
-            if score < min_score:
-                continue
-            
-            # Count pack info
-            if item.get('net_weight_kg') or item.get('net_volume_l'):
-                debug.candidates_with_pack += 1
-            else:
-                debug.candidates_without_pack += 1
-            
-            scored.append({
-                'item': item,
-                'score': score
-            })
-        
-        debug.candidates_after_score_filter = len(scored)
-        debug.filters_applied.append(f"score_filter: >= {min_score}")
-        
-        if not scored:
-            debug.status = "not_found"
-            debug.failure_reason = f"no_candidates_over_threshold_{min_score}"
-            return SearchResult(
-                status="not_found",
-                debug_event=debug,
-                message=f"Не найдено совпадений ≥ {int(min_score*100)}%"
-            )
-        
-        # Calculate total cost and sort
-        volume = required_volume or reference_item.get('pack_value') or 1.0
-        
-        for c in scored:
-            item = c['item']
-            item_volume = item.get('net_weight_kg') or item.get('net_volume_l') or 1.0
-            item_price = item.get('price') or 0
-            
-            if item_volume > 0:
-                units_needed = max(1, volume / item_volume)
-                total_cost = item_price * units_needed
-            else:
-                units_needed = 1
-                total_cost = item_price
-            
-            c['total_cost'] = total_cost
-            c['units_needed'] = units_needed
-            c['item_volume'] = item_volume
-        
-        # Sort by total cost (cheapest first), then by score
-        scored.sort(key=lambda x: (x.get('total_cost') or float('inf'), -x['score']))
-        
-        # Select winner
-        winner = scored[0]
-        winner_item = winner['item']
-        
-        debug.status = "ok"
-        debug.selected_item_id = winner_item.get('id')
-        debug.selected_price = winner_item.get('price')
-        debug.selected_brand_id = winner_item.get('brand_id')
-        debug.selected_score = winner['score']
-        
-        # Build selected offer
-        selected_offer = {
-            'supplier_id': winner_item.get('supplier_company_id'),
-            'supplier_name': company_map.get(winner_item.get('supplier_company_id'), 'Unknown'),
-            'supplier_item_id': winner_item.get('id'),
-            'name_raw': winner_item.get('name_raw'),
-            'price': winner_item.get('price'),
-            'currency': 'RUB',
-            'unit_norm': winner_item.get('unit_norm', 'kg'),
-            'pack_value': winner_item.get('net_weight_kg') or winner_item.get('net_volume_l'),
-            'pack_unit': winner_item.get('base_unit', 'kg'),
-            'price_per_base_unit': winner_item.get('price_per_base_unit'),
-            'total_cost': winner['total_cost'],
-            'units_needed': winner['units_needed'],
-            'score': winner['score'],
-            'brand_id': winner_item.get('brand_id')
-        }
-        
-        # Build top candidates
-        top = []
-        for c in scored[:5]:
-            top.append({
-                'supplier_item_id': c['item'].get('id'),
-                'name_raw': c['item'].get('name_raw'),
-                'price': c['item'].get('price'),
-                'brand_id': c['item'].get('brand_id'),
-                'pack_value': c.get('item_volume'),
-                'total_cost': c.get('total_cost'),
-                'units_needed': c.get('units_needed'),
-                'price_per_base_unit': c['item'].get('price_per_base_unit'),
-                'score': c['score'],
-                'supplier': company_map.get(c['item'].get('supplier_company_id'), 'Unknown')
-            })
-        
-        return SearchResult(
-            status="ok",
-            selected_offer=selected_offer,
-            top_candidates=top,
-            debug_event=debug
-        )
-    
-    def _calculate_score(
-        self,
-        reference: Dict[str, Any],
-        candidate: Dict[str, Any],
-        brand_critical: bool,
-        phase: str
-    ) -> float:
-        """Calculate match score between reference and candidate
-        
-        Score components:
-        - Name similarity: 60-70% (higher when brand_critical=false)
-        - Super class match: 15%
-        - Weight/volume tolerance: 15%
-        - Brand match: 10% (only when brand_critical=true)
-        
-        In RESCUE phase:
-        - Pack missing: -10% penalty instead of filtering
-        - Unit mismatch: -5% penalty instead of filtering
-        """
-        score = 0.0
-        
-        # Determine weights based on brand_critical
-        if brand_critical:
-            name_weight = 0.60
-            brand_weight = 0.10
-        else:
-            name_weight = 0.70  # Brand weight redistributed to name
-            brand_weight = 0.0   # BRAND IS NEUTRAL!
-        
-        # Synonyms for fish products
-        synonyms = {
-            'непотрошеный': 'неразделанный',
-            'неразделанный': 'непотрошеный',
-            'сибас': 'сибасс',
-            'сибасс': 'сибас',
-            'охл': 'охлажденный',
-            'охлажденный': 'охл',
-            'зам': 'замороженный',
-            'замороженный': 'зам',
-            'с/м': 'свежемороженый',
-            'свежемороженый': 'с/м',
-            'с/г': 'свежий',
-        }
-        
-        def get_canonical(token):
-            return synonyms.get(token, token)
-        
-        def normalize_tokens(tokens):
-            result = set()
-            for token in tokens:
-                result.add(get_canonical(token))
-            return result
-        
-        # 1. Name similarity (with synonyms)
-        ref_name = (reference.get('name_norm') or reference.get('name_raw', '')).lower()
-        cand_name = (candidate.get('name_norm') or candidate.get('name_raw', '')).lower()
-        
-        # Tokenize
-        ref_tokens = set(ref_name.split())
-        cand_tokens = set(cand_name.split())
-        
-        # Remove common filler words
-        fillers = {'кг', 'кг/кор.', 'кг/кор', 'гр', 'гр.', 'г', 'г.', 'л', 'л.', 'мл', 'мл.', 
-                   'шт', 'шт.', 'упак', 'упак.', 'пакет', 'вес', '~', 'и', 'в', 'с', 'на', 'к',
-                   'инд.', 'зам.', 'охл.', '%', '5%', 'tr', 'инд'}
-        ref_tokens = ref_tokens - fillers
-        cand_tokens = cand_tokens - fillers
-        
-        # Normalize with synonyms
-        ref_normalized = normalize_tokens(ref_tokens)
-        cand_normalized = normalize_tokens(cand_tokens)
-        
-        if ref_normalized and cand_normalized:
-            intersection = len(ref_normalized & cand_normalized)
-            
-            # Key word bonus
-            main_word_bonus = 0.0
-            for ref_token in ref_normalized:
-                if len(ref_token) >= 4:
-                    for cand_token in cand_normalized:
-                        if ref_token == cand_token:
-                            main_word_bonus = 0.15
-                            break
-                    if main_word_bonus > 0:
-                        break
-            
-            # Coverage
-            coverage = intersection / len(ref_normalized) if ref_normalized else 0
-            jaccard = intersection / len(ref_normalized | cand_normalized) if (ref_normalized | cand_normalized) else 0
-            
-            name_score = coverage * 0.5 + jaccard * 0.2 + main_word_bonus
-            score += min(name_score, name_weight)
-        
-        # 2. Super class match - 15%
-        ref_class = reference.get('super_class')
-        cand_class = candidate.get('super_class')
-        if ref_class and cand_class:
-            if ref_class == cand_class:
-                score += 0.15
-            elif ref_class.split('.')[0] == cand_class.split('.')[0]:
-                score += 0.08
-        elif not ref_class:
-            score += 0.10
-        
-        # 3. Weight/volume tolerance (±20%) - 15%
-        ref_weight = reference.get('pack_value') or reference.get('net_weight_kg')
-        cand_weight = candidate.get('net_weight_kg') or candidate.get('net_volume_l')
-        
-        if ref_weight and cand_weight and ref_weight > 0:
-            ratio = cand_weight / ref_weight
-            if 0.8 <= ratio <= 1.2:
-                tolerance_score = 1.0 - abs(1.0 - ratio) / 0.2
-                score += tolerance_score * 0.15
-        elif not ref_weight:
-            score += 0.10
-        elif phase == "rescue" and not cand_weight:
-            # RESCUE: Apply penalty for missing pack instead of filtering
-            score -= self.PACK_MISSING_PENALTY
-        
-        # 4. Brand match - ONLY when brand_critical=true
-        if brand_weight > 0:
-            ref_brand = reference.get('brand_id')
-            cand_brand = candidate.get('brand_id')
-            
-            if ref_brand and cand_brand:
-                if ref_brand.lower() == cand_brand.lower():
-                    score += brand_weight
-                # Also check family match
-                elif self.brand_master.is_brand_in_family(cand_brand, ref_brand):
-                    score += brand_weight * 0.8  # Slight reduction for family match
-            elif not ref_brand:
-                score += brand_weight
-        
-        return round(max(0, score), 4)
+        return brand_filtered
 
 
 # Quality report functions
 
 def generate_brand_quality_report(products: List[dict], pricelists: List[dict]) -> dict:
-    """Generate quality report for brand coverage
-    
-    Returns:
-    - % of products with brand_id by supplier
-    - Overall brand coverage
-    - Top products without brand
-    """
-    # Build product lookup
+    """Generate quality report for brand coverage"""
     product_map = {p['id']: p for p in products}
     
-    # Stats by supplier
     supplier_stats = {}
     products_without_brand = []
     
@@ -580,21 +652,19 @@ def generate_brand_quality_report(products: List[dict], pricelists: List[dict]) 
             supplier_stats[supplier_id]['with_brand'] += 1
         else:
             supplier_stats[supplier_id]['without_brand'] += 1
-            if len(products_without_brand) < 50:  # Limit sample
+            if len(products_without_brand) < 50:
                 products_without_brand.append({
                     'product_id': product_id,
                     'name': product.get('name', 'N/A'),
                     'supplier_id': supplier_id
                 })
     
-    # Calculate percentages
     for stats in supplier_stats.values():
         if stats['total'] > 0:
             stats['brand_coverage_pct'] = round(100 * stats['with_brand'] / stats['total'], 1)
         else:
             stats['brand_coverage_pct'] = 0
     
-    # Overall stats
     total_items = sum(s['total'] for s in supplier_stats.values())
     total_with_brand = sum(s['with_brand'] for s in supplier_stats.values())
     
@@ -611,12 +681,7 @@ def generate_brand_quality_report(products: List[dict], pricelists: List[dict]) 
 
 
 def generate_search_failure_report(failed_searches: List[SearchDebugEvent]) -> dict:
-    """Generate report of failed searches
-    
-    Returns:
-    - Top failure reasons
-    - Common patterns in failed searches
-    """
+    """Generate report of failed searches"""
     failure_reasons = {}
     failed_names = []
     
@@ -632,7 +697,6 @@ def generate_search_failure_report(failed_searches: List[SearchDebugEvent]) -> d
                 'phase': event.phase
             })
     
-    # Sort by count
     sorted_reasons = sorted(failure_reasons.items(), key=lambda x: -x[1])
     
     return {
@@ -640,3 +704,7 @@ def generate_search_failure_report(failed_searches: List[SearchDebugEvent]) -> d
         'failure_reasons': dict(sorted_reasons),
         'sample_failed_searches': failed_names
     }
+
+
+# Backward compatibility - keep old class name
+TwoPhaseSearchEngine = EnhancedSearchEngine
