@@ -2839,6 +2839,18 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
         selected_offer=selected,
         top_candidates=top
     )
+    
+    except Exception as e:
+        # NULL-SAFE: Catch any unexpected errors and return structured response
+        import traceback
+        logger = logging.getLogger(__name__)
+        logger.error(f"❌ SELECT_BEST_OFFER error: {str(e)}")
+        logger.error(traceback.format_exc())
+        
+        return SelectOfferResponse(
+            selected_offer=None,
+            reason=f"ERROR: {str(e)}"
+        )
 
 
 @api_router.post("/favorites/order")
