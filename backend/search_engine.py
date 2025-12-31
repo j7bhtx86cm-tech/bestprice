@@ -1,18 +1,20 @@
-"""Enhanced Search Engine with Pack Range Filtering (MVP Safe-Mode)
+"""Enhanced Search Engine with Pack Range Filtering (Final Stabilization)
 
-VERSION 2.0 (December 2025):
-- Pack range filter: 0.5x - 2x of reference pack
-- Category + unit_norm + tokens matching (базовый matching)
-- Guard rules: кетчуп ≠ соус, паста ≠ соус
-- brand_critical logic fixed
-- Economics: price_per_base_unit → total_cost → selection
-- Comprehensive SearchDebugEvent logging
+VERSION 3.0 (December 31, 2025):
+- Pack range filter: ±20% of reference pack (changed from x2)
+- Origin support: origin_country/region/city for non-branded items
+- Category + unit_norm + tokens matching
+- Guard rules: кетчуп ≠ вода, лосось ≠ курица
+- brand_critical + origin_critical logic
+- Economics: total_cost_for_reference_volume → selection
+- Score thresholds: 85% (brand_critical=ON), 70% (brand_critical=OFF)
 
 CRITICAL RULES:
-1. brand_critical=false → brand COMPLETELY IGNORED (no filter, no score)
-2. brand_critical=true → only same brand_id
-3. Pack range: 0.5 * ref_pack <= candidate_pack <= 2 * ref_pack
-4. Selection by total_cost, score is tie-breaker only
+1. brand_critical=false → brand AND origin COMPLETELY IGNORED (no filter, no score)
+2. brand_critical=true + has brand_id → only same brand_id
+3. brand_critical=true + no brand but has origin → only same origin (country+region+city)
+4. Pack range: ±20% tolerance (0.8x - 1.2x)
+5. Selection by minimum total_cost_for_reference_volume
 """
 import logging
 import re
@@ -151,20 +153,21 @@ def check_guard_conflict(ref_tokens: Set[str], cand_tokens: Set[str]) -> bool:
 
 
 def is_pack_in_range(ref_pack: Optional[float], cand_pack: Optional[float]) -> Tuple[bool, str]:
-    """Check if candidate pack is in acceptable range (0.5x - 2x of reference)
+    """Check if candidate pack is in acceptable range (±20% of reference)
     
     Returns: (is_valid, reason)
     """
-    # If reference has no pack, accept any
+    # If reference has no pack, accept any (but will penalize in scoring)
     if not ref_pack or ref_pack <= 0:
         return (True, "ref_pack_unknown")
     
-    # If candidate has no pack, we need to decide
+    # If candidate has no pack, reject
     if not cand_pack or cand_pack <= 0:
         return (False, "cand_pack_unknown")
     
-    min_pack = ref_pack * 0.5
-    max_pack = ref_pack * 2.0
+    # ±20% tolerance
+    min_pack = ref_pack * 0.8  # -20%
+    max_pack = ref_pack * 1.2  # +20%
     
     if min_pack <= cand_pack <= max_pack:
         return (True, f"in_range_{min_pack:.3f}-{max_pack:.3f}")
@@ -419,7 +422,7 @@ class EnhancedSearchEngine:
             debug.candidates_after_unit_filter = len(unit_filtered)
             debug.filters_applied.append(f"unit_filter: {ref_unit}")
             
-            # === FILTER 3: PACK RANGE (0.5x - 2x) ===
+            # === FILTER 3: PACK RANGE (±20%) ===
             pack_filtered = []
             for c in unit_filtered:
                 cand_pack = c.get('net_weight_kg') or c.get('net_volume_l') or c.get('pack_value')
@@ -442,7 +445,7 @@ class EnhancedSearchEngine:
             
             debug.candidates_after_pack_filter = len(pack_filtered)
             if ref_pack:
-                debug.filters_applied.append(f"pack_filter: {ref_pack*0.5:.2f}-{ref_pack*2:.2f}")
+                debug.filters_applied.append(f"pack_filter: {ref_pack*0.8:.2f}-{ref_pack*1.2:.2f} (±20%)")
             else:
                 debug.filters_applied.append("pack_filter: DISABLED (ref_pack unknown)")
             
