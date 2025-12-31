@@ -3649,105 +3649,197 @@ async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
             "brand_strict": False
         }
     ]
-            "unit": "kg",
-            "brand_id": "miratorg_chef",
-            "brand_strict": False
-        },
-        # Test case: pack missing (no weight in name)
-        {
-            "id": "TEST_PROD_NO_PACK",
-            "name": "Масло оливковое Extra Virgin",
-            "unit": "л",
-            "brand_id": "test_olive",
-            "brand_strict": False
-        }
-    ]
     
-    # Create test pricelists
+    # Create test pricelists with prices
     test_pricelists = [
-        # СИБАС tests
+        # Кетчуп Heinz 800г - эталон
         {
-            "id": "SI_TEST_1",
-            "productId": "TEST_PROD_A1",
+            "id": "SI_KETCHUP_HEINZ_800",
+            "productId": "TEST_KETCHUP_HEINZ_800",
             "supplierId": supplier_id,
-            "price": 990.60,
-            "supplierItemCode": "TEST-A1"
+            "price": 250.00,  # 312.5₽/кг
+            "supplierItemCode": "HEINZ-800"
         },
+        # Кетчуп Heinz 1кг - дешевле за кг
         {
-            "id": "SI_TEST_2",
-            "productId": "TEST_PROD_B1",
+            "id": "SI_KETCHUP_HEINZ_1KG",
+            "productId": "TEST_KETCHUP_HEINZ_1KG",
             "supplierId": supplier_id,
-            "price": 931.44,  # CHEAPEST
-            "supplierItemCode": "TEST-B1"
+            "price": 280.00,  # 280₽/кг - ДЕШЕВЛЕ!
+            "supplierItemCode": "HEINZ-1KG"
         },
+        # Кетчуп Calve 500г - дешевле Heinz
         {
-            "id": "SI_TEST_3",
-            "productId": "TEST_PROD_A2",
+            "id": "SI_KETCHUP_OTHER_500",
+            "productId": "TEST_KETCHUP_OTHER_500",
             "supplierId": supplier_id,
-            "price": 1020.00,
-            "supplierItemCode": "TEST-A2"
+            "price": 120.00,  # 240₽/кг - САМЫЙ ДЕШЁВЫЙ!
+            "supplierItemCode": "CALVE-500"
         },
-        # Brand family tests (Miratorg)
+        # Кетчуп MR.RICCO 1кг
         {
-            "id": "SI_TEST_MIRATORG",
-            "productId": "TEST_PROD_MIRATORG",
+            "id": "SI_KETCHUP_OTHER_1KG",
+            "productId": "TEST_KETCHUP_OTHER_1KG",
             "supplierId": supplier_id,
-            "price": 450.00,  # Cheaper than Chef
-            "supplierItemCode": "TEST-MIRATORG"
+            "price": 260.00,  # 260₽/кг
+            "supplierItemCode": "RICCO-1KG"
         },
+        # Pack tests - слишком маленький (340г < 400г = 0.5*800г)
         {
-            "id": "SI_TEST_MIRATORG_CHEF",
-            "productId": "TEST_PROD_MIRATORG_CHEF",
+            "id": "SI_KETCHUP_SMALL",
+            "productId": "TEST_KETCHUP_SMALL",
             "supplierId": supplier_id,
-            "price": 520.00,  # More expensive
-            "supplierItemCode": "TEST-MIRATORG-CHEF"
+            "price": 80.00,  # Очень дешёвый, но вне диапазона
+            "supplierItemCode": "HEINZ-340"
         },
-        # Pack missing test
+        # Pack tests - слишком большой (5кг > 1.6кг = 2*800г)
         {
-            "id": "SI_TEST_NO_PACK",
-            "productId": "TEST_PROD_NO_PACK",
+            "id": "SI_KETCHUP_LARGE",
+            "productId": "TEST_KETCHUP_LARGE",
             "supplierId": supplier_id,
-            "price": 890.00,
-            "supplierItemCode": "TEST-OLIVE"
+            "price": 1000.00,  # Дёшево за кг, но вне диапазона
+            "supplierItemCode": "HEINZ-5KG"
+        },
+        # Экономика тест A: 800г × 200₽ = 250₽/кг
+        {
+            "id": "SI_ECON_A",
+            "productId": "TEST_ECON_A",
+            "supplierId": supplier_id,
+            "price": 200.00,
+            "supplierItemCode": "ECON-A"
+        },
+        # Экономика тест B: 1кг × 230₽ = 230₽/кг (ДЕШЕВЛЕ ЗА КГ!)
+        {
+            "id": "SI_ECON_B",
+            "productId": "TEST_ECON_B",
+            "supplierId": supplier_id,
+            "price": 230.00,
+            "supplierItemCode": "ECON-B"
+        },
+        # Guard test
+        {
+            "id": "SI_SAUCE_NOT_KETCHUP",
+            "productId": "TEST_SAUCE_NOT_KETCHUP",
+            "supplierId": supplier_id,
+            "price": 100.00,
+            "supplierItemCode": "SOY-500"
         }
     ]
     
     # Create test favorites
     test_favorites = [
+        # ТЕСТ 1: brand_critical=false - должен выбрать Calve (самый дешёвый)
         {
-            "id": "FAV_TEST_1",
+            "id": "FAV_KETCHUP_ANY",
             "userId": current_user['id'],
             "companyId": current_user.get('companyId'),
-            "productId": "TEST_PROD_A1",
-            "productName": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А",
-            "productCode": "TEST-A1",
+            "productId": "TEST_KETCHUP_HEINZ_800",
+            "productName": "Кетчуп томатный Heinz 800г",
+            "productCode": "HEINZ-800",
             "unit": "kg",
             "isBranded": True,
             "brandMode": "ANY",  # brand_critical = FALSE
-            "brandId": "test_brand_a",
-            "brand": "ТЕСТ_БРЕНД_А",
+            "brandId": "heinz",
+            "brand": "Heinz",
             "schema_version": 2,
-            "source_item_id": "SI_TEST_1",
-            "brand_id": "test_brand_a",
-            "brand_critical": False,
-            "unit_norm": "kg",
-            "pack": 1.0,
-            "tokens": ["сибас", "охлажденный", "тест", "бренд", "а"],
+            "pack": 0.8,
             "broken": False,
             "displayOrder": 0
         },
+        # ТЕСТ 2: brand_critical=true - должен выбрать только Heinz
         {
-            "id": "FAV_TEST_2",
+            "id": "FAV_KETCHUP_HEINZ",
             "userId": current_user['id'],
             "companyId": current_user.get('companyId'),
-            "productId": "TEST_PROD_A1",
-            "productName": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А",
-            "productCode": "TEST-A1",
+            "productId": "TEST_KETCHUP_HEINZ_800",
+            "productName": "Кетчуп томатный Heinz 800г",
+            "productCode": "HEINZ-800",
             "unit": "kg",
             "isBranded": True,
             "brandMode": "STRICT",  # brand_critical = TRUE
-            "brandId": "test_brand_a",
-            "brand": "ТЕСТ_БРЕНД_А",
+            "brandId": "heinz",
+            "brand": "Heinz",
+            "schema_version": 2,
+            "pack": 0.8,
+            "broken": False,
+            "displayOrder": 1
+        },
+        # ТЕСТ 4: Экономика - должен выбрать B (дешевле за объём)
+        {
+            "id": "FAV_ECON_TEST",
+            "userId": current_user['id'],
+            "companyId": current_user.get('companyId'),
+            "productId": "TEST_ECON_A",
+            "productName": "Соус острый 800г бренд_А",
+            "productCode": "ECON-A",
+            "unit": "kg",
+            "isBranded": True,
+            "brandMode": "ANY",
+            "brandId": "test_econ_a",
+            "brand": "бренд_А",
+            "schema_version": 2,
+            "pack": 0.8,
+            "broken": False,
+            "displayOrder": 2
+        },
+        # ТЕСТ 5: Старое избранное без v2 полей
+        {
+            "id": "FAV_OLD_FORMAT",
+            "userId": current_user['id'],
+            "companyId": current_user.get('companyId'),
+            "productId": None,  # No product link
+            "productName": "Кетчуп томатный 800г",
+            "productCode": "",
+            "unit": "kg",
+            "isBranded": False,
+            "brandMode": "ANY",
+            # NO v2 fields
+            "displayOrder": 3
+        }
+    ]
+    
+    # Insert/update products
+    for prod in test_products:
+        await db.products.update_one(
+            {"id": prod["id"]},
+            {"$set": prod},
+            upsert=True
+        )
+    
+    # Insert/update pricelists
+    for pl in test_pricelists:
+        await db.pricelists.update_one(
+            {"id": pl["id"]},
+            {"$set": pl},
+            upsert=True
+        )
+    
+    # Insert/update favorites
+    for fav in test_favorites:
+        await db.favorites.update_one(
+            {"id": fav["id"]},
+            {"$set": fav},
+            upsert=True
+        )
+    
+    logger.info("✅ Test fixtures created")
+    
+    return {
+        "success": True,
+        "message": "Test fixtures created for MVP matching tests",
+        "data": {
+            "products": len(test_products),
+            "pricelists": len(test_pricelists),
+            "favorites": len(test_favorites)
+        },
+        "expected_behavior": {
+            "FAV_KETCHUP_ANY": "brand_critical=false → SI_KETCHUP_OTHER_500 (Calve, 240₽/кг) - cheapest",
+            "FAV_KETCHUP_HEINZ": "brand_critical=true → SI_KETCHUP_HEINZ_1KG (280₽/кг) - cheapest Heinz",
+            "FAV_ECON_TEST": "Экономика → SI_ECON_B (230₽/кг) - cheaper per unit",
+            "FAV_OLD_FORMAT": "Old format → should not crash, may return not_found",
+            "PACK_RANGE": "340г and 5кг should be REJECTED (outside 0.5x-2x range of 800г)"
+        }
+    }
             "schema_version": 2,
             "source_item_id": "SI_TEST_1",
             "brand_id": "test_brand_a",
