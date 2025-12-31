@@ -2898,26 +2898,170 @@ class AddFromFavoriteResponse(BaseModel):
 async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_user: dict = Depends(get_current_user)):
     """Add item from favorites to cart with ENHANCED BEST PRICE SEARCH
     
-    VERSION 2.0 (MVP Safe-Mode):
+    VERSION 3.0 (Final Stabilization):
+    - Score thresholds: ≥85% for brand_critical=ON, ≥70% for brand_critical=OFF
     - Pack range filter: 0.5x - 2x of reference pack
-    - Guard rules: кетчуп ≠ соус, паста ≠ соус
+    - Guard rules: кетчуп ≠ соус, лосось ≠ курица
     - Economics: total_cost = requested_qty × price_per_base_unit
     - Selection by total_cost, token match is tie-breaker
+    - Schema v2 support: brand_critical (boolean)
     
     CRITICAL RULES:
     1. NEVER use supplier_item_id from favorite directly
     2. ALWAYS run full search
     3. brand_critical=false: brand COMPLETELY IGNORED
-    4. brand_critical=true: filter by brand_id only
-    5. Pack must be in range: 0.5x - 2x of reference
-    6. Return structured response (never 500)
+    4. brand_critical=true: filter by brand_id + ≥85% threshold
+    5. brand_critical=false: no brand filter + ≥70% threshold
+    6. Pack must be in range: 0.5x - 2x of reference
+    7. Return structured response (never 500)
     """
     import logging
     from search_engine import EnhancedSearchEngine, extract_pack_value
-    from pipeline.normalizer import normalize_name
-    from pipeline.enricher import extract_super_class, extract_weights
     
     logger = logging.getLogger(__name__)
+    
+    try:
+        # Step 1: Get favorite from DB
+        favorite = await db.favorites.find_one({"id": request.favorite_id, "userId": current_user['id']}, {"_id": 0})
+        
+        if not favorite:
+            logger.warning(f"❌ ADD_FROM_FAVORITE: Favorite not found: {request.favorite_id}")
+            return AddFromFavoriteResponse(
+                status="not_found",
+                message="Favorite not found"
+            )
+        
+        # Step 2: Determine brand_critical (support both schema v1 and v2)
+        brand_critical = favorite.get('brand_critical', False)  # Schema v2
+        if not isinstance(brand_critical, bool):
+            # Fallback to legacy brandMode
+            brand_mode = favorite.get('brandMode', 'ANY')
+            brand_critical = (brand_mode == 'STRICT')
+        
+        # Step 3: Build reference item for search
+        reference_name = favorite.get('reference_name') or favorite.get('productName', '')
+        brand_id = favorite.get('brand_id') or favorite.get('brandId')
+        unit_norm = favorite.get('unit_norm') or favorite.get('unit', 'kg')
+        pack_size = favorite.get('pack_size') or extract_pack_value(reference_name, unit_norm)
+        
+        reference_item = {
+            'name_raw': reference_name,
+            'brand_id': brand_id,
+            'unit_norm': unit_norm,
+            'pack': pack_size
+        }
+        
+        logger.info(f"🎯 ADD_FROM_FAVORITE:")
+        logger.info(f"   favorite_id={request.favorite_id}")
+        logger.info(f"   reference_name='{reference_name[:50]}'")
+        logger.info(f"   brand_critical={brand_critical}, brand_id={brand_id}")
+        logger.info(f"   unit={unit_norm}, pack={pack_size}, qty={request.qty}")
+        
+        # Step 4: Get all pricelists (candidates)
+        pricelists_cursor = db.pricelists.find({"active": True}, {"_id": 0})
+        pricelists = await pricelists_cursor.to_list(length=None)
+        
+        # Join with products
+        product_ids = list(set(pl['productId'] for pl in pricelists))
+        products_cursor = db.products.find({"id": {"$in": product_ids}}, {"_id": 0})
+        products = await products_cursor.to_list(length=None)
+        product_map = {p['id']: p for p in products}
+        
+        # Build candidates
+        candidates = []
+        for pl in pricelists:
+            product = product_map.get(pl['productId'])
+            if not product:
+                continue
+            
+            # Build candidate item
+            candidate = {
+                'id': pl['id'],
+                'supplier_company_id': pl['supplierId'],
+                'name_raw': product['name'],
+                'price': pl['price'],
+                'unit_norm': unit_norm,  # Use reference unit
+                'brand_id': pl.get('brand_id'),  # From backfill
+                'net_weight_kg': None,
+                'net_volume_l': None,
+                'base_unit': product.get('unit', 'kg')
+            }
+            candidates.append(candidate)
+        
+        logger.info(f"   Total candidates: {len(candidates)}")
+        
+        # Step 5: Get company map for supplier names
+        companies = await db.companies.find({}, {"_id": 0}).to_list(1000)
+        company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+        
+        # Step 6: Run search with score threshold
+        search_engine = EnhancedSearchEngine()
+        result = search_engine.search(
+            reference_item=reference_item,
+            candidates=candidates,
+            brand_critical=brand_critical,
+            requested_qty=request.qty,
+            company_map=company_map
+            # score_threshold will be auto-determined: 0.85 for brand_critical=True, 0.70 for False
+        )
+        
+        logger.info(f"   Search result: {result.status}")
+        
+        # Step 7: Return response
+        if result.status == "ok":
+            # Add to cart
+            user_cart = await db.cart.find_one({"userId": current_user['id']}, {"_id": 0})
+            
+            if not user_cart:
+                user_cart = {
+                    "userId": current_user['id'],
+                    "items": []
+                }
+            
+            # Check if item already in cart
+            existing_item = next((item for item in user_cart.get('items', []) 
+                                if item['pricelistId'] == result.selected_offer['supplier_item_id']), None)
+            
+            if existing_item:
+                existing_item['quantity'] += request.qty
+            else:
+                user_cart.setdefault('items', []).append({
+                    "pricelistId": result.selected_offer['supplier_item_id'],
+                    "productName": result.selected_offer['name_raw'],
+                    "quantity": request.qty,
+                    "price": result.selected_offer['price'],
+                    "supplierId": result.selected_offer['supplier_id'],
+                    "supplierName": result.selected_offer['supplier_name']
+                })
+            
+            await db.cart.replace_one(
+                {"userId": current_user['id']},
+                user_cart,
+                upsert=True
+            )
+            
+            return AddFromFavoriteResponse(
+                status="ok",
+                selected_offer=SelectedOffer(**result.selected_offer),
+                top_candidates=result.top_candidates,
+                debug_log=result.debug_event.to_dict() if result.debug_event else None,
+                message="Item added to cart"
+            )
+        else:
+            return AddFromFavoriteResponse(
+                status=result.status,
+                message=result.message or f"Not found: {result.debug_event.failure_reason if result.debug_event else 'unknown'}"
+            )
+    
+    except Exception as e:
+        import traceback
+        logger.error(f"❌ ADD_FROM_FAVORITE error: {str(e)}")
+        logger.error(traceback.format_exc())
+        
+        return AddFromFavoriteResponse(
+            status="error",
+            message=f"Error: {str(e)}"
+        )
     
     try:
         # Step 1: Get favorite from DB
