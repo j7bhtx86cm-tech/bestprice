@@ -1,0 +1,116 @@
+{
+  "summary": "Backend API testing for Enhanced Search Engine MVP Safe-Mode completed successfully. All 10 tests passed. The implementation correctly handles: 1) brand_critical=false ignores brand and selects cheapest across ALL brands (199.2₽/кг PIKADOR PRO), 2) brand_critical=true filters by brand_id (280₽/кг Heinz), 3) Pack range filter 0.5x-2x correctly rejects 340г (too small) and 5кг (too large), 4) Economics selection by total_cost works, 5) Old format favorites don't crash, 6) Guard rules reject sauce for ketchup, 7) debug_log contains all counters.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/tests/test_enhanced_search_mvp.py",
+    "/app/test_reports/pytest/pytest_results_iteration4.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/tests/test_enhanced_search_mvp.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "N/A (not tested)"
+  },
+  "test_credentials": {
+    "customer": "customer@bestprice.ru / password123"
+  },
+  "seed_data_creation": "Test fixtures created via /api/test/create-fixtures: FAV_KETCHUP_ANY (brand_critical=false), FAV_KETCHUP_HEINZ (brand_critical=true), FAV_ECON_TEST, FAV_OLD_FORMAT. Products: TEST_KETCHUP_HEINZ_800, TEST_KETCHUP_HEINZ_1KG, TEST_KETCHUP_OTHER_500, TEST_KETCHUP_OTHER_1KG, TEST_KETCHUP_SMALL (340г), TEST_KETCHUP_LARGE (5кг), TEST_ECON_A, TEST_ECON_B, TEST_SAUCE_NOT_KETCHUP",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All MVP safe-mode tests passed. Key verified behaviors: 1) FAV_KETCHUP_ANY (brand_critical=false) selects PIKADOR PRO Кетчуп (199.2₽/кг) - cheapest across ALL brands. 2) FAV_KETCHUP_HEINZ (brand_critical=true) selects SI_KETCHUP_HEINZ_1KG (280₽/кг) - cheapest Heinz in pack range. 3) Pack range filter 0.5x-2x correctly rejects 340г (too_small_0.340<0.400) and 5кг (too_large_5.000>1.600). 4) Economics: selection by total_cost works (PIKADOR PRO Соус 212.21₽/кг). 5) FAV_OLD_FORMAT returns status=ok without 500 error. 6) Guard rules reject 5 sauce products for ketchup search. 7) debug_log contains counters (total=8233, after_brand=8233, after_unit=1958, after_pack=546, after_token=10, after_guard=5, final=5), pack_rejections_sample, guard_rejections_sample.",
+  "test_results": {
+    "TestSetupFixtures": {
+      "test_create_fixtures": "PASSED - Created 9 products, 9 pricelists, 4 favorites"
+    },
+    "TestFavKetchupAnyBrandCriticalFalse": {
+      "test_fav_ketchup_any_selects_cheapest_across_all_brands": "PASSED - Selected PIKADOR PRO Кетчуп (199.2₽/кг) - cheapest across ALL brands"
+    },
+    "TestFavKetchupHeinzBrandCriticalTrue": {
+      "test_fav_ketchup_heinz_filters_by_brand": "PASSED - Selected SI_KETCHUP_HEINZ_1KG (280₽/кг) - cheapest Heinz in pack range"
+    },
+    "TestPackRangeFilter": {
+      "test_pack_range_rejects_out_of_range": "PASSED - Rejected 340г (too_small) and 5кг (too_large), selected 1.0kg (in range)"
+    },
+    "TestEconomicsSelection": {
+      "test_fav_econ_selects_by_total_cost": "PASSED - Selected PIKADOR PRO Соус (212.21₽/кг) - cheapest per unit"
+    },
+    "TestOldFormatFavorite": {
+      "test_fav_old_format_no_500_error": "PASSED - Old format favorite returns status=ok, no 500 error"
+    },
+    "TestGuardRules": {
+      "test_guard_rules_reject_sauce_for_ketchup": "PASSED - Rejected 5 sauce products, selected кетчуп"
+    },
+    "TestDebugLogCounters": {
+      "test_debug_log_contains_all_counters": "PASSED - Contains all counters: total, after_brand_filter, after_unit_filter, after_pack_filter, after_token_filter, after_guard_filter, final"
+    },
+    "TestBrandCriticalComparison": {
+      "test_brand_critical_produces_different_results": "PASSED - brand_critical=false (199.2₽/кг) vs brand_critical=true (280₽/кг)"
+    },
+    "TestNonExistentFavorite": {
+      "test_non_existent_favorite_returns_not_found": "PASSED - Returns not_found status"
+    }
+  },
+  "verified_features": {
+    "enhanced_search_engine_works": true,
+    "brand_critical_false_ignores_brand": true,
+    "brand_critical_true_filters_by_brand": true,
+    "pack_range_filter_0.5x_2x_works": true,
+    "pack_range_rejects_too_small": true,
+    "pack_range_rejects_too_large": true,
+    "economics_selection_by_total_cost": true,
+    "old_format_favorites_no_500": true,
+    "guard_rules_ketchup_not_sauce": true,
+    "debug_log_counters_complete": true,
+    "debug_log_pack_rejections": true,
+    "debug_log_guard_rejections": true
+  },
+  "manual_verification_results": {
+    "FAV_KETCHUP_ANY_brand_critical_false": {
+      "selected": "PIKADOR PRO Кетчуп томатный пакет 1 кг",
+      "price_per_unit": 199.2,
+      "total_cost": 159.36,
+      "filters": ["brand_filter: DISABLED (brand_critical=false)", "unit_filter: kg", "pack_filter: 0.40-1.60", "token_filter: min_match=1", "guard_filter: applied"],
+      "expected": "Cheapest across all brands - CORRECT"
+    },
+    "FAV_KETCHUP_HEINZ_brand_critical_true": {
+      "selected": "SI_KETCHUP_HEINZ_1KG",
+      "price_per_unit": 280.0,
+      "brand": "heinz",
+      "filters": ["brand_filter: brand_id=heinz", "unit_filter: kg", "pack_filter: 0.40-1.60", "token_filter: min_match=1", "guard_filter: applied"],
+      "expected": "Cheapest Heinz in pack range - CORRECT"
+    },
+    "pack_range_filter": {
+      "reference_pack": 0.8,
+      "valid_range": "0.4-1.6 kg",
+      "rejected": ["340г (too_small_0.340<0.400)", "5кг (too_large_5.000>1.600)"],
+      "selected_pack": 1.0,
+      "expected": "Pack range filter works - CORRECT"
+    },
+    "guard_rules": {
+      "rejected_count": 5,
+      "rejected_samples": ["СОУС барбекю пакет 1 кг. Heinz", "СОУС бургер балк 1 кг. Heinz", "СОУС гриль балк 1 кг. Heinz"],
+      "selected": "кетчуп томатный пакет 1 кг. pikador pro",
+      "expected": "Guard rules reject sauce for ketchup - CORRECT"
+    },
+    "debug_log_counters": {
+      "total": 8233,
+      "after_brand_filter": 8233,
+      "after_unit_filter": 1958,
+      "after_pack_filter": 546,
+      "after_token_filter": 10,
+      "after_guard_filter": 5,
+      "final": 5
+    }
+  }
+}
