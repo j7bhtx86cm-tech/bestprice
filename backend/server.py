@@ -2706,139 +2706,141 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
             all_items.append(item)
         
         logger.info(f"📊 Loaded {len(all_items)} items from products+pricelists")
-    
-    # DEBUG: Check barco items
-    barco_items = [i for i in all_items if i.get('brand_id') == 'barco']
-    logger.info(f"🏷️ DEBUG: Found {len(barco_items)} items with brand_id='barco'")
-    for bi in barco_items[:3]:
-        logger.info(f"   - {bi['name_raw'][:40]}: price={bi['price']}")
-    
-    # Filter and score candidates
-    candidates = []
-    debug_scores = []  # For logging
-    
-    for item in all_items:
-        # Calculate score (brand_weight=0 when brand_critical=false!)
-        score = calculate_match_score(ref, item, brand_critical)
         
-        # Log high scores for debugging (include brand_id!)
-        if score >= 0.5:
-            debug_scores.append({
-                'name': item['name_raw'][:50],
-                'score': score,
-                'price': item['price'],
-                'brand_id': item.get('brand_id', 'none'),  # DEBUG: include brand_id
-                'supplier': company_map.get(item['supplier_company_id'], 'Unknown')
+        # DEBUG: Check barco items
+        barco_items = [i for i in all_items if i.get('brand_id') == 'barco']
+        logger.info(f"🏷️ DEBUG: Found {len(barco_items)} items with brand_id='barco'")
+        for bi in barco_items[:3]:
+            logger.info(f"   - {bi['name_raw'][:40]}: price={bi['price']}")
+        
+        # Filter and score candidates
+        candidates = []
+        debug_scores = []  # For logging
+        
+        for item in all_items:
+            # Calculate score (brand_weight=0 when brand_critical=false!)
+            score = calculate_match_score(ref, item, brand_critical)
+            
+            # Log high scores for debugging (include brand_id!)
+            if score >= 0.5:
+                debug_scores.append({
+                    'name': item['name_raw'][:50],
+                    'score': score,
+                    'price': item['price'],
+                    'brand_id': item.get('brand_id', 'none'),  # DEBUG: include brand_id
+                    'supplier': company_map.get(item['supplier_company_id'], 'Unknown')
+                })
+            
+            # Apply threshold
+            if score < threshold:
+                continue
+            
+            # Brand critical filter - ONLY when brand_critical=true!
+            if brand_critical and ref.get('brand_id'):
+                if not item.get('brand_id') or item['brand_id'].lower() != ref['brand_id'].lower():
+                    continue
+            # NOTE: When brand_critical=false, NO filtering by brand!
+            
+            candidates.append({
+                'item': item,
+                'score': score
             })
         
-        # Apply threshold
-        if score < threshold:
-            continue
+        # Log debug info - TOP 10 with brand_id
+        if debug_scores:
+            debug_scores.sort(key=lambda x: -x['score'])
+            ref_name_short = (ref.get('name_raw') or '')[:30]
+            logger.info(f"🎯 Top-10 candidates for '{ref_name_short}' (brand_critical={brand_critical}):")
+            
+            # Count unique brands in top scores
+            brands_in_top = set()
+            for d in debug_scores[:10]:
+                brands_in_top.add(d.get('brand_id', 'none'))
+                logger.info(f"   {d['score']:.2f} | {d['price']:>8.2f}₽ | brand={d.get('brand_id', 'none'):12} | {d['name'][:35]}")
+            
+            logger.info(f"📊 Unique brands in top-10: {len(brands_in_top)} ({', '.join(str(b) for b in brands_in_top)})")
         
-        # Brand critical filter - ONLY when brand_critical=true!
-        if brand_critical and ref.get('brand_id'):
-            if not item.get('brand_id') or item['brand_id'].lower() != ref['brand_id'].lower():
-                continue
-        # NOTE: When brand_critical=false, NO filtering by brand!
+        if not candidates:
+            ref_name_short = (ref.get('name_raw') or '')[:50]
+            logger.warning(f"❌ NO MATCH for '{ref_name_short}' with threshold {threshold}")
+            return SelectOfferResponse(
+                selected_offer=None,
+                reason="NO_MATCH_OVER_THRESHOLD"
+            )
         
-        candidates.append({
-            'item': item,
-            'score': score
-        })
-    
-    # Log debug info - TOP 10 with brand_id
-    if debug_scores:
-        debug_scores.sort(key=lambda x: -x['score'])
-        logger.info(f"🎯 Top-10 candidates for '{ref.get('name_raw')[:30]}' (brand_critical={brand_critical}):")
+        # Get required volume from request or reference item
+        required_volume = request.required_volume or ref.get('pack_value') or 1.0
         
-        # Count unique brands in top scores
-        brands_in_top = set()
-        for d in debug_scores[:10]:
-            brands_in_top.add(d.get('brand_id', 'none'))
-            logger.info(f"   {d['score']:.2f} | {d['price']:>8.2f}₽ | brand={d.get('brand_id', 'none'):12} | {d['name'][:35]}")
+        # Calculate total cost for each candidate
+        # total_cost = how much it costs to get required_volume
+        for c in candidates:
+            item = c['item']
+            item_volume = item.get('net_weight_kg') or item.get('net_volume_l') or 1.0
+            item_price = item.get('price') or 0
+            
+            if item_volume > 0:
+                # How many units needed to cover required volume
+                units_needed = required_volume / item_volume
+                # Round up if partial units
+                units_needed = max(1, units_needed)
+                total_cost = item_price * units_needed
+            else:
+                # Fallback: use item price directly
+                units_needed = 1
+                total_cost = item_price
+            
+            c['total_cost'] = total_cost
+            c['units_needed'] = units_needed
+            c['item_volume'] = item_volume
         
-        logger.info(f"📊 Unique brands in top-10: {len(brands_in_top)} ({', '.join(brands_in_top)})")
-    
-    if not candidates:
-        logger.warning(f"❌ NO MATCH for '{ref.get('name_raw')[:50]}' with threshold {threshold}")
-        return SelectOfferResponse(
-            selected_offer=None,
-            reason="NO_MATCH_OVER_THRESHOLD"
+        # Sort by TOTAL COST (cheapest first), then by score (highest first)
+        # This selects the best deal for the required volume, not just cheapest unit price
+        candidates.sort(key=lambda x: (
+            x.get('total_cost') or float('inf'),
+            -x['score']
+        ))
+        
+        winner = candidates[0]
+        logger.info(f"✅ Found {len(candidates)} candidates. Winner: {winner['item']['price']:.2f}₽ x {winner['units_needed']:.1f} = {winner['total_cost']:.2f}₽ total for {required_volume} units")
+        
+        # Select winner
+        winner_item = winner['item']
+        
+        selected = SelectedOffer(
+            supplier_id=winner_item['supplier_company_id'],
+            supplier_name=company_map.get(winner_item['supplier_company_id'], 'Unknown'),
+            supplier_item_id=winner_item['id'],
+            name_raw=winner_item['name_raw'],
+            price=winner_item['price'],
+            currency="RUB",
+            unit_norm=winner_item.get('unit_norm', 'kg'),
+            pack_value=winner_item.get('net_weight_kg') or winner_item.get('net_volume_l'),
+            pack_unit=winner_item.get('base_unit', 'kg'),
+            price_per_base_unit=winner_item.get('price_per_base_unit'),
+            total_cost=winner['total_cost'],
+            units_needed=winner['units_needed'],
+            score=winner['score']
         )
-    
-    # Get required volume from request or reference item
-    required_volume = request.required_volume or ref.get('pack_value') or 1.0
-    
-    # Calculate total cost for each candidate
-    # total_cost = how much it costs to get required_volume
-    for c in candidates:
-        item = c['item']
-        item_volume = item.get('net_weight_kg') or item.get('net_volume_l') or 1.0
-        item_price = item.get('price') or 0
         
-        if item_volume > 0:
-            # How many units needed to cover required volume
-            units_needed = required_volume / item_volume
-            # Round up if partial units
-            units_needed = max(1, units_needed)
-            total_cost = item_price * units_needed
-        else:
-            # Fallback: use item price directly
-            units_needed = 1
-            total_cost = item_price
+        # Top candidates (max 5)
+        top = []
+        for c in candidates[:5]:
+            top.append({
+                'supplier_item_id': c['item']['id'],
+                'name_raw': c['item']['name_raw'],
+                'price': c['item'].get('price'),
+                'pack_value': c.get('item_volume'),
+                'total_cost': c.get('total_cost'),
+                'units_needed': c.get('units_needed'),
+                'price_per_base_unit': c['item'].get('price_per_base_unit'),
+                'score': c['score'],
+                'supplier': company_map.get(c['item']['supplier_company_id'], 'Unknown')
+            })
         
-        c['total_cost'] = total_cost
-        c['units_needed'] = units_needed
-        c['item_volume'] = item_volume
-    
-    # Sort by TOTAL COST (cheapest first), then by score (highest first)
-    # This selects the best deal for the required volume, not just cheapest unit price
-    candidates.sort(key=lambda x: (
-        x.get('total_cost') or float('inf'),
-        -x['score']
-    ))
-    
-    winner = candidates[0]
-    logger.info(f"✅ Found {len(candidates)} candidates. Winner: {winner['item']['price']:.2f}₽ x {winner['units_needed']:.1f} = {winner['total_cost']:.2f}₽ total for {required_volume} units")
-    
-    # Select winner
-    winner_item = winner['item']
-    
-    selected = SelectedOffer(
-        supplier_id=winner_item['supplier_company_id'],
-        supplier_name=company_map.get(winner_item['supplier_company_id'], 'Unknown'),
-        supplier_item_id=winner_item['id'],
-        name_raw=winner_item['name_raw'],
-        price=winner_item['price'],
-        currency="RUB",
-        unit_norm=winner_item.get('unit_norm', 'kg'),
-        pack_value=winner_item.get('net_weight_kg') or winner_item.get('net_volume_l'),
-        pack_unit=winner_item.get('base_unit', 'kg'),
-        price_per_base_unit=winner_item.get('price_per_base_unit'),
-        total_cost=winner['total_cost'],
-        units_needed=winner['units_needed'],
-        score=winner['score']
-    )
-    
-    # Top candidates (max 5)
-    top = []
-    for c in candidates[:5]:
-        top.append({
-            'supplier_item_id': c['item']['id'],
-            'name_raw': c['item']['name_raw'],
-            'price': c['item'].get('price'),
-            'pack_value': c.get('item_volume'),
-            'total_cost': c.get('total_cost'),
-            'units_needed': c.get('units_needed'),
-            'price_per_base_unit': c['item'].get('price_per_base_unit'),
-            'score': c['score'],
-            'supplier': company_map.get(c['item']['supplier_company_id'], 'Unknown')
-        })
-    
-    return SelectOfferResponse(
-        selected_offer=selected,
-        top_candidates=top
-    )
+        return SelectOfferResponse(
+            selected_offer=selected,
+            top_candidates=top
+        )
     
     except Exception as e:
         # NULL-SAFE: Catch any unexpected errors and return structured response
