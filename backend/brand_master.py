@@ -1,8 +1,8 @@
-"""Brand Master Dictionary - BESTPRICE_BRANDS_MASTER_EN_RU_SITE_STYLE_FINAL.xlsx
+"""Brand Master Dictionary - BESTPRICE_BRANDS_MASTER_UNIFIED_RF_HORECA_ULTRA_SAFE.xlsx
 
-NEW VERSION with:
-- BRANDS_MASTER sheet (brand_id, brand_en, brand_ru, category, default_strict)
-- BRAND_ALIASES sheet (alias, brand_id, comment)
+NEW VERSION (December 2025) with:
+- BRANDS_MASTER sheet (brand_id, brand_ru, brand_en, category, default_strict, notes)
+- BRAND_ALIASES sheet (alias, alias_norm, brand_id, source, comment)
 - Normalized aliases (lower, ё→е, trim, remove special chars)
 """
 import pandas as pd
@@ -10,8 +10,8 @@ import re
 from pathlib import Path
 from typing import Optional, Tuple, Dict
 
-# NEW FILE
-BRANDS_FILE = Path(__file__).parent / 'BESTPRICE_BRANDS_MASTER_EN_RU_SITE_STYLE_FINAL.xlsx'
+# NEW FILE - UNIFIED ULTRA SAFE VERSION
+BRANDS_FILE = Path(__file__).parent / 'BESTPRICE_BRANDS_MASTER_UNIFIED_RF_HORECA_ULTRA_SAFE.xlsx'
 
 
 def normalize_alias(text: str) -> str:
@@ -30,7 +30,7 @@ def normalize_alias(text: str) -> str:
     # Replace quotes and punctuation with spaces (to separate words)
     text = text.replace('"', ' ').replace("'", ' ').replace('«', ' ').replace('»', ' ')
     text = text.replace('.', ' ').replace(',', ' ').replace(';', ' ').replace(':', ' ')
-    text = text.replace('/', ' ').replace('\\', ' ').replace('-', ' ')
+    text = text.replace('/', ' ').replace('\\', ' ').replace('-', ' ').replace('_', ' ')
     
     # Remove other special chars
     text = re.sub(r'[^\w\s]', '', text, flags=re.UNICODE)
@@ -58,19 +58,30 @@ class BrandMaster:
         return cls()
     
     def _load_brands(self):
-        """Load brand dictionary from Excel"""
+        """Load brand dictionary from Excel (UNIFIED RF HORECA ULTRA SAFE)"""
         print(f"📋 Loading brand master from {BRANDS_FILE}")
         
+        if not BRANDS_FILE.exists():
+            print(f"❌ Brand file not found: {BRANDS_FILE}")
+            self.brands_by_id = {}
+            self.alias_to_id = {}
+            return
+        
         # Load BRANDS_MASTER sheet
-        df_brands = pd.read_excel(BRANDS_FILE, sheet_name='BRANDS_MASTER')
+        try:
+            df_brands = pd.read_excel(BRANDS_FILE, sheet_name='BRANDS_MASTER')
+            print(f"   Found {len(df_brands)} brands in BRANDS_MASTER")
+        except Exception as e:
+            print(f"❌ Error loading BRANDS_MASTER: {e}")
+            df_brands = pd.DataFrame()
         
         # Load BRAND_ALIASES sheet
         try:
             df_aliases = pd.read_excel(BRANDS_FILE, sheet_name='BRAND_ALIASES')
-            print(f"   Found {len(df_aliases)} brand aliases")
+            print(f"   Found {len(df_aliases)} aliases in BRAND_ALIASES")
         except Exception as e:
             print(f"   No BRAND_ALIASES sheet found: {e}")
-            df_aliases = pd.DataFrame(columns=['alias', 'brand_id', 'comment'])
+            df_aliases = pd.DataFrame(columns=['alias', 'alias_norm', 'brand_id', 'source', 'comment'])
         
         # Build lookups
         self.brands_by_id: Dict[str, dict] = {}  # brand_id -> full info
@@ -78,10 +89,13 @@ class BrandMaster:
         
         # Process BRANDS_MASTER
         for _, row in df_brands.iterrows():
-            brand_id = str(row['brand_id']).strip().lower()
+            brand_id = str(row.get('brand_id', '')).strip().lower()
             brand_ru = str(row['brand_ru']) if pd.notna(row.get('brand_ru')) else None
             brand_en = str(row['brand_en']) if pd.notna(row.get('brand_en')) else None
-            default_strict = bool(row.get('default_strict', False))
+            
+            # Parse default_strict (can be 1, True, "1", etc.)
+            default_strict_raw = row.get('default_strict', 0)
+            default_strict = bool(default_strict_raw) if pd.notna(default_strict_raw) else False
             
             # Skip empty brand_id
             if not brand_id or brand_id == 'nan':
@@ -91,7 +105,7 @@ class BrandMaster:
                 'brand_id': brand_id,
                 'brand_en': brand_en,
                 'brand_ru': brand_ru,
-                'category': row.get('category', 'unknown'),
+                'category': str(row.get('category', 'unknown')) if pd.notna(row.get('category')) else 'unknown',
                 'default_strict': default_strict,
                 'notes': str(row.get('notes', '')) if pd.notna(row.get('notes')) else ''
             }
@@ -107,24 +121,28 @@ class BrandMaster:
                 if norm:
                     self.alias_to_id[norm] = brand_id
             
-            # Also add brand_id itself as alias
+            # Also add brand_id itself as alias (normalized)
             norm_id = normalize_alias(brand_id)
             if norm_id:
                 self.alias_to_id[norm_id] = brand_id
         
-        # Process BRAND_ALIASES (explicit aliases like BG → barco)
+        # Process BRAND_ALIASES (explicit aliases)
         for _, row in df_aliases.iterrows():
-            alias = str(row['alias']) if pd.notna(row.get('alias')) else ''
-            target_brand_id = str(row['brand_id']).strip().lower() if pd.notna(row.get('brand_id')) else ''
+            alias = str(row.get('alias', '')) if pd.notna(row.get('alias')) else ''
+            # Use pre-normalized alias if available
+            alias_norm = str(row.get('alias_norm', '')) if pd.notna(row.get('alias_norm')) else ''
+            target_brand_id = str(row.get('brand_id', '')).strip().lower() if pd.notna(row.get('brand_id')) else ''
             
-            if not alias or not target_brand_id:
+            if not alias and not alias_norm:
+                continue
+            if not target_brand_id:
                 continue
             
-            # Normalize and add alias
-            norm = normalize_alias(alias)
+            # Use alias_norm if available, otherwise normalize alias
+            norm = alias_norm.strip().lower() if alias_norm else normalize_alias(alias)
+            
             if norm and target_brand_id in self.brands_by_id:
                 self.alias_to_id[norm] = target_brand_id
-                print(f"   ➕ Alias: '{alias}' → {target_brand_id}")
         
         print(f"✅ Loaded {len(self.brands_by_id)} brands")
         print(f"   Total aliases: {len(self.alias_to_id)}")
@@ -132,7 +150,7 @@ class BrandMaster:
     def detect_brand(self, product_name: str) -> Tuple[Optional[str], bool]:
         """Detect brand from product name
         
-        Returns: (brand_id, brand_strict) or (None, False)
+        Returns: (brand_id, default_strict) or (None, False)
         
         Algorithm:
         1. Normalize product name
@@ -163,7 +181,7 @@ class BrandMaster:
                 if alias in name_norm:
                     # Check it's not part of another word
                     # Pattern: alias at start/end of string or surrounded by spaces
-                    pattern = r'(^|\\s)' + re.escape(alias) + r'($|\\s)'
+                    pattern = r'(^|\s)' + re.escape(alias) + r'($|\s)'
                     if re.search(pattern, name_norm) or alias in name_words:
                         brand_id = self.alias_to_id[alias]
                         brand_info = self.brands_by_id.get(brand_id, {})
@@ -183,9 +201,33 @@ class BrandMaster:
     def get_all_aliases(self) -> Dict[str, str]:
         """Get all aliases (normalized -> brand_id)"""
         return self.alias_to_id.copy()
+    
+    def get_stats(self) -> dict:
+        """Get statistics about brand dictionary"""
+        return {
+            'total_brands': len(self.brands_by_id),
+            'total_aliases': len(self.alias_to_id),
+            'strict_brands': sum(1 for b in self.brands_by_id.values() if b.get('default_strict')),
+            'categories': list(set(b.get('category', 'unknown') for b in self.brands_by_id.values()))
+        }
 
 
-# Global instance
+# Global instance - lazy load to avoid import errors
+brand_master = None
+
+def get_brand_master() -> BrandMaster:
+    """Get or create brand master instance"""
+    global brand_master
+    if brand_master is None:
+        try:
+            brand_master = BrandMaster()
+        except Exception as e:
+            print(f"⚠️ Warning: Could not load brand master: {e}")
+            brand_master = BrandMaster()  # Empty instance
+    return brand_master
+
+
+# For backward compatibility
 try:
     brand_master = BrandMaster()
 except Exception as e:
@@ -203,17 +245,25 @@ if __name__ == '__main__':
         "ЛОСОСЬ филе 1.5кг",  # No brand
         "Паста Barilla спагетти 500г",
         "Мясо Мираторг говядина 1кг",  # Russian brand
-        "BG масло оливковое 500мл",  # Alias for barco
-        "БГ оливки 250г",  # Cyrillic alias for barco
-        "Barko оливки каламата",  # Typo alias for barco
+        "Ahmad Tea чай черный 100г",  # Ahmad alias
+        "Acqua Panna вода 500мл",  # Acqua Panna brand
+        "Табаско соус острый 60мл",  # Tabasco
     ]
+    
+    bm = get_brand_master()
+    stats = bm.get_stats()
+    print(f"\n📊 Brand Dictionary Stats:")
+    print(f"   Total brands: {stats['total_brands']}")
+    print(f"   Total aliases: {stats['total_aliases']}")
+    print(f"   Strict brands: {stats['strict_brands']}")
+    print(f"   Categories: {len(stats['categories'])}")
     
     print("\n🧪 Testing brand detection:\n")
     for product in tests:
-        brand_id, is_strict = brand_master.detect_brand(product)
+        brand_id, is_strict = bm.detect_brand(product)
         
         if brand_id:
-            info = brand_master.get_brand_info(brand_id)
+            info = bm.get_brand_info(brand_id)
             status = "✅ BRANDED"
             print(f"{status} {product[:50]:50}")
             print(f"     → brand_id: {brand_id}, strict: {is_strict}")
