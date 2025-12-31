@@ -3559,19 +3559,15 @@ async def get_brand_families(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/test/create-fixtures")
 async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
-    """Create test fixtures for brand_critical and brand_family testing
+    """Create test fixtures for matching + pack range tests
     
-    Creates:
-    - Test products: СИБАС охлажденный with different brands
-    - Test products: Говядина Мираторг/Мираторг Chef for brand family testing
-    - Test pricelists: Different prices for each brand
-    - Test favorites
-    
-    EXPECTED BEHAVIOR:
-    - FAV_TEST_1 (brand_critical=false): Should select cheapest across ALL brands
-    - FAV_TEST_2 (brand_critical=true): Should select cheapest of specified brand
-    - FAV_TEST_FAMILY: Should find Miratorg through Miratorg Chef family
-    - FAV_TEST_PACK_MISSING: Strict may fail, rescue should find with penalty
+    MVP Tests:
+    - ТЕСТ 1: brand_critical=false - выбирает любой бренд, дешевле
+    - ТЕСТ 2: brand_critical=true - только указанный бренд
+    - ТЕСТ 3: Pack range - 0.5x-2x допустимо
+    - ТЕСТ 4: Экономика - выбор по total_cost
+    - ТЕСТ 5: Старое избранное - не падает
+    - ТЕСТ 6: Негатив - not_found без ошибки
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -3583,41 +3579,76 @@ async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
     
     supplier_id = supplier['id']
     
-    # Create test products
+    # Create test products for Кетчуп tests
     test_products = [
-        # Test case: brand_critical true/false
+        # ТЕСТ 1-2: Кетчуп с разными брендами и фасовками
         {
-            "id": "TEST_PROD_A1",
-            "name": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А",
+            "id": "TEST_KETCHUP_HEINZ_800",
+            "name": "Кетчуп томатный Heinz 800г",
             "unit": "kg",
-            "brand_id": "test_brand_a",
+            "brand_id": "heinz",
             "brand_strict": False
         },
         {
-            "id": "TEST_PROD_B1",
-            "name": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_Б",
+            "id": "TEST_KETCHUP_HEINZ_1KG",
+            "name": "Кетчуп томатный Heinz 1кг",
             "unit": "kg",
-            "brand_id": "test_brand_b",
+            "brand_id": "heinz",
             "brand_strict": False
         },
         {
-            "id": "TEST_PROD_A2",
-            "name": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А премиум",
+            "id": "TEST_KETCHUP_OTHER_500",
+            "name": "Кетчуп томатный Calve 500г",
             "unit": "kg",
-            "brand_id": "test_brand_a",
-            "brand_strict": False
-        },
-        # Test case: brand family (Miratorg Chef -> Miratorg)
-        {
-            "id": "TEST_PROD_MIRATORG",
-            "name": "Говядина фарш 500г Мираторг",
-            "unit": "kg",
-            "brand_id": "miratorg",
+            "brand_id": "calve",
             "brand_strict": False
         },
         {
-            "id": "TEST_PROD_MIRATORG_CHEF",
-            "name": "Говядина фарш премиум 500г Мираторг Chef",
+            "id": "TEST_KETCHUP_OTHER_1KG",
+            "name": "Кетчуп томатный MR.RICCO 1кг",
+            "unit": "kg",
+            "brand_id": "mr_ricco",
+            "brand_strict": False
+        },
+        # ТЕСТ 3: Pack range tests - 340g (too small), 5kg (too large)
+        {
+            "id": "TEST_KETCHUP_SMALL",
+            "name": "Кетчуп томатный Heinz 340г",
+            "unit": "kg",
+            "brand_id": "heinz",
+            "brand_strict": False
+        },
+        {
+            "id": "TEST_KETCHUP_LARGE",
+            "name": "Кетчуп томатный Heinz 5кг",
+            "unit": "kg",
+            "brand_id": "heinz",
+            "brand_strict": False
+        },
+        # ТЕСТ 4: Экономика - сравнение по total_cost
+        {
+            "id": "TEST_ECON_A",
+            "name": "Соус острый 800г бренд_А",
+            "unit": "kg",
+            "brand_id": "test_econ_a",
+            "brand_strict": False
+        },
+        {
+            "id": "TEST_ECON_B",
+            "name": "Соус острый 1кг бренд_Б",
+            "unit": "kg",
+            "brand_id": "test_econ_b",
+            "brand_strict": False
+        },
+        # Guard test - Соус ≠ Кетчуп
+        {
+            "id": "TEST_SAUCE_NOT_KETCHUP",
+            "name": "Соус соевый 500мл",
+            "unit": "l",
+            "brand_id": "test_soy",
+            "brand_strict": False
+        }
+    ]
             "unit": "kg",
             "brand_id": "miratorg_chef",
             "brand_strict": False
