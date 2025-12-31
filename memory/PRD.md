@@ -11,71 +11,117 @@ B2B marketplace platform for HoReCa (Hotels, Restaurants, Cafes) that connects s
 
 ## Current Status (December 2025)
 
-### ✅ Completed (Part A-B-D-E)
+### ✅ Completed
 
 #### Part A - Brand Dictionary Replacement
 - [x] Replaced old brand file with `BESTPRICE_BRANDS_MASTER_UNIFIED_RF_HORECA_ULTRA_SAFE.xlsx`
-- [x] New file contains 1570 brands, 232 aliases across 23 categories
+- [x] New file contains 1502 brands, 1603 aliases across 23 categories
 - [x] Updated `brand_master.py` to load new format with `BRANDS_MASTER` and `BRAND_ALIASES` sheets
-- [x] Deleted old `BESTPRICE_BRANDS_MASTER_EN_RU_SITE_STYLE_FINAL.xlsx`
 
 #### Part B - Brand Backfill
 - [x] Created endpoint `/api/admin/brands/backfill` for admin to trigger backfill
 - [x] Created endpoint `/api/admin/brands/stats` for brand statistics
-- [x] Successfully backfilled 5698 products with correct brand_id
-- [x] 76.6% of products now have brand_id (5854 of 7645)
-- [x] 552 products have strict brands
+- [x] Successfully backfilled 5698 products with correct brand_id (76.6%)
+
+#### Part C - Favorites v2 + Migration
+- [x] Created endpoint `/api/admin/favorites/migrate-v2` for schema migration
+- [x] Created endpoint `/api/favorites/{id}/enriched` for debugging
+- [x] V2 schema: `source_item_id`, `brand_id`, `brand_critical`, `unit_norm`, `pack`, `tokens`, `schema_version=2`, `broken`
+- [x] Old favorites work without crashing
 
 #### Part D - Null-safe Matching Engine
-- [x] `/api/cart/select-offer` now never returns 500 error
-- [x] Returns structured responses with statuses: `INSUFFICIENT_DATA`, `NOT_FOUND`, `NO_MATCH_OVER_THRESHOLD`, `ERROR: <message>`
-- [x] Fixed `NoneType.__format__` error in logging statements
-- [x] All exceptions are caught and returned as structured responses
+- [x] `/api/cart/select-offer` never returns 500 error
+- [x] `/api/cart/add-from-favorite` never returns 500 error
+- [x] Returns structured responses: `ok`, `not_found`, `insufficient_data`, `error`
+- [x] All exceptions caught and returned as structured responses
 
-#### Part E - Brand Critical Logic Fix
-- [x] When `brand_critical=false`: brand is COMPLETELY NEUTRAL
+#### Part E - Brand Critical Logic Fix (CRITICAL BUG FIX)
+- [x] When `brand_critical=false`: brand is COMPLETELY IGNORED
   - No filtering by brand_id
-  - 0 bonus points for brand match
-  - Name similarity gets 70% weight instead of 60%
+  - 0 bonus points for brand match in scoring
+  - System finds cheapest across ALL brands
 - [x] When `brand_critical=true`: brand is required
   - Filter candidates by brand_id
   - 10% bonus for brand match
-  - Name similarity gets 60% weight
+  - System finds cheapest within specified brand only
 
-### 🔄 In Progress (Part C)
-- [ ] Favorites v2 Schema migration
-  - New schema: `source_item_id`, `brand_id`, `unit_norm`, `pack`, `tokens`, `brand_critical`, `schema_version=2`, `broken` flag
-  - Migration script for old favorites
-  - Backend enrichment using `favorite_id` and `source_item_id`
+#### New: Add From Favorite Endpoint
+- [x] Created `/api/cart/add-from-favorite` endpoint
+- [x] ALWAYS runs full best price search (no shortcut)
+- [x] Gets `brand_id` from database, not from frontend
+- [x] Includes comprehensive debug_log:
+  - favorite_id
+  - brand_critical
+  - reference_item (name, brand_id, unit_norm)
+  - candidates_before_filters
+  - filters_applied
+  - selected_supplier_item_id
+  - selected_price
+  - selection_reason
+
+#### Test Fixtures
+- [x] Created `/api/test/create-fixtures` endpoint for acceptance tests
+- [x] Test data: FAV_TEST_1 (brand_critical=false), FAV_TEST_2 (brand_critical=true), FAV_TEST_OLD (v1 format)
+- [x] Products: СИБАС охлажденный with different brands and prices
+
+## Verified Test Results (9/9 PASSED)
+
+| Test | Description | Result |
+|------|-------------|--------|
+| A | FAV_TEST_1 (brand_critical=false) selects SI_TEST_2 (931.44₽ BRAND_B) | ✅ PASSED |
+| B | FAV_TEST_2 (brand_critical=true) selects SI_TEST_1 (990.60₽ BRAND_A) | ✅ PASSED |
+| C | FAV_TEST_OLD (old format) no 500 error | ✅ PASSED |
+| D | /api/cart/select-offer works | ✅ PASSED |
+| E | debug_log contains all fields | ✅ PASSED |
+| F | brand_critical=false shows "DISABLED" | ✅ PASSED |
+| G | brand_critical=true shows brand_id filter | ✅ PASSED |
+| H | /api/admin/favorites/migrate-v2 works | ✅ PASSED |
+| I | Different results for brand_critical true/false | ✅ PASSED |
 
 ## Key API Endpoints
+
+### Add From Favorite (NEW)
+```
+POST /api/cart/add-from-favorite
+{
+  "favorite_id": "FAV_TEST_1",
+  "qty": 1,
+  "match_threshold": 0.6
+}
+
+Response:
+{
+  "status": "ok",
+  "selected_offer": {...},
+  "top_candidates": [...],
+  "debug_log": {
+    "favorite_id": "...",
+    "brand_critical": false,
+    "filters_applied": ["brand_filter: DISABLED", ...],
+    "selected_supplier_item_id": "...",
+    "selected_price": 931.44,
+    "selection_reason": "cheapest_total_cost"
+  }
+}
+```
 
 ### Select Best Offer
 ```
 POST /api/cart/select-offer
 {
-  "reference_item": {
-    "name_raw": "Лосось филе охл 1.5кг",
-    "brand_id": "heinz",  // optional
-    "brand_critical": false  // true = strict brand, false = any brand
-  },
-  "qty": 1,
-  "required_volume": 5.0,  // optional
-  "match_threshold": 0.6  // default 0.85
+  "reference_item": {"name_raw": "...", "brand_critical": false},
+  "match_threshold": 0.6
 }
 ```
 
-### Admin Brand Management
+### Admin Endpoints
 ```
-POST /api/admin/brands/backfill  # Run brand backfill
-GET /api/admin/brands/stats      # Get brand statistics
+POST /api/admin/brands/backfill
+GET /api/admin/brands/stats
+POST /api/admin/favorites/migrate-v2
+POST /api/test/create-fixtures
+DELETE /api/test/cleanup-fixtures
 ```
-
-## Database Collections
-- `products`: Product catalog with `brand_id`, `brand_strict` fields
-- `pricelists`: Supplier prices
-- `favorites`: User favorites (v1, being migrated to v2)
-- `companies`: Supplier and customer companies
 
 ## Tech Stack
 - **Backend**: FastAPI (Python 3.11)
@@ -86,16 +132,7 @@ GET /api/admin/brands/stats      # Get brand statistics
 ## Test Credentials
 - **Customer**: `customer@bestprice.ru` / `password123`
 
-## Architecture Notes
-- Server uses `DB_NAME="test_database"` from `.env`
-- All scripts must use the same database
-- Brand detection uses normalized aliases with longest-first matching
-- Scoring algorithm varies based on `brand_critical` flag
-
 ## Backlog
-
-### P0 - Critical
-- [ ] Complete Favorites v2 migration (Part C)
 
 ### P1 - High Priority
 - [ ] Order creation flow finalization
@@ -106,8 +143,8 @@ GET /api/admin/brands/stats      # Get brand statistics
 - [ ] Advanced user permissions (presets, approval workflows)
 
 ## Files Reference
-- `/app/backend/server.py` - Main API server
+- `/app/backend/server.py` - Main API server with add-from-favorite endpoint
 - `/app/backend/brand_master.py` - Brand dictionary loader
 - `/app/backend/backfill_brands.py` - Standalone backfill script
-- `/app/backend/BESTPRICE_BRANDS_MASTER_UNIFIED_RF_HORECA_ULTRA_SAFE.xlsx` - Brand data source
 - `/app/frontend/src/pages/customer/CustomerFavorites.js` - Favorites UI
+- `/app/tests/test_add_from_favorite.py` - Acceptance tests
