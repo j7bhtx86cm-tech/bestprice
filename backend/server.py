@@ -2964,9 +2964,17 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         unit_norm = favorite.get('unit_norm') or favorite.get('unit', 'kg')
         pack_size = favorite.get('pack_size') or extract_pack_value(reference_name, unit_norm)
         
+        # Extract origin for non-branded items
+        origin_country = favorite.get('origin_country')
+        origin_region = favorite.get('origin_region')
+        origin_city = favorite.get('origin_city')
+        
         reference_item = {
             'name_raw': reference_name,
             'brand_id': brand_id,
+            'origin_country': origin_country,
+            'origin_region': origin_region,
+            'origin_city': origin_city,
             'unit_norm': unit_norm,
             'pack': pack_size
         }
@@ -2975,6 +2983,13 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   favorite_id={request.favorite_id}")
         logger.info(f"   reference_name='{reference_name[:50]}'")
         logger.info(f"   brand_critical={brand_critical}, brand_id={brand_id}")
+        if origin_country:
+            origin_str = origin_country
+            if origin_region:
+                origin_str += f"/{origin_region}"
+            if origin_city:
+                origin_str += f"/{origin_city}"
+            logger.info(f"   origin={origin_str}")
         logger.info(f"   unit={unit_norm}, pack={pack_size}, qty={request.qty}")
         
         # Step 4: Get all pricelists (candidates)
@@ -2994,6 +3009,20 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             if not product:
                 continue
             
+            # Extract origin from pricelist or product
+            pl_origin_country = pl.get('origin_country') or product.get('origin_country')
+            pl_origin_region = pl.get('origin_region') or product.get('origin_region')
+            pl_origin_city = pl.get('origin_city') or product.get('origin_city')
+            
+            # Try to extract from name if not in DB
+            if not pl_origin_country:
+                name_lower = product['name'].lower()
+                countries = ['норвегия', 'чили', 'россия', 'турция', 'китай', 'испания', 'франция']
+                for country in countries:
+                    if country in name_lower:
+                        pl_origin_country = country.capitalize()
+                        break
+            
             # Build candidate item
             candidate = {
                 'id': pl['id'],
@@ -3002,6 +3031,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 'price': pl['price'],
                 'unit_norm': unit_norm,  # Use reference unit
                 'brand_id': pl.get('brand_id'),  # From backfill
+                'origin_country': pl_origin_country,
+                'origin_region': pl_origin_region,
+                'origin_city': pl_origin_city,
                 'net_weight_kg': None,
                 'net_volume_l': None,
                 'base_unit': product.get('unit', 'kg')
