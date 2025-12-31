@@ -662,6 +662,15 @@ def test_7_total_cost_calculation(token: str):
         return
     
     test_fav = favorites[0]
+    
+    # Ensure brand_critical is OFF for this test
+    update_response = requests.put(
+        f"{BACKEND_URL}/favorites/{test_fav['id']}/brand-mode",
+        headers=headers,
+        json={"brandMode": "ANY"},
+        timeout=10
+    )
+    
     print(f"\n   Testing with: {test_fav.get('productName')[:50]}")
     
     # Call add-from-favorite with qty=2
