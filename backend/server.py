@@ -3569,6 +3569,207 @@ async def get_enriched_favorite(favorite_id: str, current_user: dict = Depends(g
 
 # ==================== ADMIN BRAND MANAGEMENT ====================
 
+@api_router.post("/test/create-fixtures")
+async def create_test_fixtures(current_user: dict = Depends(get_current_user)):
+    """Create test fixtures for brand_critical testing
+    
+    Creates:
+    - Test products: СИБАС охлажденный with different brands
+    - Test pricelists: Different prices for each brand
+    - Test favorites: FAV_1 (brand_critical=false), FAV_2 (brand_critical=true), FAV_OLD (v1)
+    
+    EXPECTED BEHAVIOR:
+    - FAV_1 (brand_critical=false): Should select SI_2 (BRAND_B, 931.44₽) - CHEAPEST
+    - FAV_2 (brand_critical=true): Should select SI_1 (BRAND_A, 990.60₽) - cheapest of BRAND_A
+    - FAV_OLD: Should return insufficient_data or broken=true
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Get first supplier
+    supplier = await db.companies.find_one({"type": "supplier"}, {"_id": 0})
+    if not supplier:
+        return {"error": "No supplier found in database"}
+    
+    supplier_id = supplier['id']
+    
+    # Create test products
+    test_products = [
+        {
+            "id": "TEST_PROD_A1",
+            "name": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А",
+            "unit": "kg",
+            "brand_id": "test_brand_a",
+            "brand_strict": False
+        },
+        {
+            "id": "TEST_PROD_B1",
+            "name": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_Б",
+            "unit": "kg",
+            "brand_id": "test_brand_b",
+            "brand_strict": False
+        },
+        {
+            "id": "TEST_PROD_A2",
+            "name": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А премиум",
+            "unit": "kg",
+            "brand_id": "test_brand_a",
+            "brand_strict": False
+        }
+    ]
+    
+    # Create test pricelists (SI_1, SI_2, SI_3)
+    test_pricelists = [
+        {
+            "id": "SI_TEST_1",
+            "productId": "TEST_PROD_A1",
+            "supplierId": supplier_id,
+            "price": 990.60,
+            "supplierItemCode": "TEST-A1"
+        },
+        {
+            "id": "SI_TEST_2",
+            "productId": "TEST_PROD_B1",
+            "supplierId": supplier_id,
+            "price": 931.44,  # CHEAPEST
+            "supplierItemCode": "TEST-B1"
+        },
+        {
+            "id": "SI_TEST_3",
+            "productId": "TEST_PROD_A2",
+            "supplierId": supplier_id,
+            "price": 1020.00,
+            "supplierItemCode": "TEST-A2"
+        }
+    ]
+    
+    # Create test favorites
+    test_favorites = [
+        {
+            "id": "FAV_TEST_1",
+            "userId": current_user['id'],
+            "companyId": current_user.get('companyId'),
+            "productId": "TEST_PROD_A1",
+            "productName": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А",
+            "productCode": "TEST-A1",
+            "unit": "kg",
+            "isBranded": True,
+            "brandMode": "ANY",  # brand_critical = FALSE
+            "brandId": "test_brand_a",
+            "brand": "ТЕСТ_БРЕНД_А",
+            "schema_version": 2,
+            "source_item_id": "SI_TEST_1",
+            "brand_id": "test_brand_a",
+            "brand_critical": False,
+            "unit_norm": "kg",
+            "pack": 1.0,
+            "tokens": ["сибас", "охлажденный", "тест", "бренд", "а"],
+            "broken": False,
+            "displayOrder": 0
+        },
+        {
+            "id": "FAV_TEST_2",
+            "userId": current_user['id'],
+            "companyId": current_user.get('companyId'),
+            "productId": "TEST_PROD_A1",
+            "productName": "СИБАС охлажденный ~1кг ТЕСТ_БРЕНД_А",
+            "productCode": "TEST-A1",
+            "unit": "kg",
+            "isBranded": True,
+            "brandMode": "STRICT",  # brand_critical = TRUE
+            "brandId": "test_brand_a",
+            "brand": "ТЕСТ_БРЕНД_А",
+            "schema_version": 2,
+            "source_item_id": "SI_TEST_1",
+            "brand_id": "test_brand_a",
+            "brand_critical": True,
+            "unit_norm": "kg",
+            "pack": 1.0,
+            "tokens": ["сибас", "охлажденный", "тест", "бренд", "а"],
+            "broken": False,
+            "displayOrder": 1
+        },
+        {
+            "id": "FAV_TEST_OLD",
+            "userId": current_user['id'],
+            "companyId": current_user.get('companyId'),
+            "productId": None,  # No product link - old format
+            "productName": "Сибас охлажденный",  # Just raw name
+            "productCode": "",
+            "unit": "kg",
+            "isBranded": False,
+            "brandMode": "ANY",
+            # NO v2 fields - this is old format
+            "displayOrder": 2
+        }
+    ]
+    
+    # Insert/update products
+    for prod in test_products:
+        await db.products.update_one(
+            {"id": prod["id"]},
+            {"$set": prod},
+            upsert=True
+        )
+    
+    # Insert/update pricelists
+    for pl in test_pricelists:
+        await db.pricelists.update_one(
+            {"id": pl["id"]},
+            {"$set": pl},
+            upsert=True
+        )
+    
+    # Insert/update favorites
+    for fav in test_favorites:
+        await db.favorites.update_one(
+            {"id": fav["id"]},
+            {"$set": fav},
+            upsert=True
+        )
+    
+    logger.info("✅ Test fixtures created")
+    logger.info(f"   Products: {len(test_products)}")
+    logger.info(f"   Pricelists: {len(test_pricelists)}")
+    logger.info(f"   Favorites: {len(test_favorites)}")
+    
+    return {
+        "success": True,
+        "message": "Test fixtures created",
+        "data": {
+            "products": test_products,
+            "pricelists": test_pricelists,
+            "favorites": test_favorites
+        },
+        "expected_behavior": {
+            "FAV_TEST_1": {
+                "brand_critical": False,
+                "expected_selection": "SI_TEST_2 (BRAND_B, 931.44₽) - CHEAPEST across all brands"
+            },
+            "FAV_TEST_2": {
+                "brand_critical": True,
+                "expected_selection": "SI_TEST_1 (BRAND_A, 990.60₽) - cheapest of BRAND_A only"
+            },
+            "FAV_TEST_OLD": {
+                "brand_critical": False,
+                "expected_selection": "status=insufficient_data or broken=true"
+            }
+        }
+    }
+
+
+@api_router.delete("/test/cleanup-fixtures")
+async def cleanup_test_fixtures(current_user: dict = Depends(get_current_user)):
+    """Remove test fixtures"""
+    # Remove test products
+    await db.products.delete_many({"id": {"$regex": "^TEST_PROD_"}})
+    # Remove test pricelists
+    await db.pricelists.delete_many({"id": {"$regex": "^SI_TEST_"}})
+    # Remove test favorites
+    await db.favorites.delete_many({"id": {"$regex": "^FAV_TEST_"}})
+    
+    return {"success": True, "message": "Test fixtures removed"}
+
 @api_router.post("/admin/brands/backfill")
 async def backfill_brands_endpoint(current_user: dict = Depends(get_current_user)):
     """Backfill brand_id for all products using the new brand dictionary
