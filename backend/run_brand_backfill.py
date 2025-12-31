@@ -80,7 +80,11 @@ async def run_brand_backfill():
         product_name = product.get('name', '')
         
         # Detect brand
-        brand_id, confidence, method = brand_master.detect_brand(product_name)
+        brand_result = brand_master.detect_brand(product_name)
+        if brand_result:
+            brand_id, default_strict = brand_result
+        else:
+            brand_id, default_strict = None, False
         
         if brand_id:
             # Update pricelist with brand_id
