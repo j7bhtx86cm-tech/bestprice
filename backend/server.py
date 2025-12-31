@@ -2858,6 +2858,309 @@ async def select_best_offer(request: SelectOfferRequest, current_user: dict = De
         )
 
 
+# ==================== ADD FROM FAVORITE TO CART ====================
+
+class AddFromFavoriteRequest(BaseModel):
+    """Request to add item from favorite to cart"""
+    favorite_id: str
+    qty: int = 1
+    match_threshold: float = 0.6  # Lower threshold for better matching
+
+class AddFromFavoriteResponse(BaseModel):
+    """Response for add-from-favorite"""
+    status: str  # "ok", "not_found", "insufficient_data", "error"
+    selected_offer: Optional[SelectedOffer] = None
+    top_candidates: Optional[List[dict]] = None
+    debug_log: Optional[dict] = None
+    message: Optional[str] = None
+
+
+@api_router.post("/cart/add-from-favorite", response_model=AddFromFavoriteResponse)
+async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_user: dict = Depends(get_current_user)):
+    """Add item from favorites to cart with FULL BEST PRICE SEARCH
+    
+    CRITICAL RULES:
+    1. NEVER use supplier_item_id from favorite directly
+    2. ALWAYS run full select_best_offer search
+    3. When brand_critical=false: brand is COMPLETELY IGNORED in filtering AND scoring
+    4. When brand_critical=true: filter by brand_id only
+    5. Return structured response (never 500)
+    
+    DEBUG LOG includes:
+    - favorite_id
+    - brand_critical
+    - reference_item (key fields)
+    - candidates_before_filters
+    - filters_applied
+    - selected_supplier_item_id
+    - selected_price
+    - reason for selection
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Initialize debug log
+    debug_log = {
+        "favorite_id": request.favorite_id,
+        "brand_critical": None,
+        "reference_item": {},
+        "candidates_before_filters": 0,
+        "filters_applied": [],
+        "selected_supplier_item_id": None,
+        "selected_price": None,
+        "selection_reason": None
+    }
+    
+    try:
+        # Step 1: Get favorite from DB
+        favorite = await db.favorites.find_one({"id": request.favorite_id, "userId": current_user['id']}, {"_id": 0})
+        
+        if not favorite:
+            logger.warning(f"❌ ADD_FROM_FAVORITE: Favorite not found: {request.favorite_id}")
+            debug_log["selection_reason"] = "favorite_not_found"
+            return AddFromFavoriteResponse(
+                status="not_found",
+                debug_log=debug_log,
+                message="Избранное не найдено"
+            )
+        
+        # Step 2: Enrich favorite - build reference_item from DB data
+        logger.info(f"📋 ADD_FROM_FAVORITE: Enriching favorite {request.favorite_id}")
+        
+        # Get brand_critical from favorite (brandMode: STRICT = true, ANY = false)
+        brand_critical = favorite.get('brandMode') == 'STRICT'
+        debug_log["brand_critical"] = brand_critical
+        
+        # Get brand_id from favorite (use brandId field, NOT brand which is name)
+        brand_id = favorite.get('brandId')  # This is the correct field!
+        
+        # If brand_id not in favorite, try to detect from product
+        if not brand_id and favorite.get('productId'):
+            product = await db.products.find_one({"id": favorite['productId']}, {"_id": 0})
+            if product:
+                brand_id = product.get('brand_id')
+        
+        # Build reference_item
+        reference_item = {
+            "name_raw": favorite.get('productName', ''),
+            "brand_id": brand_id,
+            "brand_critical": brand_critical,
+            "unit_norm": favorite.get('unit', 'kg'),
+            "pack_value": None,  # Will be extracted from name
+            "source_favorite_id": request.favorite_id
+        }
+        
+        debug_log["reference_item"] = {
+            "name_raw": reference_item["name_raw"][:50] if reference_item["name_raw"] else "N/A",
+            "brand_id": reference_item["brand_id"],
+            "brand_critical": reference_item["brand_critical"],
+            "unit_norm": reference_item["unit_norm"]
+        }
+        
+        # Check for required data
+        if not reference_item["name_raw"].strip():
+            logger.warning(f"❌ ADD_FROM_FAVORITE: No product name in favorite")
+            debug_log["selection_reason"] = "no_product_name"
+            return AddFromFavoriteResponse(
+                status="insufficient_data",
+                debug_log=debug_log,
+                message="Недостаточно данных для поиска"
+            )
+        
+        logger.info(f"   name_raw='{reference_item['name_raw'][:50]}'")
+        logger.info(f"   brand_id={brand_id}, brand_critical={brand_critical}")
+        
+        # Step 3: Run FULL select_best_offer search
+        from pipeline.normalizer import normalize_name
+        from pipeline.enricher import extract_super_class, extract_weights
+        
+        # Enrich reference_item
+        reference_item['name_norm'] = normalize_name(reference_item['name_raw'])
+        reference_item['super_class'] = extract_super_class(reference_item['name_norm'])
+        
+        weight_data = extract_weights(reference_item['name_raw'])
+        reference_item['pack_value'] = weight_data.get('net_weight_kg')
+        
+        # Load company names
+        companies = await db.companies.find({}, {"_id": 0, "id": 1, "companyName": 1, "name": 1}).to_list(100)
+        company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+        
+        # Load ALL products and pricelists
+        all_products = await db.products.find({}, {"_id": 0}).to_list(10000)
+        all_pricelists = await db.pricelists.find({}, {"_id": 0}).to_list(20000)
+        
+        if not all_products or not all_pricelists:
+            logger.warning(f"❌ ADD_FROM_FAVORITE: No products/pricelists in DB")
+            debug_log["selection_reason"] = "no_data_in_db"
+            return AddFromFavoriteResponse(
+                status="not_found",
+                debug_log=debug_log,
+                message="Нет данных в базе"
+            )
+        
+        # Build product lookup
+        product_map = {p['id']: p for p in all_products}
+        
+        # Build items list
+        all_items = []
+        for pl in all_pricelists:
+            product = product_map.get(pl['productId'])
+            if not product:
+                continue
+            
+            item = {
+                'id': pl['id'],
+                'product_id': product['id'],
+                'name_raw': product.get('name', ''),
+                'name_norm': normalize_name(product.get('name', '')),
+                'price': pl['price'],
+                'price_per_base_unit': pl['price'],
+                'supplier_company_id': pl['supplierId'],
+                'unit_norm': product.get('unit', 'kg'),
+                'super_class': extract_super_class(normalize_name(product.get('name', ''))),
+                'brand_id': product.get('brand_id'),
+                'brand_strict': product.get('brand_strict', False),
+            }
+            
+            # Extract weight
+            weight_data = extract_weights(product.get('name', ''))
+            net_weight = weight_data.get('net_weight_kg')
+            if net_weight and net_weight > 0:
+                item['net_weight_kg'] = net_weight
+                item['price_per_base_unit'] = pl['price'] / net_weight
+            
+            all_items.append(item)
+        
+        debug_log["candidates_before_filters"] = len(all_items)
+        logger.info(f"   Total items loaded: {len(all_items)}")
+        
+        # Step 4: Score and filter candidates
+        threshold = request.match_threshold
+        candidates = []
+        
+        # CRITICAL: When brand_critical=false, brand is COMPLETELY IGNORED
+        if brand_critical:
+            debug_log["filters_applied"].append(f"brand_filter: brand_id={brand_id}")
+        else:
+            debug_log["filters_applied"].append("brand_filter: DISABLED (brand_critical=false)")
+        
+        for item in all_items:
+            # Calculate score (brand_weight=0 when brand_critical=false!)
+            score = calculate_match_score(reference_item, item, brand_critical)
+            
+            # Apply threshold
+            if score < threshold:
+                continue
+            
+            # BRAND FILTER: ONLY when brand_critical=true!
+            if brand_critical and brand_id:
+                if not item.get('brand_id') or item['brand_id'].lower() != brand_id.lower():
+                    continue  # Skip non-matching brand
+            # NOTE: When brand_critical=false, NO filtering by brand!
+            
+            candidates.append({
+                'item': item,
+                'score': score
+            })
+        
+        debug_log["filters_applied"].append(f"threshold_filter: >= {threshold}")
+        logger.info(f"   Candidates after filtering: {len(candidates)}")
+        
+        if not candidates:
+            logger.warning(f"❌ ADD_FROM_FAVORITE: No candidates above threshold {threshold}")
+            debug_log["selection_reason"] = "no_match_over_threshold"
+            return AddFromFavoriteResponse(
+                status="not_found",
+                debug_log=debug_log,
+                message=f"Не найдено совпадений ≥ {int(threshold*100)}%"
+            )
+        
+        # Step 5: Calculate total cost and sort by CHEAPEST
+        required_volume = reference_item.get('pack_value') or 1.0
+        
+        for c in candidates:
+            item = c['item']
+            item_volume = item.get('net_weight_kg') or item.get('net_volume_l') or 1.0
+            item_price = item.get('price') or 0
+            
+            if item_volume > 0:
+                units_needed = max(1, required_volume / item_volume)
+                total_cost = item_price * units_needed
+            else:
+                units_needed = 1
+                total_cost = item_price
+            
+            c['total_cost'] = total_cost
+            c['units_needed'] = units_needed
+            c['item_volume'] = item_volume
+        
+        # Sort by TOTAL COST (cheapest first), then by score
+        candidates.sort(key=lambda x: (x.get('total_cost') or float('inf'), -x['score']))
+        
+        winner = candidates[0]
+        winner_item = winner['item']
+        
+        debug_log["selected_supplier_item_id"] = winner_item['id']
+        debug_log["selected_price"] = winner_item['price']
+        debug_log["selection_reason"] = "cheapest_total_cost"
+        
+        logger.info(f"✅ ADD_FROM_FAVORITE: Selected {winner_item['name_raw'][:40]} @ {winner_item['price']}₽")
+        logger.info(f"   supplier_item_id={winner_item['id']}")
+        logger.info(f"   brand_id={winner_item.get('brand_id')}, score={winner['score']:.2f}")
+        
+        # Build selected offer
+        selected = SelectedOffer(
+            supplier_id=winner_item['supplier_company_id'],
+            supplier_name=company_map.get(winner_item['supplier_company_id'], 'Unknown'),
+            supplier_item_id=winner_item['id'],
+            name_raw=winner_item['name_raw'],
+            price=winner_item['price'],
+            currency="RUB",
+            unit_norm=winner_item.get('unit_norm', 'kg'),
+            pack_value=winner_item.get('net_weight_kg') or winner_item.get('net_volume_l'),
+            pack_unit=winner_item.get('base_unit', 'kg'),
+            price_per_base_unit=winner_item.get('price_per_base_unit'),
+            total_cost=winner['total_cost'],
+            units_needed=winner['units_needed'],
+            score=winner['score']
+        )
+        
+        # Build top candidates
+        top = []
+        for c in candidates[:5]:
+            top.append({
+                'supplier_item_id': c['item']['id'],
+                'name_raw': c['item']['name_raw'],
+                'price': c['item'].get('price'),
+                'brand_id': c['item'].get('brand_id'),
+                'pack_value': c.get('item_volume'),
+                'total_cost': c.get('total_cost'),
+                'units_needed': c.get('units_needed'),
+                'price_per_base_unit': c['item'].get('price_per_base_unit'),
+                'score': c['score'],
+                'supplier': company_map.get(c['item']['supplier_company_id'], 'Unknown')
+            })
+        
+        return AddFromFavoriteResponse(
+            status="ok",
+            selected_offer=selected,
+            top_candidates=top,
+            debug_log=debug_log
+        )
+    
+    except Exception as e:
+        import traceback
+        logger.error(f"❌ ADD_FROM_FAVORITE error: {str(e)}")
+        logger.error(traceback.format_exc())
+        
+        debug_log["selection_reason"] = f"error: {str(e)}"
+        return AddFromFavoriteResponse(
+            status="error",
+            debug_log=debug_log,
+            message=f"Ошибка: {str(e)}"
+        )
+
+
 @api_router.post("/favorites/order")
 async def order_from_favorites(data: dict, current_user: dict = Depends(get_current_user)):
     """Create orders from favorites with HYBRID MATCHER + MVP minimum order logic
