@@ -590,6 +590,14 @@ def test_6_guard_rules(token: str):
         result.add_warning("Guard Rules", "No ketchup found in favorites to test")
         return
     
+    # Ensure brand_critical is OFF for this test
+    update_response = requests.put(
+        f"{BACKEND_URL}/favorites/{ketchup_fav['id']}/brand-mode",
+        headers=headers,
+        json={"brandMode": "ANY"},
+        timeout=10
+    )
+    
     print(f"\n   Testing with: {ketchup_fav.get('productName')[:50]}")
     
     # Call add-from-favorite
