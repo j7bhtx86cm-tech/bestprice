@@ -1054,16 +1054,18 @@ def test_photo_scenarios():
     print(f"\n[3] TEST 1: Дип-пот кетчуп 25мл (brand_critical=ON)...")
     print(f"   Expected: 11.50₽ (NOT 11.85₽)")
     try:
-        # First, set brand_critical=ON
+        # First, set brand_critical=ON (using brandMode='STRICT')
         update_response = requests.put(
             f"{BACKEND_URL}/favorites/{ketchup_25ml['id']}/brand-mode",
             headers=headers,
-            json={"brand_critical": True},
+            json={"brandMode": "STRICT"},
             timeout=10
         )
         
         if update_response.status_code != 200:
             result.add_warning("Test 1 Setup", f"Failed to set brand_critical=ON: {update_response.status_code}")
+        else:
+            print(f"   ✓ Set brand_critical=ON (STRICT mode)")
         
         # Now add from favorite
         add_response = requests.post(
