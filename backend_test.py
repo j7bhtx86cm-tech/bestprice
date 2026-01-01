@@ -1334,7 +1334,7 @@ def main():
     """Run all tests"""
     print("\n" + "="*80)
     print("BESTPRICE B2B MARKETPLACE - BACKEND API TESTING")
-    print("Testing FINAL COMPREHENSIVE TEST - All Photo Scenarios Fixed")
+    print("Testing FINAL VERIFICATION - All Photo Scenarios + Packaged Weight Fix")
     print("="*80)
     
     # Test photo scenarios (main focus)
