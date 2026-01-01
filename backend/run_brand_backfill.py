@@ -42,9 +42,9 @@ async def run_brand_backfill():
     brand_master = BrandMaster()
     logger.info(f"   Brand Master loaded successfully")
     
-    # Get all pricelists
+    # Get all pricelists (include _id for updates)
     logger.info("🔍 Fetching all pricelists...")
-    pricelists_cursor = db.pricelists.find({}, {"_id": 1, "id": 1, "productId": 1, "brand_id": 1})  # Include _id for update
+    pricelists_cursor = db.pricelists.find({})  # Don't exclude _id
     pricelists = await pricelists_cursor.to_list(length=None)
     logger.info(f"   Found {len(pricelists)} pricelists")
     
