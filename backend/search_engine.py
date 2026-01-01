@@ -507,14 +507,14 @@ class EnhancedSearchEngine:
                     ref_tokens_clean = ref_tokens.copy()
                     cand_tokens_clean = cand_tokens.copy()
                     
-                    # Remove reference brand token
-                    if ref_brand:
+                    # Remove reference brand token (if exists)
+                    if ref_brand and ref_brand.strip():
                         ref_tokens_clean.discard(ref_brand.lower())
                     
-                    # Remove candidate brand token  
-                    cand_brand = c.get('brand_id', '').lower()
-                    if cand_brand:
-                        cand_tokens_clean.discard(cand_brand)
+                    # Remove candidate brand token (if exists)
+                    cand_brand = c.get('brand_id')
+                    if cand_brand and cand_brand.strip():
+                        cand_tokens_clean.discard(cand_brand.lower())
                     
                     # Calculate common tokens WITHOUT brands
                     common_tokens = ref_tokens_clean & cand_tokens_clean
