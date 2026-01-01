@@ -979,21 +979,23 @@ def test_fixed_select_offer_endpoint():
         result.add_fail("Response Structure", f"Error testing response structure: {str(e)}")
 
 def test_photo_scenarios():
-    """Test 3 photo scenarios from user review request
+    """Test 4 photo scenarios from user review request
     
-    FINAL COMPREHENSIVE TEST - All Photo Scenarios Fixed:
+    FINAL VERIFICATION - All Photo Scenarios + Packaged Weight Fix:
     1. Дип-пот кетчуп 25мл: Should select 11.50₽ (not 11.85₽) with brand_critical=ON
     2. Кетчуп 800г: Should select 185.50₽ (not 250₽) with brand_critical=ON
     3. Кукуруза 425мл: Should select 70₽ (not 86₽) with brand_critical=OFF
+    4. Лосось филе "вес 1.6кг": Should select 1590₽ (not 1642₽) - packaged weight test
     
     Critical Fixes Applied:
     - Fix 1: Overlap Coefficient for ALL modes (allows finding products with MORE descriptive names)
     - Fix 2: Unit-aware pricing (шт vs кг/л)
     - Fix 3: Frontend threshold removed (backend auto-determines: 70% OFF, 85% ON)
+    - Fix 4: Packaged weight detection (вес, ~, /кор, инд., тушка, целый, целая)
     """
     print("\n" + "="*80)
-    print("TESTING: PHOTO SCENARIOS - FINAL COMPREHENSIVE TEST")
-    print("Testing all 3 photo scenarios with critical fixes applied")
+    print("TESTING: PHOTO SCENARIOS - FINAL VERIFICATION")
+    print("Testing all 4 photo scenarios with packaged weight fix")
     print("="*80)
     
     # Step 1: Login as customer
