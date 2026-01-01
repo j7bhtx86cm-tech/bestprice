@@ -138,17 +138,30 @@ def extract_tokens(name: str) -> Set[str]:
     return tokens
 
 
-def check_guard_conflict(ref_tokens: Set[str], cand_tokens: Set[str]) -> bool:
+def check_guard_conflict(ref_tokens: Set[str], cand_tokens: Set[str], ref_category: Optional[str] = None, cand_category: Optional[str] = None) -> bool:
     """Check if there's a guard conflict between reference and candidate
     
     Returns True if CONFLICT (should reject candidate)
+    
+    Checks:
+    1. Category mismatch (if both specified)
+    2. Token-based conflicts (кетчуп ≠ вода)
     """
+    # Check 1: Category must match if both are specified
+    if ref_category and cand_category:
+        ref_cat_norm = ref_category.lower().strip()
+        cand_cat_norm = cand_category.lower().strip()
+        if ref_cat_norm != cand_cat_norm:
+            return True  # CONFLICT: different categories
+    
+    # Check 2: Token-based conflicts
     for ref_token in ref_tokens:
         if ref_token in GUARD_CONFLICTS:
             conflicts = GUARD_CONFLICTS[ref_token]
             # Check if any candidate token is in conflicts
             if cand_tokens & conflicts:
-                return True
+                return True  # CONFLICT
+    
     return False
 
 
@@ -475,18 +488,21 @@ class EnhancedSearchEngine:
             debug.candidates_after_token_filter = len(token_filtered)
             debug.filters_applied.append(f"token_filter: min_tokens=2, min_score={score_threshold:.2f}")
             
-            # === FILTER 5: GUARD RULES ===
+            # === FILTER 5: GUARD RULES (category + token conflicts) ===
             guard_filtered = []
+            ref_category = reference_item.get('category')
+            
             for c in token_filtered:
                 cand_tokens = extract_tokens(c.get('name_raw', ''))
+                cand_category = c.get('category')
                 
-                if check_guard_conflict(ref_tokens, cand_tokens):
+                if check_guard_conflict(ref_tokens, cand_tokens, ref_category, cand_category):
                     debug.guard_rejections.append(c.get('name_raw', '')[:40])
                 else:
                     guard_filtered.append(c)
             
             debug.candidates_after_guard_filter = len(guard_filtered)
-            debug.filters_applied.append("guard_filter: applied")
+            debug.filters_applied.append("guard_filter: category + token_conflicts")
             
             # Final candidates
             final_candidates = guard_filtered
