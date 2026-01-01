@@ -493,9 +493,18 @@ class EnhancedSearchEngine:
                 if len(common_tokens) < 2:
                     continue
                 
-                # Calculate token score: Jaccard similarity
+                # Calculate token score: Use overlap coefficient instead of Jaccard for brand_critical
+                # This prevents penalizing candidates with MORE descriptive information
                 union_tokens = ref_tokens | cand_tokens
-                token_score = len(common_tokens) / len(union_tokens) if union_tokens else 0
+                
+                if brand_critical:
+                    # For brand_critical=ON: Use overlap coefficient (prevents penalty for extra tokens)
+                    # Score = common / min(ref, cand) - rewards full coverage of reference tokens
+                    min_tokens = min(len(ref_tokens), len(cand_tokens))
+                    token_score = len(common_tokens) / min_tokens if min_tokens > 0 else 0
+                else:
+                    # For brand_critical=OFF: Use Jaccard similarity (stricter)
+                    token_score = len(common_tokens) / len(union_tokens) if union_tokens else 0
                 
                 # Apply score threshold
                 if token_score >= score_threshold:
