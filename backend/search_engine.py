@@ -450,25 +450,30 @@ class EnhancedSearchEngine:
                 debug.filters_applied.append("pack_filter: DISABLED (ref_pack unknown)")
             
             # === FILTER 4: TOKEN MATCHING WITH SCORE THRESHOLD ===
+            # CANDIDATE GUARD: Require minimum 2 common meaningful tokens
             token_filtered = []
             for c in pack_filtered:
                 cand_tokens = extract_tokens(c.get('name_raw', ''))
                 
-                # Calculate token score
+                # Calculate common tokens
                 common_tokens = ref_tokens & cand_tokens
-                if len(common_tokens) >= 1:
-                    # Simple token-based score: Jaccard similarity
-                    union_tokens = ref_tokens | cand_tokens
-                    token_score = len(common_tokens) / len(union_tokens) if union_tokens else 0
-                    
-                    # Apply score threshold
-                    if token_score >= score_threshold:
-                        c['_common_tokens'] = common_tokens
-                        c['_token_score'] = token_score
-                        token_filtered.append(c)
+                
+                # CRITICAL: Minimum 2 common tokens required (Candidate Guard)
+                if len(common_tokens) < 2:
+                    continue
+                
+                # Calculate token score: Jaccard similarity
+                union_tokens = ref_tokens | cand_tokens
+                token_score = len(common_tokens) / len(union_tokens) if union_tokens else 0
+                
+                # Apply score threshold
+                if token_score >= score_threshold:
+                    c['_common_tokens'] = common_tokens
+                    c['_token_score'] = token_score
+                    token_filtered.append(c)
             
             debug.candidates_after_token_filter = len(token_filtered)
-            debug.filters_applied.append(f"token_filter: min_score={score_threshold:.2f}")
+            debug.filters_applied.append(f"token_filter: min_tokens=2, min_score={score_threshold:.2f}")
             
             # === FILTER 5: GUARD RULES ===
             guard_filtered = []
