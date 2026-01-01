@@ -44,7 +44,7 @@ async def run_brand_backfill():
     
     # Get all pricelists
     logger.info("🔍 Fetching all pricelists...")
-    pricelists_cursor = db.pricelists.find({}, {"_id": 0})
+    pricelists_cursor = db.pricelists.find({}, {"_id": 1, "id": 1, "productId": 1, "brand_id": 1})  # Include _id for update
     pricelists = await pricelists_cursor.to_list(length=None)
     logger.info(f"   Found {len(pricelists)} pricelists")
     
@@ -87,9 +87,9 @@ async def run_brand_backfill():
             brand_id, default_strict = None, False
         
         if brand_id:
-            # Update pricelist with brand_id
+            # Update pricelist with brand_id using _id
             result = await db.pricelists.update_one(
-                {'id': pricelist_id},
+                {'_id': pricelist['_id']},  # Use MongoDB _id for update
                 {'$set': {'brand_id': brand_id}}
             )
             
