@@ -689,7 +689,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Photo Scenarios - Final Comprehensive Test (Overlap Coefficient + Unit-Aware Pricing)"
+    - "ULTIMATE FINAL TEST - Brand Agnostic Search"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
