@@ -1,6 +1,19 @@
 """Enhanced Search Engine - Final Architecture per Clean Spec
 
-VERSION 3.1 (January 1, 2026):
+VERSION 3.2 (January 1, 2026):
+CRITICAL FIX: Token scoring method for brand_critical=ON
+
+CHANGES:
+- For brand_critical=ON: Use Overlap Coefficient (prevents penalty for extra descriptive tokens)
+- For brand_critical=OFF: Use Jaccard Similarity (stricter matching)
+- This allows finding "КЕТЧУП томатный 25мл HEINZ РОССИЯ" when searching for "Кетчуп 25мл Heinz"
+
+TOKEN SCORING:
+- brand_critical=ON: score = common_tokens / min(ref_tokens, cand_tokens)
+  → Rewards full coverage of reference, doesn't penalize candidates with MORE info
+- brand_critical=OFF: score = common_tokens / (ref_tokens ∪ cand_tokens)
+  → Standard Jaccard similarity
+
 BASED ON: Clean Technical Specification - BestPrice MVP
 
 ARCHITECTURE:
