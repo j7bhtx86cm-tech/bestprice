@@ -225,10 +225,11 @@ export const CustomerFavorites = () => {
       // Call NEW endpoint: add-from-favorite (ALWAYS runs full search)
       // CRITICAL: This endpoint gets brand_id from DB, not from frontend
       // Pack value is extracted on backend from product name
+      // Score threshold auto-determined by backend: 85% (brand_critical=ON), 70% (brand_critical=OFF)
       const response = await axios.post(`${API}/cart/add-from-favorite`, {
         favorite_id: favorite.id,
-        qty: 1,
-        match_threshold: 0.6  // Lower threshold for better matching
+        qty: 1
+        // NO match_threshold - let backend decide based on brand_critical
       }, { headers });
 
       // Check response status
