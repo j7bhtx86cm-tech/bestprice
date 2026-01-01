@@ -1,20 +1,38 @@
-"""Enhanced Search Engine with Pack Range Filtering (Final Stabilization)
+"""Enhanced Search Engine - Final Architecture per Clean Spec
 
-VERSION 3.0 (December 31, 2025):
-- Pack range filter: ±20% of reference pack (changed from x2)
-- Origin support: origin_country/region/city for non-branded items
-- Category + unit_norm + tokens matching
-- Guard rules: кетчуп ≠ вода, лосось ≠ курица
-- brand_critical + origin_critical logic
-- Economics: total_cost_for_reference_volume → selection
-- Score thresholds: 85% (brand_critical=ON), 70% (brand_critical=OFF)
+VERSION 3.1 (January 1, 2026):
+BASED ON: Clean Technical Specification - BestPrice MVP
 
-CRITICAL RULES:
-1. brand_critical=false → brand AND origin COMPLETELY IGNORED (no filter, no score)
-2. brand_critical=true + has brand_id → only same brand_id
-3. brand_critical=true + no brand but has origin → only same origin (country+region+city)
-4. Pack range: ±20% tolerance (0.8x - 1.2x)
-5. Selection by minimum total_cost_for_reference_volume
+ARCHITECTURE:
+- Two separate entities: Reference (favorite v2) vs Supplier Item (pricelist)
+- Never mix reference with supplier_item
+- Search uses ONLY normalized fields, NOT raw titles
+
+CANDIDATE GUARD (Step 1):
+- Minimum 2 common meaningful tokens required
+- Category must match (if specified)
+- Units must be compatible (kg ↔ kg, l ↔ l, pcs ↔ pcs)
+- Prohibits absurd matches: ketchup ≠ water, lamb ≠ sauce
+
+BRAND/ORIGIN RULES (Step 2):
+- brand_critical=false → brand AND origin COMPLETELY IGNORED
+- brand_critical=true + has brand_id → only same brand_id
+- brand_critical=true + no brand but has origin → origin_critical (country required, region/city if specified)
+
+PACK & PRICE (Step 3):
+- Pack tolerance: ±20% (0.8x - 1.2x)
+- Price calculation: ceil(required_qty / pack_value) × price
+- Selection by minimum total_cost
+
+THRESHOLDS:
+- brand_critical=OFF: min_score >= 70%
+- brand_critical=ON: min_score >= 85%
+
+PROHIBITIONS:
+❌ Don't use raw title for logic
+❌ Don't mix reference and supplier_item
+❌ Don't consider brand when brand_critical=OFF
+❌ Don't jump between categories
 """
 import logging
 import re
