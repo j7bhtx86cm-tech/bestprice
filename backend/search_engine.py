@@ -500,22 +500,43 @@ class EnhancedSearchEngine:
             for c in pack_filtered:
                 cand_tokens = extract_tokens(c.get('name_raw', ''))
                 
-                # Calculate common tokens
-                common_tokens = ref_tokens & cand_tokens
-                
-                # CRITICAL: Minimum 2 common tokens required (Candidate Guard)
-                if len(common_tokens) < 2:
-                    continue
-                
-                # Calculate token score: Use overlap coefficient for BOTH modes
-                # This prevents penalizing candidates with MORE descriptive information
-                # Difference is in threshold: 85% (ON) vs 70% (OFF)
-                
-                # Overlap Coefficient: common / min(ref, cand)
-                # Rewards full coverage of reference tokens
-                # Doesn't penalize if candidate has extra descriptive info
-                min_tokens = min(len(ref_tokens), len(cand_tokens))
-                token_score = len(common_tokens) / min_tokens if min_tokens > 0 else 0
+                # CRITICAL: When brand_critical=OFF, EXCLUDE brand tokens from scoring
+                # This allows finding OTHER brands (e.g., Царский vs Heinz)
+                if not brand_critical:
+                    # Remove brand-specific tokens from BOTH reference and candidate
+                    ref_tokens_clean = ref_tokens.copy()
+                    cand_tokens_clean = cand_tokens.copy()
+                    
+                    # Remove reference brand token
+                    if ref_brand:
+                        ref_tokens_clean.discard(ref_brand.lower())
+                    
+                    # Remove candidate brand token  
+                    cand_brand = c.get('brand_id', '').lower()
+                    if cand_brand:
+                        cand_tokens_clean.discard(cand_brand)
+                    
+                    # Calculate common tokens WITHOUT brands
+                    common_tokens = ref_tokens_clean & cand_tokens_clean
+                    
+                    # CRITICAL: Minimum 2 common NON-BRAND tokens required
+                    if len(common_tokens) < 2:
+                        continue
+                    
+                    # Calculate score WITHOUT brand tokens
+                    min_tokens = min(len(ref_tokens_clean), len(cand_tokens_clean))
+                    token_score = len(common_tokens) / min_tokens if min_tokens > 0 else 0
+                else:
+                    # For brand_critical=ON: Use ALL tokens (including brand)
+                    common_tokens = ref_tokens & cand_tokens
+                    
+                    # Minimum 2 common tokens required
+                    if len(common_tokens) < 2:
+                        continue
+                    
+                    # Calculate score WITH brand tokens
+                    min_tokens = min(len(ref_tokens), len(cand_tokens))
+                    token_score = len(common_tokens) / min_tokens if min_tokens > 0 else 0
                 
                 # Apply score threshold
                 if token_score >= score_threshold:
@@ -524,7 +545,10 @@ class EnhancedSearchEngine:
                     token_filtered.append(c)
             
             debug.candidates_after_token_filter = len(token_filtered)
-            debug.filters_applied.append(f"token_filter: min_tokens=2, min_score={score_threshold:.2f}")
+            if brand_critical:
+                debug.filters_applied.append(f"token_filter: min_tokens=2, min_score={score_threshold:.2f} (WITH brand)")
+            else:
+                debug.filters_applied.append(f"token_filter: min_tokens=2, min_score={score_threshold:.2f} (NO brand)")
             
             # === FILTER 5: GUARD RULES (category + token conflicts) ===
             guard_filtered = []
