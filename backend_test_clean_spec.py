@@ -145,10 +145,12 @@ def update_favorite_brand_mode(token: str, favorite_id: str, brand_critical: boo
     """Update favorite's brand_critical setting"""
     try:
         headers = get_headers(token)
+        # Convert boolean to brandMode string
+        brand_mode = "STRICT" if brand_critical else "ANY"
         response = requests.put(
             f"{BACKEND_URL}/favorites/{favorite_id}/brand-mode",
             headers=headers,
-            json={"brand_critical": brand_critical},
+            json={"brandMode": brand_mode},
             timeout=10
         )
         
