@@ -2002,13 +2002,44 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
     
     # Try to extract from name if not in DB
     if not origin_country:
-        # Simple extraction from name (e.g., "Лосось Норвегия" → Norway)
+        # Extended list: countries + major Russian fishing regions/cities
         name_lower = product['name'].lower()
-        countries = ['норвегия', 'чили', 'россия', 'турция', 'китай', 'испания', 'франция']
-        for country in countries:
-            if country in name_lower:
-                origin_country = country.capitalize()
+        
+        # Countries
+        countries = {
+            'норвегия': 'Норвегия', 'norway': 'Норвегия',
+            'чили': 'Чили', 'chile': 'Чили',
+            'россия': 'Россия', 'russia': 'Россия',
+            'турция': 'Турция', 'turkey': 'Турция',
+            'китай': 'Китай', 'china': 'Китай',
+            'испания': 'Испания', 'spain': 'Испания',
+            'франция': 'Франция', 'france': 'Франция',
+            'исландия': 'Исландия', 'iceland': 'Исландия'
+        }
+        
+        # Russian fishing regions/cities (for origin_city)
+        russian_regions = {
+            'мурманск': ('Россия', None, 'Мурманск'),
+            'владивосток': ('Россия', None, 'Владивосток'),
+            'камчатка': ('Россия', 'Камчатка', None),
+            'сахалин': ('Россия', 'Сахалин', None),
+            'архангельск': ('Россия', None, 'Архангельск')
+        }
+        
+        # Check for Russian regions first
+        for region_key, (country, region, city) in russian_regions.items():
+            if region_key in name_lower:
+                origin_country = country
+                origin_region = region
+                origin_city = city
                 break
+        
+        # If not found, check countries
+        if not origin_country:
+            for country_key, country_name in countries.items():
+                if country_key in name_lower:
+                    origin_country = country_name
+                    break
     
     # Create favorite with SCHEMA V2
     favorite = {
@@ -3020,11 +3051,42 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             # Try to extract from name if not in DB
             if not pl_origin_country:
                 name_lower = product['name'].lower()
-                countries = ['норвегия', 'чили', 'россия', 'турция', 'китай', 'испания', 'франция']
-                for country in countries:
-                    if country in name_lower:
-                        pl_origin_country = country.capitalize()
+                
+                # Countries
+                countries = {
+                    'норвегия': 'Норвегия', 'norway': 'Норвегия',
+                    'чили': 'Чили', 'chile': 'Чили',
+                    'россия': 'Россия', 'russia': 'Россия',
+                    'турция': 'Турция', 'turkey': 'Турция',
+                    'китай': 'Китай', 'china': 'Китай',
+                    'испания': 'Испания', 'spain': 'Испания',
+                    'франция': 'Франция', 'france': 'Франция',
+                    'исландия': 'Исландия', 'iceland': 'Исландия'
+                }
+                
+                # Russian regions/cities
+                russian_regions = {
+                    'мурманск': ('Россия', None, 'Мурманск'),
+                    'владивосток': ('Россия', None, 'Владивосток'),
+                    'камчатка': ('Россия', 'Камчатка', None),
+                    'сахалин': ('Россия', 'Сахалин', None),
+                    'архангельск': ('Россия', None, 'Архангельск')
+                }
+                
+                # Check for Russian regions first
+                for region_key, (country, region, city) in russian_regions.items():
+                    if region_key in name_lower:
+                        pl_origin_country = country
+                        pl_origin_region = region
+                        pl_origin_city = city
                         break
+                
+                # If not found, check countries
+                if not pl_origin_country:
+                    for country_key, country_name in countries.items():
+                        if country_key in name_lower:
+                            pl_origin_country = country_name
+                            break
             
             # Build candidate item
             candidate = {
