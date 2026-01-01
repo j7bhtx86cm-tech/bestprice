@@ -562,16 +562,23 @@ class EnhancedSearchEngine:
                 item = c
                 item_pack = c.get('_pack_value') or 1.0
                 item_price = c.get('price') or 0
+                item_unit = c.get('unit_norm', 'kg')
                 
-                # Price per base unit (per kg or per l)
-                if item_pack > 0:
-                    price_per_unit = item_price / item_pack
+                # CRITICAL FIX: For piece-based items (шт), compare price directly
+                # Don't divide by pack_value because user buys by PIECE, not by kg/l
+                if ref_unit in ['pcs', 'шт']:
+                    # For pieces: price IS the total cost per piece
+                    price_per_unit = item_price  # Price per piece
+                    total_cost = requested_qty * item_price  # Total for N pieces
                 else:
-                    price_per_unit = item_price
-                
-                # Total cost = requested_qty * price_per_unit
-                # (requested_qty is in base units: kg or l)
-                total_cost = requested_qty * price_per_unit
+                    # For weight/volume (kg, l): calculate price per base unit
+                    if item_pack > 0:
+                        price_per_unit = item_price / item_pack
+                    else:
+                        price_per_unit = item_price
+                    
+                    # Total cost = requested_qty * price_per_unit
+                    total_cost = requested_qty * price_per_unit
                 
                 # Token score as tie-breaker
                 token_score = c.get('_token_score', 0)
