@@ -563,15 +563,23 @@ class EnhancedSearchEngine:
                 item_pack = c.get('_pack_value') or 1.0
                 item_price = c.get('price') or 0
                 item_unit = c.get('unit_norm', 'kg')
+                item_name = c.get('name_raw', '').lower()
                 
-                # CRITICAL FIX: For piece-based items (шт), compare price directly
-                # Don't divide by pack_value because user buys by PIECE, not by kg/l
-                if ref_unit in ['pcs', 'шт']:
-                    # For pieces: price IS the total cost per piece
-                    price_per_unit = item_price  # Price per piece
+                # CRITICAL FIX: Detect if this is "packaged by weight" (sold as whole package)
+                # Indicators: "вес X кг", "~X кг/кор", "инд. зам." (individually packaged)
+                is_packaged_weight = any(indicator in item_name for indicator in [
+                    'вес', '~', '/кор', 'инд.', 'инд', 'тушка', 'целый', 'целая'
+                ])
+                
+                # For piece-based items (шт) OR packaged weight items:
+                # Compare price directly (user buys WHOLE package, not by kg/l)
+                if ref_unit in ['pcs', 'шт'] or (ref_unit in ['kg', 'кг', 'l', 'л'] and is_packaged_weight):
+                    # Price IS the total cost per piece/package
+                    price_per_unit = item_price  # Price per piece/package
                     total_cost = requested_qty * item_price  # Total for N pieces
                 else:
-                    # For weight/volume (kg, l): calculate price per base unit
+                    # For true weight/volume items (sold by kg/l, not pre-packaged):
+                    # Calculate price per base unit
                     if item_pack > 0:
                         price_per_unit = item_price / item_pack
                     else:
@@ -588,7 +596,8 @@ class EnhancedSearchEngine:
                     'price_per_unit': price_per_unit,
                     'total_cost': total_cost,
                     'token_score': token_score,
-                    'pack_value': item_pack
+                    'pack_value': item_pack,
+                    'is_packaged_weight': is_packaged_weight
                 })
             
             # Sort by total_cost (cheapest first), then by token_score (tie-breaker)
