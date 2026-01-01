@@ -523,18 +523,19 @@ class EnhancedSearchEngine:
                     if len(common_tokens) < 2:
                         continue
                     
-                    # Calculate score WITHOUT brand tokens
-                    min_tokens = min(len(ref_tokens_clean), len(cand_tokens_clean))
-                    token_score = len(common_tokens) / min_tokens if min_tokens > 0 else 0
+                    # For brand_critical=OFF: Simple ratio - common / ref_tokens
+                    # This focuses on "does candidate have what I'm looking for?"
+                    # Not penalized by extra candidate tokens
+                    token_score = len(common_tokens) / len(ref_tokens_clean) if len(ref_tokens_clean) > 0 else 0
                 else:
-                    # For brand_critical=ON: Use ALL tokens (including brand)
+                    # For brand_critical=ON: Use Overlap Coefficient (strict)
                     common_tokens = ref_tokens & cand_tokens
                     
                     # Minimum 2 common tokens required
                     if len(common_tokens) < 2:
                         continue
                     
-                    # Calculate score WITH brand tokens
+                    # Overlap: common / min(ref, cand)
                     min_tokens = min(len(ref_tokens), len(cand_tokens))
                     token_score = len(common_tokens) / min_tokens if min_tokens > 0 else 0
                 
