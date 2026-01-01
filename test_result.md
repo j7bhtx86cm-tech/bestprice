@@ -516,10 +516,10 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.8"
-  test_sequence: 10
+  version: "1.9"
+  test_sequence: 11
   run_ui: true
-  last_test_date: "2025-12-21"
+  last_test_date: "2026-01-03"
 
 
   - task: "Fuzzy/Typo Search in Catalog"
