@@ -725,9 +725,9 @@ class EnhancedSearchEngine:
         # Filter by origin
         origin_filtered = []
         for c in candidates:
-            cand_country = c.get('origin_country', '').lower().strip()
-            cand_region = c.get('origin_region', '').lower().strip()
-            cand_city = c.get('origin_city', '').lower().strip()
+            cand_country = (c.get('origin_country') or '').lower().strip()
+            cand_region = (c.get('origin_region') or '').lower().strip()
+            cand_city = (c.get('origin_city') or '').lower().strip()
             
             ref_country_norm = origin_country.lower().strip()
             
