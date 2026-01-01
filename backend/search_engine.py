@@ -1,18 +1,23 @@
 """Enhanced Search Engine - Final Architecture per Clean Spec
 
-VERSION 3.2 (January 1, 2026):
-CRITICAL FIX: Token scoring method for brand_critical=ON
+VERSION 3.3 (January 1, 2026):
+CRITICAL FIX: Use Overlap Coefficient for ALL modes (not just brand_critical=ON)
 
-CHANGES:
-- For brand_critical=ON: Use Overlap Coefficient (prevents penalty for extra descriptive tokens)
-- For brand_critical=OFF: Use Jaccard Similarity (stricter matching)
-- This allows finding "КЕТЧУП томатный 25мл HEINZ РОССИЯ" when searching for "Кетчуп 25мл Heinz"
+TOKEN SCORING (FINAL):
+- ALL modes: score = common_tokens / min(ref_tokens, cand_tokens)
+- This is Overlap Coefficient (aka Szymkiewicz–Simpson coefficient)
+- Prevents penalty for candidates with MORE descriptive information
+- Example: "Кукуруза LUTIK 425мл" vs "Кукуруза сахарная LUTIK 425мл Китай ключом"
+  → Score = 3/3 = 1.0 (not 3/5 = 0.6)
 
-TOKEN SCORING:
-- brand_critical=ON: score = common_tokens / min(ref_tokens, cand_tokens)
-  → Rewards full coverage of reference, doesn't penalize candidates with MORE info
-- brand_critical=OFF: score = common_tokens / (ref_tokens ∪ cand_tokens)
-  → Standard Jaccard similarity
+THRESHOLDS (different for each mode):
+- brand_critical=OFF: min_score >= 70%
+- brand_critical=ON: min_score >= 85%
+
+WHY OVERLAP NOT JACCARD:
+- Jaccard penalizes extra descriptive tokens ("китай", "ключом", "сахарная")
+- Overlap checks "does candidate cover all reference tokens?"
+- Allows finding cheaper variants with MORE detailed names
 
 BASED ON: Clean Technical Specification - BestPrice MVP
 
@@ -30,16 +35,12 @@ CANDIDATE GUARD (Step 1):
 BRAND/ORIGIN RULES (Step 2):
 - brand_critical=false → brand AND origin COMPLETELY IGNORED
 - brand_critical=true + has brand_id → only same brand_id
-- brand_critical=true + no brand but has origin → origin_critical (country required, region/city if specified)
+- brand_critical=true + no brand but has origin → origin_critical (country required)
 
 PACK & PRICE (Step 3):
 - Pack tolerance: ±20% (0.8x - 1.2x)
 - Price calculation: ceil(required_qty / pack_value) × price
 - Selection by minimum total_cost
-
-THRESHOLDS:
-- brand_critical=OFF: min_score >= 70%
-- brand_critical=ON: min_score >= 85%
 
 PROHIBITIONS:
 ❌ Don't use raw title for logic
@@ -506,18 +507,15 @@ class EnhancedSearchEngine:
                 if len(common_tokens) < 2:
                     continue
                 
-                # Calculate token score: Use overlap coefficient instead of Jaccard for brand_critical
+                # Calculate token score: Use overlap coefficient for BOTH modes
                 # This prevents penalizing candidates with MORE descriptive information
-                union_tokens = ref_tokens | cand_tokens
+                # Difference is in threshold: 85% (ON) vs 70% (OFF)
                 
-                if brand_critical:
-                    # For brand_critical=ON: Use overlap coefficient (prevents penalty for extra tokens)
-                    # Score = common / min(ref, cand) - rewards full coverage of reference tokens
-                    min_tokens = min(len(ref_tokens), len(cand_tokens))
-                    token_score = len(common_tokens) / min_tokens if min_tokens > 0 else 0
-                else:
-                    # For brand_critical=OFF: Use Jaccard similarity (stricter)
-                    token_score = len(common_tokens) / len(union_tokens) if union_tokens else 0
+                # Overlap Coefficient: common / min(ref, cand)
+                # Rewards full coverage of reference tokens
+                # Doesn't penalize if candidate has extra descriptive info
+                min_tokens = min(len(ref_tokens), len(cand_tokens))
+                token_score = len(common_tokens) / min_tokens if min_tokens > 0 else 0
                 
                 # Apply score threshold
                 if token_score >= score_threshold:
