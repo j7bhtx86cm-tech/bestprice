@@ -1023,10 +1023,11 @@ def test_photo_scenarios():
         favorites = response.json()
         print(f"   Found {len(favorites)} favorites")
         
-        # Find the 3 test items
+        # Find the 4 test items
         ketchup_25ml = None
         ketchup_800g = None
         corn_425ml = None
+        salmon_packaged = None
         
         for fav in favorites:
             name = fav.get('productName', '') or fav.get('reference_name', '')
@@ -1041,12 +1042,20 @@ def test_photo_scenarios():
             elif 'кукуруза' in name_lower and '425' in name:
                 corn_425ml = fav
                 print(f"   ✓ Found: Кукуруза 425мл (ID: {fav['id']})")
+            elif 'лосось' in name_lower and 'филе' in name_lower and ('вес' in name_lower or '1.6' in name or '1,6' in name):
+                salmon_packaged = fav
+                print(f"   ✓ Found: Лосось филе вес 1.6кг (ID: {fav['id']})")
         
         if not ketchup_25ml or not ketchup_800g or not corn_425ml:
-            result.add_fail("Find Test Items", f"Missing test items: 25ml={bool(ketchup_25ml)}, 800g={bool(ketchup_800g)}, corn={bool(corn_425ml)}")
-            return
+            result.add_fail("Find Test Items", f"Missing test items: 25ml={bool(ketchup_25ml)}, 800g={bool(ketchup_800g)}, corn={bool(corn_425ml)}, salmon={bool(salmon_packaged)}")
+            # Continue even if salmon is missing - it might not be in favorites yet
         
-        result.add_pass("Find Test Items", "All 3 test items found in favorites")
+        if ketchup_25ml and ketchup_800g and corn_425ml and salmon_packaged:
+            result.add_pass("Find Test Items", "All 4 test items found in favorites")
+        elif ketchup_25ml and ketchup_800g and corn_425ml:
+            result.add_pass("Find Test Items", "First 3 test items found (salmon may need to be added)")
+        else:
+            result.add_warning("Find Test Items", "Some test items missing from favorites")
         
     except Exception as e:
         result.add_fail("Get Favorites", f"Error getting favorites: {str(e)}")
