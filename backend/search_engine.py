@@ -205,7 +205,7 @@ def check_guard_conflict(ref_tokens: Set[str], cand_tokens: Set[str], ref_catego
 
 
 def is_pack_in_range(ref_pack: Optional[float], cand_pack: Optional[float]) -> Tuple[bool, str]:
-    """Check if candidate pack is in acceptable range (±20% of reference)
+    """Check if candidate pack is in acceptable range (±50% of reference)
     
     Returns: (is_valid, reason)
     """
@@ -217,9 +217,9 @@ def is_pack_in_range(ref_pack: Optional[float], cand_pack: Optional[float]) -> T
     if not cand_pack or cand_pack <= 0:
         return (False, "cand_pack_unknown")
     
-    # ±20% tolerance
-    min_pack = ref_pack * 0.8  # -20%
-    max_pack = ref_pack * 1.2  # +20%
+    # ±50% tolerance (allows 700g → 1kg, 1.5л → 1.8л)
+    min_pack = ref_pack * 0.5
+    max_pack = ref_pack * 1.5
     
     if min_pack <= cand_pack <= max_pack:
         return (True, f"in_range_{min_pack:.3f}-{max_pack:.3f}")
@@ -509,7 +509,7 @@ class EnhancedSearchEngine:
             
             debug.candidates_after_pack_filter = len(pack_filtered)
             if ref_pack:
-                debug.filters_applied.append(f"pack_filter: {ref_pack*0.8:.2f}-{ref_pack*1.2:.2f} (±20%)")
+                debug.filters_applied.append(f"pack_filter: {ref_pack*0.5:.2f}-{ref_pack*1.5:.2f} (±50%)")
             else:
                 debug.filters_applied.append("pack_filter: DISABLED (ref_pack unknown)")
             
@@ -608,20 +608,24 @@ class EnhancedSearchEngine:
                 item_price = c.get('price') or 0
                 item_unit = c.get('unit_norm', 'kg')
                 
-                # CORRECT LOGIC based on unit:
-                # - If unit is pcs/шт: price is per piece → compare directly
-                # - If unit is kg/l/кг/л: price is per kg/l → calculate price_per_unit
+                # CRITICAL FIX: Volume/Weight Normalization
+                # For products sold by piece BUT have volume/weight (bottles, packages):
+                # Calculate price per base unit (per kg/l) for fair comparison
                 
                 if ref_unit in ['pcs', 'шт']:
-                    # For pieces: price IS per piece
-                    price_per_unit = item_price
-                    total_cost = requested_qty * item_price
+                    # Check if this has volume/weight info (bottles, cans, packages)
+                    if item_pack and item_pack > 0.01:  # Has meaningful pack_value
+                        # Calculate price per base unit (kg/l)
+                        price_per_unit = item_price / item_pack
+                        total_cost = requested_qty * price_per_unit
+                    else:
+                        # True "pieces" without weight (eggs, individual items)
+                        price_per_unit = item_price
+                        total_cost = requested_qty * item_price
                 else:
                     # For kg/l: price is ALREADY per kg/l in catalog
-                    # pack_value is minimum weight (e.g., 1.6kg for salmon)
-                    # Just use price as price_per_unit
-                    price_per_unit = item_price  # This IS price/kg from catalog
-                    total_cost = requested_qty * item_price  # Total for requested kg/l
+                    price_per_unit = item_price
+                    total_cost = requested_qty * item_price
                 
                 # Token score as tie-breaker
                 token_score = c.get('_token_score', 0)

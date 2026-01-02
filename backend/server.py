@@ -3088,13 +3088,13 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                             pl_origin_country = country_name
                             break
             
-            # Build candidate item
+            # Build candidate item - PRESERVE ACTUAL UNIT FROM PRODUCT
             candidate = {
                 'id': pl['id'],
                 'supplier_company_id': pl['supplierId'],
                 'name_raw': product['name'],
                 'price': pl['price'],
-                'unit_norm': unit_norm,  # Use reference unit
+                'unit_norm': product.get('unit', 'kg'),  # CRITICAL: Use product's actual unit, not reference
                 'brand_id': pl.get('brand_id'),  # From backfill
                 'origin_country': pl_origin_country,
                 'origin_region': pl_origin_region,
