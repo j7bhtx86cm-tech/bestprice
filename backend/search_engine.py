@@ -44,6 +44,81 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
+# Critical product modifiers - these create DIFFERENT products
+# If reference has modifier, candidate MUST have it too (and vice versa)
+CRITICAL_MODIFIERS = {
+    # Seafood ink/additives
+    'чернила', 'каракатиц', 'ink', 'squid',
+    
+    # Spices/flavors
+    'острый', 'острая', 'пикантн', 'spicy', 'hot',
+    'чесночн', 'garlic',
+    'копчен', 'smoked',
+    'сладк', 'sweet',
+    
+    # Meat types (critical - cannot substitute!)
+    'говядин', 'beef',
+    'свинин', 'pork', 
+    'курица', 'куриц', 'chicken',
+    'ягнен', 'lamb',
+    'индейк', 'turkey',
+    
+    # Fish/seafood species (critical!)
+    'лосось', 'salmon',
+    'семга', 
+    'форель', 'trout',
+    'тунец', 'tuna',
+    'сибас', 'sea bass',
+    'дорад', 'dorado',
+    'треска', 'cod',
+    'минтай', 'pollock',
+    
+    # Dairy types
+    'сливочн', 'creamy', 'cream',
+    'обезжир', 'fat-free', 'skim',
+    
+    # Special ingredients
+    'трюфель', 'truffle',
+    'шафран', 'saffron',
+    'базилик', 'basil',
+    'розмарин', 'rosemary',
+}
+
+
+def has_critical_modifier_mismatch(ref_tokens: Set[str], cand_tokens: Set[str]) -> bool:
+    """Check if reference and candidate have DIFFERENT critical modifiers
+    
+    Returns True if MISMATCH (should reject candidate)
+    
+    Example:
+    - Ref: "паста спагетти яйца" 
+    - Cand: "паста спагетти яйца чернилами каракатицы"
+    - Result: True (REJECT) - candidate has modifier ref doesn't have
+    """
+    ref_modifiers = set()
+    cand_modifiers = set()
+    
+    # Find modifiers in reference
+    for token in ref_tokens:
+        for modifier in CRITICAL_MODIFIERS:
+            if modifier in token:
+                ref_modifiers.add(modifier)
+                break
+    
+    # Find modifiers in candidate
+    for token in cand_tokens:
+        for modifier in CRITICAL_MODIFIERS:
+            if modifier in token:
+                cand_modifiers.add(modifier)
+                break
+    
+    # If either has modifiers the other doesn't, it's a mismatch
+    if ref_modifiers != cand_modifiers:
+        return True
+    
+    return False
+
+
 # Guard rules - conflicting product types
 GUARD_CONFLICTS = {
     'кетчуп': {'соус', 'паста', 'майонез', 'горчица', 'вода'},
@@ -559,7 +634,7 @@ class EnhancedSearchEngine:
             else:
                 debug.filters_applied.append(f"token_filter: min_tokens=2, min_score={score_threshold:.2f} (NO brand)")
             
-            # === FILTER 5: GUARD RULES (category + token conflicts) ===
+            # === FILTER 5: GUARD RULES (category + token conflicts + modifier mismatch) ===
             guard_filtered = []
             ref_category = reference_item.get('category')
             
@@ -567,13 +642,21 @@ class EnhancedSearchEngine:
                 cand_tokens = extract_tokens(c.get('name_raw', ''))
                 cand_category = c.get('category')
                 
+                # Check 1: Category/token conflicts
                 if check_guard_conflict(ref_tokens, cand_tokens, ref_category, cand_category):
-                    debug.guard_rejections.append(c.get('name_raw', '')[:40])
-                else:
-                    guard_filtered.append(c)
+                    debug.guard_rejections.append(f"conflict: {c.get('name_raw', '')[:40]}")
+                    continue
+                
+                # Check 2: Critical modifier mismatch  
+                # (e.g., "с чернилами" vs without)
+                if has_critical_modifier_mismatch(ref_tokens, cand_tokens):
+                    debug.guard_rejections.append(f"modifier: {c.get('name_raw', '')[:40]}")
+                    continue
+                
+                guard_filtered.append(c)
             
             debug.candidates_after_guard_filter = len(guard_filtered)
-            debug.filters_applied.append("guard_filter: category + token_conflicts")
+            debug.filters_applied.append("guard_filter: category + conflicts + modifiers")
             
             # Final candidates
             final_candidates = guard_filtered
