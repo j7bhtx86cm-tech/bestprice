@@ -3063,6 +3063,23 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             pl_origin_region = pl.get('origin_region') or product.get('origin_region')
             pl_origin_city = pl.get('origin_city') or product.get('origin_city')
             
+            # Get brand_id from pricelist (from backfill)
+            pl_brand_id = pl.get('brand_id')
+            
+            # FALLBACK: If no brand_id, check abbreviations
+            if not pl_brand_id:
+                name_upper = product['name'].upper()
+                abbreviations = {
+                    'PRB': 'pearl river bridge',
+                    'SEN SOY': 'sen soy',
+                    'СЕН СОЙ': 'sen soy',
+                }
+                
+                for abbr, full_brand in abbreviations.items():
+                    if abbr in name_upper:
+                        pl_brand_id = full_brand
+                        break
+            
             # Try to extract from name if not in DB
             if not pl_origin_country:
                 name_lower = product['name'].lower()
