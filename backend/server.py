@@ -1984,6 +1984,21 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
             brand_info = brand_master.get_brand_info(brand_id)
             brand_name = brand_info.get('brand_en') if brand_info else None
     
+    # FALLBACK: Check for common abbreviations not in brand master
+    if not brand_id:
+        name_upper = product['name'].upper()
+        abbreviations = {
+            'PRB': 'pearl river bridge',
+            'SEN SOY': 'sen soy',
+            'СЕН СОЙ': 'sen soy',
+        }
+        
+        for abbr, full_brand in abbreviations.items():
+            if abbr in name_upper:
+                brand_id = full_brand
+                brand_strict = True
+                break
+    
     is_branded = brand_id is not None
     
     # Extract pack_size and tokens (for schema v2)
