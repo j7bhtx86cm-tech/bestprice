@@ -448,15 +448,27 @@ class EnhancedSearchEngine:
             
             # === FILTER 1: BRAND OR ORIGIN (only if brand_critical=true) ===
             if brand_critical:
-                filtered = self._filter_by_brand_or_origin(candidates, reference_item, debug)
-                debug.filters_applied.append(f"brand_or_origin_filter: ENABLED (brand_critical=true)")
+                # Check if reference has brand_id OR origin
+                has_brand_or_origin = bool(ref_brand) or bool(reference_item.get('origin_country'))
+                
+                if has_brand_or_origin:
+                    # Apply strict brand/origin filter
+                    filtered = self._filter_by_brand_or_origin(candidates, reference_item, debug)
+                    debug.filters_applied.append(f"brand_or_origin_filter: ENABLED (brand_critical=true)")
+                else:
+                    # FALLBACK: No brand_id AND no origin → cannot apply strict filter
+                    # Use all candidates (will rely on token matching with high threshold)
+                    filtered = candidates
+                    debug.filters_applied.append(f"brand_or_origin_filter: SKIPPED (no brand_id and no origin, using token matching)")
+                    logger.warning(f"⚠️ brand_critical=ON but no brand_id/origin → fallback to token matching")
             else:
                 filtered = candidates
                 debug.filters_applied.append("brand_or_origin_filter: DISABLED (brand_critical=false)")
             
             debug.candidates_after_brand_filter = len(filtered)
             
-            if brand_critical and len(filtered) == 0:
+            # Only fail if we had brand/origin but found nothing
+            if brand_critical and len(filtered) == 0 and (ref_brand or reference_item.get('origin_country')):
                 debug.status = "not_found"
                 debug.failure_reason = "no_candidates_for_brand_or_origin"
                 debug.duration_ms = (time.time() - start_time) * 1000
