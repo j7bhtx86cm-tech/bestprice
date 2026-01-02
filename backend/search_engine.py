@@ -525,8 +525,10 @@ class EnhancedSearchEngine:
                     # Calculate common tokens WITHOUT brands
                     common_tokens = ref_tokens_clean & cand_tokens_clean
                     
-                    # CRITICAL: Minimum 2 common NON-BRAND tokens required
-                    if len(common_tokens) < 2:
+                    # CRITICAL: For brand_critical=OFF, allow 1+ common NON-BRAND tokens
+                    # After brand removal, only category tokens remain (e.g., "кетчуп")
+                    # This is VALID for finding alternative brands
+                    if len(common_tokens) < 1:
                         continue
                     
                     # For brand_critical=OFF: Simple ratio - common / ref_tokens
