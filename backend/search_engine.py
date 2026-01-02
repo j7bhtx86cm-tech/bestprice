@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 
 # Guard rules - conflicting product types
 GUARD_CONFLICTS = {
-    'кетчуп': {'соус', 'паста', 'майонез', 'горчица'},
+    'кетчуп': {'соус', 'паста', 'майонез', 'горчица', 'вода'},
     'соус': {'кетчуп', 'паста', 'майонез'},
     'паста': {'соус', 'кетчуп'},
     'майонез': {'кетчуп', 'соус', 'горчица'},
@@ -70,6 +70,13 @@ GUARD_CONFLICTS = {
     'сливки': {'молоко', 'кефир'},
     'томатный': {'острый', 'сырный', 'грибной'},
     'острый': {'томатный', 'сырный'},
+    # NEW: Critical guards for common mismatches
+    'лапша': {'мука', 'крупа', 'рис', 'хлопья'},
+    'мука': {'лапша', 'крупа', 'макароны', 'вермишель'},
+    'крупа': {'мука', 'лапша', 'макароны'},
+    'рис': {'лапша', 'мука', 'крупа'},
+    'макароны': {'мука', 'крупа'},
+    'вермишель': {'мука', 'крупа'},
 }
 
 # Category synonyms for matching
@@ -390,7 +397,7 @@ class EnhancedSearchEngine:
         
         # Determine score threshold based on brand_critical
         if score_threshold is None:
-            score_threshold = 0.85 if brand_critical else 0.50  # Lower threshold for brand_critical=OFF
+            score_threshold = 0.85 if brand_critical else 0.60  # Balanced threshold for brand_critical=OFF
         
         # Extract reference data
         ref_name = reference_item.get('name_raw', '')
