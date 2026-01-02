@@ -390,7 +390,7 @@ class EnhancedSearchEngine:
         
         # Determine score threshold based on brand_critical
         if score_threshold is None:
-            score_threshold = 0.85 if brand_critical else 0.70
+            score_threshold = 0.85 if brand_critical else 0.50  # Lower threshold for brand_critical=OFF
         
         # Extract reference data
         ref_name = reference_item.get('name_raw', '')
