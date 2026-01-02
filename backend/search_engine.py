@@ -47,6 +47,19 @@ logger = logging.getLogger(__name__)
 # Critical product modifiers - these create DIFFERENT products
 # If reference has modifier, candidate MUST have it too (and vice versa)
 CRITICAL_MODIFIERS = {
+    # Rice varieties (CRITICAL - cannot substitute!)
+    'басмати', 'basmati',
+    'жасмин', 'jasmine',
+    'арборио', 'arborio',
+    'пропаренн', 'parboiled', 'steamed',
+    'золотист', 'golden',
+    'черный', 'black',
+    'красный', 'red',
+    'дикий', 'wild',
+    'круглозерн', 'short-grain',
+    'длиннозерн', 'long-grain',
+    'среднезерн', 'medium-grain',
+    
     # Seafood ink/additives
     'чернила', 'каракатиц', 'ink', 'squid',
     
