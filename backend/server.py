@@ -3110,7 +3110,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 'name_raw': product['name'],
                 'price': pl['price'],
                 'unit_norm': product.get('unit', 'kg'),  # CRITICAL: Use product's actual unit, not reference
-                'brand_id': pl.get('brand_id'),  # From backfill
+                'brand_id': pl_brand_id,  # From backfill OR fallback
                 'origin_country': pl_origin_country,
                 'origin_region': pl_origin_region,
                 'origin_city': pl_origin_city,
