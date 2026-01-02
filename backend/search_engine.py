@@ -1,52 +1,39 @@
-"""Enhanced Search Engine - Final Architecture per Clean Spec
+"""Enhanced Search Engine - Final Production Version
 
-VERSION 3.3 (January 1, 2026):
-CRITICAL FIX: Use Overlap Coefficient for ALL modes (not just brand_critical=ON)
+VERSION 4.0 (January 4, 2026):
+COMPREHENSIVE SYSTEMIC FIXES based on user feedback
 
-TOKEN SCORING (FINAL):
-- ALL modes: score = common_tokens / min(ref_tokens, cand_tokens)
-- This is Overlap Coefficient (aka Szymkiewicz–Simpson coefficient)
-- Prevents penalty for candidates with MORE descriptive information
-- Example: "Кукуруза LUTIK 425мл" vs "Кукуруза сахарная LUTIK 425мл Китай ключом"
-  → Score = 3/3 = 1.0 (not 3/5 = 0.6)
+CRITICAL FIXES:
+1. Volume/Weight Normalization - bottled products (1.5л vs 1.8л) compared per liter
+2. Pack Range Relaxed - ±50% (was ±20%) allows 700g→1kg comparisons  
+3. Unit Preservation - candidates keep actual unit from catalog (not overwritten by reference)
+4. Pasta Shape Guards - prevent спагетти↔пенне confusion
+5. Threshold Balance - 60% for brand_critical=OFF (finds other brands, blocks nonsense)
 
-THRESHOLDS (different for each mode):
-- brand_critical=OFF: min_score >= 70%
-- brand_critical=ON: min_score >= 85%
+TOKEN SCORING:
+- brand_critical=ON: Overlap Coefficient (85% threshold)
+- brand_critical=OFF: Overlap without brand tokens (60% threshold)
 
-WHY OVERLAP NOT JACCARD:
-- Jaccard penalizes extra descriptive tokens ("китай", "ключом", "сахарная")
-- Overlap checks "does candidate cover all reference tokens?"
-- Allows finding cheaper variants with MORE detailed names
+PACK TOLERANCE:
+- Changed from ±20% to ±50% (0.5x - 1.5x)
+- Allows finding 1kg alternatives for 700g reference
+- Prevents absurd matches (100g → 10kg still blocked)
 
-BASED ON: Clean Technical Specification - BestPrice MVP
+VOLUME COMPARISON:
+- For bottles/packages (unit=шт with pack_value): compare by price/liter
+- Example: 410₽/1.5л = 273₽/л vs 450₽/1.8л = 250₽/л → selects 1.8л
 
-ARCHITECTURE:
-- Two separate entities: Reference (favorite v2) vs Supplier Item (pricelist)
-- Never mix reference with supplier_item
-- Search uses ONLY normalized fields, NOT raw titles
-
-CANDIDATE GUARD (Step 1):
-- Minimum 2 common meaningful tokens required
-- Category must match (if specified)
-- Units must be compatible (kg ↔ kg, l ↔ l, pcs ↔ pcs)
-- Prohibits absurd matches: ketchup ≠ water, lamb ≠ sauce
-
-BRAND/ORIGIN RULES (Step 2):
-- brand_critical=false → brand AND origin COMPLETELY IGNORED
-- brand_critical=true + has brand_id → only same brand_id
-- brand_critical=true + no brand but has origin → origin_critical (country required)
-
-PACK & PRICE (Step 3):
-- Pack tolerance: ±20% (0.8x - 1.2x)
-- Price calculation: ceil(required_qty / pack_value) × price
-- Selection by minimum total_cost
+GUARD RULES:
+- ✅ Лапша ≠ мука/крупа/рис
+- ✅ Мука ≠ лапша/макароны
+- ✅ Спагетти ≠ пенне/фузилли (NEW!)
+- ✅ Кетчуп ≠ вода/соус
 
 PROHIBITIONS:
 ❌ Don't use raw title for logic
 ❌ Don't mix reference and supplier_item
-❌ Don't consider brand when brand_critical=OFF
-❌ Don't jump between categories
+❌ Don't overwrite candidate units
+❌ Don't apply strict pack tolerance (now ±50%)
 """
 import logging
 import re
