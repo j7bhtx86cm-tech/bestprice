@@ -1,201 +1,163 @@
 <analysis>**original_problem_statement:**
-The user's primary goal is to overhaul the B2B marketplace's core logic to ensure the Best Price feature is robust, automatic, and accurate. The latest set of user requests involves a complete replacement of the brand dictionary, a refactoring of the Favorites data structure, and making the matching engine resilient to errors.
+The user's primary goal is to create a flawless Best Price search engine. When a user adds an item from their Favorites list to the cart, the system must intelligently search through all supplier pricelists to find the most economical and correct match, even if it's a different brand or package size (within limits).
 
-PRODUCT REQUIREMENTS (from the latest user messages):
-1.  **Replace Brand Dictionary (Part A)**:
-    *   Delete the old brand dictionary/files.
-    *   Import a new, definitive brand list from .
-    *   This file contains two sheets:  for brands and  for aliases.
+The user has provided numerous, highly-detailed specifications and bug reports via text and images. The core requirements are:
+1.  **Strict Logic**: The  flag must be strictly enforced.  means filter by brand/origin only.  means ignore brand/origin completely and find the absolute best price from any brand.
+2.  **Intelligent Matching**: The system must not match dissimilar products (e.g., лапша vs. мука, спагетти vs. пенне, items with/without key ingredients like чернила каракатицы). This is managed by  and .
+3.  **Economic Accuracy**: For per piece items (), comparison must be based on the price per item. For weighted items, it must be based on the price per base unit (e.g., price per kg). The final choice must always be the most economical one that passes all filters.
+4.  **Robustness**: The system must handle products that lack a  in the database by using fallback mechanisms. It must never crash and should return clear statuses.
+5.  **Data Integrity**: Favorites ( schema) must store a normalized reference item, not a link to a specific supplier's item. The  process must ensure  is correctly populated in the  collection.
 
-2.  **Brand Backfill (Part B)**:
-    *   Create a script or endpoint () to re-process all  (or / as the data is spread out).
-    *   For each item, use the new brand dictionary to find and save the correct .
-    *   This must be done without reloading all supplier pricelists.
-
-3.  **Favorites v2 Schema (Part C)**:
-    *   Address the nothing found error for old favorite items by migrating to a new, stable  schema.
-    *   The new schema must include , , , , , , , and a  flag.
-    *   When adding to the cart from favorites, the backend should receive a , enrich it using the  to get a full , and then find the best offer.
-    *   Implement a migration script to update old favorites to the v2 schema, marking items that can't be linked as .
-
-4.  **Null-Safe Matching Engine (Part D)**:
-    *   The matching endpoint () must never return a 500 error.
-    *   It should return specific statuses like  or , which the UI can handle gracefully.
-
-5.  ** Logic Fix (Part E)**:
-    *   When , the brand must be completely ignored in both filtering and scoring to ensure true brand-agnostic best-price searching. The brand should provide zero bonus points in the score calculation.
-    *   When , the search must be strictly filtered by .
-
-**User's preferred language**: Russian. The user consistently communicates in Russian. The next agent MUST respond in Russian only.
+**User's preferred language**: Russian
 
 **what currently exists?**
-A full-stack application (FastAPI, React, MongoDB) with a sophisticated, but brittle, product matching engine. The application logic is split between two databases,  (used by the live server) and  (used by offline scripts), which has caused significant data synchronization issues. The backend features a  endpoint that attempts to find the best price for a given item, and a frontend that has been repeatedly modified to accommodate new matching logic. The last agent successfully implemented and fixed several versions of this logic but was about to start a major overhaul based on a new user request just before the session ended.
+The application is a full-stack solution with a FastAPI backend, React frontend, and MongoDB database. The core search logic is encapsulated in , which is called by the  endpoint in .
+
+The search engine is highly complex and has undergone numerous iterations. It includes:
+-   Sophisticated scoring using Overlap Coefficient.
+-   Score thresholds that differ for  ON (0.85) and OFF (0.60).
+-   Package size filtering (±20% tolerance).
+-    to prevent matching different product categories (e.g., лапша vs мука).
+-    to differentiate products with key ingredient variations (e.g., с чернилами каракатицы).
+-   Logic to handle per piece () vs. weighted (/) items.
+-   A brand backfill script () to populate  in the  collection.
+
+The agent has been in a long cycle of fixing specific bugs reported by the user through images, leading to a feature-rich but fragile system.
 
 **Last working item**:
--   **Last item agent was working**: The agent was at the very beginning of a large, multi-part task provided by the user (Message #461) to completely overhaul the brand system, refactor the favorites data model, and make the matching engine more robust. The agent had just downloaded the new brand file () and was analyzing its contents. An unresolved Python error () occurred just before this new task was assigned.
--   **Status**: NOT STARTED
--   **Agent Testing Done**: N
--   **Which testing method agent to use?**: Both.
-    -   A backend test script/agent is needed to verify the new brand import, the  endpoint, and the corrected  logic in .
-    -   A frontend testing agent is needed to verify the full E2E flow of adding items from the newly structured Favorites v2 list to the cart and to check the UI for broken favorite items.
+-   **Last item agent was working**: Fixing an incorrect product match where РИС супер басмати was being matched with РИС пропаренный.
+-   **Status**: USER VERIFICATION PENDING
+-   **Agent Testing Done**: Y
+-   **Which testing method agent to use?**: Frontend testing agent. The agent should test adding various rice products from Favorites to the cart to ensure the  for rice types (, , etc.) are working correctly and preventing mismatches.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Implement Comprehensive Brand & Favorites Overhaul (P0)**
-    -   **Description**: This is the main, unstarted task from the user's latest request (Message #461). It is a blocker for all other progress.
-    -   **Attempted fixes**: None. The task is new.
-    -   **Next debug checklist**: Follow the user's plan exactly:
-        1.  **Part A**: Delete old brand files/collections. Implement logic in  to load brands and aliases from the new  file ().
-        2.  **Part B**: Create a new endpoint . This endpoint must run the brand backfill process on the correct database () to update all product items with the correct .
-        3.  **Part C**: Implement the  schema. Create a migration script to update old favorites. Modify the add to cart from favorites flow to use  and enrich the data on the backend.
-        4.  **Part D**: Refactor  to be null-safe and return structured responses (, ) instead of crashing.
-        5.  **Part E**: Fix the scoring logic in  to completely ignore brand influence (give 0 bonus points) when  is false.
-    -   **Why fix this issue?** To fix the core business logic, resolve data synchronization problems, and make the application stable and reliable as per user's explicit instructions.
-    -   **Status**: NOT STARTED
-    -   **Is recurring issue?** Y (Brand logic and favorites issues have been a constant problem).
-    -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on other issue**: None. This is the primary blocker.
+-   **Issue 1**: Systemic Instability and Regressions (P0)
 
--   **Issue 2: Unresolved Python Error (P1)**
-    -   **Description**: Before the user assigned the major overhaul task, the agent encountered an  while testing the  endpoint with .
-    -   **Attempted fixes**: The agent was about to debug it but was interrupted by the new user request. The error is in the logging/string formatting part of the endpoint.
-    -   **Next debug checklist**:
-        1.  Review the  formatting in the  and  statements within the  endpoint in .
-        2.  One of the variables being logged is  when it's not expected to be. This likely happens when no  is found. Add checks for  before formatting strings for logging.
-    -   **Why fix this issue?** It causes the endpoint to crash, violating the Null-safe requirement.
-    -   **Status**: NOT STARTED
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Backend
-    -   **Blocked on other issue**: Issue 1 should be done first, as it will heavily refactor this endpoint anyway.
-
--   **Issue 3: API Performance (P2)**
-    -   **Description:** API endpoints like  and  become very slow or time out when dealing with a large number of items. The complex matcher is called sequentially for each item.
-    -   **Attempted fixes:** None in this session. The issue was identified in a previous session.
-    -   **Next debug checklist:** Implement caching for matcher results; refactor APIs to process items in parallel.
-    -   **Why fix this issue?** The application is unusable for customers with large favorite lists.
-    -   **Status**: NOT STARTED
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Backend
-    -   **Blocked on other issue**: Blocked on Issue 1.
+  **Issues Detail**:
+  -   **Issue 1**: Systemic Instability and Regressions
+      -   **Attempted fixes**: The previous agent addressed a long series of individual bugs reported via screenshots. Fixes included: switching the scoring algorithm to Overlap Coefficient, adjusting sorting logic, adding  for product types, implementing  for ingredients, and patching fallback logic. While each fix solved a specific problem, the system's overall stability has not been validated, and new bugs frequently appear.
+      -   **Next debug checklist**: The next agent's first priority must be to break the bug-fixing cycle by creating a **comprehensive regression test suite**. This script should codify all historical bug reports into automated tests.
+          1.  **Create a test script ()** that simulates calls to .
+          2.  **Add test cases for all past bug reports**:
+              *   **Ketchup (Heinz)**:  selects the cheapest Heinz, not a more expensive one.
+              *   **Corn (Lutik)**:  correctly selects the cheaper brand, respecting the  pack size rule and comparing price-per-piece ().
+              *   **Salmon (Мурманск)**:  works for items without a  by filtering on .
+              *   **Mirin Sauce (Dunkan)**:  finds cheaper alternatives despite brand name transliteration differences.
+              *   **Noodles (Aroy-D)**: Лапша is never matched with Мука due to .
+              *   **Udon (Сэн Сой)**:  finds the correct item even if the brand wasn't recognized during backfill, using fallback logic.
+              *   **Pasta (Solo Fresco)**: Пенне is never matched with Спагетти, and items с чернилами каракатицы are treated as distinct.
+              *   **Rice (Басмати)**: Басмати is never matched with Пропаренный or other rice types.
+          3.  Run this regression test suite after **every single code change** to prevent introducing new bugs.
+      -   **Why fix this issue and what will be achieved with the fix?**: To achieve the user's core request for a stable and reliable search engine, ending the cycle of endless, isolated bug fixes.
+      -   **Status**: IN PROGRESS
+      -   **Is recurring issue?**: Y
+      -   **Should Test frontend/backend/both after fix?**: Both. Backend first with the new regression suite, then a high-level frontend test to confirm the end-to-end flow.
+      -   **Blocked on other issue**: None. This is the main blocker.
 
 **In progress Task List**:
-None. The main task is broken down into the issues above.
+None.
 
 **Upcoming and Future Tasks**
+-   **Upcoming Tasks**:
+    -   **(P0) Create and Implement Comprehensive Regression Test Suite**: As detailed in All Pending/In progress Issue list. This is the highest priority.
 -   **Future Tasks**:
-    -   (P1) Finalize and test the Order Creation flow ( and ).
+    -   (P1) Finalize and test the Order Creation flow ().
     -   (P2) Telegram Bot Integration.
-    -   (P3) Advanced User Permissions (custom presets, approval workflows, activity logs).
+    -   (P3) Advanced User Permissions.
+    -   (P4) Refactor  into smaller, logical routers (e.g., , , ).
+    -   (P5) Extract test fixture logic from  into a separate testing utility module.
 
 **Completed work in this session**
--   **Implemented Best Offer Service ()**:
-    -   Created a new endpoint to replace the old  logic. This endpoint takes a  and finds the best-priced equivalent across all suppliers.
-    -   Refactored  and  multiple times to improve scoring logic, including synonym handling ('непотрошеный' = 'неразделанный') and fuzzy matching ('сибас' vs 'сибасс').
--   **Fixed Critical Data Source Bug**:
-    -   Diagnosed and fixed a major bug where the  was reading from  while all data processing scripts were writing to , causing massive data desynchronization. The backfill script was corrected to write to .
--   **Implemented Total Cost Sorting**:
-    -   Modified the best offer logic to sort candidates by the **total cost for the required volume**, not just the price per base unit. This ensures that bulk discounts are correctly prioritized.
-    -   Updated  to correctly parse required volume from product names (e.g., ).
--   **UI/UX Overhaul for Favorites Page**:
-    -   Refactored  to call the new  endpoint.
-    -   Removed global toggles in favor of a per-item Бренд критичен switch.
-    -   Added detailed success alerts showing the user which product was selected, its price, supplier, and match score.
--   **Replaced Brand Dictionary (and fixed it again)**:
-    -   Replaced the brand master file once.
-    -   Created and ran a  script to update  in the  collection.
-    -   Debugged and fixed the brand detection logic in  to handle edge cases like short brand names inside other words (e.g., ПАН in панировочные) and aliases with punctuation ().
+-   **Systemic Search Logic Overhaul**: Iteratively debugged and refined the search engine based on numerous user-provided bug reports.
+-   **Data Integrity Fixes**: Successfully ran the  script to populate  in the  collection, fixing a critical data gap.
+-   **Advanced Matching Rules**:
+    -   Switched scoring from Jaccard Index to **Overlap Coefficient** to handle descriptive product names better.
+    -   Implemented and refined **** to distinguish products with different key ingredients (e.g., с чернилами каракатицы).
+    -   Expanded **** to prevent mismatches between product types like pasta shapes (пенне vs спагетти) and categories (лапша vs мука).
+-   **Economic Logic Refinement**: Added logic to correctly compare per piece () items based on item price, and weighted items based on price per base unit (/).
+-   **Robustness Improvements**: Added fallback logic for  to handle products that lack a  or , preventing not found errors.
+-   **Frontend Fix**: Removed a hardcoded  from  that was overriding the backend's dynamic thresholds.
+-   **Code Cleanup**: Refactored  to remove significant blocks of duplicated and obsolete code related to the search endpoints.
 
 **Earlier issues found/mentioned but not fixed**
--   **API Performance for large lists**: As mentioned in the pending issues, this is a known technical debt.
+None. All reported bugs were addressed, but the solutions need to be solidified with regression testing.
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in this session**: Product Matching & Brand Logic.
--   **Recurrence count**: This has been the central, recurring theme of the entire project. The logic was refactored at least 4-5 times in this session alone, culminating in the user's latest request for a complete overhaul (Issue 1).
--   **Status**: BLOCKED (on Issue 1). The latest user request is the next attempt to finally resolve this.
+-   **Issue recurrence in previous fork**: Product Matching & Brand Logic.
+-   **Recurrence count**: Very high. This was the central theme of the entire session.
+-   **Status**: IN PROGRESS. The core logic remains fragile and requires comprehensive regression testing to stabilize.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Best Offer Selection Service**: A centralized backend endpoint () that acts as the single source of truth for finding the cheapest equivalent product.
--   **Total Cost Sorting**: The matching logic now prioritizes offers based on the final cost for a requested quantity/volume, correctly handling different package sizes.
--   **Data Desynchronization**: A critical bug was discovered where the application server and offline scripts were using two different databases ( and ). This is a key risk factor.
--   **Favorites v2 (Upcoming)**: A planned refactor of the  collection to a more robust schema to prevent errors with outdated data.
--   **Fuzzy & Synonym Matching**: The scoring algorithm was enhanced to use fuzzy string matching (e.g.,  library) and synonym lists for more accurate name comparisons.
+-   **Advanced Search Algorithm**: A multi-stage process involving guards, filters (brand, package size), scoring, and economic sorting.
+-   **Overlap Coefficient**: Used for scoring to avoid penalizing items with more descriptive names.
+-   ****: A hardcoded dictionary in  to prevent illogical matches between product types (e.g., ).
+-   ****: A hardcoded list of keywords in  that make a product fundamentally different (e.g., ). If a modifier is in one name but not the other, they cannot match.
+-   **Dynamic Pricing Logic**: Differentiates between comparing  for per piece items and  (price per base unit) for weighted items.
+-   **Brand Backfill**: A critical data-populating step that parses product names and assigns a  to items in the  collection.
 
 **key DB schema**
--   **products**: 
--   **pricelists**: 
--   **favorites (current, problematic)**: Contains stale s and an inconsistent structure.
--   **favorites (proposed v2)**: 
--   **brands (new, proposed)**: To be created from  sheet.
--   **brand_aliases (new, proposed)**: To be created from  sheet.
+-   **pricelists**: . The  is now populated by the backfill script.
+-   **favorites (v2)**: 
 
 **changes in tech stack**
--   **Backend**:  library was added for fuzzy string matching.  and  are used for Excel processing.
+-   None.
 
 **All files of reference**
--   : Heavily modified. Contains the  endpoint and scoring logic. **CRITICAL**.
--   : Heavily modified. Contains the frontend logic for calling the new endpoint. **CRITICAL**.
--   : Modified multiple times to support new brand files and fix normalization logic. Will need to be replaced again.
--   : New script created to run the brand backfill. Will need to be updated for the new user request.
--   : The new, definitive source for brand data. **CRITICAL**.
--   : The  variable here is critical and was the source of a major bug. It is set to .
+-   : Contains all the critical and complex search logic.
+-   : Defines the API endpoints, especially .
+-   : The script for populating brand data.
+-   : The frontend component that initiates the search.
 
 **Areas that need refactoring**:
--   ****: Still a massive monolith. The user's request to create an admin endpoint () is a good opportunity to start breaking logic out into separate routers/modules.
--   **Database Usage**: The codebase is riddled with connections to both  and . This needs to be standardized to use  ONLY, by reading from the  file in all scripts.
--   **Favorites Logic**: The entire favorites system is outdated and needs to be refactored according to the Favorites v2 plan (Issue 1, Part C).
+-   **Hardcoded Rules**: The  and  are hardcoded in . This logic is brittle and hard to maintain. It would be better to move this configuration into a database collection or an external file (like the brand master Excel file) to make it more manageable.
+-   ** Monolith**: The file still contains too many unrelated endpoints and could be broken down into dedicated routers.
 
 **key api endpoints**
--   : (HEAVILY MODIFIED) The core endpoint for finding the best price. Takes a  and returns a .
--   : (PROPOSED) A new endpoint to be created for running the brand backfill process.
+-   : The main endpoint for adding an item from favorites, triggering the complex search logic.
+-   : Adds a new item to the user's favorites list.
 
 **Critical Info for New Agent**
--   **DATABASE NAME IS CRITICAL**: The server uses  from . All scripts (like the backfill script) MUST be modified to use this same database. The previous agent spent hours debugging an issue caused by scripts writing to a different  database. Verify all  connections.
--   **FOLLOW THE NEW PLAN**: The user has provided a detailed, multi-part plan in message #461. You MUST follow this plan exactly. Do not try to patch the old code; the user wants a full overhaul of the brand and favorites systems.
--   ** is the main logic hub**: Most of the matching, scoring, and data aggregation logic is currently inside  in the  endpoint and its helper functions.
--   **The Data is in  and **: The agent discovered that the  collection is empty. All matching logic must query the  and  collections and join them in the code.
+-   **STOP REACTIVE BUG-FIXING**: Your first and most important task is to build a comprehensive regression test suite as described in the **All Pending/In progress Issue list**. Do not make any other code changes until this suite is built and passes. The user is providing excellent test cases through their bug reports; you must codify them.
+-   **The Logic is Fragile**: The search engine's behavior is highly sensitive to the interplay between scoring thresholds, package size tolerance, , and . Any change can have unintended consequences. Use the regression suite to validate every change.
+-   **Data is Key**: Many issues were caused by missing data (e.g.,  not being populated). Always verify the data in the database (, ) when debugging an issue. The brand backfill script is critical.
 
 **documents and test reports created in this job**
--    (New, to be used)
--    (Old, to be replaced)
 -   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User (msg #461):** Provides a comprehensive, multi-part task to fix the entire system: replace brand dictionary, run a backfill, introduce a  schema, make the matcher null-safe, and fix the  logic. (NOT STARTED)
-2.  **User (msg #464, #467):** Confirms the agent should proceed with the major task. (NOT STARTED)
-3.  **Agent (msg #466):** Acknowledges the task and analyzes the new brand file. (IN PROGRESS)
-4.  **User (msg #438):** Reports that when  is OFF, the system still favors the original brand instead of finding the true best price among all analogs. (FIX IN PROGRESS, part of #461)
-5.  **Agent (msg #440-456):** Attempts to fix the  logic by modifying the scoring function, but runs into a  error. (BLOCKED)
-6.  **User (msg #405):** Requests a change in logic: sort offers by the **total cost** for the required volume, not just the price per unit. (COMPLETED)
-7.  **Agent (msg #406-437):** Successfully implements the total cost sorting logic in the backend and updates the frontend to display the final cost and required units. (COMPLETED)
-8.  **User (msg #282):** Requests to replace the brand dictionary with a new file () and run a backfill to update all existing products. (COMPLETED, but now superseded by a newer file in msg #461).
-9.  **Agent (msg #283-404):** Successfully implements the brand dictionary replacement, including creating a backfill script, fixing normalization bugs, and diagnosing a critical issue where the server and scripts were using different databases ( vs ). (COMPLETED)
-10. **User (msg #219):** Reports a bug where the best price logic fails for a Сибас product, selecting a more expensive option. (COMPLETED)
+1.  **User (msg #543):** у нас база данных PostgreSQL? (Is our database PostgreSQL?) (RESOLVED - Agent clarified it's MongoDB).
+2.  **User (msg #534):** Bug Report: РИС супер басмати is being mismatched. (RESOLVED - Agent added rice types to ).
+3.  **User (msg #500):** Bug Report:  is failing for Кимчи PRB. (RESOLVED - Agent added fallback logic for unrecognized brand abbreviations like PRB).
+4.  **User (msg #478):** Bug Report: Brand critical seems to have stopped working for pasta; incorrect item being added. (RESOLVED - Agent added pasta shapes like пенне and спагетти to ).
+5.  **User (msg #467):** Bug Report: System is matching products with different key ingredients (паста с чернилами каракатицы). (RESOLVED - Agent implemented ).
+6.  **User (msg #439):** Comprehensive Bug Report (5 images): Price calculation errors, items not found, product mismatches. (RESOLVED - Agent called  and applied systemic fixes).
+7.  **User (msg #425):** Bug Report: Лапша Удон Сэн Сой is not found when  because the brand wasn't recognized. (RESOLVED - Agent added fallback for items without a ).
+8.  **User (msg #412):** Bug Report: Лапша рисовая is incorrectly matched with Мука рисовая. (RESOLVED - Agent added лапша vs мука to  and adjusted score threshold).
+9.  **User (msg #397):** Bug Report:  isn't finding cheaper alternatives for Соус Мирин due to brand name variations. (RESOLVED - Agent lowered the score threshold for ).
+10. **User (msg #374):** Bug Report: ЛОСОСЬ...Мурманск is not found when . (RESOLVED - Agent improved origin extraction and fixed a  error).
 
 **Project Health Check:**
--   **Broken**:
-    -   The brand matching system is incorrect until the new dictionary is imported and backfilled (Issue 1).
-    -   The Favorites feature is partially broken due to an outdated data schema, causing not found errors (Issue 1).
-    -   The  endpoint can crash with a Python error under certain conditions (Issue 2).
+-   **Broken**: The core search functionality is extremely fragile and prone to regressions. While individual bugs are fixed, the overall system is not stable and fails on new or untested edge cases.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
--   , : Frontend drag-and-drop.
--   : Frontend fuzzy search.
--   , : Backend for reading  files.
+-   , : Backend for reading  brand files.
 -   : Backend for fuzzy string matching.
+-   : Frontend fuzzy search.
+-   , : Frontend drag-and-drop.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, the agent used a testing agent to verify a previous version of the  endpoint.
--   **Troubleshoot agent used after agent stuck in loop**: NO.
--   **Test files created**: None. All testing was done via ad-hoc Python scripts () and screenshots.
--   **Known regressions**: The  logic is not working as intended. The system still gives preference to the original brand.
+-   **Testing agent used after significant changes**: YES, but sporadically. The agent relied heavily on ad-hoc Python scripts executed via the  tool for testing. This is a major gap.
+-   **Troubleshoot agent used after agent stuck in loop**: YES, the agent successfully used the  to identify systemic issues.
+-   **Test files created**: None. All tests were temporary scripts and were not saved.
+-   **Known regressions**: The project is in a constant state of regression. Fixing one scenario often breaks another.
 
 **Credentials to test flow:**
 -   **Customer (Admin)**:  / 
 
 **What agent forgot to execute**
--   The primary unexecuted task is the entire multi-part plan from the user's last message (#461), which involves replacing the brand file, running a backfill, refactoring favorites to a v2 schema, and making the code null-safe.
--   The agent did not fix the  error that occurred just before receiving the final task.</analysis>
+The agent consistently failed to create a persistent, comprehensive regression test suite. Each bug was fixed in isolation, but the learnings were not codified into automated tests, leading to a whack-a-mole cycle of fixing one bug only for another to appear. This is the primary reason for the project's instability.</analysis>
