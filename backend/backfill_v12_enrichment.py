@@ -110,15 +110,42 @@ def determine_product_core_id(product_name, seed_rules_cache):
     
     Uses seed_dict_rules to identify the product category.
     Returns a normalized identifier like 'кетчуп', 'лосось', 'креветки', etc.
-    """
-    core_tokens = extract_product_core_tokens(product_name, seed_rules_cache)
     
-    if not core_tokens:
+    Priority: Longest matching term (more specific categories)
+    Ignore: Technical attributes like "0%", "5%", "g", "l", etc.
+    """
+    if not product_name:
         return None
     
-    # Use the first (most important) token as product_core_id
-    # In a more sophisticated system, this could be a combination
-    return core_tokens[0]
+    name_norm = normalize_text(product_name)
+    name_words = name_norm.split()
+    
+    # Find ALL matching rules
+    matched_canonicals = []
+    
+    for raw_term, canonical in seed_rules_cache.items():
+        raw_norm = normalize_text(raw_term)
+        
+        # Skip empty or invalid canonicals
+        if not canonical or len(canonical) < 2:
+            continue
+        
+        # Skip technical/measurement terms (очень короткие или числа)
+        if canonical in ['0%', '1%', '2%', '3%', '4%', '5%', '6%', '7%', '8%', '9%', 
+                         'g', 'l', 'ml', 'kg', 'шт', 'pcs', 'сm', 'см', 'мм', 'mm']:
+            continue
+        
+        # Check if raw term appears in product name
+        if raw_norm in name_norm or raw_norm in name_words:
+            # Score by length (longer = more specific)
+            matched_canonicals.append((canonical, len(raw_norm)))
+    
+    if not matched_canonicals:
+        return None
+    
+    # Return the LONGEST match (most specific)
+    matched_canonicals.sort(key=lambda x: x[1], reverse=True)
+    return matched_canonicals[0][0]
 
 
 # ==================== LOAD CACHES FROM V12 ====================
