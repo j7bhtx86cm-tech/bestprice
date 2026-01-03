@@ -2985,7 +2985,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
     7. Return structured response (never 500)
     """
     import logging
-    from search_engine import EnhancedSearchEngine, extract_pack_value
+    from search_engine_v12 import SearchEngineV12, extract_pack_value
+    import search_engine_v12
     
     logger = logging.getLogger(__name__)
     
@@ -3213,18 +3214,18 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             
             # Check if item already in cart
             existing_item = next((item for item in user_cart.get('items', []) 
-                                if item['pricelistId'] == result.selected_offer['supplier_item_id']), None)
+                                if item['pricelistId'] == result.supplier_item_id), None)
             
             if existing_item:
                 existing_item['quantity'] += request.qty
             else:
                 user_cart.setdefault('items', []).append({
-                    "pricelistId": result.selected_offer['supplier_item_id'],
-                    "productName": result.selected_offer['name_raw'],
+                    "pricelistId": result.supplier_item_id,
+                    "productName": result.name_raw,
                     "quantity": request.qty,
-                    "price": result.selected_offer['price'],
-                    "supplierId": result.selected_offer['supplier_id'],
-                    "supplierName": result.selected_offer['supplier_name']
+                    "price": result.price,
+                    "supplierId": result.supplier_id,
+                    "supplierName": result.supplier_name
                 })
             
             await db.cart.replace_one(
@@ -3233,17 +3234,34 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 upsert=True
             )
             
+            # Build SelectedOffer for response
+            selected_offer = SelectedOffer(
+                supplier_id=result.supplier_id,
+                supplier_name=result.supplier_name,
+                supplier_item_id=result.supplier_item_id,
+                name_raw=result.name_raw,
+                price=result.price,
+                currency='RUB',
+                unit_norm='kg',
+                pack_value=1.0,
+                pack_unit='kg',
+                price_per_base_unit=result.price_per_base_unit,
+                total_cost=result.total_cost,
+                units_needed=result.need_packs or 1.0,
+                score=result.match_percent or 0
+            )
+            
             return AddFromFavoriteResponse(
                 status="ok",
-                selected_offer=SelectedOffer(**result.selected_offer),
+                selected_offer=selected_offer,
                 top_candidates=result.top_candidates,
-                debug_log=result.debug_event.to_dict() if result.debug_event else None,
+                debug_log=result.explanation,
                 message="Item added to cart"
             )
         else:
             return AddFromFavoriteResponse(
                 status=result.status,
-                message=result.message or f"Not found: {result.debug_event.failure_reason if result.debug_event else 'unknown'}"
+                message=result.failure_reason or "Not found"
             )
     
     except Exception as e:
