@@ -3143,11 +3143,55 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         companies = await db.companies.find({}, {"_id": 0}).to_list(1000)
         company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
         
-        # Step 6: Run search with score threshold
-        search_engine = EnhancedSearchEngine()
+        # Step 6: Run search with V12 ENGINE
+        from search_engine_v12 import SearchEngineV12
+        
+        # Prepare reference_item for v12 (requires product_core_id)
+        v12_loader = search_engine_v12.get_v12_loader()
+        
+        # Detect product_core_id from reference name
+        ref_product_core_id = v12_loader.determine_product_core_id(reference_name)
+        if not ref_product_core_id:
+            logger.warning(f"⚠️ Could not determine product_core_id for '{reference_name}'")
+            return AddFromFavoriteResponse(
+                status="insufficient_data",
+                message="Не удалось определить категорию продукта"
+            )
+        
+        # Re-build reference_item with v12 fields
+        reference_item = {
+            'name_raw': reference_name,
+            'product_core_id': ref_product_core_id,
+            'brand_id': brand_id,
+            'origin_country': origin_country,
+            'origin_region': origin_region,
+            'origin_city': origin_city,
+            'pack_value': pack_size,
+            'pack_tolerance_pct': 20
+        }
+        
+        logger.info(f"   ✅ V12: product_core_id={ref_product_core_id}")
+        
+        # Re-prepare candidates with v12 fields (product_core_id, offer_status, price_status)
+        v12_candidates = []
+        for c in candidates:
+            # Get enriched data from pricelist (from backfill)
+            pl_item = next((pl for pl in pricelists if pl['id'] == c['id']), None)
+            if not pl_item:
+                continue
+            
+            # Use enriched fields from backfill
+            v12_candidates.append({
+                **c,
+                'product_core_id': pl_item.get('product_core_id'),
+                'offer_status': pl_item.get('offer_status', 'ACTIVE'),
+                'price_status': pl_item.get('price_status', 'VALID')
+            })
+        
+        search_engine = SearchEngineV12()
         result = search_engine.search(
             reference_item=reference_item,
-            candidates=candidates,
+            candidates=v12_candidates,
             brand_critical=brand_critical,
             requested_qty=request.qty,
             company_map=company_map
