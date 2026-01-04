@@ -3090,61 +3090,62 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             return re.sub(r'\s+', ' ', text).strip()
         
         def detect_product_core(name):
-            """Используем ту же логику, что в backfill"""
+            """Map product name to super_class category"""
             if not name:
                 return None
             name_norm = normalize(name)
             
-            # Простая эвристика для основных продуктов
+            # Map to super_class categories (from supplier_items)
             if 'кетчуп' in name_norm:
-                return 'кетчуп'
-            elif 'кукуруза' in name_norm:
-                return 'кукуруза_консервированная' if 'консерв' in name_norm else 'кукуруза'
+                return 'condiments.ketchup'
+            elif 'кукуруза' in name_norm and 'консерв' in name_norm:
+                return 'vegetables.corn'
             elif 'лосось' in name_norm or 'сёмга' in name_norm:
-                return 'лосось'
+                return 'seafood.salmon'
             elif 'креветк' in name_norm:
-                return 'креветки'
-            # Можно добавить больше правил
+                return 'seafood.shrimp'
+            elif 'сибас' in name_norm or 'сибасс' in name_norm:
+                return 'seafood.seabass'
+            # Можно добавить больше маппингов
             return None
         
-        ref_product_core_id = detect_product_core(reference_name)
+        ref_super_class = detect_product_core(reference_name)
         
-        if not ref_product_core_id:
-            logger.warning(f"⚠️ product_core_id не определён для '{reference_name}'")
+        if not ref_super_class:
+            logger.warning(f"⚠️ super_class не определён для '{reference_name}'")
             return AddFromFavoriteResponse(
                 status="insufficient_data",
                 message="Категория продукта не определена"
             )
         
-        logger.info(f"   product_core_id: {ref_product_core_id}")
+        logger.info(f"   super_class: {ref_super_class}")
         
         # Step 7: Filter candidates step-by-step with DETAILED LOGGING
-        total_candidates = len(pricelists)
-        logger.info(f"   Total pricelists: {total_candidates}")
+        total_candidates = len(supplier_items)
+        logger.info(f"   Total supplier_items: {total_candidates}")
         
-        # Filter 1: ACTIVE + VALID + product_core match
+        # Filter 1: super_class match (вместо product_core_id)
         step1 = [
-            pl for pl in pricelists 
-            if pl.get('offer_status') == 'ACTIVE'
-            and pl.get('price_status') == 'VALID'
-            and pl.get('product_core_id') == ref_product_core_id
-            and pl.get('price', 0) > 0
+            si for si in supplier_items 
+            if si.get('active') == True
+            and si.get('super_class') == ref_super_class
+            and si.get('price', 0) > 0
         ]
-        logger.info(f"   После core filter ({ref_product_core_id}): {len(step1)}")
+        logger.info(f"   После super_class filter ({ref_super_class}): {len(step1)}")
         
         if len(step1) == 0:
-            logger.error(f"❌ NO CANDIDATES after product_core filter")
-            logger.error(f"   Reference core: {ref_product_core_id}")
-            logger.error(f"   Total ACTIVE: {sum(1 for p in pricelists if p.get('offer_status') == 'ACTIVE')}")
-            logger.error(f"   With core: {sum(1 for p in pricelists if p.get('product_core_id'))}")
+            logger.error(f"❌ NO CANDIDATES after super_class filter")
+            logger.error(f"   Reference super_class: {ref_super_class}")
+            logger.error(f"   Total active: {sum(1 for si in supplier_items if si.get('active') == True)}")
+            logger.error(f"   With super_class: {sum(1 for si in supplier_items if si.get('super_class'))}")
             return AddFromFavoriteResponse(
                 status="not_found",
-                message=f"Не найдено товаров с категорией '{ref_product_core_id}'"
+                message=f"Не найдено товаров с категорией '{ref_super_class}'"
             )
         
         # Filter 2: Brand (if brand_critical=ON)
         if brand_critical and brand_id:
-            step2 = [pl for pl in step1 if pl.get('brand_id') == brand_id]
+            step2 = [si for si in step1 if si.get('brand_id') == brand_id]
             logger.info(f"   После brand filter (brand_id={brand_id}): {len(step2)}")
         else:
             step2 = step1
@@ -3160,10 +3161,12 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         if pack_size:
             min_pack = pack_size * 0.8
             max_pack = pack_size * 1.2
-            step3 = [
-                pl for pl in step2 
-                if pl.get('pack_base') and min_pack <= pl.get('pack_base') <= max_pack
-            ]
+            step3 = []
+            for si in step2:
+                # Get pack from net_weight_kg or net_volume_l
+                si_pack = si.get('net_weight_kg') or si.get('net_volume_l')
+                if si_pack and min_pack <= si_pack <= max_pack:
+                    step3.append(si)
             logger.info(f"   После pack filter (±20% от {pack_size}): {len(step3)}")
         else:
             step3 = step2
@@ -3179,13 +3182,15 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         step3.sort(key=lambda x: x.get('price', 999999))
         
         winner = step3[0]
-        winner_product = product_map.get(winner['productId'])
         
         logger.info(f"✅ НАЙДЕНО: {len(step3)} кандидатов")
-        logger.info(f"   Победитель: {winner.get('name_raw', '')[:50]}")
+        logger.info(f"   Победитель: {winner.get('name_raw', '')[:40]}")
         logger.info(f"   Цена: {winner.get('price')}₽")
+        logger.info(f"   Бренд: {winner.get('brand_id', 'NONE')}")
         
-        # Build response using simplified structure
+        # Get supplier name
+        companies = await db.companies.find({}, {"_id": 0}).to_list(1000)
+        company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
         result = type('obj', (object,), {
             'status': 'ok',
             'supplier_id': winner.get('supplierId'),
@@ -3265,11 +3270,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 selected_offer=selected_offer,
                 top_candidates=[
                     {
-                        'name_raw': pl.get('name_raw', '')[:50],
-                        'price': pl.get('price'),
-                        'supplier': company_map.get(pl.get('supplierId'), 'Unknown')
+                        'name_raw': si.get('name_raw', '')[:50],
+                        'price': si.get('price'),
+                        'supplier': company_map.get(si.get('supplier_company_id'), 'Unknown')
                     }
-                    for pl in step3[:5]
+                    for si in step3[:5]
                 ],
                 debug_log=result.explanation,
                 message="Товар добавлен в корзину"
