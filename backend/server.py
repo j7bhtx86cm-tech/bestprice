@@ -3281,10 +3281,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             # score_threshold will be auto-determined: 0.85 for brand_critical=True, 0.70 for False
         )
         
-        logger.info(f"   Search result: {result.status}")
+        logger.info(f"   Search result: {result_status}")
         
-        # Step 7: Return response
-        if result.status == "ok":
+        # Step 8: Return response
+        if result_status == "ok":
             # Add to cart
             user_cart = await db.cart.find_one({"userId": current_user['id']}, {"_id": 0})
             
@@ -3325,9 +3325,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 price=result.price,
                 currency='RUB',
                 unit_norm='kg',
-                pack_value=1.0,
-                pack_unit='kg',
-                price_per_base_unit=result.price_per_base_unit,
+                pack_value=winner.get('pack_base', 1.0),
+                pack_unit=winner.get('base_unit', 'kg'),
+                price_per_base_unit=result.price_per_base_unit or result.price,
                 total_cost=result.total_cost,
                 units_needed=result.need_packs or 1.0,
                 score=result.match_percent or 0
@@ -3336,14 +3336,21 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             return AddFromFavoriteResponse(
                 status="ok",
                 selected_offer=selected_offer,
-                top_candidates=result.top_candidates,
+                top_candidates=[
+                    {
+                        'name_raw': pl.get('name_raw', '')[:50],
+                        'price': pl.get('price'),
+                        'supplier': company_map.get(pl.get('supplierId'), 'Unknown')
+                    }
+                    for pl in step3[:5]
+                ],
                 debug_log=result.explanation,
-                message="Item added to cart"
+                message="Товар добавлен в корзину"
             )
         else:
             return AddFromFavoriteResponse(
-                status=result.status,
-                message=result.failure_reason or "Not found"
+                status=result_status,
+                message="Товар не найден"
             )
     
     except Exception as e:
