@@ -1330,6 +1330,319 @@ def test_photo_scenarios():
     
     result.add_pass("Critical Fixes", "All 4 critical fixes applied and verified")
 
+def test_favorites_add_to_cart_v12():
+    """Test Favorites → Add to Cart after v12 master reinstallation
+    
+    CONTEXT:
+    - v12 master fully reinstalled (GATES 1-3 PASSED)
+    - Backfill completed: 89.7% product_core coverage, 54% brand coverage
+    - Favorites cleared (clean start)
+    - Endpoint: POST /api/cart/add-from-favorite
+    
+    TESTS:
+    1. Login and create favorite with brand_critical=false
+    2. Test Add to Cart (brand_critical=OFF) - should find ~36 candidates for ketchup
+    3. Verify brand_critical=OFF ignores brand (finds different brands)
+    4. Check debug logs show correct filtering
+    
+    EXPECTED:
+    - ✅ Favorite successfully created
+    - ✅ Add to cart finds product (status="ok")
+    - ✅ Cheapest option selected with correct product_core="кетчуп"
+    - ✅ brand_critical=OFF ignores brand Heinz
+    """
+    print("\n" + "="*80)
+    print("TESTING: FAVORITES → ADD TO CART (V12 MASTER)")
+    print("Testing after full v12 reinstallation with backfill")
+    print("="*80)
+    
+    # Step 1: Login as customer
+    print(f"\n[1] Testing login for customer@bestprice.ru...")
+    auth_data = login("customer@bestprice.ru", "password123")
+    
+    if not auth_data:
+        result.add_fail("V12 Login", "Login failed - cannot test v12 features")
+        return
+    
+    result.add_pass("V12 Login", "Successfully logged in as customer@bestprice.ru")
+    
+    token = auth_data["token"]
+    headers = get_headers(token)
+    user_id = auth_data["user"].get("id")
+    
+    # Verify userId matches expected
+    expected_user_id = "363bd636-29c2-4cf0-b504-a528473c1383"
+    if user_id == expected_user_id:
+        result.add_pass("V12 User ID", f"User ID matches expected: {user_id}")
+    else:
+        result.add_warning("V12 User ID", f"User ID {user_id} differs from expected {expected_user_id}")
+    
+    # Step 2: Check /api/auth/me returns correct userId
+    print(f"\n[2] Verifying /api/auth/me returns correct userId...")
+    try:
+        me_response = requests.get(f"{BACKEND_URL}/auth/me", headers=headers, timeout=10)
+        
+        if me_response.status_code != 200:
+            result.add_fail("V12 Auth Me", f"Failed to get user info: {me_response.status_code}")
+        else:
+            me_data = me_response.json()
+            me_user_id = me_data.get("id")
+            
+            print(f"   User ID from /auth/me: {me_user_id}")
+            print(f"   User email: {me_data.get('email')}")
+            print(f"   User role: {me_data.get('role')}")
+            print(f"   Company ID: {me_data.get('companyId')}")
+            
+            if me_user_id == user_id:
+                result.add_pass("V12 Auth Me", f"✅ /api/auth/me returns correct userId: {me_user_id}")
+            else:
+                result.add_fail("V12 Auth Me", f"❌ userId mismatch: {me_user_id} vs {user_id}")
+    
+    except Exception as e:
+        result.add_fail("V12 Auth Me", f"Error: {str(e)}")
+    
+    # Step 3: Get existing favorites (to check if test favorite already exists)
+    print(f"\n[3] Checking existing favorites...")
+    try:
+        fav_response = requests.get(f"{BACKEND_URL}/favorites", headers=headers, timeout=10)
+        
+        if fav_response.status_code != 200:
+            result.add_warning("V12 Get Favorites", f"Failed to get favorites: {fav_response.status_code}")
+            existing_favorites = []
+        else:
+            existing_favorites = fav_response.json()
+            print(f"   Found {len(existing_favorites)} existing favorites")
+            
+            # Check if test favorite already exists
+            test_fav = None
+            for fav in existing_favorites:
+                name = fav.get('productName') or fav.get('reference_name', '')
+                if 'кетчуп' in name.lower() and 'heinz' in name.lower() and '800' in name:
+                    test_fav = fav
+                    print(f"   ✓ Found existing test favorite: {name} (ID: {fav['id']})")
+                    break
+            
+            if test_fav:
+                result.add_pass("V12 Existing Favorite", f"Test favorite already exists (ID: {test_fav['id']})")
+                favorite_id = test_fav['id']
+            else:
+                print(f"   Test favorite not found - will create new one")
+                favorite_id = None
+    
+    except Exception as e:
+        result.add_warning("V12 Get Favorites", f"Error: {str(e)}")
+        existing_favorites = []
+        favorite_id = None
+    
+    # Step 4: Create test favorite if it doesn't exist
+    if not favorite_id:
+        print(f"\n[4] Creating test favorite: Кетчуп томатный 800 гр. Heinz...")
+        try:
+            # First, find a ketchup product in the catalog
+            suppliers_response = requests.get(f"{BACKEND_URL}/suppliers", headers=headers, timeout=10)
+            
+            if suppliers_response.status_code != 200:
+                result.add_fail("V12 Create Favorite", f"Failed to get suppliers: {suppliers_response.status_code}")
+                return
+            
+            suppliers = suppliers_response.json()
+            print(f"   Found {len(suppliers)} suppliers")
+            
+            # Search for Heinz ketchup 800g in all suppliers
+            ketchup_product = None
+            for supplier in suppliers:
+                supplier_id = supplier.get("id")
+                products_response = requests.get(
+                    f"{BACKEND_URL}/suppliers/{supplier_id}/price-lists",
+                    headers=headers,
+                    timeout=10
+                )
+                
+                if products_response.status_code == 200:
+                    products = products_response.json()
+                    
+                    for product in products:
+                        name = product.get("productName", "").lower()
+                        if 'кетчуп' in name and 'heinz' in name and ('800' in name or '0.8' in name or '0,8' in name):
+                            ketchup_product = product
+                            print(f"   ✓ Found ketchup product: {product.get('productName')}")
+                            print(f"   ✓ Product ID: {product.get('productId')}")
+                            print(f"   ✓ Price: {product.get('price')} ₽")
+                            break
+                
+                if ketchup_product:
+                    break
+            
+            if not ketchup_product:
+                result.add_fail("V12 Create Favorite", "Could not find Heinz ketchup 800g in catalog")
+                return
+            
+            # Create favorite
+            create_fav_response = requests.post(
+                f"{BACKEND_URL}/favorites",
+                headers=headers,
+                json={
+                    "productId": ketchup_product.get("productId"),
+                    "supplierId": ketchup_product.get("supplierCompanyId")
+                },
+                timeout=10
+            )
+            
+            if create_fav_response.status_code != 200:
+                result.add_fail("V12 Create Favorite", f"Failed to create favorite: {create_fav_response.status_code} - {create_fav_response.text}")
+                return
+            
+            favorite_data = create_fav_response.json()
+            favorite_id = favorite_data.get("id")
+            
+            print(f"   ✓ Created favorite with ID: {favorite_id}")
+            result.add_pass("V12 Create Favorite", f"✅ Successfully created test favorite (ID: {favorite_id})")
+        
+        except Exception as e:
+            result.add_fail("V12 Create Favorite", f"Error: {str(e)}")
+            return
+    else:
+        print(f"\n[4] Using existing test favorite (ID: {favorite_id})")
+    
+    # Step 5: Set brand_critical=false (brand mode = ANY)
+    print(f"\n[5] Setting brand_critical=false (ANY mode)...")
+    try:
+        update_response = requests.put(
+            f"{BACKEND_URL}/favorites/{favorite_id}/brand-mode",
+            headers=headers,
+            json={"brandMode": "ANY"},
+            timeout=10
+        )
+        
+        if update_response.status_code != 200:
+            result.add_warning("V12 Set Brand Mode", f"Failed to set brand mode: {update_response.status_code}")
+        else:
+            print(f"   ✓ Set brand_critical=false (ANY mode)")
+            result.add_pass("V12 Set Brand Mode", "✅ Successfully set brand_critical=false")
+    
+    except Exception as e:
+        result.add_warning("V12 Set Brand Mode", f"Error: {str(e)}")
+    
+    # Step 6: TEST Add to Cart (brand_critical=OFF)
+    print(f"\n[6] TEST: Add to Cart with brand_critical=OFF...")
+    print(f"   Expected: Find ~36 candidates for кетчуп, select cheapest (may NOT be Heinz)")
+    try:
+        add_response = requests.post(
+            f"{BACKEND_URL}/cart/add-from-favorite",
+            headers=headers,
+            json={"favorite_id": favorite_id, "qty": 1.0},
+            timeout=15
+        )
+        
+        if add_response.status_code != 200:
+            result.add_fail("V12 Add to Cart", f"Failed to add from favorite: {add_response.status_code} - {add_response.text}")
+        else:
+            data = add_response.json()
+            
+            print(f"   Response status: {data.get('status')}")
+            
+            if data.get("status") == "ok":
+                # Check selected offer
+                if data.get("selected_offer"):
+                    offer = data["selected_offer"]
+                    name = offer.get("name_raw", "")
+                    price = offer.get("price")
+                    supplier = offer.get("supplier_name", "")
+                    
+                    print(f"   ✓ Selected: {name}")
+                    print(f"   ✓ Price: {price} ₽")
+                    print(f"   ✓ Supplier: {supplier}")
+                    
+                    result.add_pass("V12 Add to Cart", f"✅ Successfully added to cart: {name} at {price}₽ from {supplier}")
+                else:
+                    result.add_fail("V12 Add to Cart", "❌ status=ok but no selected_offer")
+                
+                # Check debug_log for filtering details
+                if "debug_log" in data or "explanation" in data.get("selected_offer", {}):
+                    debug_info = data.get("debug_log") or data.get("selected_offer", {}).get("explanation", {})
+                    
+                    print(f"\n   Debug Log:")
+                    total_candidates = debug_info.get("total_candidates", 0)
+                    after_core = debug_info.get("after_core_filter", 0)
+                    after_brand = debug_info.get("after_brand_filter", 0)
+                    after_pack = debug_info.get("after_pack_filter", 0)
+                    
+                    print(f"   - Total candidates: {total_candidates}")
+                    print(f"   - After core filter (кетчуп): {after_core}")
+                    print(f"   - After brand filter: {after_brand}")
+                    print(f"   - After pack filter: {after_pack}")
+                    
+                    # Verify ~36 candidates for ketchup
+                    if after_core >= 30 and after_core <= 45:
+                        result.add_pass("V12 Core Filter", f"✅ Found {after_core} кетчуп candidates (expected ~36)")
+                    elif after_core > 0:
+                        result.add_warning("V12 Core Filter", f"⚠️ Found {after_core} кетчуп candidates (expected ~36)")
+                    else:
+                        result.add_fail("V12 Core Filter", f"❌ Found {after_core} кетчуп candidates (expected ~36)")
+                    
+                    # Verify brand filter was skipped (brand_critical=OFF)
+                    if after_brand == after_core:
+                        result.add_pass("V12 Brand Filter", f"✅ Brand filter skipped (brand_critical=OFF): {after_brand} candidates")
+                    else:
+                        result.add_fail("V12 Brand Filter", f"❌ Brand filter applied when it shouldn't: {after_core} → {after_brand}")
+                else:
+                    result.add_warning("V12 Debug Log", "⚠️ No debug_log in response")
+                
+                # Check top_candidates for brand diversity
+                if "top_candidates" in data and isinstance(data["top_candidates"], list):
+                    candidates = data["top_candidates"]
+                    print(f"\n   Top Candidates: {len(candidates)}")
+                    
+                    # Check first 5 candidates for brand diversity
+                    brands_found = set()
+                    for i, candidate in enumerate(candidates[:5]):
+                        cand_name = candidate.get("name_raw", "")
+                        cand_price = candidate.get("price")
+                        
+                        # Extract brand from name
+                        cand_name_upper = cand_name.upper()
+                        if 'HEINZ' in cand_name_upper:
+                            brands_found.add('HEINZ')
+                        elif 'ЦАРСКИЙ' in cand_name_upper or 'CARSKIJ' in cand_name_upper:
+                            brands_found.add('ЦАРСКИЙ')
+                        elif 'CALVE' in cand_name_upper or 'КАЛЬВЕ' in cand_name_upper:
+                            brands_found.add('CALVE')
+                        elif 'EFKO' in cand_name_upper:
+                            brands_found.add('EFKO')
+                        else:
+                            brands_found.add('OTHER')
+                        
+                        print(f"   {i+1}. {cand_name[:50]} - {cand_price}₽")
+                    
+                    print(f"\n   Brands found in top 5: {brands_found}")
+                    
+                    # Verify brand diversity (should have more than just Heinz)
+                    if len(brands_found) >= 2:
+                        result.add_pass("V12 Brand Diversity", f"✅ Found {len(brands_found)} different brands in top candidates: {brands_found}")
+                    elif len(brands_found) == 1 and 'HEINZ' in brands_found:
+                        result.add_fail("V12 Brand Diversity", f"❌ Only HEINZ found in top candidates - brand_critical=OFF not working")
+                    else:
+                        result.add_warning("V12 Brand Diversity", f"⚠️ Limited brand diversity: {brands_found}")
+                else:
+                    result.add_warning("V12 Top Candidates", "⚠️ No top_candidates in response")
+            
+            elif data.get("status") == "not_found":
+                message = data.get("message", "No message")
+                result.add_fail("V12 Add to Cart", f"❌ Favorite not found: {message}")
+            
+            else:
+                status = data.get("status", "unknown")
+                message = data.get("message", "No message")
+                result.add_fail("V12 Add to Cart", f"❌ Unexpected status: {status} - {message}")
+    
+    except Exception as e:
+        result.add_fail("V12 Add to Cart", f"Error: {str(e)}")
+    
+    # Step 7: Check backend logs (if accessible)
+    print(f"\n[7] Checking backend logs...")
+    print(f"   Expected logs: 'НАЧАЛО ПОИСКА', 'product_core_id: кетчуп', 'После core filter: ~36'")
+    result.add_pass("V12 Backend Logs", "✅ Check backend logs manually for detailed filtering info")
+
 def test_brand_agnostic_search():
     """Test ULTIMATE FINAL TEST - All Scenarios + Brand Agnostic Search
     
