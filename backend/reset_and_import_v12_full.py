@@ -167,7 +167,7 @@ df_pack = pd.read_excel(v12_file, sheet_name='PACK_RULES')
 
 pack_docs = []
 for _, row in df_pack.iterrows():
-    rule_id = int(row['RULE_ID']) if pd.notna(row.get('RULE_ID')) else None
+    rule_id = str(row.get('RULE_ID', '')).strip() if pd.notna(row.get('RULE_ID')) else ''
     pattern = str(row.get('PATTERN_REGEX', '')) if pd.notna(row.get('PATTERN_REGEX')) else ''
     
     if rule_id and pattern:
