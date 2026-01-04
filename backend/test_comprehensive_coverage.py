@@ -49,7 +49,7 @@ for i, product in enumerate(test_products, 1):
     from datetime import datetime, timezone
     
     mongo_url = os.environ.get('MONGO_URL')
-    db_name = os.environ.get('DB_NAME')
+    db_name = os.environ.get('DB_NAME', 'test_database')
     db = MongoClient(mongo_url)[db_name]
     
     customer = db.users.find_one({'email': 'customer@bestprice.ru', 'role': 'customer'}, {'_id': 0})
