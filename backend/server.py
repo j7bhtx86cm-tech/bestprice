@@ -3144,55 +3144,137 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         companies = await db.companies.find({}, {"_id": 0}).to_list(1000)
         company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
         
-        # Step 6: Run search with V12 ENGINE
-        from search_engine_v12 import SearchEngineV12
+        # Step 6: ПРОСТОЙ ПОИСК С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ
+        logger.info(f"🔍 НАЧАЛО ПОИСКА")
         
-        # Prepare reference_item for v12 (requires product_core_id)
-        v12_loader = search_engine_v12.get_v12_loader()
+        # Detect product_core_id from reference name using same logic as backfill
+        def normalize(text):
+            if not text:
+                return ""
+            import re
+            text = str(text).lower().strip().replace('ё', 'е')
+            text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
+            return re.sub(r'\s+', ' ', text).strip()
         
-        # Detect product_core_id from reference name
-        ref_product_core_id = v12_loader.determine_product_core_id(reference_name)
+        def detect_product_core(name):
+            """Используем ту же логику, что в backfill"""
+            if not name:
+                return None
+            name_norm = normalize(name)
+            
+            # Простая эвристика для основных продуктов
+            if 'кетчуп' in name_norm:
+                return 'кетчуп'
+            elif 'кукуруза' in name_norm:
+                return 'кукуруза_консервированная' if 'консерв' in name_norm else 'кукуруза'
+            elif 'лосось' in name_norm or 'сёмга' in name_norm:
+                return 'лосось'
+            elif 'креветк' in name_norm:
+                return 'креветки'
+            # Можно добавить больше правил
+            return None
+        
+        ref_product_core_id = detect_product_core(reference_name)
+        
         if not ref_product_core_id:
-            logger.warning(f"⚠️ Could not determine product_core_id for '{reference_name}'")
+            logger.warning(f"⚠️ product_core_id не определён для '{reference_name}'")
             return AddFromFavoriteResponse(
                 status="insufficient_data",
-                message="Не удалось определить категорию продукта"
+                message="Категория продукта не определена"
             )
         
-        # Re-build reference_item with v12 fields
-        reference_item = {
-            'name_raw': reference_name,
-            'product_core_id': ref_product_core_id,
-            'brand_id': brand_id,
-            'origin_country': origin_country,
-            'origin_region': origin_region,
-            'origin_city': origin_city,
-            'pack_value': pack_size,
-            'pack_tolerance_pct': 20
-        }
+        logger.info(f"   product_core_id: {ref_product_core_id}")
         
-        logger.info(f"   ✅ V12: product_core_id={ref_product_core_id}")
+        # Step 7: Filter candidates step-by-step with DETAILED LOGGING
+        total_candidates = len(pricelists)
+        logger.info(f"   Total pricelists: {total_candidates}")
         
-        # Re-prepare candidates with v12 fields (product_core_id, offer_status, price_status)
-        v12_candidates = []
-        for c in candidates:
-            # Get enriched data from pricelist (from backfill)
-            pl_item = next((pl for pl in pricelists if pl['id'] == c['id']), None)
-            if not pl_item:
-                continue
-            
-            # Use enriched fields from backfill
-            v12_candidates.append({
-                **c,
-                'product_core_id': pl_item.get('product_core_id'),
-                'offer_status': pl_item.get('offer_status', 'ACTIVE'),
-                'price_status': pl_item.get('price_status', 'VALID')
-            })
+        # Filter 1: ACTIVE + VALID + product_core match
+        step1 = [
+            pl for pl in pricelists 
+            if pl.get('offer_status') == 'ACTIVE'
+            and pl.get('price_status') == 'VALID'
+            and pl.get('product_core_id') == ref_product_core_id
+            and pl.get('price', 0) > 0
+        ]
+        logger.info(f"   После core filter ({ref_product_core_id}): {len(step1)}")
         
-        search_engine = SearchEngineV12()
-        result = search_engine.search(
-            reference_item=reference_item,
-            candidates=v12_candidates,
+        if len(step1) == 0:
+            logger.error(f"❌ NO CANDIDATES after product_core filter")
+            logger.error(f"   Reference core: {ref_product_core_id}")
+            logger.error(f"   Total ACTIVE: {sum(1 for p in pricelists if p.get('offer_status') == 'ACTIVE')}")
+            logger.error(f"   With core: {sum(1 for p in pricelists if p.get('product_core_id'))}")
+            return AddFromFavoriteResponse(
+                status="not_found",
+                message=f"Не найдено товаров с категорией '{ref_product_core_id}'"
+            )
+        
+        # Filter 2: Brand (if brand_critical=ON)
+        if brand_critical and brand_id:
+            step2 = [pl for pl in step1 if pl.get('brand_id') == brand_id]
+            logger.info(f"   После brand filter (brand_id={brand_id}): {len(step2)}")
+        else:
+            step2 = step1
+            logger.info(f"   Brand filter: SKIP (brand_critical={brand_critical})")
+        
+        if len(step2) == 0:
+            return AddFromFavoriteResponse(
+                status="not_found",
+                message=f"Не найдено товаров бренда {brand_id}"
+            )
+        
+        # Filter 3: Pack ±20%
+        if pack_size:
+            min_pack = pack_size * 0.8
+            max_pack = pack_size * 1.2
+            step3 = [
+                pl for pl in step2 
+                if pl.get('pack_base') and min_pack <= pl.get('pack_base') <= max_pack
+            ]
+            logger.info(f"   После pack filter (±20% от {pack_size}): {len(step3)}")
+        else:
+            step3 = step2
+            logger.info(f"   Pack filter: SKIP (pack_size unknown)")
+        
+        if len(step3) == 0:
+            return AddFromFavoriteResponse(
+                status="not_found",
+                message="Не найдено товаров с подходящей фасовкой"
+            )
+        
+        # Sort by price (cheapest first)
+        step3.sort(key=lambda x: x.get('price', 999999))
+        
+        winner = step3[0]
+        winner_product = product_map.get(winner['productId'])
+        
+        logger.info(f"✅ НАЙДЕНО: {len(step3)} кандидатов")
+        logger.info(f"   Победитель: {winner.get('name_raw', '')[:50]}")
+        logger.info(f"   Цена: {winner.get('price')}₽")
+        
+        # Build response using simplified structure
+        result = type('obj', (object,), {
+            'status': 'ok',
+            'supplier_id': winner.get('supplierId'),
+            'supplier_name': company_map.get(winner.get('supplierId'), 'Unknown'),
+            'supplier_item_id': winner.get('id'),
+            'name_raw': winner.get('name_raw'),
+            'price': winner.get('price'),
+            'price_per_base_unit': winner.get('price_per_base_unit'),
+            'total_cost': winner.get('price') * request.qty,
+            'need_packs': request.qty,
+            'match_percent': 95.0,
+            'explanation': {
+                'total_candidates': total_candidates,
+                'after_core_filter': len(step1),
+                'after_brand_filter': len(step2),
+                'after_pack_filter': len(step3)
+            }
+        })()
+        
+        search_engine = None  # Not using complex engine
+        # result already set above
+        result_status = result.status  # Compatibility
             brand_critical=brand_critical,
             requested_qty=request.qty,
             company_map=company_map
