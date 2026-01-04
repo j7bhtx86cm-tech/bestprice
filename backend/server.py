@@ -3200,18 +3200,18 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             )
         result = type('obj', (object,), {
             'status': 'ok',
-            'supplier_id': winner.get('supplierId'),
-            'supplier_name': company_map.get(winner.get('supplierId'), 'Unknown'),
+            'supplier_id': winner.get('supplier_company_id'),  # ИСПРАВЛЕНО
+            'supplier_name': company_map.get(winner.get('supplier_company_id'), 'Unknown'),
             'supplier_item_id': winner.get('id'),
             'name_raw': winner.get('name_raw'),
             'price': winner.get('price'),
-            'price_per_base_unit': winner.get('price_per_base_unit'),
+            'price_per_base_unit': winner.get('price_per_base_unit') or winner.get('price'),  # ИСПРАВЛЕНО
             'total_cost': winner.get('price') * request.qty,
             'need_packs': request.qty,
             'match_percent': 95.0,
             'explanation': {
                 'total_candidates': total_candidates,
-                'after_core_filter': len(step1),
+                'after_super_class_filter': len(step1),  # ОБНОВЛЕНО
                 'after_brand_filter': len(step2),
                 'after_pack_filter': len(step3)
             }
