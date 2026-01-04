@@ -3178,6 +3178,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 message="Не найдено товаров с подходящей фасовкой"
             )
         
+        # КРИТИЧНО: Sort by price (cheapest first) ПЕРЕД выбором winner
+        step3.sort(key=lambda x: x.get('price', 999999))
+        logger.info(f"   Отсортировано по цене")
+        
         winner = step3[0]
         
         logger.info(f"✅ НАЙДЕНО: {len(step3)} кандидатов")
