@@ -1956,11 +1956,11 @@ def main():
     """Run all tests"""
     print("\n" + "="*80)
     print("BESTPRICE B2B MARKETPLACE - BACKEND API TESTING")
-    print("Testing ULTIMATE FINAL TEST - Brand Agnostic Search")
+    print("Testing V12 Master - Favorites → Add to Cart")
     print("="*80)
     
-    # Test brand agnostic search (main focus)
-    test_brand_agnostic_search()
+    # Test V12 Favorites → Add to Cart (main focus for this review)
+    test_favorites_add_to_cart_v12()
     
     # Print summary
     result.print_summary()
