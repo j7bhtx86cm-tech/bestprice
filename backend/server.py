@@ -3099,13 +3099,39 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         total_candidates = len(candidates)
         logger.info(f"   Total candidates: {total_candidates}")
         
-        # Filter 1: super_class match (вместо product_core_id)
+        # Filter 1: super_class match
         step1 = [
             c for c in candidates 
             if c.get('super_class') == ref_super_class
             and c.get('price', 0) > 0
         ]
         logger.info(f"   После super_class filter ({ref_super_class}): {len(step1)}")
+        
+        # P0.2 FALLBACK: Если super_class='other', используем keyword matching
+        if len(step1) == 0 and ref_super_class and 'other' not in ref_super_class:
+            logger.warning(f"   ⚠️ Пробуем fallback на 'other' категорию...")
+            
+            # Try matching within 'other' category by keywords
+            import re
+            ref_keywords = set(re.findall(r'\w+', reference_name.lower()))
+            ref_keywords = {w for w in ref_keywords if len(w) >= 4}  # Only meaningful words
+            
+            step1_fallback = []
+            for c in candidates:
+                if c.get('super_class') == 'other' and c.get('price', 0) > 0:
+                    cand_keywords = set(re.findall(r'\w+', c.get('name_raw', '').lower()))
+                    common = ref_keywords & cand_keywords
+                    
+                    # Require at least 2 common keywords
+                    if len(common) >= 2:
+                        c['_match_score'] = len(common) / len(ref_keywords) if ref_keywords else 0
+                        step1_fallback.append(c)
+            
+            if step1_fallback:
+                step1 = step1_fallback
+                logger.info(f"   ✅ Fallback 'other': найдено {len(step1)} кандидатов")
+            else:
+                logger.error(f"   ❌ Fallback failed: нет совпадений в 'other'")
         
         if len(step1) == 0:
             logger.error(f"❌ NO CANDIDATES after super_class filter")
