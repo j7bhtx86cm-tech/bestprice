@@ -3083,17 +3083,37 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         # Detect super_class using UNIVERSAL mapper
         from universal_super_class_mapper import detect_super_class
+        from p0_hotfix_stabilization import (
+            calculate_match_percent, 
+            has_negative_keywords,
+            parse_pack_value,
+            SearchLogger
+        )
+        
+        # Initialize structured logger
+        search_logger = SearchLogger(reference_id=request.favorite_id)
         
         ref_super_class, confidence = detect_super_class(reference_name)
         
+        # Set context
+        search_logger.set_context(
+            reference_name=reference_name,
+            brand_critical=brand_critical,
+            brand_id=brand_id,
+            requested_qty=request.qty
+        )
+        
         if not ref_super_class:
             logger.warning(f"⚠️ super_class не определён для '{reference_name}' (confidence={confidence:.2f})")
+            search_logger.set_outcome('insufficient_data', 'INSUFFICIENT_CLASSIFICATION')
+            search_logger.log()
             return AddFromFavoriteResponse(
                 status="insufficient_data",
                 message="Категория продукта не определена"
             )
         
         logger.info(f"   super_class: {ref_super_class} (confidence={confidence:.2f})")
+        search_logger.set_context(ref_super_class=ref_super_class, confidence=confidence)
         
         # Step 7: Filter candidates step-by-step with DETAILED LOGGING
         total_candidates = len(candidates)
@@ -3148,32 +3168,48 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         if brand_critical and brand_id:
             step2 = [c for c in step1 if c.get('brand_id') == brand_id]
             logger.info(f"   После brand filter (brand_id={brand_id}): {len(step2)}")
+            search_logger.set_count('after_brand_filter', len(step2))
+            
+            # Диагностика если 0
+            if len(step2) == 0:
+                brands_available = list(set(c.get('brand_id') for c in step1 if c.get('brand_id')))[:5]
+                logger.warning(f"   Бренд '{brand_id}' не найден. Доступные бренды: {brands_available}")
+                search_logger.set_context(available_brands=brands_available)
         else:
             step2 = step1
             logger.info(f"   Brand filter: SKIP (brand_critical={brand_critical})")
+            search_logger.set_count('after_brand_filter', len(step2))
         
         if len(step2) == 0:
+            search_logger.set_outcome('not_found', 'BRAND_REQUIRED_NOT_FOUND')
+            search_logger.log()
             return AddFromFavoriteResponse(
                 status="not_found",
                 message=f"Не найдено товаров бренда {brand_id}"
             )
         
-        # Filter 3: Pack ±20%
-        if pack_size:
-            min_pack = pack_size * 0.8
-            max_pack = pack_size * 1.2
+        # Filter 3: Pack ±20% (IMPROVED parsing)
+        ref_pack_size = parse_pack_value(reference_name) if not pack_size else pack_size
+        
+        if ref_pack_size:
+            min_pack = ref_pack_size * 0.8
+            max_pack = ref_pack_size * 1.2
             step3 = []
             for c in step2:
                 # Get pack from net_weight_kg or net_volume_l
                 c_pack = c.get('net_weight_kg') or c.get('net_volume_l')
                 if c_pack and min_pack <= c_pack <= max_pack:
                     step3.append(c)
-            logger.info(f"   После pack filter (±20% от {pack_size}): {len(step3)}")
+            logger.info(f"   После pack filter (±20% от {ref_pack_size}): {len(step3)}")
+            search_logger.set_count('after_pack_filter', len(step3))
         else:
             step3 = step2
             logger.info(f"   Pack filter: SKIP (pack_size unknown)")
+            search_logger.set_count('after_pack_filter', len(step3))
         
         if len(step3) == 0:
+            search_logger.set_outcome('not_found', 'PACK_NOT_COMPATIBLE')
+            search_logger.log()
             return AddFromFavoriteResponse(
                 status="not_found",
                 message="Не найдено товаров с подходящей фасовкой"
@@ -3190,6 +3226,20 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   Цена: {winner.get('price')}₽")
         logger.info(f"   Бренд: {winner.get('brand_id', 'NONE')}")
         logger.info(f"   Supplier ID: {winner.get('supplier_company_id', 'NONE')}")
+        
+        # Calculate match_percent with STRICT CLAMP 0..100
+        match_percent = calculate_match_percent(confidence)
+        
+        # Log selection
+        search_logger.set_selection(
+            selected_item_id=winner.get('id'),
+            supplier_id=supplier_id,
+            price=winner.get('price'),
+            match_percent=match_percent,
+            total_cost=winner.get('price') * request.qty
+        )
+        search_logger.set_outcome('ok')
+        search_logger.log()
         
         # Get supplier name
         companies = await db.companies.find({}, {"_id": 0}).to_list(1000)
