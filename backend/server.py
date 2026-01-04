@@ -3107,9 +3107,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         ]
         logger.info(f"   После super_class filter ({ref_super_class}): {len(step1)}")
         
-        # P0.2 FALLBACK: Если super_class='other', используем keyword matching
-        if len(step1) == 0 and ref_super_class and 'other' not in ref_super_class:
-            logger.warning(f"   ⚠️ Пробуем fallback на 'other' категорию...")
+        # P0.2 FALLBACK: Если не найдено по super_class, пробуем 'other' с keyword matching  
+        if len(step1) == 0:
+            logger.warning(f"   ⚠️ Пробуем fallback на 'other' категорию с keyword matching...")
             
             # Try matching within 'other' category by keywords
             import re
@@ -3119,7 +3119,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             step1_fallback = []
             for c in candidates:
                 if c.get('super_class') == 'other' and c.get('price', 0) > 0:
-                    cand_keywords = set(re.findall(r'\w+', c.get('name_raw', '').lower()))
+                    cand_keywords = set(re.findall(r'\w+', (c.get('name_raw') or '').lower()))
                     common = ref_keywords & cand_keywords
                     
                     # Require at least 2 common keywords
@@ -3131,7 +3131,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 step1 = step1_fallback
                 logger.info(f"   ✅ Fallback 'other': найдено {len(step1)} кандидатов")
             else:
-                logger.error(f"   ❌ Fallback failed: нет совпадений в 'other'")
+                logger.error(f"   ❌ Fallback failed: нет совпадений")
         
         if len(step1) == 0:
             logger.error(f"❌ NO CANDIDATES after super_class filter")
