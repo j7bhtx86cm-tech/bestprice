@@ -3121,15 +3121,14 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   super_class: {ref_super_class}")
         
         # Step 7: Filter candidates step-by-step with DETAILED LOGGING
-        total_candidates = len(supplier_items)
-        logger.info(f"   Total supplier_items: {total_candidates}")
+        total_candidates = len(candidates)
+        logger.info(f"   Total candidates: {total_candidates}")
         
         # Filter 1: super_class match (вместо product_core_id)
         step1 = [
-            si for si in supplier_items 
-            if si.get('active') == True
-            and si.get('super_class') == ref_super_class
-            and si.get('price', 0) > 0
+            c for c in candidates 
+            if c.get('super_class') == ref_super_class
+            and c.get('price', 0) > 0
         ]
         logger.info(f"   После super_class filter ({ref_super_class}): {len(step1)}")
         
@@ -3145,7 +3144,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         # Filter 2: Brand (if brand_critical=ON)
         if brand_critical and brand_id:
-            step2 = [si for si in step1 if si.get('brand_id') == brand_id]
+            step2 = [c for c in step1 if c.get('brand_id') == brand_id]
             logger.info(f"   После brand filter (brand_id={brand_id}): {len(step2)}")
         else:
             step2 = step1
@@ -3162,11 +3161,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             min_pack = pack_size * 0.8
             max_pack = pack_size * 1.2
             step3 = []
-            for si in step2:
+            for c in step2:
                 # Get pack from net_weight_kg or net_volume_l
-                si_pack = si.get('net_weight_kg') or si.get('net_volume_l')
-                if si_pack and min_pack <= si_pack <= max_pack:
-                    step3.append(si)
+                c_pack = c.get('net_weight_kg') or c.get('net_volume_l')
+                if c_pack and min_pack <= c_pack <= max_pack:
+                    step3.append(c)
             logger.info(f"   После pack filter (±20% от {pack_size}): {len(step3)}")
         else:
             step3 = step2
@@ -3277,11 +3276,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 selected_offer=selected_offer,
                 top_candidates=[
                     {
-                        'name_raw': si.get('name_raw', '')[:50],
-                        'price': si.get('price'),
-                        'supplier': company_map.get(si.get('supplier_company_id'), 'Unknown')
+                        'name_raw': c.get('name_raw', '')[:50],
+                        'price': c.get('price'),
+                        'supplier': company_map.get(c.get('supplier_company_id'), 'Unknown')
                     }
-                    for si in step3[:5]
+                    for c in step3[:5]
                 ],
                 debug_log=result.explanation,
                 message="Товар добавлен в корзину"
