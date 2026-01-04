@@ -2992,10 +2992,15 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
     
     try:
         # Step 1: Get favorite from DB
+        logger.info(f"🔍 ADD_FROM_FAVORITE: Looking for favorite_id={request.favorite_id}, userId={current_user['id']}")
         favorite = await db.favorites.find_one({"id": request.favorite_id, "userId": current_user['id']}, {"_id": 0})
         
         if not favorite:
             logger.warning(f"❌ ADD_FROM_FAVORITE: Favorite not found: {request.favorite_id}")
+            # Check if favorite exists with different userId
+            any_fav = await db.favorites.find_one({"id": request.favorite_id}, {"_id": 0, "userId": 1})
+            if any_fav:
+                logger.warning(f"   Favorite exists but with different userId: {any_fav.get('userId')}")
             return AddFromFavoriteResponse(
                 status="not_found",
                 message="Favorite not found"
