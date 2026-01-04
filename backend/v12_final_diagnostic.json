@@ -1,0 +1,169 @@
+{
+  "report_version": "v12_diagnostic_final",
+  "database": "test_database",
+  "sections": {
+    "overall_metrics": {
+      "total_active_items": 8218,
+      "total_favorites": 18,
+      "super_class_defined": 5838,
+      "super_class_other": 2380,
+      "with_pack": 7166,
+      "with_brand": 475,
+      "with_price_base": 8218
+    },
+    "top_categories": [
+      {
+        "super_class": "other",
+        "count": 2380,
+        "pack_coverage": 80.46218487394958,
+        "brand_coverage": 3.2773109243697482
+      },
+      {
+        "super_class": "condiments.sauce",
+        "count": 468,
+        "pack_coverage": 98.07692307692307,
+        "brand_coverage": 25.427350427350426
+      },
+      {
+        "super_class": "dairy.сыр",
+        "count": 403,
+        "pack_coverage": 96.02977667493796,
+        "brand_coverage": 0.9925558312655087
+      },
+      {
+        "super_class": "staples.рис",
+        "count": 177,
+        "pack_coverage": 92.65536723163842,
+        "brand_coverage": 5.084745762711865
+      },
+      {
+        "super_class": "vegetables.картофель",
+        "count": 174,
+        "pack_coverage": 92.52873563218391,
+        "brand_coverage": 4.597701149425287
+      },
+      {
+        "super_class": "seafood.shrimp",
+        "count": 160,
+        "pack_coverage": 93.75,
+        "brand_coverage": 0.0
+      },
+      {
+        "super_class": "staples.сахар",
+        "count": 153,
+        "pack_coverage": 97.38562091503267,
+        "brand_coverage": 0.0
+      },
+      {
+        "super_class": "canned.говядина.тушеная",
+        "count": 139,
+        "pack_coverage": 89.20863309352518,
+        "brand_coverage": 8.633093525179856
+      },
+      {
+        "super_class": "staples.макароны",
+        "count": 134,
+        "pack_coverage": 100.0,
+        "brand_coverage": 22.388059701492537
+      },
+      {
+        "super_class": "beverages.water",
+        "count": 114,
+        "pack_coverage": 99.12280701754386,
+        "brand_coverage": 1.7543859649122806
+      },
+      {
+        "super_class": "pasta",
+        "count": 113,
+        "pack_coverage": 93.80530973451327,
+        "brand_coverage": 27.43362831858407
+      },
+      {
+        "super_class": "dairy.молоко",
+        "count": 113,
+        "pack_coverage": 96.46017699115043,
+        "brand_coverage": 9.734513274336283
+      },
+      {
+        "super_class": "condiments.spice",
+        "count": 107,
+        "pack_coverage": 100.0,
+        "brand_coverage": 0.9345794392523363
+      },
+      {
+        "super_class": "dairy.сливки",
+        "count": 107,
+        "pack_coverage": 93.45794392523365,
+        "brand_coverage": 0.9345794392523363
+      },
+      {
+        "super_class": "canned.перец.консервированный",
+        "count": 95,
+        "pack_coverage": 80.0,
+        "brand_coverage": 0.0
+      },
+      {
+        "super_class": "staples.мука",
+        "count": 91,
+        "pack_coverage": 90.10989010989012,
+        "brand_coverage": 6.593406593406594
+      },
+      {
+        "super_class": "beverages.tea",
+        "count": 90,
+        "pack_coverage": 83.33333333333334,
+        "brand_coverage": 0.0
+      },
+      {
+        "super_class": "condiments.seasoning",
+        "count": 87,
+        "pack_coverage": 98.85057471264368,
+        "brand_coverage": 2.2988505747126435
+      },
+      {
+        "super_class": "condiments.broth",
+        "count": 82,
+        "pack_coverage": 98.78048780487805,
+        "brand_coverage": 37.80487804878049
+      },
+      {
+        "super_class": "canned.томаты.консервированные",
+        "count": 79,
+        "pack_coverage": 70.88607594936708,
+        "brand_coverage": 6.329113924050633
+      }
+    ],
+    "problems": {
+      "other_category_high": true,
+      "brand_coverage_low": true,
+      "pack_coverage_low": false
+    },
+    "favorites_analysis": {
+      "total": 18,
+      "success": 16,
+      "failed": 2,
+      "success_rate_pct": 88.88888888888889,
+      "failure_reasons": {
+        "insufficient_data_super_class": 1,
+        "no_candidates_after_brand_filter": 1
+      }
+    },
+    "recommendations": [
+      {
+        "priority": "HIGH",
+        "issue": "29% товаров в категории 'other'",
+        "action": "Расширить SEED_DICT_RULES для специфичных товаров (масла, специи, добавки)"
+      },
+      {
+        "priority": "MEDIUM",
+        "issue": "Только 5.8% с brand_id",
+        "action": "Расширить BRAND_ALIASES или использовать ML для определения брендов"
+      },
+      {
+        "priority": "HIGH",
+        "issue": "Success rate favorites: 88.9% (<95%)",
+        "action": "Проанализировать failed_reasons и добавить недостающие правила"
+      }
+    ]
+  }
+}
