@@ -701,7 +701,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "ULTIMATE FINAL TEST - Brand Agnostic Search"
+    - "V12 Master - Favorites → Add to Cart Integration"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -730,6 +730,8 @@ test_plan:
 agent_communication:
   - agent: "testing"
     message: "Comprehensive end-to-end testing completed for BestPrice B2B marketplace. All critical requirements verified."
+  - agent: "testing"
+    message: "V12 MASTER TESTING COMPLETED (2026-01-08): ❌ CRITICAL BUG FOUND in POST /api/cart/add-from-favorite endpoint. The endpoint is querying the WRONG collection ('pricelists' instead of 'supplier_items') and using WRONG field names ('product_core_id' instead of 'super_class', 'offer_status' instead of 'active'). This is a DATA LAYER mismatch issue. The v12 master data exists correctly in 'supplier_items' collection (8,218 documents with 47 active ketchup items), but the endpoint code hasn't been updated to use the new v12 structure. Authentication is working correctly. Main agent must update the endpoint to query 'supplier_items' collection with correct field mappings."
   - agent: "testing"
     message: "CLEAN TECHNICAL SPECIFICATION - FINAL ACCEPTANCE TESTING COMPLETED (2026-01-01): ✅ ALL 7 MANDATORY TESTS PASSED - Verified implementation with Candidate Guard (min 2 tokens), Category checking, Reference vs Supplier Item separation, and all prohibitions enforced. RESULTS: (1) ✅ Кетчуп brand_critical=OFF: Brand COMPLETELY IGNORED, selected cheapest (206.25₽), score 1.0 >= 0.70. (2) ✅ Кетчуп brand_critical=ON: Strict brand filtering with 85% threshold, returns 'not_found' when brand_id missing in pricelists (DATA limitation, CODE is correct). (3) ✅ Лосось origin matching: Origin_critical applied for non-branded items, correctly matched 'Чили' origin. (4) ✅ Сибас cheaper option: Selected cheapest (931.44₽), not stuck on original supplier. (5) ✅ Кетчуп ≠ water: Guard rules prevent cross-category matches, filters show: 8218 total → 459 after pack → 1 after token → 1 after guard. (6) ✅ Min 2 tokens: Candidate Guard requires minimum 2 common tokens. (7) ✅ Category check: Guard filter applies 'category + token_conflicts'. ARCHITECTURE: ✅ Score thresholds (70% OFF, 85% ON), ✅ Pack range ±20%, ✅ Total cost calculation, ✅ No 500 errors. DATA NOTE: Brand matching returns 'not_found' because pricelists lack brand_id field - expected behavior when data incomplete. SUMMARY: 8 tests passed, 0 failed, 5 warnings. All Clean Spec requirements working correctly."
   - agent: "testing"
