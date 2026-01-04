@@ -3178,19 +3178,26 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 message="Не найдено товаров с подходящей фасовкой"
             )
         
-        # Sort by price (cheapest first)
-        step3.sort(key=lambda x: x.get('price', 999999))
-        
         winner = step3[0]
         
         logger.info(f"✅ НАЙДЕНО: {len(step3)} кандидатов")
         logger.info(f"   Победитель: {winner.get('name_raw', '')[:40]}")
         logger.info(f"   Цена: {winner.get('price')}₽")
         logger.info(f"   Бренд: {winner.get('brand_id', 'NONE')}")
+        logger.info(f"   Supplier ID: {winner.get('supplier_company_id', 'NONE')}")
         
         # Get supplier name
         companies = await db.companies.find({}, {"_id": 0}).to_list(1000)
         company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+        
+        supplier_id = winner.get('supplier_company_id')
+        if not supplier_id:
+            logger.error(f"❌ supplier_company_id is None in winner!")
+            logger.error(f"   Winner keys: {list(winner.keys())}")
+            return AddFromFavoriteResponse(
+                status="error",
+                message="Internal error: supplier_company_id missing"
+            )
         result = type('obj', (object,), {
             'status': 'ok',
             'supplier_id': winner.get('supplierId'),
