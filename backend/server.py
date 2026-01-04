@@ -3060,6 +3060,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 'supplier_company_id': si['supplier_company_id'],
                 'name_raw': si['name_raw'],
                 'price': si['price'],
+                'super_class': si.get('super_class'),  # КРИТИЧНО!
                 'unit_norm': si['unit_norm'],
                 'brand_id': si.get('brand_id'),
                 'origin_country': si.get('origin_country'),
