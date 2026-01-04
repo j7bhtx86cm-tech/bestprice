@@ -12,7 +12,7 @@ import os, sys, requests
 from pymongo import MongoClient
 from datetime import datetime, timezone
 
-backend_url = os.popen("grep REACT_APP_BACKEND_URL /app/frontend/.env | cut -d '\"' -f2").read().strip()
+backend_url = os.popen("grep REACT_APP_BACKEND_URL /app/frontend/.env | cut -d '=' -f2 | tr -d '\"'").read().strip()
 base_url = f"{backend_url}/api"
 
 TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwYjNmMGIwOS1kOGJhLTRmZjktOWQyYS01MTllMWMzNDA2N2UiLCJyb2xlIjoiY3VzdG9tZXIiLCJleHAiOjE3NjgxMjU0NDJ9.M5F1uDVfJmGc6wvYdzNQ1-1PM1zOQccyEe--gyqIg-Q'
