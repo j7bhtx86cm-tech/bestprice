@@ -96,12 +96,12 @@ def get_super_class_index():
         _super_class_cache = build_super_class_index()
     return _super_class_cache
 
-def detect_super_class(product_name, min_confidence=0.5):
+def detect_super_class(product_name, min_confidence=0.3):
     """Detect super_class from product name
     
     Args:
         product_name: Product name (Russian)
-        min_confidence: Minimum confidence threshold (0..1)
+        min_confidence: Minimum confidence threshold (0..1), default 0.3
     
     Returns:
         (super_class, confidence) or (None, 0.0)
@@ -109,6 +109,34 @@ def detect_super_class(product_name, min_confidence=0.5):
     if not product_name:
         return None, 0.0
     
+    name_norm = normalize_text(product_name)
+    
+    # DIRECT MAPPINGS (high priority, confidence=1.0)
+    direct_map = {
+        'кетчуп': 'condiments.ketchup',
+        'майонез': 'condiments.mayo',
+        'соус': 'condiments.sauce',
+        'сибас': 'seafood.seabass',
+        'сибасс': 'seafood.seabass',
+        'лосось': 'seafood.salmon',
+        'сёмга': 'seafood.salmon',
+        'креветк': 'seafood.shrimp',
+        'дорадо': 'seafood.seabream',
+        'форель': 'seafood.trout',
+        'тунец': 'canned.тунец.консервированный',
+        'говядина': 'meat.beef',
+        'свинина': 'meat.pork',
+        'курица': 'meat.chicken',
+        'индейка': 'meat.turkey',
+        'ягнятина': 'meat.lamb'
+    }
+    
+    # Check direct mappings first
+    for key, super_class in direct_map.items():
+        if key in name_norm:
+            return super_class, 1.0
+    
+    # Fallback to keyword-based detection
     index = get_super_class_index()
     
     # Extract keywords from product name
