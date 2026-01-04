@@ -11,8 +11,8 @@ import re
 from pathlib import Path
 from typing import Optional, Tuple, Dict, List
 
-# NEW FILE - UNIFIED ULTRA SAFE VERSION
-BRANDS_FILE = Path(__file__).parent / 'BESTPRICE_BRANDS_MASTER_UNIFIED_RF_HORECA_ULTRA_SAFE.xlsx'
+# NEW FILE - V12 MASTER (ЕДИНСТВЕННЫЙ SOURCE OF TRUTH)
+BRANDS_FILE = Path(__file__).parent / 'BESTPRICE_IDEAL_MASTER_v12_PATCH_FULL.xlsx'
 
 # Brand family mappings: sub_brand_id -> parent_brand_id
 # These are brands that are variants/lineages of a parent brand
