@@ -3017,7 +3017,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         reference_name = favorite.get('reference_name') or favorite.get('productName', '')
         brand_id = favorite.get('brand_id') or favorite.get('brandId')
         unit_norm = favorite.get('unit_norm') or favorite.get('unit', 'kg')
-        pack_size = favorite.get('pack_size') or extract_pack_value(reference_name, unit_norm)
+        pack_size = favorite.get('pack_size')  # Remove extract_pack_value call
         
         # Extract origin for non-branded items
         origin_country = favorite.get('origin_country')
