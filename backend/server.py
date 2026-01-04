@@ -3221,11 +3221,26 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         winner = step3[0]
         
+        # КРИТИЧНО: Определяем supplier_id СРАЗУ после winner
+        supplier_id = winner.get('supplier_company_id')
+        
+        # Get supplier names
+        companies = await db.companies.find({}, {"_id": 0}).to_list(1000)
+        company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
+        
+        if not supplier_id:
+            logger.error(f"❌ supplier_company_id is None in winner!")
+            logger.error(f"   Winner keys: {list(winner.keys())}")
+            return AddFromFavoriteResponse(
+                status="error",
+                message="Internal error: supplier_company_id missing"
+            )
+        
         logger.info(f"✅ НАЙДЕНО: {len(step3)} кандидатов")
         logger.info(f"   Победитель: {winner.get('name_raw', '')[:40]}")
         logger.info(f"   Цена: {winner.get('price')}₽")
         logger.info(f"   Бренд: {winner.get('brand_id', 'NONE')}")
-        logger.info(f"   Supplier ID: {winner.get('supplier_company_id', 'NONE')}")
+        logger.info(f"   Supplier ID: {supplier_id}")
         
         # Calculate match_percent with STRICT CLAMP 0..100
         match_percent = calculate_match_percent(confidence)
@@ -3241,18 +3256,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         search_logger.set_outcome('ok')
         search_logger.log()
         
-        # Get supplier name
-        companies = await db.companies.find({}, {"_id": 0}).to_list(1000)
-        company_map = {c['id']: c.get('companyName') or c.get('name', 'Unknown') for c in companies}
-        
-        supplier_id = winner.get('supplier_company_id')
-        if not supplier_id:
-            logger.error(f"❌ supplier_company_id is None in winner!")
-            logger.error(f"   Winner keys: {list(winner.keys())}")
-            return AddFromFavoriteResponse(
-                status="error",
-                message="Internal error: supplier_company_id missing"
-            )
+        # Build result object
         result = type('obj', (object,), {
             'status': 'ok',
             'supplier_id': winner.get('supplier_company_id'),  # ИСПРАВЛЕНО
