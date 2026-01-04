@@ -3042,8 +3042,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             logger.info(f"   origin={origin_str}")
         logger.info(f"   unit={unit_norm}, pack={pack_size}, qty={request.qty}")
         
-        # Step 4: Get all pricelists (candidates)
-        pricelists_cursor = db.pricelists.find({"active": True}, {"_id": 0})
+        # Step 4: Get all pricelists (candidates) - БЕЗ ФИЛЬТРА, фильтруем позже
+        pricelists_cursor = db.pricelists.find({}, {"_id": 0})
         pricelists = await pricelists_cursor.to_list(length=None)
         
         # Join with products
