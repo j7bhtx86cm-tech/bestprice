@@ -3187,7 +3187,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             'price_per_base_unit': winner.get('price_per_base_unit') or winner.get('price'),  # ИСПРАВЛЕНО
             'total_cost': winner.get('price') * request.qty,
             'need_packs': request.qty,
-            'match_percent': 95.0,
+            'match_percent': min(95.0, confidence * 100),  # ИСПРАВЛЕНО: 0..100 range
             'explanation': {
                 'total_candidates': total_candidates,
                 'after_super_class_filter': len(step1),  # ОБНОВЛЕНО
