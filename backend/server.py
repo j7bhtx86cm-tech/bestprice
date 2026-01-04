@@ -3081,45 +3081,19 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         # Step 6: ПРОСТОЙ ПОИСК С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ
         logger.info(f"🔍 НАЧАЛО ПОИСКА")
         
-        # Detect product_core_id from reference name using same logic as backfill
-        def normalize(text):
-            if not text:
-                return ""
-            import re
-            text = str(text).lower().strip().replace('ё', 'е')
-            text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
-            return re.sub(r'\s+', ' ', text).strip()
+        # Detect super_class using UNIVERSAL mapper
+        from universal_super_class_mapper import detect_super_class
         
-        def detect_product_core(name):
-            """Map product name to super_class category"""
-            if not name:
-                return None
-            name_norm = normalize(name)
-            
-            # Map to super_class categories (from supplier_items)
-            if 'кетчуп' in name_norm:
-                return 'condiments.ketchup'
-            elif 'кукуруза' in name_norm and 'консерв' in name_norm:
-                return 'vegetables.corn'
-            elif 'лосось' in name_norm or 'сёмга' in name_norm:
-                return 'seafood.salmon'
-            elif 'креветк' in name_norm:
-                return 'seafood.shrimp'
-            elif 'сибас' in name_norm or 'сибасс' in name_norm:
-                return 'seafood.seabass'
-            # Можно добавить больше маппингов
-            return None
-        
-        ref_super_class = detect_product_core(reference_name)
+        ref_super_class, confidence = detect_super_class(reference_name)
         
         if not ref_super_class:
-            logger.warning(f"⚠️ super_class не определён для '{reference_name}'")
+            logger.warning(f"⚠️ super_class не определён для '{reference_name}' (confidence={confidence:.2f})")
             return AddFromFavoriteResponse(
                 status="insufficient_data",
                 message="Категория продукта не определена"
             )
         
-        logger.info(f"   super_class: {ref_super_class}")
+        logger.info(f"   super_class: {ref_super_class} (confidence={confidence:.2f})")
         
         # Step 7: Filter candidates step-by-step with DETAILED LOGGING
         total_candidates = len(candidates)
@@ -3137,7 +3111,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             logger.error(f"❌ NO CANDIDATES after super_class filter")
             logger.error(f"   Reference super_class: {ref_super_class}")
             logger.error(f"   Total active: {sum(1 for si in supplier_items if si.get('active') == True)}")
-            logger.error(f"   With super_class: {sum(1 for si in supplier_items if si.get('super_class'))}")
+            logger.error(f"   With super_class: {sum(1 for c in candidates if c.get('super_class'))}")
+            logger.error(f"   Sample super_classes: {list(set(c.get('super_class') for c in candidates if c.get('super_class')))[:10]}")
             return AddFromFavoriteResponse(
                 status="not_found",
                 message=f"Не найдено товаров с категорией '{ref_super_class}'"
