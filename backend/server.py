@@ -3042,99 +3042,27 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             logger.info(f"   origin={origin_str}")
         logger.info(f"   unit={unit_norm}, pack={pack_size}, qty={request.qty}")
         
-        # Step 4: Get all pricelists (candidates) - БЕЗ ФИЛЬТРА, фильтруем позже
-        pricelists_cursor = db.pricelists.find({}, {"_id": 0})
-        pricelists = await pricelists_cursor.to_list(length=None)
+        # Step 4: Get all SUPPLIER_ITEMS (candidates) - ПРАВИЛЬНАЯ КОЛЛЕКЦИЯ!
+        supplier_items_cursor = db.supplier_items.find({"active": True}, {"_id": 0})
+        supplier_items = await supplier_items_cursor.to_list(length=None)
         
-        # Join with products
-        product_ids = list(set(pl['productId'] for pl in pricelists))
-        products_cursor = db.products.find({"id": {"$in": product_ids}}, {"_id": 0})
-        products = await products_cursor.to_list(length=None)
-        product_map = {p['id']: p for p in products}
-        
-        # Build candidates
+        # Build candidates from supplier_items
         candidates = []
-        for pl in pricelists:
-            product = product_map.get(pl['productId'])
-            if not product:
-                continue
-            
-            # Extract origin from pricelist or product
-            pl_origin_country = pl.get('origin_country') or product.get('origin_country')
-            pl_origin_region = pl.get('origin_region') or product.get('origin_region')
-            pl_origin_city = pl.get('origin_city') or product.get('origin_city')
-            
-            # Get brand_id from pricelist (from backfill)
-            pl_brand_id = pl.get('brand_id')
-            
-            # FALLBACK: If no brand_id, check abbreviations
-            if not pl_brand_id:
-                name_upper = product['name'].upper()
-                abbreviations = {
-                    'PRB': 'pearl river bridge',
-                    'SEN SOY': 'sen soy',
-                    'СЕН СОЙ': 'sen soy',
-                }
-                
-                for abbr, full_brand in abbreviations.items():
-                    if abbr in name_upper:
-                        pl_brand_id = full_brand
-                        break
-            
-            # Try to extract from name if not in DB
-            if not pl_origin_country:
-                name_lower = product['name'].lower()
-                
-                # Countries
-                countries = {
-                    'норвегия': 'Норвегия', 'norway': 'Норвегия',
-                    'чили': 'Чили', 'chile': 'Чили',
-                    'россия': 'Россия', 'russia': 'Россия',
-                    'турция': 'Турция', 'turkey': 'Турция',
-                    'китай': 'Китай', 'china': 'Китай',
-                    'испания': 'Испания', 'spain': 'Испания',
-                    'франция': 'Франция', 'france': 'Франция',
-                    'исландия': 'Исландия', 'iceland': 'Исландия'
-                }
-                
-                # Russian regions/cities
-                russian_regions = {
-                    'мурманск': ('Россия', None, 'Мурманск'),
-                    'владивосток': ('Россия', None, 'Владивосток'),
-                    'камчатка': ('Россия', 'Камчатка', None),
-                    'сахалин': ('Россия', 'Сахалин', None),
-                    'архангельск': ('Россия', None, 'Архангельск')
-                }
-                
-                # Check for Russian regions first
-                for region_key, (country, region, city) in russian_regions.items():
-                    if region_key in name_lower:
-                        pl_origin_country = country
-                        pl_origin_region = region
-                        pl_origin_city = city
-                        break
-                
-                # If not found, check countries
-                if not pl_origin_country:
-                    for country_key, country_name in countries.items():
-                        if country_key in name_lower:
-                            pl_origin_country = country_name
-                            break
-            
-            # Build candidate item - PRESERVE ACTUAL UNIT FROM PRODUCT
+        for si in supplier_items:
+            # Build candidate item - USE SUPPLIER_ITEMS DATA
             candidate = {
-                'id': pl['id'],
-                'supplier_company_id': pl['supplierId'],
-                'name_raw': product['name'],
-                'price': pl['price'],
-                'unit_norm': product.get('unit', 'kg'),  # CRITICAL: Use product's actual unit, not reference
-                'brand_id': pl_brand_id,  # From backfill OR fallback
-                'origin_country': pl_origin_country,
-                'origin_region': pl_origin_region,
-                'origin_city': pl_origin_city,
-                'net_weight_kg': None,
-                'net_volume_l': None,
-                'base_unit': product.get('unit', 'kg')
+                'id': si['id'],
+                'supplier_company_id': si['supplier_company_id'],
+                'name_raw': si['name_raw'],
+                'price': si['price'],
+                'unit_norm': si['unit_norm'],
+                'brand_id': si.get('brand_id'),
+                'origin_country': si.get('origin_country'),
+                'origin_region': si.get('origin_region'),
+                'origin_city': si.get('origin_city'),
+                'net_weight_kg': si.get('net_weight_kg'),
+                'net_volume_l': si.get('net_volume_l'),
+                'base_unit': si.get('base_unit', si['unit_norm'])
             }
             candidates.append(candidate)
         
