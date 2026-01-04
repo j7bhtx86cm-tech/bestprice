@@ -3272,14 +3272,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             }
         })()
         
-        search_engine = None  # Not using complex engine
         # result already set above
         result_status = result.status  # Compatibility
-            brand_critical=brand_critical,
-            requested_qty=request.qty,
-            company_map=company_map
-            # score_threshold will be auto-determined: 0.85 for brand_critical=True, 0.70 for False
-        )
         
         logger.info(f"   Search result: {result_status}")
         
