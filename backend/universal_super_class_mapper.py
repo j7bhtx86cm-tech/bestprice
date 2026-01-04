@@ -112,23 +112,93 @@ def detect_super_class(product_name, min_confidence=0.3):
     name_norm = normalize_text(product_name)
     
     # DIRECT MAPPINGS (high priority, confidence=1.0)
+    # Расширенный набор для снижения 'other' с 29% до <10%
     direct_map = {
+        # Condiments & Sauces
         'кетчуп': 'condiments.ketchup',
         'майонез': 'condiments.mayo',
         'соус': 'condiments.sauce',
+        'горчиц': 'condiments.mustard',
+        'хрен': 'condiments.horseradish',
+        'аджик': 'condiments.adjika',
+        
+        # Spices & Seasonings
+        'васаби': 'condiments.spice',
+        'бадьян': 'condiments.spice',
+        'кардамон': 'condiments.spice',
+        'корица': 'condiments.spice',
+        'анис': 'condiments.spice',
+        'гвоздик': 'condiments.spice',
+        'кориандр': 'condiments.spice',
+        'куркум': 'condiments.spice',
+        'паприк': 'condiments.spice',
+        'перец': 'condiments.spice',
+        'пряност': 'condiments.spice',
+        'специ': 'condiments.spice',
+        'приправ': 'condiments.seasoning',
+        'заправк': 'condiments.seasoning',
+        
+        # Oils
+        'кунжут': 'oils.sesame',
+        'тыквен': 'oils.pumpkin',
+        'фритюр': 'oils.frying',
+        'оливков': 'staples.масло.оливковое',
+        'подсолнеч': 'oils.sunflower',
+        'рапсов': 'oils.rapeseed',
+        
+        # Seafood
         'сибас': 'seafood.seabass',
         'сибасс': 'seafood.seabass',
         'лосось': 'seafood.salmon',
         'сёмга': 'seafood.salmon',
+        'форель': 'seafood.trout',
         'креветк': 'seafood.shrimp',
         'дорадо': 'seafood.seabream',
-        'форель': 'seafood.trout',
+        'дорада': 'seafood.seabream',
         'тунец': 'canned.тунец.консервированный',
+        'минтай': 'seafood.pollock',
+        'треска': 'seafood.cod',
+        'камбал': 'seafood.flounder',
+        'палтус': 'seafood.halibut',
+        'скумбр': 'seafood.mackerel',
+        'сельд': 'seafood.herring',
+        'анчоус': 'seafood.anchovy',
+        'кальмар': 'seafood.squid',
+        'осьминог': 'seafood.octopus',
+        'мидии': 'seafood.mussels',
+        'гребешок': 'seafood.scallop',
+        'икра': 'seafood.caviar',
+        
+        # Meat
         'говядина': 'meat.beef',
         'свинина': 'meat.pork',
         'курица': 'meat.chicken',
         'индейка': 'meat.turkey',
-        'ягнятина': 'meat.lamb'
+        'ягнятина': 'meat.lamb',
+        'утка': 'meat.duck',
+        'фарш': 'meat.ground',
+        'колбас': 'meat.kolbasa',
+        'сосиск': 'meat.sausage',
+        'ветчин': 'meat.ham',
+        
+        # Additives
+        'желатин': 'additives.gelatin',
+        'глутамат': 'additives.msg',
+        'кокосов': 'additives.coconut',
+        'крахмал': 'additives.starch',
+        'разрыхлител': 'additives.baking_powder',
+        'сода': 'additives.baking_soda',
+        'уксус': 'condiments.vinegar',
+        'лимонн': 'additives.citric_acid',
+        
+        # Pickles & Preserves
+        'релиш': 'condiments.relish',
+        'огурц': 'canned.огурцы',
+        'помидор': 'canned.томаты.консервированные',
+        'томат': 'canned.томаты.консервированные',
+        'оливк': 'canned.оливки',
+        'каперс': 'canned.каперсы',
+        'корнишон': 'canned.огурцы'
     }
     
     # Check direct mappings first
