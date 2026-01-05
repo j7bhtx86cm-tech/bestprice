@@ -3551,13 +3551,17 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     'rejected_by_forbidden': rejected_forbidden,
                     'rejected_by_missing_anchor': rejected_anchors,
                     'after_brand': len(step3_brand),
-                    'after_pack': len(step4_pack)
+                    'after_unit_filter': len(step4_unit_compatible),
+                    'rejected_unit_mismatch': unit_mismatch_count
                 },
                 'outcome': result_status,
                 'selected_id': winner.get('id'),
                 'selected_name': winner.get('name_raw', '')[:50],
                 'price': winner.get('price'),
-                'match_percent': match_percent
+                'packs_needed': packs_needed,
+                'total_cost': actual_total_cost,
+                'match_percent': match_percent,
+                'pack_explanation': winner.get('_pack_explanation', '')
             }
             logger.info(f"SEARCH_SUMMARY: {json.dumps(log_summary, ensure_ascii=False)}")
         except Exception as log_err:
