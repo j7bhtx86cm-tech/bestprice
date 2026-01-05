@@ -3133,6 +3133,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 'name_raw': si['name_raw'],
                 'price': si['price'],
                 'super_class': si.get('super_class'),  # КРИТИЧНО!
+                'product_core_id': si.get('product_core_id'),  # P1: для strict matching
                 'unit_norm': si['unit_norm'],
                 'brand_id': si.get('brand_id'),
                 'origin_country': si.get('origin_country'),
