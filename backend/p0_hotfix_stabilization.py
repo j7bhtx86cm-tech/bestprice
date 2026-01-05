@@ -83,6 +83,7 @@ REQUIRED_ANCHORS = {
     'seafood.pollock': ['минтай', 'pollock'],
     'condiments.ketchup': ['кетчуп', 'ketchup'],
     'condiments.mayo': ['майонез', 'mayo'],
+    'condiments.wasabi': ['васаби', 'wasabi'],  # Васаби специфичные anchors
     'condiments.spice': [],  # Wide category - use dynamic anchors from reference
     'staples.flour': [],  # Wide category - use dynamic anchors from reference
     'staples.мука': [],  # Wide category (Russian) - use dynamic anchors from reference
