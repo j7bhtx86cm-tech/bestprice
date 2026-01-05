@@ -131,8 +131,10 @@ def detect_super_class(product_name, min_confidence=0.3):
         
         # Paper/Disposables - NOT staples/food
         # NOTE: Removed 'пакет' - too generic, appears in product descriptions like "желатин пакет 1кг"
+        # NOTE: 'бумага рисовая' is food (rice paper), not disposables
         'бумага для выпечки': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.paper'},
         'бумага туалетная': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.paper'},
+        'бумага рисов': {'exclude': ['disposables'], 'assign': 'staples.rice_paper'},  # Rice paper is food
         'полотенц': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.napkins'},
         'салфетк': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.napkins'},
         'перчатк': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.gloves'},
