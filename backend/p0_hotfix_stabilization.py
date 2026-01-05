@@ -80,6 +80,10 @@ REQUIRED_ANCHORS = {
     'seafood.pollock': ['минтай', 'pollock'],
     'condiments.ketchup': ['кетчуп', 'ketchup'],
     'condiments.mayo': ['майонез', 'mayo'],
+    'condiments.spice': [],  # Wide category - no anchor required, rely on forbidden only
+    'staples.flour': ['мук', 'flour'],  # Мука категория
+    'staples.flour.wheat': ['пшенич', 'wheat'],  # Пшеничная мука
+    'staples.flour.rye': ['ржан', 'rye'],  # Ржаная мука
 }
 
 
