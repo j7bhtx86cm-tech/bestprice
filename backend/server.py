@@ -3509,8 +3509,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             'name_raw': winner.get('name_raw'),
             'price': winner.get('price'),
             'price_per_base_unit': winner.get('price_per_base_unit') or winner.get('price'),
-            'total_cost': winner.get('price') * request.qty,
-            'need_packs': request.qty,
+            'total_cost': actual_total_cost,  # P0: Correct total_cost
+            'need_packs': packs_needed or 1.0,
             'match_percent': match_percent,
             'explanation': {
                 'request_id': request_id,
@@ -3522,10 +3522,12 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 'rejected_by_forbidden': rejected_forbidden,
                 'rejected_by_missing_anchor': rejected_anchors,
                 'after_brand_filter': len(step3_brand),
-                'after_pack_filter': len(step4_pack),
+                'after_unit_filter': len(step4_unit_compatible),
                 'confidence_raw': round(confidence, 2),
                 'match_percent_final': match_percent,
-                'selected_item_id': winner.get('id')
+                'selected_item_id': winner.get('id'),
+                'packs_needed': packs_needed,
+                'total_cost': actual_total_cost
             }
         })()
         
