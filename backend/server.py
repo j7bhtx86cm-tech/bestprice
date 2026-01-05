@@ -3199,7 +3199,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         if len(step1) == 0:
             logger.error(f"❌ NO CANDIDATES after super_class filter")
             logger.error(f"   Reference super_class: {ref_super_class}")
-            logger.error(f"   Total active: {sum(1 for si in supplier_items if si.get('offer_status') == 'ACTIVE')}")
+            logger.error(f"   Total active: {sum(1 for si in supplier_items if si.get('active') == True)}")
             logger.error(f"   With super_class: {sum(1 for c in candidates if c.get('super_class'))}")
             logger.error(f"   Sample super_classes: {list(set(c.get('super_class') for c in candidates if c.get('super_class')))[:10]}")
             search_logger.set_outcome('not_found', 'NO_MATCHING_SUPER_CLASS')
