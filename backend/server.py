@@ -3230,10 +3230,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 continue
             
             # Check 2: Required anchors (e.g., васаби must contain васаби/wasabi)
-            has_anchor, found_anchor = has_required_anchors(candidate_name, ref_super_class)
+            # ENHANCED: Pass reference_name for dynamic anchor detection
+            has_anchor, found_anchor = has_required_anchors(candidate_name, ref_super_class, reference_name)
             if not has_anchor:
                 rejected_anchors += 1
-                logger.debug(f"   ❌ MISSING_ANCHOR: '{candidate_name[:40]}' missing required anchor for {ref_super_class}")
+                logger.debug(f"   ❌ MISSING_ANCHOR: '{candidate_name[:40]}' missing required anchor '{found_anchor}' for {ref_super_class}")
                 continue
             
             # Passed guards
