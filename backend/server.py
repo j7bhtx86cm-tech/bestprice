@@ -3400,7 +3400,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 message="Internal error: supplier_company_id missing"
             )
         
-        logger.info(f"✅ НАЙДЕНО: {len(step3)} кандидатов")
+        logger.info(f"✅ НАЙДЕНО: {len(step4_pack)} кандидатов")
         logger.info(f"   Победитель: {winner.get('name_raw', '')[:40]}")
         logger.info(f"   Цена: {winner.get('price')}₽")
         logger.info(f"   Бренд: {winner.get('brand_id', 'NONE')}")
@@ -3423,27 +3423,34 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         # Build result object
         result = type('obj', (object,), {
             'status': 'ok',
-            'supplier_id': winner.get('supplier_company_id'),  # ИСПРАВЛЕНО
+            'supplier_id': winner.get('supplier_company_id'),
             'supplier_name': company_map.get(winner.get('supplier_company_id'), 'Unknown'),
             'supplier_item_id': winner.get('id'),
             'name_raw': winner.get('name_raw'),
             'price': winner.get('price'),
-            'price_per_base_unit': winner.get('price_per_base_unit') or winner.get('price'),  # ИСПРАВЛЕНО
+            'price_per_base_unit': winner.get('price_per_base_unit') or winner.get('price'),
             'total_cost': winner.get('price') * request.qty,
             'need_packs': request.qty,
-            'match_percent': match_percent,  # ИСПРАВЛЕНО: используем calculate_match_percent()
+            'match_percent': match_percent,
             'explanation': {
+                'request_id': request_id,
+                'build_sha': BUILD_SHA,
+                'guards_applied': True,
                 'total_candidates': total_candidates,
                 'after_super_class_filter': len(step1),
-                'after_brand_filter': len(step2),
-                'after_pack_filter': len(step3),
+                'after_guards': len(step2_guards),
+                'rejected_by_forbidden': rejected_forbidden,
+                'rejected_by_missing_anchor': rejected_anchors,
+                'after_brand_filter': len(step3_brand),
+                'after_pack_filter': len(step4_pack),
                 'confidence_raw': round(confidence, 2),
-                'match_percent_final': match_percent  # int 0..100
+                'match_percent_final': match_percent,
+                'selected_item_id': winner.get('id')
             }
         })()
         
         # result already set above
-        result_status = result.status  # Compatibility
+        result_status = result.status
         
         # Structured log line (ONE LINE JSON for easy parsing)
         try:
@@ -3456,16 +3463,21 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 'brand_critical': brand_critical,
                 'super_class': ref_super_class,
                 'confidence': round(confidence, 2),
+                'guards_applied': True,
                 'counts': {
                     'total': total_candidates,
-                    'after_super_class_guards': len(step1) if 'step1' in locals() else 0,
-                    'after_brand': len(step2) if 'step2' in locals() else 0,
-                    'after_pack': len(step3) if 'step3' in locals() else 0
+                    'after_super_class': len(step1),
+                    'after_guards': len(step2_guards),
+                    'rejected_by_forbidden': rejected_forbidden,
+                    'rejected_by_missing_anchor': rejected_anchors,
+                    'after_brand': len(step3_brand),
+                    'after_pack': len(step4_pack)
                 },
-                'outcome': result_status if 'result_status' in locals() else 'unknown',
-                'selected_id': winner.get('id') if result_status == 'ok' and 'winner' in locals() else None,
-                'price': winner.get('price') if result_status == 'ok' and 'winner' in locals() else None,
-                'match_percent': match_percent if 'match_percent' in locals() else 0
+                'outcome': result_status,
+                'selected_id': winner.get('id'),
+                'selected_name': winner.get('name_raw', '')[:50],
+                'price': winner.get('price'),
+                'match_percent': match_percent
             }
             logger.info(f"SEARCH_SUMMARY: {json.dumps(log_summary, ensure_ascii=False)}")
         except Exception as log_err:
