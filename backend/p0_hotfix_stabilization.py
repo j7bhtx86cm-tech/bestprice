@@ -54,6 +54,45 @@ def has_negative_keywords(product_name: str, super_class: str) -> Tuple[bool, st
     Returns:
         (has_negative, keyword_found)
     """
+
+
+# REQUIRED ANCHORS - обязательные токены (если НЕТ = кандидат выкидывается)
+REQUIRED_ANCHORS = {
+    'dairy.сыр': ['сыр', 'cheese', 'mozzarella', 'моцарелл', 'пармезан', 'гауда', 'чеддер', 'фета', 'брынз', 'сулугун'],
+    'dairy.cheese': ['сыр', 'cheese', 'mozzarella', 'пармезан'],
+    'meat.beef': ['говядин', 'beef'],
+    'meat.pork': ['свинин', 'pork'],
+    'meat.chicken': ['курин', 'chicken', 'цыпл'],
+    'meat.turkey': ['индейк', 'turkey'],
+    'seafood.salmon': ['лосос', 'семг', 'salmon'],
+    'seafood.shrimp': ['креветк', 'shrimp', 'prawn'],
+    'seafood.seabass': ['сибас', 'seabass'],
+    'seafood.pollock': ['минтай', 'pollock'],
+    'condiments.ketchup': ['кетчуп', 'ketchup'],
+    'condiments.mayo': ['майонез', 'mayo'],
+}
+
+
+def has_required_anchors(product_name: str, super_class: str) -> Tuple[bool, str]:
+    """Check if product contains REQUIRED anchor tokens for this category
+    
+    If super_class requires anchors, candidate MUST contain at least ONE anchor.
+    
+    Returns:
+        (has_anchor, found_anchor) or (True, '') if anchors not required
+    """
+    if not super_class or super_class not in REQUIRED_ANCHORS:
+        return True, ""  # No anchors required = pass
+    
+    name_lower = product_name.lower()
+    
+    # At least ONE anchor must be present
+    for anchor in REQUIRED_ANCHORS[super_class]:
+        if anchor in name_lower:
+            return True, anchor
+    
+    return False, ""
+
     if not super_class or super_class not in NEGATIVE_KEYWORDS:
         return False, ""
     
