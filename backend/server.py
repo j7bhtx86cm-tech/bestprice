@@ -3792,13 +3792,22 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     }
                     for c in step4_unit_compatible[:5]
                 ],
+                # P0+P1 Diagnostic fields (UI visible)
+                build_sha=BUILD_SHA,
+                request_id=request_id,
+                ref_product_core=ref_product_core,
+                selected_product_core=winner.get('product_core_id'),
+                ref_unit_type=ref_pack_info.unit_type.value,
+                selected_unit_type=winner.get('_pack_info').unit_type.value if winner.get('_pack_info') else None,
+                packs_needed=packs_needed,
+                computed_total_cost=actual_total_cost,
                 debug_log={
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
                     'guards_applied': True,
                     'counts': {
                         'total': total_candidates,
-                        'after_super_class': len(step1),
+                        'after_product_core': len(step1),
                         'after_guards': len(step2_guards),
                         'rejected_by_forbidden': rejected_forbidden,
                         'rejected_by_missing_anchor': rejected_anchors,
