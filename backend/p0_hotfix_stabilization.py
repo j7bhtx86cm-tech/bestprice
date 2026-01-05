@@ -126,11 +126,11 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
             return False, ""
     
     # Strategy 2: DYNAMIC anchors from reference (for wide categories)
-    # Extract specific product words from reference (e.g., "васаби", "соль", "перец", "пшеничная", "ржаная")
-    if reference_name and super_class in ['condiments.spice', 'staples.flour', 'staples.мука', 'other']:
+    # Extract specific product words from reference (e.g., "васаби", "соль", "перец", "пшеничная", "ржаная", "фарш")
+    if reference_name and super_class in ['condiments.spice', 'staples.flour', 'staples.мука', 'meat.beef', 'other']:
         ref_lower = reference_name.lower()
         
-        # List of specific condiment/spice words
+        # List of specific product types
         specific_products = [
             'васаби', 'wasabi',
             'соль', 'salt', 'нитритн',
@@ -151,7 +151,14 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
             'кукуруз', 'corn',
             'рисов', 'rice',
             'гречнев', 'buckwheat',
-            'овсян', 'oat'
+            'овсян', 'oat',
+            # Мясо типы
+            'фарш', 'minced', 'ground',
+            'стейк', 'steak',
+            'филе', 'fillet',
+            'рёбр', 'ribs',
+            'грудк', 'breast',
+            'бедр', 'thigh'
         ]
         
         # Check if reference contains any specific product
