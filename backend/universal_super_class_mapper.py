@@ -111,6 +111,53 @@ def detect_super_class(product_name, min_confidence=0.3):
     
     name_norm = normalize_text(product_name)
     
+    # GUARD RULES: Hard negative filters to prevent false positives
+    # These keywords EXCLUDE certain super_classes regardless of other matches
+    guard_rules = {
+        # Vegetables/Legumes - NOT seafood
+        'бобы': {'exclude': ['seafood'], 'assign': 'vegetables.beans'},
+        'эдамаме': {'exclude': ['seafood'], 'assign': 'vegetables.beans'},
+        'горох': {'exclude': ['seafood'], 'assign': 'vegetables.peas'},
+        'фасоль': {'exclude': ['seafood'], 'assign': 'vegetables.beans'},
+        'чечевиц': {'exclude': ['seafood'], 'assign': 'vegetables.lentils'},
+        'нут': {'exclude': ['seafood'], 'assign': 'vegetables.chickpeas'},
+        
+        # Canned fruits - NOT seafood
+        'персик': {'exclude': ['seafood'], 'assign': 'canned.фрукты'},
+        'ананас': {'exclude': ['seafood'], 'assign': 'canned.фрукты'},
+        'груша': {'exclude': ['seafood'], 'assign': 'canned.фрукты'},
+        'абрикос': {'exclude': ['seafood'], 'assign': 'canned.фрукты'},
+        
+        # Paper/Disposables - NOT staples/food
+        'бумага для выпечки': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.paper'},
+        'бумага': {'exclude': ['staples.рис', 'seafood'], 'assign': 'disposables.paper'},
+        'полотенц': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.napkins'},
+        'салфетк': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.napkins'},
+        'перчатк': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.gloves'},
+        'пакет': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.bags'},
+        'пленк': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.film'},
+        'фольг': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.foil'},
+        
+        # Seaweed salads - special category, not shrimp
+        'чука': {'exclude': ['seafood.shrimp'], 'assign': 'seafood.seaweed'},
+        'вакаме': {'exclude': ['seafood.shrimp'], 'assign': 'seafood.seaweed'},
+        'нори': {'exclude': ['seafood.shrimp'], 'assign': 'seafood.seaweed'},
+        'водоросл': {'exclude': ['seafood.shrimp'], 'assign': 'seafood.seaweed'},
+        
+        # Fish - not shrimp (горбуша, семга, etc.)
+        'горбуша': {'exclude': ['seafood.shrimp'], 'assign': 'seafood.salmon'},
+        'тилапия': {'exclude': ['seafood.shrimp'], 'assign': 'seafood.tilapia'},
+        'пангасиус': {'exclude': ['seafood.shrimp'], 'assign': 'seafood.pangasius'},
+    }
+    
+    # Check GUARD RULES first - highest priority
+    for guard_key, guard_rule in guard_rules.items():
+        if guard_key in name_norm:
+            # This keyword triggers a guard rule
+            assigned_class = guard_rule.get('assign')
+            if assigned_class:
+                return assigned_class, 1.0
+    
     # DIRECT MAPPINGS (high priority, confidence=1.0)
     # Расширенный набор для снижения 'other' с 29% до <10%
     direct_map = {
