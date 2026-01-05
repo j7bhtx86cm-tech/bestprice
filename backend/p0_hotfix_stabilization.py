@@ -40,12 +40,15 @@ def calculate_match_percent(confidence: float, score_raw: float = None) -> int:
 # ==================== 2) NEGATIVE KEYWORDS ====================
 
 NEGATIVE_KEYWORDS = {
-    'meat.beef': ['растительн', 'веган', 'соев', 'заменител', 'тофу'],
+    'meat.beef': ['растительн', 'веган', 'соев', 'заменител', 'тофу', 'substitute'],
     'meat.pork': ['растительн', 'веган', 'соев', 'заменител'],
     'meat.chicken': ['растительн', 'веган', 'соев', 'заменител'],
     'dairy.сыр': ['сырник'],  # Сыр не должен матчиться с сырниками
     'dairy.cheese': ['сырник', 'cheesecake'],
-    'seafood.shrimp': []  # Креветки обычно OK
+    'seafood.shrimp': [],  # Креветки обычно OK
+    'condiments.spice': [],  # Wide category - будем полагаться на product-specific логику
+    'staples.flour.wheat': ['ржан', 'rye', 'макарон', 'pasta'],  # Пшеничная мука не должна матчиться с ржаной
+    'staples.flour.rye': ['пшенич', 'wheat'],  # Ржаная мука не должна матчиться с пшеничной
 }
 
 def has_negative_keywords(product_name: str, super_class: str) -> Tuple[bool, str]:
