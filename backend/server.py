@@ -3157,12 +3157,13 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         # Initialize structured logger
         search_logger = SearchLogger(reference_id=request.favorite_id)
         
-        # P1: Detect product_core for reference
-        from product_core_classifier import detect_product_core as classify_core
-        ref_product_core, ref_core_conf = classify_core(reference_name, None)
-        logger.info(f"   ref_product_core: {ref_product_core} (conf={ref_core_conf:.2f})")
-        
+        # Classify reference super_class
         ref_super_class, confidence = detect_super_class(reference_name)
+        
+        # P1: Detect product_core for reference (after super_class)
+        from product_core_classifier import detect_product_core as classify_core
+        ref_product_core, ref_core_conf = classify_core(reference_name, ref_super_class)
+        logger.info(f"   ref_product_core: {ref_product_core} (conf={ref_core_conf:.2f})")
         
         # Set context
         search_logger.set_context(
