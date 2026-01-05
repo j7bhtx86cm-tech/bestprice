@@ -2570,6 +2570,13 @@ class SelectedOffer(BaseModel):
     total_cost: Optional[float] = None  # Total cost for required volume
     units_needed: Optional[float] = None  # How many units needed for required volume
     score: float
+    # P0: New fields for unit normalization
+    selected_pack_base_qty: Optional[float] = None  # e.g., 5 (in grams)
+    selected_pack_unit: Optional[str] = None  # e.g., "g"
+    required_base_qty: Optional[float] = None  # e.g., 1000 (in grams)
+    required_unit: Optional[str] = None  # e.g., "g"
+    packs_needed: Optional[int] = None  # e.g., 200
+    pack_explanation: Optional[str] = None  # e.g., "200 × 5 г = 1000 г"
 
 class SelectOfferResponse(BaseModel):
     selected_offer: Optional[SelectedOffer] = None
