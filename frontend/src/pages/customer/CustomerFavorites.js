@@ -291,8 +291,9 @@ export const CustomerFavorites = () => {
       existingCart.push(cartItem);
       localStorage.setItem('catalogCart', JSON.stringify(existingCart));
       
-      // Show success with total cost
-      const scorePercent = Math.round(offer.score * 100);
+      // ИСПРАВЛЕНО: Backend уже отдаёт score в процентах (0..100)
+      // НЕ умножаем на 100 повторно!
+      const scorePercent = Math.round(offer.score || 0);
       let message = `✓ Добавлено в корзину!\n\n📦 ${offer.name_raw}\n💰 ${offer.price.toLocaleString('ru-RU')} ₽`;
       
       // Show total cost if calculated
