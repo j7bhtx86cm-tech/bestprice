@@ -3407,12 +3407,12 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         search_logger.set_count('rejected_unit_mismatch', unit_mismatch_count)
         search_logger.set_count('pack_calculated', pack_calculated_count)
         
-        if len(step4_pack) == 0:
-            search_logger.set_outcome('not_found', 'PACK_NOT_COMPATIBLE')
+        if len(step4_unit_compatible) == 0:
+            search_logger.set_outcome('not_found', 'UNIT_MISMATCH_ALL_REJECTED')
             search_logger.log()
             return AddFromFavoriteResponse(
                 status="not_found",
-                message="Не найдено товаров с подходящей фасовкой",
+                message=f"Не найдено товаров с совместимыми единицами измерения (rejected: {unit_mismatch_count} unit_mismatch)",
                 debug_log={
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
@@ -3422,23 +3422,37 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                         'after_super_class': len(step1),
                         'after_guards': len(step2_guards),
                         'after_brand': len(step3_brand),
-                        'after_pack': 0
+                        'after_unit_filter': 0,
+                        'rejected_unit_mismatch': unit_mismatch_count
                     }
                 }
             )
         
-        # КРИТИЧНО: Sort by TOTAL_COST (price * pack_penalty)
-        # Сначала по price, потом по pack_score_penalty
+        # КРИТИЧНО: Sort by TOTAL_COST (price * total_cost_mult + pack_penalty)
+        # 1. Товары с известным packs_needed → по total_cost
+        # 2. Товары с неизвестным packs_needed → в конец
         def sort_key(c):
+            packs = c.get('_packs_needed')
+            mult = c.get('_total_cost_mult', 1.0)
             price = c.get('price', 999999)
             penalty = c.get('_pack_score_penalty', 0)
-            # Higher penalty = lower priority (higher sort key)
-            return (price * (1 + penalty * 0.01), penalty)
+            
+            # Если packs не определены → штраф
+            if not packs:
+                return (999999, penalty, price)
+            
+            # Рассчитываем total_cost
+            total_cost = price * mult
+            
+            # Учитываем penalty (higher penalty = higher cost)
+            adjusted_cost = total_cost * (1 + penalty * 0.01)
+            
+            return (adjusted_cost, penalty, price)
         
-        step4_pack.sort(key=sort_key)
-        logger.info(f"   Отсортировано по цене + pack penalty")
+        step4_unit_compatible.sort(key=sort_key)
+        logger.info(f"   Отсортировано по total_cost + pack penalty")
         
-        winner = step4_pack[0]
+        winner = step4_unit_compatible[0]
         
         # КРИТИЧНО: Определяем supplier_id СРАЗУ после winner
         supplier_id = winner.get('supplier_company_id')
