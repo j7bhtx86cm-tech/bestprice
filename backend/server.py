@@ -3340,38 +3340,50 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 }
             )
         
-        # Filter 3: Pack ±20% (IMPROVED parsing)
+        # Filter 4: Pack ±20% (IMPROVED parsing)
         ref_pack_size = parse_pack_value(reference_name) if not pack_size else pack_size
         
         if ref_pack_size:
             min_pack = ref_pack_size * 0.8
             max_pack = ref_pack_size * 1.2
-            step3 = []
-            for c in step2:
+            step4_pack = []
+            for c in step3_brand:
                 # Get pack from net_weight_kg or net_volume_l
                 c_pack = c.get('net_weight_kg') or c.get('net_volume_l')
                 if c_pack and min_pack <= c_pack <= max_pack:
-                    step3.append(c)
-            logger.info(f"   После pack filter (±20% от {ref_pack_size}): {len(step3)}")
-            search_logger.set_count('after_pack_filter', len(step3))
+                    step4_pack.append(c)
+            logger.info(f"   После pack filter (±20% от {ref_pack_size}): {len(step4_pack)}")
+            search_logger.set_count('after_pack_filter', len(step4_pack))
         else:
-            step3 = step2
+            step4_pack = step3_brand
             logger.info(f"   Pack filter: SKIP (pack_size unknown)")
-            search_logger.set_count('after_pack_filter', len(step3))
+            search_logger.set_count('after_pack_filter', len(step4_pack))
         
-        if len(step3) == 0:
+        if len(step4_pack) == 0:
             search_logger.set_outcome('not_found', 'PACK_NOT_COMPATIBLE')
             search_logger.log()
             return AddFromFavoriteResponse(
                 status="not_found",
-                message="Не найдено товаров с подходящей фасовкой"
+                message="Не найдено товаров с подходящей фасовкой",
+                debug_log={
+                    'request_id': request_id,
+                    'build_sha': BUILD_SHA,
+                    'guards_applied': True,
+                    'counts': {
+                        'total': total_candidates,
+                        'after_super_class': len(step1),
+                        'after_guards': len(step2_guards),
+                        'after_brand': len(step3_brand),
+                        'after_pack': 0
+                    }
+                }
             )
         
         # КРИТИЧНО: Sort by price (cheapest first) ПЕРЕД выбором winner
-        step3.sort(key=lambda x: x.get('price', 999999))
+        step4_pack.sort(key=lambda x: x.get('price', 999999))
         logger.info(f"   Отсортировано по цене")
         
-        winner = step3[0]
+        winner = step4_pack[0]
         
         # КРИТИЧНО: Определяем supplier_id СРАЗУ после winner
         supplier_id = winner.get('supplier_company_id')
