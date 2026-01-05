@@ -3407,9 +3407,16 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 }
             )
         
-        # КРИТИЧНО: Sort by price (cheapest first) ПЕРЕД выбором winner
-        step4_pack.sort(key=lambda x: x.get('price', 999999))
-        logger.info(f"   Отсортировано по цене")
+        # КРИТИЧНО: Sort by TOTAL_COST (price * pack_penalty)
+        # Сначала по price, потом по pack_score_penalty
+        def sort_key(c):
+            price = c.get('price', 999999)
+            penalty = c.get('_pack_score_penalty', 0)
+            # Higher penalty = lower priority (higher sort key)
+            return (price * (1 + penalty * 0.01), penalty)
+        
+        step4_pack.sort(key=sort_key)
+        logger.info(f"   Отсортировано по цене + pack penalty")
         
         winner = step4_pack[0]
         
