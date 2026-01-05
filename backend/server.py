@@ -3472,22 +3472,35 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         search_logger.set_count('pack_calculated', pack_calculated_count)
         
         if len(step4_unit_compatible) == 0:
-            search_logger.set_outcome('not_found', 'UNIT_MISMATCH_ALL_REJECTED')
+            # Determine reason
+            if unit_mismatch_count > 0 and pack_outlier_count == 0:
+                reason_code = 'UNIT_MISMATCH_ALL_REJECTED'
+                message = f"Не найдено товаров с совместимыми единицами измерения (rejected: {unit_mismatch_count} unit_mismatch)"
+            elif pack_outlier_count > 0 and unit_mismatch_count == 0:
+                reason_code = 'PACK_OUTLIER_ALL_REJECTED'
+                message = f"Не найдено товаров с подходящей фасовкой (rejected: {pack_outlier_count} слишком малая фасовка, требуется >{PACK_OUTLIER_THRESHOLD} упаковок)"
+            else:
+                reason_code = 'UNIT_AND_PACK_REJECTED'
+                message = f"Не найдено подходящих товаров (rejected: {unit_mismatch_count} unit_mismatch, {pack_outlier_count} pack_outlier)"
+            
+            search_logger.set_outcome('not_found', reason_code)
             search_logger.log()
             return AddFromFavoriteResponse(
                 status="not_found",
-                message=f"Не найдено товаров с совместимыми единицами измерения (rejected: {unit_mismatch_count} unit_mismatch)",
+                message=message,
                 debug_log={
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
                     'guards_applied': True,
+                    'reason_code': reason_code,
                     'counts': {
                         'total': total_candidates,
-                        'after_super_class': len(step1),
+                        'after_product_core': len(step1),
                         'after_guards': len(step2_guards),
                         'after_brand': len(step3_brand),
                         'after_unit_filter': 0,
-                        'rejected_unit_mismatch': unit_mismatch_count
+                        'rejected_unit_mismatch': unit_mismatch_count,
+                        'rejected_pack_outlier': pack_outlier_count
                     }
                 }
             )
