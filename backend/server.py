@@ -3540,6 +3540,37 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         winner = step4_unit_compatible[0]
         
+        # HARD RULE: product_core MUST match (P1 CRITICAL)
+        winner_product_core = winner.get('product_core_id')
+        if winner_product_core != ref_product_core:
+            logger.error(f"❌ CORE_MISMATCH: ref={ref_product_core} vs winner={winner_product_core}")
+            logger.error(f"   Winner name: {winner.get('name_raw', '')[:60]}")
+            search_logger.set_outcome('not_found', 'CORE_MISMATCH')
+            search_logger.log()
+            return AddFromFavoriteResponse(
+                status="not_found",
+                message=f"Найденный товар не соответствует категории (ref={ref_product_core}, found={winner_product_core})",
+                build_sha=BUILD_SHA,
+                request_id=request_id,
+                ref_product_core=ref_product_core,
+                selected_product_core=winner_product_core,
+                debug_log={
+                    'request_id': request_id,
+                    'build_sha': BUILD_SHA,
+                    'reason_code': 'CORE_MISMATCH',
+                    'ref_product_core': ref_product_core,
+                    'winner_product_core': winner_product_core,
+                    'winner_name': winner.get('name_raw', ''),
+                    'counts': {
+                        'total': total_candidates,
+                        'after_product_core': len(step1),
+                        'after_guards': len(step2_guards),
+                        'after_brand': len(step3_brand),
+                        'after_unit_filter': len(step4_unit_compatible)
+                    }
+                }
+            )
+        
         # КРИТИЧНО: Определяем supplier_id СРАЗУ после winner
         supplier_id = winner.get('supplier_company_id')
         
