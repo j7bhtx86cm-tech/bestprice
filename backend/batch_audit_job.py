@@ -165,23 +165,37 @@ for i, ref_item in enumerate(sample_items):
         not_found_reasons['INSUFFICIENT_CLASSIFICATION'] += 1
         continue
     
-    # Filter by super_class + GUARDS
+    # Filter by super_class + GUARDS (СИНХРОНИЗИРОВАНО С ENDPOINT!)
     candidates = []
+    rejected_by_forbidden = 0
+    rejected_by_missing_anchor = 0
+    
     for c in all_items:
-        if c.get('super_class') == ref_super_class and c.get('price', 0) > 0 and c.get('id') != ref_item.get('id'):
-            # Apply guards
-            try:
-                has_neg, _ = has_negative_keywords(c.get('name_raw', ''), ref_super_class)
-                if has_neg:
-                    continue  # REJECT forbidden
-                
-                has_anchor, _ = has_required_anchors(c.get('name_raw', ''), ref_super_class)
-                if not has_anchor:
-                    continue  # REJECT missing anchor
-            except:
-                pass  # SAFE - if guard fails, allow candidate
-            
-            candidates.append(c)
+        if c.get('id') == ref_item.get('id'):
+            continue  # Exclude self
+        
+        if c.get('super_class') != ref_super_class or c.get('price', 0) <= 0:
+            continue
+        
+        # GUARD 1: FORBIDDEN tokens (жёсткий запрет)
+        try:
+            has_neg, _ = has_negative_keywords(c.get('name_raw', ''), ref_super_class)
+            if has_neg:
+                rejected_by_forbidden += 1
+                continue  # REJECT
+        except:
+            pass
+        
+        # GUARD 2: REQUIRED anchors
+        try:
+            has_anchor, _ = has_required_anchors(c.get('name_raw', ''), ref_super_class)
+            if not has_anchor:
+                rejected_by_missing_anchor += 1
+                continue  # REJECT
+        except:
+            pass
+        
+        candidates.append(c)
     
     # Fallback to 'other'
     if len(candidates) == 0 and ref_super_class != 'other':
@@ -195,12 +209,14 @@ for i, ref_item in enumerate(sample_items):
         matching_results.append({
             'reference_name': ref_name[:100],
             'status': 'not_found',
-            'reason_code': 'NO_CANDIDATES_AFTER_SUPER_CLASS',
+            'reason_code': 'NO_CANDIDATES_AFTER_GUARDS',
             'ref_super_class': ref_super_class,
             'candidates_total': len(all_items),
-            'after_super_class': 0
+            'after_super_class': 0,
+            'rejected_by_forbidden': rejected_by_forbidden,
+            'rejected_by_anchor': rejected_by_missing_anchor
         })
-        not_found_reasons['NO_CANDIDATES_AFTER_SUPER_CLASS'] += 1
+        not_found_reasons['NO_CANDIDATES_AFTER_GUARDS'] += 1
         continue
     
     # Sort by price
@@ -233,7 +249,9 @@ for i, ref_item in enumerate(sample_items):
         'selected_super_class': winner.get('super_class'),
         'price': winner.get('price'),
         'match_percent': min(100, int(conf * 100)),
-        'candidates_after_super_class': len(candidates),
+        'candidates_after_super_class_guards': len(candidates),
+        'rejected_by_forbidden': rejected_by_forbidden,
+        'rejected_by_anchor': rejected_by_missing_anchor,
         'is_bad_match': is_bad_match,
         'bad_match_reason': bad_match_reason
     })
