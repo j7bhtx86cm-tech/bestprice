@@ -3557,17 +3557,15 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   Pack penalty: {winner.get('_pack_score_penalty', 0)}")
         
         # Calculate match_percent with STRICT CLAMP 0..100 and penalties
-        # P1: New scoring logic
+        # New scoring logic (без fallback bonus)
         base_score = 60  # Base for any match
         
-        # Product core bonus
-        if winner.get('product_core_id') == ref_product_core and ref_core_conf >= 0.7:
+        # Product core bonus (strict match only)
+        if winner.get('product_core_id') == ref_product_core:
             base_score += 20  # Perfect core match
-        elif winner.get('_fallback_to_super_class'):
-            base_score -= 20  # Penalty for fallback
         
-        # Anchors bonus (already applied via guards)
-        base_score += 10  # Passed guards
+        # Guards bonus (passed forbidden + anchors)
+        base_score += 10
         
         # Pack penalty
         pack_penalty = winner.get('_pack_score_penalty', 0)
