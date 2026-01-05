@@ -57,9 +57,10 @@ def parse_pack_from_text(text: str) -> PackInfo:
         # Килограммы
         (r'(\d+[\.,]?\d*)\s*кг', 1000.0, UnitType.WEIGHT, 1.0),
         (r'(\d+[\.,]?\d*)\s*kg', 1000.0, UnitType.WEIGHT, 1.0),
-        # Граммы
+        # Граммы (с пробелом или без)
+        (r'(\d+[\.,]?\d*)\s*гр?\.?\b', 1.0, UnitType.WEIGHT, 1.0),
+        (r'(\d+[\.,]?\d*)\s*gr?\.?\b', 1.0, UnitType.WEIGHT, 1.0),
         (r'(\d+[\.,]?\d*)\s*г\b', 1.0, UnitType.WEIGHT, 1.0),
-        (r'(\d+[\.,]?\d*)\s*gr?\b', 1.0, UnitType.WEIGHT, 1.0),
         # Приблизительный вес: ~5кг
         (r'~\s*(\d+[\.,]?\d*)\s*кг', 1000.0, UnitType.WEIGHT, 0.9),
         (r'~\s*(\d+[\.,]?\d*)\s*г', 1.0, UnitType.WEIGHT, 0.9),
