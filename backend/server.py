@@ -3093,6 +3093,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   favorite_id={request.favorite_id}")
         logger.info(f"   reference_name='{reference_name[:50]}'")
         logger.info(f"   brand_critical={brand_critical}, brand_id={brand_id}")
+        
+        # P0: Parse reference pack using unit_normalizer
+        ref_pack_info = parse_pack_from_text(reference_name)
+        logger.info(f"   ref_pack: type={ref_pack_info.unit_type.value}, qty={ref_pack_info.base_qty}, conf={ref_pack_info.confidence}")
+        
         if origin_country:
             origin_str = origin_country
             if origin_region:
