@@ -162,6 +162,19 @@ def detect_super_class(product_name, min_confidence=0.3):
         'пектин': 'additives.pectin',
         # Salt - often comes in "пакет" packaging
         'соль': 'condiments.salt',
+        # Rice-specific to avoid false matches
+        'рис басмати': 'staples.рис.басмати',
+        'рис жасмин': 'staples.рис.жасмин',
+        'рис круглозерн': 'staples.рис',
+        'рис длиннозерн': 'staples.рис',
+        # Vegetables that may incorrectly get staples.рис
+        'тыква': 'vegetables.тыква',
+        'кабачок': 'vegetables.кабачок',
+        # Seafood imitation products
+        'крабов': 'seafood.crab_sticks',
+        'сурими': 'seafood.surimi',
+        # Sugar
+        'сахар': 'staples.сахар',
     }
     
     # Check priority direct mappings FIRST
