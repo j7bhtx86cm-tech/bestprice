@@ -1,0 +1,1001 @@
+id,name_raw,product_core_id,confidence,super_class
+d52e741e-4ca0-4e5d-b8de-19021b08fbcb,КРЕМ-СОУС бальзамический классический п/б 500 мл. KOTANYI,condiments.sauce,0.3,condiments.sauce
+512c5253-83da-4351-846e-ee246f8ad915,СОУС ананасовый с перцем чили 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+1cf2c732-0372-4aa0-8c4f-a506a43b06bc,СОУС бальзамический 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+79fa1bda-9012-4842-824e-bc68cc58a109,СОУС Барбекю 1 кг. Hellmann`s,condiments.sauce,0.3,condiments.sauce
+f486b169-643b-4d7a-b0ca-d957865173dd,СОУС Барбекю 1 кг. Tamaki,condiments.sauce,0.3,condiments.sauce
+dc8fcd85-7a51-459e-a7b6-d0f2c9d21cc5,СОУС Барбекю 1 кг. Россия Got2Eat,condiments.sauce,0.3,condiments.sauce
+e3cf3404-0fb1-43ca-a161-ec6ac207d219,"СОУС Барбекю Америка 2,3 кг. PROVIL S.A.",condiments.sauce,0.3,condiments.sauce
+a6024d12-b166-40d3-984c-424d682e48c5,СОУС барбекю дип-пот 25 мл *125 шт. Heinz,condiments.sauce,0.3,condiments.sauce
+c3098a45-7f29-4981-ad8a-41c923d0c1ba,"СОУС Барбекю копченый 2,3 кг. PROVIL S.A.",condiments.sauce,0.3,condiments.sauce
+25899adc-9688-4892-97fb-b322055a182a,СОУС барбекю пакет 1 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+e0647c60-1517-4a05-a2e1-8f3a4f0e5f25,"СОУС Бешамель сухая смесь 1,8 кг. Knorr",condiments.sauce,0.3,condiments.sauce
+25094ed2-180c-4cef-9b83-f36873d3e174,"СОУС Бонито 1,8 кг. Kingzest",condiments.sauce,0.3,condiments.sauce
+12fb21d5-c59e-48a4-9600-366082c8807d,СОУС бургер балк 1 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+a6ab8e1e-e5f5-42ab-88a6-d6603e17f82e,СОУС Бургер Гриль 1 кг. Hellmann`s,condiments.sauce,0.3,condiments.sauce
+1367469a-5225-4e12-a3fc-cd6a7b992d1d,СОУС Ворчестер 740 гр. PROVIL S.A.,condiments.sauce,0.3,condiments.sauce
+df112a46-bc96-4e33-a231-7b8edb94f877,СОУС Голландез Hollandaise 1 кг. PROVIL S.A.,condiments.sauce,0.3,condiments.sauce
+b5a0eb53-00af-42fe-90d1-949a6fcdec36,"СОУС Голландский 1,7 кг. Knorr",condiments.sauce,0.3,condiments.sauce
+0599aeac-b8b3-4f35-9c8d-d7b8964ce4b7,СОУС горчичный балк 700 гр. Heinz,condiments.sauce,0.3,condiments.sauce
+3ecdfa1b-6fa9-4031-b185-e72296a0673e,СОУС горчичный дип-пот 25 мл *125 шт. Heinz,condiments.sauce,0.3,condiments.sauce
+65215bcd-3e76-498f-9960-b7c9ba2532f2,СОУС горчичный пакет 2 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+23659a49-b66a-4082-94b2-7254c4493413,СОУС гриль балк 1 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+ada7d084-bfd1-47eb-bb60-9d9ffd3f797a,СОУС гриль на основе растительных масел 1 кг. Tamaki,condiments.sauce,0.3,condiments.sauce
+7f9d55d9-d5d9-43b3-b997-f910d0f9692f,СОУС деликатесный Барбекью острый дип-пот 25 мл*125 шт. PIKADOR,condiments.sauce,0.3,condiments.sauce
+faa7f86d-ee01-4cf0-bcef-4073360efc59,СОУС деликатесный Барбекю балк 1 кг. PIKADOR PRO,condiments.sauce,0.3,condiments.sauce
+0fe3fb12-3d96-46ad-9881-7f9338d4e616,СОУС деликатесный кисло-сладкий оригинальный балк 1 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+04e3235f-ccd1-4528-9cb0-9f505a5819f2,СОУС деликатесный кисло-сладкий Чили дип-пот 25 мл*125 шт. PIKADOR,condiments.sauce,0.3,condiments.sauce
+b82be619-ee53-4df0-a912-e2c3c0b7ee58,СОУС деликатесный терияки дип-пот 25 мл *125 шт. Heinz,condiments.sauce,0.3,condiments.sauce
+56d34013-9a13-43b6-9461-c73e313fa5c7,"СОУС Деми гласс 1,8 кг. Knorr",condiments.sauce,0.3,condiments.sauce
+f4dcb65c-5323-465d-b048-c68fa53b2cf7,СОУС для шаурмы 1 кг. Tamaki,condiments.sauce,0.3,condiments.sauce
+f1511cd9-b8ea-42c4-8acd-71f41a5d6454,"СОУС Карри 2,3 кг. PROVIL S.A.",condiments.sauce,0.3,condiments.sauce
+7db8e333-97bb-48cb-a1d5-835ac0cb0bc2,СОУС карри с ананасом 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+3ae349dc-527b-44e5-af8e-f7ba89c0920e,"СОУС Кимчи 1,5 л. GENSO Asian style",condiments.sauce,0.3,condiments.sauce
+0562a226-c893-461c-892a-cf26575f9d5c,"СОУС Кимчи 1,5 л. Tamaki",condiments.sauce,0.3,condiments.sauce
+cd04c04f-7004-4233-a147-f78b15c96032,"СОУС Кимчи 1,8 л. BG",condiments.sauce,0.3,condiments.sauce
+e84125a2-6e09-478f-8db5-560edd047d80,"СОУС Кимчи 1,8 л. PEARL RIVER BRIDGE",condiments.sauce,0.3,condiments.sauce
+53ee20c3-04e5-46dd-aecd-4e33cbb89847,"СОУС Кимчи 1,8 л. Tamaki",condiments.sauce,0.3,condiments.sauce
+69c85273-9137-43d6-90d4-6ecab7da4447,СОУС кисло-сладкий 1 кг. Tamaki,condiments.sauce,0.3,condiments.sauce
+1ac8056e-600d-4b53-b2e0-986643b507a1,СОУС кисло-сладкий дип-пот 25 мл*125 шт. Heinz,condiments.sauce,0.3,condiments.sauce
+c82f46ca-6b16-43eb-8d9a-f6a29acf08f1,СОУС Лемонграсс Таиланд 285 гр. Chang,condiments.sauce,0.3,condiments.sauce
+3ea0bfd3-da57-4734-8d2a-92d97307b084,СОУС Манго с перцем чили 470 гр. Tamaki,condiments.sauce,0.3,condiments.sauce
+d3fa2a2f-f32e-48fd-9a02-2b64ba84094b,СОУС Манго Чили 850 гр. Genso,condiments.sauce,0.3,condiments.sauce
+da64623c-ae08-4b99-8e82-eb915ba28859,СОУС маринад шашлычный 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+bcc42d26-69f8-4287-8100-eb0f71e079f4,СОУС медово-горчичный 1 кг. Hellmann`s,condiments.sauce,0.3,condiments.sauce
+beeee06e-0e11-4b0d-9cce-68282e5a0674,СОУС медово-горчичный 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+3dfca2be-33d2-489c-8d4c-f0739c7fcd60,"СОУС Мексиканский 2,2 кг. PROVIL S.A.",condiments.sauce,0.3,condiments.sauce
+94453284-6c40-4ab2-9e03-dc051e641116,СОУС на основе растительных масел горчично-медовый дип-пот 25 мл*125 шт. PIKADOR,condiments.sauce,0.3,condiments.sauce
+c47a545d-1048-484f-b52b-fa50f1f9259f,СОУС на основе растительных масел сырный с Халапеньо дип-пот 25 мл*125 шт. PIKADOR,condiments.sauce,0.3,condiments.sauce
+5198b273-1a54-4fe0-a5ab-f09ba105efa0,СОУС на основе растительных масел Тысяча островов дип-пот 25 мл*125 шт. Heinz,condiments.sauce,0.3,condiments.sauce
+78bcd9f9-2c9d-47b1-bf68-7050915d3ad2,СОУС на основе растительных масел Цезарь оригинальный 2 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+b96f9d07-828a-46b1-a407-441a467a1174,"СОУС Наполи сухая смесь 1,8 кг. Knorr",condiments.sauce,0.3,condiments.sauce
+5b5cfac5-2c7e-4e6d-94ef-11a1fb723373,СОУС ореховый на основе растительных масел 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+1c34b288-3af8-48f8-b4b9-799e70b048bd,"СОУС ореховый на основе растительных масел Pro 1,5 л. Tamaki",condiments.sauce,0.3,condiments.sauce
+d34d0c0d-066c-4a00-be11-6ada3945b7f2,СОУС острый с хрустящим перцем чили 210 гр. Lao Gan Ma,condiments.sauce,0.3,condiments.sauce
+d20b20ae-3c8c-400f-b4ba-fee54428e960,СОУС Пад Тай 1 кг. AROY-D,condiments.sauce,0.3,condiments.sauce
+a9b68659-a0ce-44dd-b184-ee5b69e950cc,"СОУС Пад Тай 1,2 кг. Thai Chef",condiments.sauce,0.3,condiments.sauce
+f77ae4e0-3dd9-43b8-8cfd-5a5c21ad69d3,"СОУС Перечный 2,3 кг. Kingzest",condiments.sauce,0.3,condiments.sauce
+b535aa4c-9450-424e-8bf2-eeccdf2707de,"СОУС песто ""Pesto alla Genovese"" 190 гр. FEDERICI",condiments.sauce,0.3,condiments.sauce
+04f461c6-6a49-4441-8da3-491c53d6f81a,СОУС Поке 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+81848504-29b7-427a-8803-a5a2893be788,СОУС Понзу 1 кг. PADAM,condiments.sauce,0.3,condiments.sauce
+9410109e-7692-4456-9f3d-3f1979cf4d8f,СОУС Ремулад 1 кг. Hellmann`s,condiments.sauce,0.3,condiments.sauce
+e0948fa5-c660-4b61-9fca-7884384670f8,СОУС рисовый Мирин 1 л. ToDoFood,condiments.sauce,0.3,condiments.sauce
+0e9108fb-850e-46c8-8e55-1504a60735c9,СОУС рисовый Мирин 18 л. PADAM,condiments.sauce,0.3,condiments.sauce
+085f14d3-0218-45d0-8b9d-0bddd62b6cd7,"СОУС рыбный 4,5 л. AROY-D",condiments.sauce,0.3,condiments.sauce
+645f1e81-fa76-4c22-986c-610ca0ef263b,СОУС рыбный Тайланд 700 мл. Aroy-D Тайланд,condiments.sauce,0.3,condiments.sauce
+d2f25a5b-2a2c-40b6-a779-f1b4dbb5b0fd,"СОУС сладкий чили для курицы 1,8 л. Tamaki",condiments.sauce,0.3,condiments.sauce
+cb19c172-c98c-4703-8034-9d00e24975c8,СОУС сладкий чили для курицы Тайланд 920 мл. Aroy-D,condiments.sauce,0.3,condiments.sauce
+42950111-4228-4878-807f-7b7cc66b04a6,СОУС сладкий чили Россия 1 кг. GOT2EAT,condiments.sauce,0.3,condiments.sauce
+bfa76b41-5b5d-4ee0-b74e-7f5e75692188,СОУС со вкусом лемонграсса 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+bb15621e-8528-4787-89f1-5b236900af12,СОУС Спайси 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+bbc4300b-7f31-4642-862c-0b778b541d88,СОУС сырный 1 кг. Россия Got2Eat,condiments.sauce,0.3,condiments.sauce
+8addfe4b-0f00-444c-9b07-c1d08a1081b9,"СОУС Сырный 1,8 кг. Knorr",condiments.sauce,0.3,condiments.sauce
+67e513b2-405e-496e-8b01-b6d523b3ec51,СОУС сырный 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+ce06f9d0-2d32-46b1-b11d-72dd8db1e283,СОУС сырный Parmegiano балк 1 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+c5d0aac4-e521-4c35-b273-25916e7e87dd,СОУС сырный дип-пот 25 мл*125 шт. Heinz,condiments.sauce,0.3,condiments.sauce
+6a0c7d23-9623-4db4-9c16-03169ca28769,СОУС сырный на основе растительных масел пакет 1 кг. PIKADOR PRO,condiments.sauce,0.3,condiments.sauce
+0d13ee69-894e-4b3e-97a6-c0851957e081,СОУС сырный пакет 1 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+cf798a3d-2569-437e-b408-a1a956feda29,СОУС сырный Чеддер Sandwich Creams 2 кг. PROVIL S.A.,condiments.sauce,0.3,condiments.sauce
+d5e5b1ed-3599-49a2-a661-e58a76c239fd,"СОУС Терияки 1,5 л. GENSO",condiments.sauce,0.3,condiments.sauce
+ea9d0484-93e5-4eb0-a38b-c5935b0b0789,"СОУС Терияки 1,5 л. GENSO",condiments.sauce,0.3,condiments.sauce
+3e94a9ef-ce10-4266-9547-82e1646ee025,"СОУС Терияки 1,5 л. Tamaki",condiments.sauce,0.3,condiments.sauce
+fff59625-62f4-4ac3-b9af-cbc90f3930fe,"СОУС Терияки 1,8 л. BG",condiments.sauce,0.3,condiments.sauce
+0f15ff11-0ce8-4cc3-947c-120b022df927,"СОУС Терияки 1,8 л. Tamaki",condiments.sauce,0.3,condiments.sauce
+65c93560-bc0f-4eef-8125-fa179e7ce3eb,СОУС Терияки 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+08e8461d-1419-4f35-9d24-c912235c50e0,"СОУС Терияки для глазировки 1,8 л. PEARL RIVER BRIDGE",condiments.sauce,0.3,condiments.sauce
+22b5c4a2-8a74-4bd3-83e7-32191b1adff4,СОУС терияки пакет 1 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+aa1fec04-2936-475d-a22a-a69cc9b78bbf,СОУС Тысяча островов оригинальный балк 1 кг. Heinz,condiments.sauce,0.3,condiments.sauce
+8e408cee-c1d0-4486-9e92-5c42e916b4d1,"СОУС Унаги 1,5 л. GENSO",condiments.sauce,0.3,condiments.sauce
+32ed4f1c-4124-45ec-a774-ab17f751b6ae,"СОУС Унаги 1,5 л. GENSO",condiments.sauce,0.3,condiments.sauce
+24777158-5c26-457d-9531-e65346053124,"СОУС Унаги 1,8 л. BG",condiments.sauce,0.3,condiments.sauce
+3ce23596-a1ae-4320-8958-86c89e2065da,"СОУС Унаги 1,8 л. PRB",condiments.sauce,0.3,condiments.sauce
+bdf5672b-ad57-4cc2-9adb-614b6e482956,СОУС Унаги 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+03e76153-ecc8-4f5b-91c2-d4553d25ca10,СОУС устричный 1 л. Tamaki,condiments.sauce,0.3,condiments.sauce
+84756801-d6ec-4490-b54c-aaf1776f006d,"СОУС устричный 2,4 кг. PEARL RIVER BRIDGE",condiments.sauce,0.3,condiments.sauce
+69b6c428-0ecc-4f36-a0be-bbcfc99a9922,СОУС устричный 510 гр. PEARL RIVER BRIDGE,condiments.sauce,0.3,condiments.sauce
+9c1b0f3a-39b2-481c-afbe-04891474d2fb,СОУС Халапеньо 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+2e026516-8fee-444a-a38e-d96c3f8e7a32,СОУС Хойсин 1 л.,condiments.sauce,0.3,condiments.sauce
+ba05b624-34c0-4a07-8d50-4f487d8bda7e,"СОУС Хойсин 2,20 кг. PRB",condiments.sauce,0.3,condiments.sauce
+45bb92ec-17d8-4d4e-8cfe-6f811901c875,СОУС чёрно-перечный 1.5 л. Asian Style Genso,condiments.sauce,0.3,condiments.sauce
+be5a8255-dca0-48cd-a74d-2e166fcd8633,"СОУС чёрно-перечный Тайланд 2,3 кг. GENSO",condiments.sauce,0.3,condiments.sauce
+ac364306-5ef3-4f33-b326-3e1b3f4ed046,СОУС Черный перец 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+c7ee19c7-4de6-474a-bb74-663a33acd0d2,СОУС чесночный дип-пот 25 мл*125 шт. Heinz,condiments.sauce,0.3,condiments.sauce
+7d23dd88-d6f4-4f56-8408-88683f2dfbed,СОУС чесночный пакет 1 кг. PIKADOR PRO,condiments.sauce,0.3,condiments.sauce
+e5252220-2554-45ca-96d0-aa4115030494,СОУС чесночный Ранч на основе растительных масел 1 кг. Tamaki,condiments.sauce,0.3,condiments.sauce
+12272acb-061f-4265-b656-fdb3b95c9ff2,СОУС Чесночный Ранч на основе растительных масел 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+630012f9-f50b-4416-850d-6876dbf316b3,СОУС чили с чесноком 240 гр. PRB,condiments.sauce,0.3,condiments.sauce
+236d7d8d-f8a4-4b4c-a732-6a73ed425c1e,СОУС Чили сладкий для курицы 1 л. Samui,condiments.sauce,0.3,condiments.sauce
+4f224837-3de6-450b-932e-6a32fdc58de9,"СОУС чили сладкий для курицы 2,4 кг. AROY-D",condiments.sauce,0.3,condiments.sauce
+6566849d-ff9a-41e4-a38d-85460a190862,"СОУС Чили сладкий для курицы 4,5 л. Samui",condiments.sauce,0.3,condiments.sauce
+47ad4189-d46a-435b-b627-f6d643a57dd8,СОУС Шрирача (чили 35%) 510 гр. AROY-D,condiments.sauce,0.3,condiments.sauce
+1478410e-402d-4dcd-9a84-df0904ea4b15,СОУС Шрирача 1 л. Tamaki,condiments.sauce,0.3,condiments.sauce
+cdfd8222-da75-4305-9274-645d1bab92e4,СОУС Шрирача 475 гр. Uni-Eagle,condiments.sauce,0.3,condiments.sauce
+63faf580-5c70-46df-82d1-07a646bb27c3,СОУС Шрирача с дозатором 230 гр. Uni-Eagle,condiments.sauce,0.3,condiments.sauce
+003bd40a-3227-48eb-99e2-481e606f534e,СОУС Шрирача с дозатором 815 гр. Uni-Eagle,condiments.sauce,0.3,condiments.sauce
+1d939812-21cf-44f2-ac83-be969865f78a,СОУС Юдзу 470 мл. Tamaki,condiments.sauce,0.3,condiments.sauce
+fbf300c7-c5d4-4db6-ba6c-197583273d6f,АНИС звездчатый 70 гр. KOTANYI,condiments.spice,0.3,condiments.spice
+34921f97-ca88-4ee5-b5b3-d892521419b1,БАДЬЯН целый пакет 1 кг. SpicеExpert,condiments.spice,0.3,condiments.spice
+e4acc9b8-c612-406f-bc7d-e81f9a67c21c,ВАНИЛИН пакет 1 кг. SpiceExpert,condiments.spice,0.3,condiments.spice
+856e499b-d311-4a18-9d61-4e32a915ae7b,ГВОЗДИКА целая пакет 500 гр. SpicеExpert,condiments.spice,0.3,condiments.spice
+5eca591b-0859-43cb-b82e-b4368e30b97c,КАКАО порошок 1 кг. SpicExpert,condiments.spice,0.3,condiments.spice
+7bf1f87e-a44f-43f6-adbf-7cd21e7bc9d0,КАРДАМОН молотый п/б 159 гр. KOTANYI,condiments.spice,0.3,condiments.spice
+952ff048-153e-4685-bda3-59f2e30c4fe1,КОРИЦА молотая 600 гр. KOTANYI,condiments.spice,0.3,condiments.spice
+64cf8f2d-5216-43cf-98b4-b92c0cee9a88,КОРИЦА молотая в банке 400 гр. SpicеExpert,condiments.spice,0.3,condiments.spice
+6d2c4e0a-0904-4231-a5fb-559c7ce6a0a5,КОРИЦА палочки 350 гр. KOTANYI,condiments.spice,0.3,condiments.spice
+f1c0706d-40b2-4289-a986-4d41734c028d,КОРИЦА палочки пакет 1 кг. SpicеExpert,condiments.spice,0.3,condiments.spice
+92728d02-2aee-4a4c-8738-079237db6b77,КРАХМАЛ кукурузный 1 кг. SpiceExpert,condiments.spice,0.3,condiments.spice
+d687e912-4dab-44c9-8b1f-40d4fbe1b4b2,КУМИН семена банка 450 гр. SpiceExpert,condiments.spice,0.3,condiments.spice
+064db680-7d3b-489d-ba06-983291b3c5c8,ОРЕХ Мускатный целый банка 300 гр. SpiceExpert,condiments.spice,0.3,condiments.spice
+8273d8ef-b1fc-4c64-b680-6319ee6d3d3c,САХАРНАЯ ПУДРА нетающая пакет 1 кг. SpiceExpert,condiments.spice,0.3,condiments.spice
+4acbcbca-ce27-448f-9ab1-cb377cac2409,СМЕСЬ темпурная 1 кг. Tamaki Pro,condiments.sauce,0.3,condiments.sauce
+c0d54b58-c98c-40f0-8648-d2a1178d6f88,СПЕЦИЯ Шичими Тогараши 250 гр.,condiments.spice,0.3,condiments.spice
+329ed32d-466f-4828-bb2f-aa370f97f999,"СУП-ПЮРЕ сырный 1,7 кг. Knorr",dairy.сыр,0.3,dairy.сыр
+976b54cf-18be-484a-b4f9-8d592842540c,СУХАРИ панировочные Панко 1 кг. Tamaki,condiments.sauce,0.3,condiments.sauce
+2cd71109-f756-4475-8c1d-ba09747c4629,СУХАРИ панировочные Панко GOLD 1 кг. Tamaki,condiments.sauce,0.3,condiments.sauce
+ce9596e2-9094-499f-8dad-5902b878f159,ЧЕСНОК молотый банка 450 гр. SpicеExpert,condiments.spice,0.3,condiments.spice
+fb67d13c-8d07-4d10-877f-aaaf9d4375c7,МИНДАЛЬ лепестки 1 кг. Суприм,staples.мука,0.3,staples.мука
+d12ab3e6-a723-4d8d-8587-ffc45f4260a2,ОРЕХ грецкий 1/4 1 кг. Суприм,condiments.spice,0.3,condiments.spice
+f569f4c4-ddf3-472c-a917-395e3b7d956b,ОРЕХ грецкий бабочка 1 кг. Суприм,condiments.spice,0.3,condiments.spice
+5c3ba56d-2f31-4396-aa6a-1bd84f0b31b9,МУКА миндальная 1 кг. Суприм,staples.мука,0.3,staples.мука
+fe348aee-98cb-4ecc-894b-85ce07cc31f7,МУКА Темпура 1 кг. ToDoFood,staples.мука,0.3,staples.мука
+97bb3e9c-b03c-4e6d-b94d-e87726d6b866,ЛАПША фунчоза 500 гр. Tamaki,condiments.sauce,0.3,condiments.sauce
+dd1c0fa5-7ca4-4bc6-a59e-f6570ca7a5a8,СИРОП Корица 1 л. Barinoff,condiments.spice,0.3,condiments.spice
+905e0836-d291-4642-b27f-616221790f9f,ПЕРСИКИ очищенные половинки в сиропе ж/б 850 мл. LUTIK,seafood.shrimp,0.3,seafood.shrimp
+3fccf9a2-f6d4-4051-897d-b2c387405e93,ИМБИРЬ маринованный белый 1 кг. TAMAKI PRO,condiments.sauce,0.3,condiments.sauce
+a6e614da-b8b2-4878-8ae2-5a24365d3c08,УГОРЬ филе С жаренное в соусе с/м вес 600 гр. SANGO,condiments.sauce,0.3,condiments.sauce
+35adc429-6189-4e51-8b7c-6b6327ef4b6c,ГОРБУША потрошеная без головы (штучная заморозка) с/м вес 26 кг. Максимовский,seafood.shrimp,0.3,seafood.shrimp
+1654c6f7-5296-4ba1-a049-93a7b56a22bd,"ГЁДЗА с цыплёнком п/ф 0,5 кг. Yoshimi",meat.pork,0.3,meat.pork
+52b90a3b-2039-4155-acd0-b26d5cd5fde5,"ГЁДЗА со свининой п/ф 0,5 кг. Yoshimi",meat.pork,0.3,meat.pork
+87ff88b6-b024-4e2f-9b56-85b274f4bf71,"СЫРНИКИ классические (70 гр*140 шт) с/м 9,8 кг. Сырникофф",dairy.сыр,0.3,dairy.сыр
+c14a7fb6-1b2b-44d7-9ad4-766161ab36a4,СЫРНИКИ классические с/м 70 гр*63 шт. Сырникофф,dairy.сыр,0.3,dairy.сыр
+c88ce4c4-8186-47ff-b63f-0f2d4987a809,БЛИНЫ с курицей и грибами с/м 150 гр. Qummy,meat.chicken,0.3,meat.chicken
+6ac8908b-6516-4a8b-8638-5d6cbcf9dd45,БЛИНЫ с соусом из черной смородины 170 гр. Qummy,condiments.sauce,0.3,condiments.sauce
+f4a017fb-28a8-46fa-baf1-2a78ea8dd67b,БЛИНЫ с сыром и ветчиной с/м 150 гр. Qummy,dairy.сыр,0.3,dairy.сыр
+bbcfb26c-885a-4ecb-80e0-a55f7b7f9e85,КОТЛЕТЫ куриные с пюре и сырным соусом с/м 260 гр. Qummy,condiments.sauce,0.3,condiments.sauce
+1aa880d6-ce26-4e2e-85c6-a664d2cc3375,ЛАПША гречневая с говядиной и овощами с/м 250 гр. Qummy,meat.beef,0.3,meat.beef
+df373fdb-62de-4dfc-8622-044e4c1b3b51,ПАНКЕЙК с шоколадно-банановым соусом с/м 150 гр. Qummy,condiments.sauce,0.3,condiments.sauce
+d4b5b650-7ccd-47e5-9827-e8f4f7f4491c,ПАСТА с цыпленком в сливочно-шпинатном соусе 230 гр. Qummy,condiments.sauce,0.3,condiments.sauce
+9f83e374-6712-4b18-8786-567abb92f5b0,"ПЛОВ с говядиной ""Традиционный"" с/м 250 гр. Qummy",meat.beef,0.3,meat.beef
+268a0e17-0656-46d6-9ca6-481a73f83c53,"ПЛОВ с курицей ""Традиционный"" с/м 250 гр. Qummy",meat.chicken,0.3,meat.chicken
+25ce380e-b4b0-4a05-97de-6ec528271dfe,РУЛЕТИКИ из омлета с ветчиной и сыром 160 гр. Qummy,dairy.сыр,0.3,dairy.сыр
+5c1f9738-2e35-4642-a010-868fbc946aa6,РЫБА белая филе запеченное в соусе мисо с копчеными сливками и картофельным пюре с/м 240 гр. Qummy,condiments.sauce,0.3,condiments.sauce
+b48c3b1a-541d-42c5-baff-9242ec5e5aa9,СЫРНИКИ с малиновым вареньем с/м 180 гр. Qummy,dairy.сыр,0.3,dairy.сыр
+a2de5f27-896c-4ac0-94f2-0e9d1e13f0e9,УДОН с курицей и овощами с/м 250 гр. Qummy,meat.chicken,0.3,meat.chicken
+f1afde44-9e31-44c1-83d1-20332a0b6cab,"ФРИКАДЕЛЬКИ с рисом и соусом ""Черный перец"" с/м 300 гр. Qummy",condiments.sauce,0.3,condiments.sauce
+eb7ea051-9b6b-4bde-8a31-fa8cc3948d41,ЦЫПЛЕНОК в кисло-сладком соусе с/м 270 гр. Qummy,condiments.sauce,0.3,condiments.sauce
+97ddaee4-97ea-41c2-a625-cbba821d2676,ЦЫПЛЕНОК в сливочном соусе с/м 250 гр. Qummy,condiments.sauce,0.3,condiments.sauce
+1d1b2fe3-d3b1-49f5-8782-22f56ca17874,ШАРИКИ сырные с/м 145 гр. Qummy,dairy.сыр,0.3,dairy.сыр
+c0f15eaf-378d-474d-aaee-23552fc92434,БОБЫ соевые зелёные Эдамаме очищенные Premium с/м 500 гр. Don Kreveton,seafood.shrimp,0.3,seafood.shrimp
+2c7cd2a0-5c0d-49df-ba2d-31f2341ad7ed,БОБЫ соевые зелёные Эдамаме очищенные с/м 1 кг.,seafood.shrimp,0.3,seafood.shrimp
+eaaeb0f2-7301-472c-bdf3-ad6906b71141,"КОЛБАСКИ пряные с сыром полукопченые 4*50 гр. б/о с/м вес 0,2 кг. Поннат",dairy.сыр,0.3,dairy.сыр
+ac49c0d7-18cf-4cf9-abd4-895ca224706a,КРЕВЕТКИ очищенные с хвостиком сырые в панировке торпедо с/м 200 гр. VICI,dairy.сыр,0.3,dairy.сыр
+1ca3f592-1a06-4edd-afbc-54b1a36f0029,"СОСИСКИ Коктейльные из свинины с/м 1,2 кг. Черкизово",meat.pork,0.3,meat.pork
+417beb04-4dfa-42c3-af96-d7006da932e5,"ВЕТЧИНА вареная из индейки и курицы квадрат вес 2,7 кг. Анком",meat.chicken,0.3,meat.chicken
+f101fdc1-3c82-439d-ad18-7c3c72e62f46,СЫР Российский 50% вес 4 кг. Сырная долина,dairy.сыр,0.3,dairy.сыр
+1234a770-c6a0-4f16-b580-7bd7edb4b48e,"СЫР сливочный 45% вес 4,5 кг. NATURA",dairy.сыр,0.3,dairy.сыр
+ce219c6c-cb9d-48bf-9d15-469bd1ac10e8,"СЫР Тильзитер 45% вес 4,5 кг. NATURA",dairy.сыр,0.3,dairy.сыр
+1958d3ed-201b-497a-aba4-8f36922628dc,СЫР Тильзитер 45% вес 5 кг. Чизагро,dairy.сыр,0.3,dairy.сыр
+a5c097e1-078b-49fe-b4f1-6638d90f2047,СЫР Бри 60% 125 гр. NATURA SELECTION,dairy.сыр,0.3,dairy.сыр
+5c05dee6-c1a0-4914-8288-00dae6c58a54,СЫР Горгонзола вес 750 гр.-1 кг.,dairy.сыр,0.3,dairy.сыр
+5ff8e4c2-b1a4-41bb-b42c-7be16e53edd8,СЫР Дор Блю по-итальянски с благородной плесенью 50% вес 750 гр. -1 кг.,dairy.сыр,0.3,dairy.сыр
+23947305-f0ee-424b-b5f0-817e653ebbf9,СЫР Камамбер 50% 125 гр. NATURA SELECTION,dairy.сыр,0.3,dairy.сыр
+d2e163d2-517a-4f73-8f8b-04ad9a661753,СЫР с голубой благородной плесенью 50% 100 гр. Natura SELECTION,dairy.сыр,0.3,dairy.сыр
+c595418c-917f-4872-ac98-37b0303b0f10,"СЫР с голубой благородной плесенью 55% вес 2,6 кг. TM TEMPLIER",dairy.сыр,0.3,dairy.сыр
+73660279-cc56-4aff-ae5c-40243614033d,СЫР с голубой благородной плесенью Danablu 50% вес 1 кг. NATURA SELECTION,dairy.сыр,0.3,dairy.сыр
+cabcdabd-d647-418e-9549-b635c216bb5d,СЫР мягкий в рассоле 480 гр. (сухой вес 400 гр.) Hochland Professional,dairy.сыр,0.3,dairy.сыр
+d3eef53f-93c8-4164-9c12-b5d09cad0210,СЫР Гауда 45% вес 5 кг. Навруз,dairy.сыр,0.3,dairy.сыр
+024d7b0c-95a6-4b5e-adad-942cdbe57a4b,СЫР Гауда 45% вес 5 кг. Чизагро,dairy.сыр,0.3,dairy.сыр
+5e43325e-eea4-4485-b452-74cd585152d3,"СЫР Гойя 40% вес 5,4 кг. La Paulina",dairy.сыр,0.3,dairy.сыр
+5121bede-c5f2-407f-b46b-e768e06e3d4c,"СЫР Маасдам 45% вес 4,7 кг. Ичалки",dairy.сыр,0.3,dairy.сыр
+245ed67e-e247-45e0-84ac-2409cb8b810e,СЫР твердый Палермо 40% (срок созревания 12 месяцев) вес 3 кг.,dairy.сыр,0.3,dairy.сыр
+681cd59c-cb58-48d1-9f2b-055ccb771001,СЫР твердый Палермо 40% (срок созревания 6 месяцев) вес 3 кг.,dairy.сыр,0.3,dairy.сыр
+2e5bb95e-6ba7-4a72-9197-315a1b7ee261,СЫР твердый Палермо 40% крошка (срок созревания 6 месяцев) 300 гр. PALERMO,dairy.сыр,0.3,dairy.сыр
+a83d1670-d48a-4752-a39e-c9d2a88b1426,"СЫР твердый Парменте 48% (срок созревания 12 месяцев) вес 1,5 кг.",dairy.сыр,0.3,dairy.сыр
+e1cdebb9-56b3-42e8-89c0-073536654864,СЫР Кремчиз 70% 11 кг. CooКing,dairy.сыр,0.3,dairy.сыр
+5421ca36-895a-429e-a07d-c77c05ef9039,СЫР Маскарпоне 83% 500 гр. CooКing,dairy.сыр,0.3,dairy.сыр
+0bb66b01-e0b0-4aae-b0c3-eeb63810356a,"СЫР мягкий сливочный ""Белый соус для пиццы"" с массовой долей жира в сухом веществе 70% 2 кг. СооKing",condiments.sauce,0.3,condiments.sauce
+3142fce7-9596-4b68-bd9e-85c13269b79b,СЫР сливочный мягкий 2 кг. Natura Pro,dairy.сыр,0.3,dairy.сыр
+d7f864a8-0410-4e30-ba7b-886577ad0e30,СЫР сливочный мягкий Bake’n’roll 2 кг. NATURA PRO,dairy.сыр,0.3,dairy.сыр
+7af32ceb-42bd-4485-a5f2-de7bd6c9c12c,"СЫР творожный 62% ведро 3,3 кг. Милетто",dairy.сыр,0.3,dairy.сыр
+144ffaf9-7ecc-4ce1-89d8-9a951a97a214,СЫР творожный 65% 1 кг. FriendChef,dairy.сыр,0.3,dairy.сыр
+2231deb3-4195-47ab-888f-fb72d89887a4,СЫР творожный Cremette Professional 65% 1 кг. Hochland,dairy.сыр,0.3,dairy.сыр
+816c4fd8-ae89-40bb-89b4-e0b8a1bb89fd,"СЫР творожный Cremette Professional 65% 2,2 кг. Hochland",dairy.сыр,0.3,dairy.сыр
+95d4ed39-d21c-4329-9e09-0e4226e5b434,СЫР творожный Cremette Professional 65% ведро 10 кг. Hochland,dairy.сыр,0.3,dairy.сыр
+2f439551-27cc-474a-a85b-209889d2eaa2,"СЫР творожный сливочный ""Лабне"" 55% ведро 1 кг. Чудское озеро",dairy.сыр,0.3,dairy.сыр
+cacdab03-3792-4b31-906a-bcd324be34bd,"СЫР творожный 70% 2,2 кг. PROFI CHEESE",dairy.сыр,0.3,dairy.сыр
+6c04fd88-1ff1-4996-aea3-1eefe92a4bdb,"СЫР творожный 70% 5,5 кг. PROFI CHEESE",dairy.сыр,0.3,dairy.сыр
+00fefdf6-8724-4e6c-8119-4e322b901ea8,ЧУКА салат из морских водорослей 1 кг. RISMA,seafood.shrimp,0.3,seafood.shrimp
+b3a68655-8027-4e98-8fef-96b0706d50ab,КОКТЕЙЛЬ морской 1 кг. RISMA,seafood.shrimp,0.3,seafood.shrimp
+300801d2-2d0a-4052-b188-bc6157499d07,ЛАНГУСТИНЫ L1 (10/20 шт/кг) c/г в панцире с/м 2 кг. CABO VIRGINES (2276),seafood.shrimp,0.3,seafood.shrimp
+3212d563-fc6f-4be1-87ed-092da0be77f2,СЛИВКИ для соуса ультрапастеризованные 23% 500 гр. Parmalat,condiments.sauce,0.3,condiments.sauce
+88423cec-f877-4f4f-a543-030faa791589,КРЕМ комбинированный на растительных маслах с добавлением молочного жира 33% 1 л. Сreamart,condiments.sauce,0.3,condiments.sauce
+fd6bc7de-6704-4849-9418-39e67a6a2a6e,КРЕМ на растительных маслах 20 % 1 л. Сreamart,condiments.sauce,0.3,condiments.sauce
+8ae41049-79bc-442e-8bec-a70778a80480,КРЕМ на растительных маслах de Chantilly 27% 1 л. Соблазн,condiments.sauce,0.3,condiments.sauce
+e4cf552c-b41c-4bcc-bf9a-9a2316b45573,КРЕМ на растительных маслах Diamond 26% 1 л. Соблазн,condiments.sauce,0.3,condiments.sauce
+276d26fd-561c-4496-a129-9fa22ce6e193,"ПРОДУКТ со вкусом сыра Токио 3,3 кг. Bakery Mix",dairy.сыр,0.3,dairy.сыр
+ed82c8fa-4dab-4277-98d0-6ac3db6f6774,"СПРЕД растительно-жировой 82,5% вес 10 кг.",dairy.сыр,0.3,dairy.сыр
+b6502b79-761d-4a52-9750-b98ba47519d7,ЛЕЙЗ Сыр 70 гр.,dairy.сыр,0.3,dairy.сыр
+de8d4aed-c4e6-44dd-a936-1c834283d1f6,РАСТИТЕЛЬНЫЕ СТРИПСЫ вместо говядины 150 гр. GREENWISE,meat.beef,0.3,meat.beef
+0692e9f8-48de-4ce4-a030-ecaabb9562e3,БАТОНЧИК 6*32*55 гр. Bounty Everest,seafood.shrimp,0.3,seafood.shrimp
+30d252b1-b51d-4bc0-84a8-526d81b8a764,БАТОНЧИК Everest 26 гр. Milky Way,seafood.shrimp,0.3,seafood.shrimp
+edef6dac-1d5c-411b-9b3b-16ca899d19d9,БАТОНЧИК Лесной орех Everes 5*32*81г,condiments.spice,0.3,condiments.spice
+73a00120-99eb-46cb-ab1a-fff90c9e1b74,БАНКА круглая прозрачная 360 мл (d112 мм) 1 кор/400 шт. Перинт,condiments.spice,0.3,condiments.spice
+4ad0d924-b5c7-425e-84bf-e9905c946f4c,БАНКА круглая прозрачная 500 мл (d112 мм) 1 кор/400 шт. Перинт,condiments.spice,0.3,condiments.spice
+8d931a9c-2f33-4e71-b7b4-8171996fd3ab,СОУСНИК 30 мл 1 блок/80 шт. Покровский полимер,condiments.sauce,0.3,condiments.sauce
+929afbd9-1ede-49fb-8495-dc696caf0b3c,СОУСНИК 50 мл 1 блок/80 шт. Покровский полимер,condiments.sauce,0.3,condiments.sauce
+90543220-b9c3-4e3f-992d-49c209aa73cd,СОУСНИК 80 мл 1 блок/80 шт. Покровский полимер,condiments.sauce,0.3,condiments.sauce
+9e0d7a92-ab3a-46ac-a84e-ef29b1dfbfcc,"ПОЛОТНО вафельное отбелённое 0,45*60 м 125 г/м 1 шт.",condiments.sauce,0.3,condiments.sauce
+851d21ef-3d2e-4df7-add4-b01ce2cde2e6,Сырники зам 7кг/коробка,dairy.сыр,0.3,dairy.сыр
+fadd10e2-528f-4797-8200-74f56a527f92,Агар-агар 6гр,condiments.spice,0.3,condiments.spice
+5f7161bb-8a01-4c89-91b8-a003eb9b6cb1,Соус Glaze темный бальзамный 500гр,condiments.sauce,0.3,condiments.sauce
+f61b295f-605a-4a9f-8716-2e5a11b94cdf,Сыр Бри ТМ Alti 60% 125гр,dairy.сыр,0.3,dairy.сыр
+2f128458-1163-4187-b1ad-b520849cb269,Сыр блю чиз с гол/ плесенью 50% 100 гр,dairy.сыр,0.3,dairy.сыр
+fc0cae7e-faf6-4766-b1c1-ed26e80d199b,Сыр Гранд блю с голубой плесенью 56% 100гр,dairy.сыр,0.3,dairy.сыр
+471ca330-48ba-4d1b-ae73-ee48b9fdff5c,"Сыр Гауда Люкс 50% Сырная долина, брус",dairy.сыр,0.3,dairy.сыр
+0b8a4d5d-3a42-4b0e-a5c4-a7ca6082e2f2,Сыр косичка копченая вес,dairy.сыр,0.3,dairy.сыр
+22e68f6b-51f5-44ff-a18e-8931707fb3ed,Сыр маскарпоне Bonfesto 70% 500г,dairy.сыр,0.3,dairy.сыр
+43e26ec4-b3e0-47fd-a158-0307cb27a477,Сыр мягкий кавказский 45% Стародуб,dairy.сыр,0.3,dairy.сыр
+44332a8c-f394-4fd2-a9fc-a42f078f99f5,Сыр сиртаки синяя 55% 330гр,dairy.сыр,0.3,dairy.сыр
+6d997548-e6ab-4e56-be73-5666deb0b636,"Сыр творожный Креметте 2,2кг",dairy.сыр,0.3,dairy.сыр
+59de7a98-195e-4997-b1ba-7e5c29708573,Сыр мягкий Natura Professional 65% 2кг ведро,dairy.сыр,0.3,dairy.сыр
+9b86bb84-4ca7-4f5e-8097-80ff26cb6aea,Сыр тофу 500гр,dairy.сыр,0.3,dairy.сыр
+50c5459b-17b1-4111-8baf-f396431a1c46,Творожный продукт  деревеское подворье 9% 5 кг,dairy.сыр,0.3,dairy.сыр
+0eb9e713-7a1c-4d25-8662-34053dc32cd7,Мука Кирова 50 кг,staples.мука,0.3,staples.мука
+240fb01a-a1ab-4b5c-ab8c-0d7cabb099db,Мука макфа 2 кг,staples.мука,0.3,staples.мука
+a25bac23-2117-4119-97f2-f0bd57cef2a6,Мука лимак в/с 2кг,staples.мука,0.3,staples.мука
+14c50f46-48ee-4415-a486-9ce17dc6f451,Мука предпортовая 10кг.,staples.мука,0.3,staples.мука
+cf0f798c-4496-4cb8-8ad1-585b32d01dd5,Мука предпортовая 2кг,staples.мука,0.3,staples.мука
+f2f86fa7-ac44-44c7-9fc0-83278c397451,Суповой набор из курицы вес,meat.chicken,0.3,meat.chicken
+7d323065-45a4-41e8-b747-d5bd42d88be7,Арахис очищенный бланшированный,dairy.сыр,0.3,dairy.сыр
+1aad136a-6a53-43bf-a699-a313882a3320,Грецкий орех в скорлупе вес,condiments.spice,0.3,condiments.spice
+3091d39f-d0cb-49bf-8618-0a254853f4d6,Орех Грецкий Бабочка,condiments.spice,0.3,condiments.spice
+03ad7d17-02f3-41e9-a9da-410b69bce7de,Орех Кедровый очищенный вес,condiments.spice,0.3,condiments.spice
+cd5488e2-e53f-444a-969a-9d9c9d7910ad,Орех Макадамия очищеный,condiments.spice,0.3,condiments.spice
+6ea3704a-e850-479f-9991-d89bdd5991ce,Орех Миндаль очищенный вес,staples.мука,0.3,staples.мука
+5f70b7fd-bc11-4fd0-9a29-a784023a9375,Орех Пекан вес,condiments.spice,0.3,condiments.spice
+86d566b5-2cfa-4bb4-bc92-adc9ad84b821,Орехи Грецкий орех четвертинки,condiments.spice,0.3,condiments.spice
+89a4975d-2a5f-4506-a9e9-560192944cba,Финики королевские 1кг,seafood.shrimp,0.3,seafood.shrimp
+d16c60d7-0f93-477b-9ea1-ccbb415ece4e,Фисташки очищенные вес,seafood.shrimp,0.3,seafood.shrimp
+661c22a4-f8e1-432b-9668-aaceef12d06d,Бадьян вес,condiments.spice,0.3,condiments.spice
+ac20043e-fb46-442a-bed6-add43d1a2f59,Ванилин 1кг,condiments.spice,0.3,condiments.spice
+bfd280d0-4354-49d2-8e39-d5be85461a0a,Гвоздика сушеная целая вес,condiments.spice,0.3,condiments.spice
+b1c102f3-01b1-4112-8875-673db006640e,Зира (кумин) молотый 400гр ЕМ Специи,condiments.spice,0.3,condiments.spice
+88022b52-3ff3-4539-b005-e53a155faacb,Зира вес,condiments.spice,0.3,condiments.spice
+3837bb43-07e1-478a-aa18-f1c42087dddf,Кардамон Молотый Ем Специи 400гр банка,condiments.spice,0.3,condiments.spice
+42254a1f-b588-46a0-9c99-b6a1cf6c0b56,Кардамон целый (зерно) вес,condiments.spice,0.3,condiments.spice
+8404095c-da65-4ae7-8802-1f53526bf0a4,Карри ЕМ Специи 400гр,condiments.spice,0.3,condiments.spice
+3f49dbc3-700b-467f-a39f-1262529a9965,Корица молотая вес,condiments.spice,0.3,condiments.spice
+65cfcccb-4711-43a9-894b-793c37d7b442,Корица молотая ЕМ специи 400гр,condiments.spice,0.3,condiments.spice
+0c925085-fff8-49d2-aa62-02a6105ec109,Корица палочки кг,condiments.spice,0.3,condiments.spice
+bdf18fd9-9e51-41b2-8adf-ef170eac6961,Корица палочки ЕМ Специи 250гр банка,condiments.spice,0.3,condiments.spice
+24edacc9-03cf-4335-ba0e-858afd0e3e59,Лавровый лист вес,condiments.spice,0.3,condiments.spice
+383c5530-34aa-4bf7-a36a-469158462639,Смесь пять перцев дробленная ЕМ специи 500гр банка,condiments.spice,0.3,condiments.spice
+9a487ec8-3c30-4cd3-9cd4-59e9ffd26604,Хмели Сунели вес,condiments.spice,0.3,condiments.spice
+2113d51f-e6f2-430c-9498-a57416e15498,Уцко-Сунели вес,condiments.spice,0.3,condiments.spice
+6b1ccd6d-4b0f-4cb3-aa33-310cf58e8cd3,Чеснок сушеный гранул. 500гр ЕМ Специи Банк,condiments.spice,0.3,condiments.spice
+72c13c02-1344-42fd-af5f-f738e22e60ce,Соус Барбекю Эфкофуд 1кг пакет,condiments.sauce,0.3,condiments.sauce
+f75298db-17d9-4982-bda1-a1ff866c36cd,Соус Ворчестер 800мл,condiments.sauce,0.3,condiments.sauce
+cf652e4e-bc0d-4671-9b2e-5f3819f8aa2f,Соус Горчичный Эфкофуд 22% 1кг,condiments.sauce,0.3,condiments.sauce
+7603b0a4-448c-4359-bade-e435283b8441,"Соус Деми Гласс 1,8кг Knorr",condiments.sauce,0.3,condiments.sauce
+563b9b11-0277-4421-9401-67a93a996ffb,"Соус Деми Гласс 1,5кг Dinner Service",condiments.sauce,0.3,condiments.sauce
+09de958a-d014-42a6-89b5-12cb6c4d96c7,Соус Наршараб 400гр,condiments.sauce,0.3,condiments.sauce
+165f1bd1-c96f-4b17-8800-e5bd7285730c,"Соус ореховый Мидори 1,5л",condiments.sauce,0.3,condiments.sauce
+55e4b339-1c35-480e-b857-1bd9773216b7,Соус рыбный 700мл Арой-Д,condiments.sauce,0.3,condiments.sauce
+89527511-6b7b-49cd-baaa-d972a38b22bd,Соус Сырный оригинальный пакет 1кг Heinz,condiments.sauce,0.3,condiments.sauce
+3aeb0940-133a-4938-9636-165206f41e12,Соус Сырный Эфко 35% 1кг пакет,condiments.sauce,0.3,condiments.sauce
+e6dcc3f7-6921-48c0-95fb-1a9db480c11a,"Соус Терияки Mitsurikan 1,8л",condiments.sauce,0.3,condiments.sauce
+6ee14b3b-9fed-4c46-91e0-b4760cf61142,Соус Чили сладкий для курицы ст/б 920гр AROY-D,condiments.sauce,0.3,condiments.sauce
+b78a8f36-e47d-46d3-933e-71449e7b5be7,Соус Шрирача чили 815гр,condiments.sauce,0.3,condiments.sauce
+db6f358a-9a08-42e8-851b-a4d62d59d867,"Соус Унаги Mitsurican 1,8л",condiments.sauce,0.3,condiments.sauce
+df56f2f5-99e8-433b-9f63-0187c44a6edb,Соус устричный Pearl R/Bridge 510гр,condiments.sauce,0.3,condiments.sauce
+4e29a823-5413-491f-84f6-667164e737d7,Батон нарезной,dairy.сыр,0.3,dairy.сыр
+7806371b-f145-409f-9e9c-29bf18d08e71,Тимьян (Чабрец),condiments.spice,0.3,condiments.spice
+54662ff1-af13-4f23-aef0-22ad40997a11,Фенхель,condiments.spice,0.3,condiments.spice
+e38a5d48-9af5-47fa-af41-5329ebd4b27e,Айва,condiments.sauce,0.3,condiments.sauce
+2ea2431b-c032-4645-8f6f-315d16b509a6,Чеснок соленый /0.5 кг,condiments.spice,0.3,condiments.spice
+6e06ab02-370d-4f6b-a45a-f33ca97b628c,Чеснок (1) кг,condiments.spice,0.3,condiments.spice
+934f6708-e0f6-4178-b090-12ae64809fda,"СЫРНИКИ творожные 70 г (-F-), MR.FOOD, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+95a37f4e-6205-48ab-bc73-47bdf380dde2,"СЫРНИКИ 200 шт х 50 г, COOK_ME, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+9f398612-fa59-4b42-8a35-169c3f7a3c45,"СОУС сырный 1,8 кг, КНОРР, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+5e447cfa-d410-4be6-b1df-7f26f2484395,"СОУС Голландский 1,7 кг, КНОРР, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+27719a4d-e422-4d53-8a51-864cdf54ed52,"СОУС Деми Глас 1,8 кг, КНОРР, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+d975de74-9497-4cea-81a5-24c7abe0babe,"СОУС Деми Глас 1,8 кг, MAREVEN FOOD, РОССИЯ (-С-)",condiments.sauce,0.3,condiments.sauce
+8e0661a8-77d5-440d-af75-939201b7e490,"СУП-ПЮРЕ сырный Professional 1,7 кг, КНОРР, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+74f914ed-748e-4c60-be1e-60b6f620099f,"СЕМГА свежемороженая с головой 5-6 кг качество сырья PREMIUM, ЧИЛИ",dairy.сыр,0.3,dairy.сыр
+1ee0a194-e77b-4478-85d1-08703530028a,"СЕМГА свежемороженая с головой 6-7 кг качество сырья PREMIUM, ЧИЛИ",dairy.сыр,0.3,dairy.сыр
+44ace855-baab-4b99-904c-037818623276,"СЫР Маскарпоне 83% 500 г,COOKING,БЕЛАРУСЬ (-FP-)",dairy.сыр,0.3,dairy.сыр
+e290cba7-862b-4c6c-9607-1d30004ab25c,"МИНДАЛЬ мука мелкого помола 1 кг, MANOLET, ИСПАНИЯ",staples.мука,0.3,staples.мука
+e7e13e6e-e6f2-4a0d-bf62-3848d6e4cb1b,"МИНДАЛЬ мука мелкого помола 1 кг, VALERICO, БЕЛАРУСЬ",staples.мука,0.3,staples.мука
+b1f093bb-7691-4bc1-8daa-6cb0a598df7c,"МИНДАЛЬ мука мелкого помола 10 кг, CALCONUT, ИСПАНИЯ",staples.мука,0.3,staples.мука
+376c5413-5f61-4da0-bd1e-bc0ba9770854,"МИНДАЛЬ мука мелкого помола 10 кг, MANOLET, ИСПАНИЯ",staples.мука,0.3,staples.мука
+28ca37e9-94c6-497c-8912-fca544cb3cce,"МИНДАЛЬ мука мелкого помола 10 кг, БЕЛАРУСЬ",staples.мука,0.3,staples.мука
+27aacf44-5aaf-46c2-bd02-b2aa8d2f574d,"МИНДАЛЬ лепестки очищенные 1 кг, AYDIN, ТУРЦИЯ",seafood.shrimp,0.3,seafood.shrimp
+b11172e0-8835-4443-8c1f-24d6751890a0,"МИНДАЛЬ лепестки очищенные 10 кг, AYDIN, ТУРЦИЯ",seafood.shrimp,0.3,seafood.shrimp
+bbf4b16a-da9a-4815-ba47-f543fc34212f,"СВИНИНА Прошутто сыровяленая 2 кг, SD, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+863eef1b-688f-4198-8942-9dbdd957617b,"СПЕЦИИ прованские травы сушеные 270 г/1200 мл пэт, KOTANYI, АВСТРИЯ",condiments.spice,0.3,condiments.spice
+d73f6bd2-ce4c-4336-87e0-8059aabf2c59,"СПЕЦИИ хмели-сунели 450 г/1200 мл, KOTANYI, АВСТРИЯ (-С-)",condiments.spice,0.3,condiments.spice
+3ab4ee50-f90c-498d-89c8-ac99b1982bdc,"СЫР Рикотта 50% 500 г,COOKING,БЕЛАРУСЬ (-P-)",dairy.сыр,0.3,dairy.сыр
+032348b8-8436-4556-8143-e2364792327e,"СОУС для пиццы белый сырный 500 г, COOKING, БЕЛАРУСЬ",condiments.sauce,0.3,condiments.sauce
+ddeb0d35-7cac-4e41-bac7-5354a2897319,"СОУС для пиццы со специями 4100 г/4250 мл, COOK_ME PRO, ИТАЛИЯ (-F-)",condiments.sauce,0.3,condiments.sauce
+2207682d-0295-4437-b3d2-2a6f93410c1b,"СОУС для пиццы Классичеcкий 4100 г/4250 мл, COOK_ME PRO, ИТАЛИЯ (-F-)",condiments.sauce,0.3,condiments.sauce
+f695ddf7-dc2d-49c8-a808-99bb7604d3ac,"СОУС Мирин 20 л, ДУНКАН, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+a9175fed-f733-4aee-b851-2c1f3723d229,"СОУС орехово-кунжутный 1,5 л, TAMAKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+74629e91-d98e-4ec2-875c-71b8dfe84172,"СОУС кунжутный 1 л, TAMAKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+5249a77c-54ac-499d-83f1-c92cdb540b62,"СОУС рыбный 0,7 л, AROY-D, ТАИЛАНД",condiments.sauce,0.3,condiments.sauce
+8e415e7a-de3f-4a99-93cf-b99007f8d905,"СОУС сладкий чили для курицы 920 г/720 мл, AROY-D, ТАИЛАНД",condiments.sauce,0.3,condiments.sauce
+107164a5-d492-410c-a297-c495c7e4fa02,"СОУС сладкий чили для курицы 5,4 кг/4,5 л, AROY-D, ТАИЛАНД",condiments.sauce,0.3,condiments.sauce
+d10f7c2d-cb71-4b98-83da-7f0cce0936fa,"СОУС сладкий чили для курицы 1,8 л, TAMAKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+de88b2bc-97ec-42d2-aefe-09fa695d904e,"СОУС Терияки 1,8 л, HOKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+160de77d-cfbc-4f4b-84cd-c276352a395d,"СОУС Терияки 1,8 л, TAMAKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+05c31472-aa9a-4a29-a7a3-71f968dc2bd9,"СОУС Тобанджан 1 кг, NANTONG, КИТАЙ",condiments.sauce,0.3,condiments.sauce
+c288f6d0-43d3-4ef0-948a-10627c8ec1fd,"СОУС Унаги 1,8 л, HOKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+dd0ab1b5-21b8-403d-909e-7fb5e32f6379,"СОУС Унаги 1,8 л, TAMAKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+da67a051-a57c-4cbb-a544-96ddd4b48f09,"СОУС устричный 510 г, PRB, КИТАЙ",condiments.sauce,0.3,condiments.sauce
+8c65690f-afa2-4cc3-9447-b7065780a6be,"СОУС Шрирача 815 г/740 мл, UNI-EAGLE, ТАИЛАНД",condiments.sauce,0.3,condiments.sauce
+27301ab3-4fff-4e7a-b0d5-c3f562de7523,"СОУС Шрирача 475 г/430 мл, UNI-EAGLE, ТАИЛАНД",condiments.sauce,0.3,condiments.sauce
+be90fca6-d8f4-4059-885b-71b0deb689e0,"СОУС Шрирача 484 г/440 мл, CRYING THAIGER, ТАИЛАНД",condiments.sauce,0.3,condiments.sauce
+c2e0e8a5-4593-4adf-9793-5943e2446694,"СОУС Шрирача 470 мл, TAMAKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+3aa4997e-255b-41cf-8d16-73700066938a,"СОУС Кимчи 1,8 л, TAMAKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+e2210444-ec12-4d89-b875-19aacfd8463f,"СОУС ШАПКА ЯКИ для роллов 72%. FOOD MATIK, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+89422395-4ffe-46e7-b235-c07d499304bc,"СОУС Спайси 1 л, TAMAKI, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+493e1d2f-52cf-4a4d-836a-70003906de2a,"СОУС Пад Тай 840 г, СЕН СОЙ, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+44a4309d-8205-4aca-8855-747009b08299,"СОУС барбекю 25 мл дип-пот,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+be702791-c290-4564-a2c3-217319aff203,"СОУС барбекью острый 125 шт х25 г дип-пот, PIKADOR, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+c2ea9eab-c8ca-451f-b272-297aaf145203,"СОУС горчичный 25 мл дип-пот, HEINZ, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+fea2cd70-907b-4758-b758-89bb6258d6c5,"СОУС кисло-сладкий 25 мл дип-пот,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+218c8f82-406c-4a18-8305-d754d9d6ce91,"СОУС сырный 25 мл дип-пот, HEINZ, РОССИЯ (-F-)",condiments.sauce,0.3,condiments.sauce
+fc7e6b30-51bc-4aa6-9464-01b448ab99b3,"СОУС сырный Пармеджано 125 шт х25 мл дип-пот, HEINZ, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+634e34b5-85a2-4fd5-8d71-dbe47fdc5f6a,"СОУС сырный с халапеньо 125 шт х25 мл дип-пот, PIKADOR, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+5c66030e-6bb1-4bdd-a40a-b234e4017777,"СОУС Тысяча островов 25 мл дип-пот, HEINZ, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+e4c41854-860d-44e3-a0f4-deba51f40728,"СОУС Цезарь дрессинг 25 мл дип-пот,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+67eb1819-ba67-47e6-96c6-87d22c6a2333,"СОУС чесночный 25 мл дип-пот,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+cd7f8d8b-9fab-41d5-9d31-bf8bdafea342,"СОУС песто зеленый 180 г стекло, BELLA CONTADINA, ИТАЛИЯ",condiments.sauce,0.3,condiments.sauce
+d00063f1-c534-4906-98ac-56af36dd7354,"СОУС барбекю 1 кг балк, COOK_ME, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+d28a3b3c-f650-48b8-9ec8-3b899ec3a1db,"СОУС барбекю 1 кг балк,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+c9f56e62-1abc-4a31-8ee6-23bd0e736354,"СОУС барбекю 1 кг, ХЕЛЛМАННС, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+ddde7fda-7305-43ef-9172-74edd011ab46,"СОУС барбекю 1 кг балк,ПИКАНТЬЕ,РОССИЯ (-C-)",condiments.sauce,0.3,condiments.sauce
+f5e0afbc-e8f1-4b79-9640-fc2c31426e21,"СОУС барбекью 1 кг, PIKADOR, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+560c2acc-4c3a-41c7-8f23-96a744ddccdf,"СОУС Бешамель 1,8 кг, КНОРР, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+d651b7c6-4840-4d1d-91c5-071c7516e754,"СОУС растительный горчичный 30% 1 кг балк, HI, РОССИЯ (-C-)",condiments.sauce,0.3,condiments.sauce
+3116c754-1e55-4cc0-8ab0-251646aa5214,"СОУС горчичный 700 г балк, HEINZ, РОССИЯ (-F-)",condiments.sauce,0.3,condiments.sauce
+9c3fd04b-6f5e-4476-8caf-f464ecd04cd6,"СОУС горчичный 2 кг балк с коннектором,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+5b1800d9-8e5a-4bcc-814a-ae978f4d2250,"СОУС Гриль тейсти 1 кг балк, COOK_ME, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+f9e312f7-634c-44a9-b70a-3552a2231807,"СОУС гриль 1 кг балк, HEINZ, РОССИЯ (-F-)",condiments.sauce,0.3,condiments.sauce
+c9899109-2638-47f3-b133-cf8ea3887adb,"СОУС для гамбургера с маринованными огурцами 1 кг балк, COOK_ME, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+7d000477-b4f9-452b-ae87-0bc6e2c81064,"СОУС на растительных маслах Бургер 1 кг балк,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+11a9b1a6-e142-4a79-bd5a-c9985d4ae744,"СОУС кисло-сладкий 1 кг балк,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+f058e256-39b0-42ae-9879-18ce2ad23b4d,"СОУС медово-горчичный 1 кг, ХЕЛЛМАННС, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+42658b15-a4a5-4bcd-a5a2-d70100194076,"СОУС медово-горчичный 1 кг балк,ПИКАНТЬЕ,РОССИЯ (-C-)",condiments.sauce,0.3,condiments.sauce
+f93d45a8-1b5d-4928-891d-19b6b13b3288,"СОУС Наполи Professional 1,8 кг, КНОРР, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+6ad65870-2fd1-43d3-b027-a6cf13ab1966,"СОУС Сальса жгучий 1 кг балк,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+305b1602-a04f-4bdf-aea4-59c455641f65,"СОУС сливочная база Professional 1,5 кг, KNORR, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+fa4b1edb-58e2-45e7-811f-563a0a9db99f,"СОУС сырный 1 кг балк, COOK_ME, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+6429f53a-edfd-4a08-b24a-dc7e5129101d,"СОУС сырный 35% 1 кг балк, EFKO FOOD, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+0b44f6fb-8266-441e-a6be-092f8909840e,"СОУС сырный 1 кг балк, HEINZ, РОССИЯ (-F-)",condiments.sauce,0.3,condiments.sauce
+d44bfe13-f301-4c89-b676-0faa7fe28150,"СОУС сырный Пармеджано 1 кг балк,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+7505a21b-4954-4543-bb00-d16ea91a2754,"СОУС сырный на основе растительных масел 1 кг, PIKADOR, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+44aa2c46-0c15-4aec-8e82-43902c14bcd3,"СОУС Терияки 1 кг балк, HEINZ, РОССИЯ (-F-)",condiments.sauce,0.3,condiments.sauce
+deb141fb-d681-4ad9-b759-c5b6adfb06ae,"СОУС терияки 1 кг пэт,ПИКАНТЬЕ,РОССИЯ (-C-)",condiments.sauce,0.3,condiments.sauce
+e007f863-3202-421d-9b57-7661f7c968fa,"СОУС Тысяча островов 1 кг балк,HEINZ,РОССИЯ",condiments.sauce,0.3,condiments.sauce
+50481b01-f50e-47cc-a69b-9e88f673e845,"СОУС Цезарь Professional 1 кг балк, EFKO FOOD, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+520cac9b-6da2-4087-9104-89481c1e1432,"СОУС Цезарь 2 кг балк, HEINZ, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+63328b42-13a7-426e-8d58-0568542322e1,"СОУС сырный Чеддер 1 кг, HOCHLAND PROFESSIONAL, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+5b812700-e08c-40b8-9917-e505fa45e688,"СОУС Чеддер 1 кг, ГУРМИКС, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+2fe91db6-b810-4baf-a7b7-1921d1f42384,"СОУС чесночный на основе растительных масел 1 кг, PIKADOR, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+33493899-a5ea-4784-af0b-db4249dd7fa4,"СОУС сливочный на основе творожного сыра 50% 1 кг балк, HOCHLAND PROFESSIONAL, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+30d8a2d7-f3c1-46d3-9dc7-767c5390d5e9,"СОУС крем бальзамический темный 0,5 л, LUCIANO, РОССИЯ (-C-)",condiments.sauce,0.3,condiments.sauce
+c4114320-b0dc-4c6d-a5cf-11edb4c88d40,"СОУС с добавлением бальзамического уксуса Модены темный 500 мл, CASA VERDI, ИТАЛИЯ",condiments.sauce,0.3,condiments.sauce
+2dfbfe3e-cb40-4998-bdad-405850a4465e,"СПЕЦИИ корица целая 350 г/1200 мл пэт, KOTANYI, АВСТРИЯ (-C-)",condiments.spice,0.3,condiments.spice
+aa17fba6-28e6-47c7-99ac-d696d17b9bfa,"СПЕЦИИ лук жареный 1 кг, COOK_ME, ТУРЦИЯ",condiments.spice,0.3,condiments.spice
+ee51a874-dc5f-4b17-803d-05ccf54ab640,"СПЕЦИИ лук жареный 1 кг,KOTANYI,АВСТРИЯ (-F-)",condiments.spice,0.3,condiments.spice
+9e67eb9e-d4e5-4200-a309-11747bafbcae,"СПЕЦИИ лук жареный 1 кг, ИНДИЯ (-C-)",condiments.spice,0.3,condiments.spice
+d0552624-ce2d-485f-80af-e54f5b9b4c7d,"СЫР Гауда 40% 2,6 кг, БАСНИ О СЫРЕ, БЕЛАРУСЬ",dairy.сыр,0.3,dairy.сыр
+533b5319-16f3-49cc-b62b-f1e245461d32,"СЫР Гауда 45% ~4 кг, РОГАЧЕВ, БЕЛАРУСЬ (-F-)",dairy.сыр,0.3,dairy.сыр
+8a71b1a4-17a2-4217-bcd6-cffad2bcf461,"СОУС сырный Блю Чиз 500 г, HOCHLAND PROFESSIONAL, РОССИЯ",condiments.sauce,0.3,condiments.sauce
+3f52a13f-9438-48d3-8aa9-12854b2ed87d,"СЫР Камамбер с белой плесенью 50% 125 г, COOK_ME PRO, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+fb8f8e22-4ba3-4faa-9361-14178d6a4f88,"СЫР с голубой плесенью Рокфорини 50% ~3 кг, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+73d63422-3ba2-4f1c-968d-1f75f6c2b321,"СЫР Grand Blue сливочный с голубой плесенью 56% 2,6 кг,MILKANA,АРГЕНТИНА",dairy.сыр,0.3,dairy.сыр
+0be17c39-eb2e-4fce-bf10-8f6616674efa,"СЫР с голубой плесенью 50% 100 г, MONBLU, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+78b4c239-ae49-456e-9f8c-3abbfb1c852e,"СЫР творожный сливочный 65% 10,5 кг, САВУШКИН, БЕЛАРУСЬ",dairy.сыр,0.3,dairy.сыр
+7935ed26-f46f-4341-99c6-0001e3be9f01,"СЫР творожный сливочный 65% 10 кг, МИЛЕТТО, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+a76052d7-9ff6-4ae1-a594-c05b2fc7a78d,"СЫР Кремчиз сливочный мягкий 70% 11 кг,COOKING,БЕЛАРУСЬ (-FP-)",dairy.сыр,0.3,dairy.сыр
+f47b7106-9c30-43ae-99fc-5c6911aab716,"СЫР Кремчиз сливочный мягкий 70% 2,25 кг,COOKING,БЕЛАРУСЬ (-FP-)",dairy.сыр,0.3,dairy.сыр
+d2fc776b-2376-470d-b664-d86422166d69,"СЫР Кремчиз сливочный мягкий 70% 500 г,COOKING,БЕЛАРУСЬ (-FP-)",dairy.сыр,0.3,dairy.сыр
+44b9d329-f2f9-41e9-b97f-f7af80355de4,"СЫР Креметте Professional творожный 65% 10 кг,CREMETTE PROFESSIONAL,РОССИЯ (-FP-)",dairy.сыр,0.3,dairy.сыр
+d6071db6-51f1-4d5e-b555-d571a5169fe5,"СЫР Креметте Professional творожный 65% 1 кг, CREMETTE PROFESSIONAL, РОССИЯ (-F-)",dairy.сыр,0.3,dairy.сыр
+d97cbbeb-ec84-4817-b07d-cf99cf299682,"СЫР Креметте Professional творожный 65% 2,2 кг, CREMETTE PROFESSIONAL, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+895b5102-829c-492b-a705-bfc2aa44bdb9,"СЫР творожный сливочный 60% 1,1 кг, LACTICA, РОССИЯ (-F-)",dairy.сыр,0.3,dairy.сыр
+b9614898-55a8-4792-a5af-ea97138ab58f,"СЫР творожный сливочный 65% 1 кг, FRIENDCHEF, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+82266c1e-bdba-4a5c-9ed7-3a62dba03fb5,"СЫР творожный сливочный 65% 2,4 кг, САВУШКИН, БЕЛАРУСЬ",dairy.сыр,0.3,dairy.сыр
+f2e22cde-16d0-4bba-bbe8-75910c789438,"СЫР творожный сливочный 65% 3,3 кг, МИЛЕТТО, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+62bfe83b-f1d4-48d0-bb24-81b320977f6c,"СЫР творожный сливочный 69% 6 кг, SABAH, ИРАН",dairy.сыр,0.3,dairy.сыр
+aefb5406-8949-4b1a-b128-8360ce894aa6,"СЫР творожный сливочный 69% 1,5 кг, SABAH, ИРАН",dairy.сыр,0.3,dairy.сыр
+73fd0ef2-300c-4c96-a2d5-d9972db446ae,"СЫР творожный LaCreme 65% 2,2 кг, ЭКОМИЛК, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+7ef6d9df-3441-49d9-97c5-c6f846f94d05,"СЫР творожный сливочный 70% 5,5 кг, ПРОФИЧИЗ, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+439f5496-85b3-4e75-85ec-c94351c0fbb7,"СЫР творожный сливочный 70% 2.2 кг, ПРОФИЧИЗ, РОССИЯ (-F-)",dairy.сыр,0.3,dairy.сыр
+d9881022-850a-43cd-abcb-4614000dd879,"СЫР творожный сливочный 70% 5,5 кг, ПРОФИЧИЗ, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+4429a45d-67ce-4cbc-9c3e-73220bf09f94,"СЫР Камамбер с белой плесенью в панировке 50% 1 кг, ALTI, РОССИЯ",dairy.сыр,0.3,dairy.сыр
+e1147aac-cd59-4c07-afd8-91669c7f2e57,"ЧЕБУРЕКИ с курицей замороженные 5 кг, РОССИЯ",meat.chicken,0.3,meat.chicken
+333fb2eb-69a5-44e3-8946-d9ba4d5ab6fd,"Соус Генуэзский Песто Алла Дженовезе ""МЕНЮ"" (0,780 кг) ж/б кор. .",condiments.sauce,0.3,condiments.sauce
+29aa696b-2c20-4f8d-bfe9-6bcfc942814b,"Соус Песто ""Pesto alla Genovese"" на основе подсолнечного масла ""D`Amico"" ж/б (0,800 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+3413d82e-f868-4f5d-b19c-b8202a37f195,"Ассорти оливок сладкий микс NEFELI ст/бан (0,310 кг/300 мл)",condiments.sauce,0.3,condiments.sauce
+290c41a7-f5cc-4ad6-90d9-9474974a7058,"Оливки Халкидики с голубым сыром ""NEFELI"" ст./бан. (0,300 кг/300 мл) упак. .",dairy.сыр,0.3,dairy.сыр
+fdb27616-c702-4140-aeb2-bc6553913520,"Оливки Халкидики со сливочным сыром и соусом Ранч ""NEFELI"" ст./бан. (0,290 кг/300 мл) упак. .",condiments.sauce,0.3,condiments.sauce
+23a721dc-4c7f-4c1a-9c01-07e787eee490,"Джем персиковый дип-пот (25 мл/0,020 кг/0,021 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+925b0c2c-0a51-4683-9f1f-4da51d225694,"Джем вишневый дип-пот (25 мл/0,020 кг/0,021 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+473c3212-497d-4c48-bd1e-335c234f2f8d,"Джем малиновый дип-пот (25 мл/0,020 кг/0,021 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+d67e31dc-c68f-46eb-92a5-c575c6794024,"Джем клубничный дип-пот (25 мл/0,020 кг/0,021 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+6440a152-c778-436a-a21e-8fe88e25d4fb,"Окорок сыровяленый Alto Concetto охл. нарезка ( 0,100 кг) упак. . Россия НДС 10%",dairy.сыр,0.3,dairy.сыр
+82d06606-2bb7-421a-a3a9-38f79e0d0787,"Говядина сыровяленая Брезаола Alto Concetto охл. (~ 1,5 кг) НДС 10%",dairy.сыр,0.3,dairy.сыр
+426502ef-6390-4a05-aca3-66857c6dd5f3,"Окорок сыровяленый Alto Concetto охл. (~ 1,8 кг) упак. ~ 21 кг НДС 10%",dairy.сыр,0.3,dairy.сыр
+68515d97-1d8b-45e8-bac8-5363840807e0,"Говядина сыровяленая Alto Concetto охл. нарезка ( 0,100 кг) упак. . Россия НДС 10%",dairy.сыр,0.3,dairy.сыр
+757f6dc7-d862-4a2b-b0c7-10e363bed148,"Шейка сыровяленая Alto Concetto Коппа охл.нарезка ( 0,100 кг) упак. . Россия НДС 10%",dairy.сыр,0.3,dairy.сыр
+9dfc9507-73a3-4d47-a4d2-6ea84479ae33,"Сет Итальянский ( ассорти- ветчина /шейка сыровяленые) La Medea (0,100 кг) упак.Россия",dairy.сыр,0.3,dairy.сыр
+fde2e1bf-248a-4154-a33b-19ec2d5b3dc0,"Ветчина сыровяленая Prosciuttocrudo La Medea (0,060 кг) упак.Россия",dairy.сыр,0.3,dairy.сыр
+b04a721a-fd5d-48f2-8c34-06d9a95efb4f,"Колбаса сыровяленая полусухая Салями с острым перцем «Salumu di Reggiо» (0,200 кг)",dairy.сыр,0.3,dairy.сыр
+2e7d7ae1-be42-4d64-b21a-b99117d79cc4,"Колбаса сыровяленая полусухая Салями Традиционная «Salumu di Reggiо» (0,200 кг)",dairy.сыр,0.3,dairy.сыр
+1a828de5-77dc-4f07-97fa-4576a7c02a4d,"Колбаса сыровяленая полусухая Салями Монтанья «Salumu di Reggiо» (0,200 кг)",dairy.сыр,0.3,dairy.сыр
+8327b62a-3b51-4972-affa-935bf7d33eed,"Колбаса сыровяленая полусухая Салями Кампаньоло «Salumu di Reggiо» (0,200 кг)",dairy.сыр,0.3,dairy.сыр
+3f438595-ee85-4346-9657-79dc692458d8,"Колбаса сыровяленая полусухая Салями с Трюфелем «Salumu di Reggiо» (0,200 кг)",dairy.сыр,0.3,dairy.сыр
+bec63107-61c4-4d40-a083-87577a5df159,"Говядина сыровяленая Брезаола Ваканза (~ 1,000 кг) ~15 кг/упак Доброско",dairy.сыр,0.3,dairy.сыр
+7d3e99a9-5106-4247-895a-e134d4fe115e,"Продукт из свинины цельно кусковой сыровял кат.Б Coppa (Коппа) Solemici нар (0,090 кг) упак",dairy.сыр,0.3,dairy.сыр
+0ce60412-6251-4694-af9f-e83367afc8ac,"Продукт из свинины цельно куск.с/в кат.А «Lombo» («Ломбо») Solemici нар (0,090 кг) упак",meat.pork,0.3,meat.pork
+a0afae94-d7fe-4f95-bab5-3a312dda43e8,"Продукт из мяса свинины цельнокусковый с/в кат.А Prosciutto Crudo (Прошутто Крудо) Solemici нар (0,100 кг) упак",meat.pork,0.3,meat.pork
+14796397-e44c-4a86-8c30-06eaa5d976df,"Колбаски сыровяленые, Segreti d’Artigiano, Mini Fuet колбаски из оленины кат А (0,080 кг) упак",dairy.сыр,0.3,dairy.сыр
+32af9484-dcbe-4136-a1dd-fe64f6a5e6ea,"Колбаса сыровяленая из лося, Segreti d’Artigiano категория А, серв.нарезка (0,075 кг) упак",dairy.сыр,0.3,dairy.сыр
+f992d858-0466-436c-9330-7fa9bae63cdb,"Колбаса сыровяленая из зайца Segreti d’Artigiano категория А серв.нарезка (0,075 кг)",dairy.сыр,0.3,dairy.сыр
+4febc986-1ff3-4f4c-9dd6-b7135114ebdc,"Колбаса сыровяленая из марала Segreti d’Artigiano категория А серв.нарезка (0,075 кг) упак",dairy.сыр,0.3,dairy.сыр
+3d372179-0a3c-48a1-98f2-d08ce712250c,"Колбаса сыровяленая из косули Segreti d’Artigiano категория А, серв.нарезка (0,075 кг) упак",dairy.сыр,0.3,dairy.сыр
+9f5f16f6-0479-417d-b1d5-4c3596941dc0,"Колбаса сыровяленая из утки, Segreti d’Artigiano категория А, серв.нарезка (0,075 кг) упак",dairy.сыр,0.3,dairy.сыр
+e8eb2b9f-5ce7-41d2-bce9-72095a3d0aa0,"Колбаса с/в п/с из свинины Segreti d’Artigiano Фуэт Экстра в пряных травах кат А (0,110 кг)",meat.pork,0.3,meat.pork
+e9f17ff8-02b8-4839-b559-f4c6f3b54a83,"Колбаски сыровяленые, Segreti d’Artigiano, Mini Fuet колбаски из медведя кат А (0,080 кг) упак",dairy.сыр,0.3,dairy.сыр
+27968db4-b8b1-4e33-85f9-4314f49ffc33,"Колбаски сыровяленые, Segreti d’Artigiano, Mini Fuet колбаски из косули кат А (0,080 кг) упак",dairy.сыр,0.3,dairy.сыр
+56164baf-8c5e-41dd-9c24-324be0b27405,"Колбаски сыровяленые, Segreti d’Artigiano, Mini Fuet колбаски из лося кат А (0,080 кг) упак",dairy.сыр,0.3,dairy.сыр
+ac2c8ab7-986d-4869-8019-7b3fd7e1c06b,"Колбаски сыровяленые Segreti d’Artigiano Mini Fuet колбаски из зайца кат А (0,080 кг)",dairy.сыр,0.3,dairy.сыр
+b71d1326-797d-4c13-8eb8-46baa32428d9,"Колбаски сыровяленые, Segreti d’Artigiano, Mini Fuet колбаски из утки кат А (0,080 кг) упак",dairy.сыр,0.3,dairy.сыр
+84ab1b9f-f40e-4442-b5a2-10494d9bbe95,"Колбаски сыровяленые, Segreti d’Artigiano, Mini Fuet колбаски из марала кат А (0,080 кг) упак",dairy.сыр,0.3,dairy.сыр
+b03e9756-1fde-4e31-9afd-650b0148a8da,"Колбаса сыровяленая из оленины, Segreti d’Artigiano категория А, серв.нарезка (0,075 кг) упак",dairy.сыр,0.3,dairy.сыр
+d1c73e7e-6785-4f5a-84bd-b8f582b1666c,"Сосиски для хот-догов РЕМИТ из свинины зам в/у (10х75г-0,750 кг)",meat.pork,0.3,meat.pork
+26eee095-d75b-4faf-bfab-e75b80357d1d,"Сосиски Гриль с говядиной РЕМИТ зам в/у (10х75г-0,750 кг)",meat.beef,0.3,meat.beef
+b69ff1f1-f910-4a26-a988-cbbead8de8f8,"Колбаски Пепперони с сыром в/у зам Окраина (~0,600 кг) упак. ~ 6 кг",dairy.сыр,0.3,dairy.сыр
+54dd7aa5-b56f-4927-8ab7-17db53300bac,"Сосиски Гриль с говядиной РЕМИТ зам в/у (10х75г-0,750 кг)",meat.beef,0.3,meat.beef
+308341d3-64a2-439e-943f-f4a4e0a6d452,"Пастрами из утки с кожей в специях запеченое ДЕЛИ МИТ зам (~ 0,200 кг) упак.~ 6,4 кг",condiments.spice,0.3,condiments.spice
+d3106f7d-7367-45d8-8126-be7e9f71b24c,"Сосиски вареные из свинины для гриля HoReCa в/у заморож. (0,960 кг) упак.. Дымов",meat.pork,0.3,meat.pork
+aa70db20-5c51-49d9-89a1-b8b748aa6d32,"Сосиски из говядины для гриля, ст.вес зам в/у (0,960 кг) упак.Дымов (1821)",meat.beef,0.3,meat.beef
+0ca31b7a-1c04-40ec-84d0-121c654412b9,"Сосиски вареные из курицы для гриля HoReCa в/у заморож. (0,960 кг) упак.. Дымов",meat.chicken,0.3,meat.chicken
+088f7743-e86c-43b2-8de6-2208927dfc20,"Бекон экстра с/к из свинины охл 0,500 кг ТМ Черкизово",meat.pork,0.3,meat.pork
+301a6189-1b46-4922-8066-6d81de1ad63d,"Утиная сыро-копч. грудка МАГРЕ в/у 225+ зам (~ 0,200 кг) упак. ~ 10 кг",dairy.сыр,0.3,dairy.сыр
+3f888569-c247-4797-90db-5e3a2e1d1afc,Окорочок ЦБ зам вал ~13кг/упак КЦ (15-23-04) 1010262065,condiments.sauce,0.3,condiments.sauce
+a3fc72db-8bbb-4b12-b90b-9f86424045d8,"Мясо курицы ц/б для Шаурмы Загорский Бройлер ( ~ 3,000 кг) упак.~ 12 кг",meat.chicken,0.3,meat.chicken
+77efd5b8-1f62-42b3-ad9d-072ebd9820f6,Крыло целое ЦБ зам вал ~13кг/упак КЦ (1010259065),condiments.sauce,0.3,condiments.sauce
+7ab27f5b-fbd0-4732-a417-30f9fa13d733,"Ребра свиные для барбекю и гриля МАРУСЯ с/м (~ 0,500 кг - 0,700 кг) упак.~ 13-26 кг",condiments.sauce,0.3,condiments.sauce
+b208465b-51ac-40d6-bdaa-443685dc65c5,"Сыр Рикотта ""Pretto"" пл/с 30-45% (0.500 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+98f74ab1-307e-47a8-936c-fabd67bfc2cf,"Сыр полутвердый Скаморца копченый ""Bonfesto"" 45% (0,235 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+66c2f2cf-b823-4e9b-b3c6-a9cfee5817bd,"Сыр мягкий Рикотта Лайт ""Bonfesto"" в с/в 40% (0,500 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+68bd3a21-3217-4c9f-aedf-d9d83d911bab,"Сыр Маскарпоне мягкий тм Bonfesto 78% (0,500 кг) Беларусь",dairy.сыр,0.3,dairy.сыр
+39d736bf-c11c-4ee7-941e-1096ca897e5f,"Сыр Камамбер Нуар с белой плесенью ""Тревиль"" (0,130 кг/0,135 кг) упак. . Россия",dairy.сыр,0.3,dairy.сыр
+e59a41c3-e929-4a0b-9278-034296401e0f,"Сыр Камамбер Классик с белой плесенью ""Тревиль"" (0,130 кг/0,135 кг) упак. . Россия",dairy.сыр,0.3,dairy.сыр
+b832b813-b4ec-4a75-88cd-5ebc96f7a2eb,"Сыр Камамбер Гурмэ с белой плесенью ""Тревиль"" (0,130 кг/0,135 кг) упак. . Россия",dairy.сыр,0.3,dairy.сыр
+4343692e-be6b-45eb-bf6c-dc3356eca027,"Сыр Бри с белой плесенью ""Тревиль"" ( 0,120 кг) упак. . Россия",dairy.сыр,0.3,dairy.сыр
+8040057f-5748-4d42-a7ff-28d7b7955886,"Сыр Swisshard ""ЛеСуперб"" (0,180 кг) (выдержка 15 мес.) EUR ПРОМО",dairy.сыр,0.3,dairy.сыр
+7ab00c9d-ce57-4ec9-9c70-ff2c8beeb21d,"Сыр Тет де Муан ""ЛеСуперб"" (~0,900 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+207575f8-9caf-4a3b-bc3e-7d0747f37078,"Сыр Раклет ""ЛеСуперб"" нарезка (0,160 кг) упак. . ПРОМО",dairy.сыр,0.3,dairy.сыр
+34414b08-b7d7-42fa-aae3-f8b397d415ef,"Сыр Диаболо-Гурме ""ЛеСуперб"" (0,180 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+00b677ac-aa2b-4b05-8aa6-e7ca75c94c43,"Сыр Жура Монтань ""ЛеСуперб"" (0,180 кг) упак. . ПРОМО",dairy.сыр,0.3,dairy.сыр
+92d42cfd-d536-4605-a992-cd87a43b4ee6,"Ассорти из швейцарских сыров ""ЛеСуперб"" (0,260 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+7fc05e86-c89c-4428-9254-85c1a2d348d6,"Сыр Тет де Муан ""ЛеСуперб"" (0,080 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+f2e8a130-33d7-4b4d-8121-1a7e7374e561,"Сыр Шале ""ЛеСуперб"" (0,170 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+e3648d26-6d55-45ce-b5da-3da2a336a688,"Сыр Страчателла Гальбани 52% 0,250кг",dairy.сыр,0.3,dairy.сыр
+eb037e7b-c87f-4e10-9c8b-1daca444d02e,"Сыр Маскарпоне ""Гальбани"" 80% (0,500 кг/0,533 кг) упак. . Сербия",dairy.сыр,0.3,dairy.сыр
+f9a7da78-c8a2-4df9-8f01-9db631c741b3,"Сыр мягкий с белой плесенью Камамбер Президент 45% 0,125кг",dairy.сыр,0.3,dairy.сыр
+79414600-76d5-4d28-9b21-692f43f4d22b,"Сыр Буррата Гальбани мини 1 шарик 50% (0,125 кг/0,436 кг)",dairy.сыр,0.3,dairy.сыр
+f1a96cf8-ee9f-4144-939d-75161f408c2a,"Сыр творожный из козьего молока Chevre President 65% 0,140кг",dairy.сыр,0.3,dairy.сыр
+ae1fc5ec-c802-416a-a2c6-3256ae3321b5,"Сыр творожный Креметте Профессионал Хохланд 65% (1,000 кг) упак. .(795012)",dairy.сыр,0.3,dairy.сыр
+ffad4ab5-1a57-4ead-bc9a-26266999817d,"Сыр творожный Креметте Профессионал Хохланд (2,200 кг) упак. .(795013)",dairy.сыр,0.3,dairy.сыр
+e982fba7-714a-4f87-a1b2-63c519c6d23d,"Сыр творожный Креметте Профессионал Хохланд (10,000 кг/10,800 кг) (8953)",dairy.сыр,0.3,dairy.сыр
+2236b933-f37b-4566-9b92-8fee543daaa7,"Сыр для соуса творожный сливочный Хохланд Профессионал 50% (1,000 кг)упак. .(790910)",condiments.sauce,0.3,condiments.sauce
+4ca439ba-bccf-4399-8383-bf0f84f9d030,"Сыр плавленный Чеддер 40% Хохланд Профессионал пакет 1,000 кг (сырный соус)",condiments.sauce,0.3,condiments.sauce
+a670735c-3e74-49a0-ad67-ac59216e3cb0,"Сыр мягкий в рассоле 45% Hochland Professional (0,480 кг/0,400 кг) (795702)",dairy.сыр,0.3,dairy.сыр
+917eb16e-e5af-472f-b474-38ecf0e1f9a6,"Сыр Камамбер с плесенью в панировке для фритюра 50% Alti п/ф зам. 1,000 кг (00345)",dairy.сыр,0.3,dairy.сыр
+e8f97adf-052a-4004-bcf4-2d95fd1f9abd,"Сыр Маасдам АЛЬГЕРД 45% круг (~8,5кг) Верхнедвинский Беларусь",dairy.сыр,0.3,dairy.сыр
+de1916b7-481f-4b52-a3d9-eacf803181dd,"Сыр полутвердый с плесенью Горгонзола 50% ~ 1,000 кг Шангал",dairy.сыр,0.3,dairy.сыр
+90d747f4-191d-4080-92a3-d25c91e2f8e4,"Сыр твердый PARMENTE 48% кусковой срок созревания 12мес ~1-1,5 кг Сыровар",dairy.сыр,0.3,dairy.сыр
+78fa2701-db0c-4398-9601-76be68084498,"Сыр творожный сливочный «Лабне» ""Чудское озеро"" 55% ведро 11 кг упак.",dairy.сыр,0.3,dairy.сыр
+dbb2836e-a3c4-4571-9015-6368d37aa600,"Сыр твердый PARMENTE 48% кусковой срок созревания не менее 18мес ~0,150кг/шт ~ Сыровар",dairy.сыр,0.3,dairy.сыр
+7857e206-9155-42f9-b3c1-fe7ee9d04c96,"Продукт белково-жировой полутв. Маасдам 45% брус ~4,600 кг ТЗ Джанкойский сыр ВСД",dairy.сыр,0.3,dairy.сыр
+b13f86d1-1c0d-45d3-8664-dce504776946,"Сыр твердый PALERMO (Палермо) 40% срок созревания не менее 12 мес ~3,000кг Сыровар",dairy.сыр,0.3,dairy.сыр
+7829ff87-e097-4d16-bd2a-c660a32251aa,"Сыр Гауда 45% брус ~4,500кг Поставы Беларусь",dairy.сыр,0.3,dairy.сыр
+79e7b6f5-9835-45e2-bc9c-b786f9f158b9,"Сыр твердый PALERMO (Палермо) с пажитником 40% ~1,500кг/шт Сыровар",dairy.сыр,0.3,dairy.сыр
+f7665865-1406-493d-ab5b-b3d86684b25c,"Сыр твердый PALERMO (Палермо) 40% срок созревания не менее 6 мес ~3,000кг Сыровар",dairy.сыр,0.3,dairy.сыр
+b316d0e1-6286-47b0-8ec4-1d4c7f1bc164,"Сыр твердый PALERMO (Палермо) 40% КРОШКА (0,300кг) Сыровар 5049",dairy.сыр,0.3,dairy.сыр
+86c34b96-a17f-47c5-a306-f60e00323313,"Сыр мягкий Дорблю по - итальянски с плесенью 50% ~ 1, 000 кг Шангал",dairy.сыр,0.3,dairy.сыр
+fb6c973b-2ca1-4864-85c5-3f53ac1b3a2f,"Сыр Монт Блю c голубой благородной плесенью 50% (~ 2,700 кг) кор. . Россия",dairy.сыр,0.3,dairy.сыр
+7455b196-3d5f-4488-b844-d93d1a558beb,"Сыр полутвердый с плесенью ""Горгонзола"" ТМ ""ЖАН"" (0,100 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+94f8cd1a-3a61-40fc-9d6a-b0546d8e6ca8,Спред растительно-жировой Green Style 82% 10кг/упак Пальмира,dairy.сыр,0.3,dairy.сыр
+8d467c91-76c7-41b7-a2bc-2cff4afdede3,"Спред растительно-сливочный 82,5% упак. 5 кг",dairy.сыр,0.3,dairy.сыр
+0c092dfa-33e8-4c7f-ba36-f440b8ba9d61,"Сырники жар.из ТВОРОЖНОГО ПРОДУКТА зам. в/у (1,000 кг - .*50г) ОТГРУЗКА КОРОБАМИ",dairy.сыр,0.3,dairy.сыр
+a3229362-4941-43bc-857e-d244c2f3cb25,"Сырники твор. жар. зам. в/у (1,000 кг- *50г) упак. Про Вкус ОТГРУЗКА КОРОБАМИ",dairy.сыр,0.3,dairy.сыр
+77ebc8fa-a2d1-4c12-a848-69b35698a7a9,"Креветки тигровые сыромороженые черные с/г в панцире 8-12 1,000кг Индия (222)",dairy.сыр,0.3,dairy.сыр
+9a7b2e77-9a57-438d-bba1-c71ab4f81b4a,"Креветка Ваннамей сыромороженая очищ.б/пищевого тракта б/г 26/30 1,000кг Индия 1581",dairy.сыр,0.3,dairy.сыр
+ff6cc87d-6c64-40ff-8f92-e4211165c20a,"Угорь жареный филе на коже в соусе Унаги (10%) 10-15унц зам ~0,500кг Don Kreveton",condiments.sauce,0.3,condiments.sauce
+d8f627ed-ac1c-4e01-bbee-a64cf7099c12,Крем на растительных маслах Master Martini Decor Up 27% 1л*Италия,condiments.sauce,0.3,condiments.sauce
+afcc727c-292c-4933-8fb7-e488a7d6cc27,"Улучшитель х/п ""Мажимикс"" софт гамбургер банс 10кг",condiments.sauce,0.3,condiments.sauce
+0fa0f341-ae67-43e5-aa55-c25f893cc3a0,"Пицца Чиз Карбонара замороженная 20*30 * * ""Zotman"" (0,0,420 кг) упак.",dairy.сыр,0.3,dairy.сыр
+38bf388d-2a96-4c8a-ace2-b10d7ba9cf5f,"Пицца Маргарита замороженная 20*30 * ""Zotman"" (0,390 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+5692d2c8-e4fd-4f25-80d1-4b2ff6b2e495,"Лепешка мексиканская Tortillas со вкусом сыра (0,828 кг)",dairy.сыр,0.3,dairy.сыр
+013eb2ab-38cf-46e4-904f-a85a7bae7637,"Чипсы картофельные ""San Carlo"" со вкусом сыра и черного перца (0,100 кг), упак.",dairy.сыр,0.3,dairy.сыр
+65e9b27c-af74-44b1-b079-3a419f7e2329,"Чипсы картофельные ""San Carlo"" со вкусом соуса песто (0,050 кг) упак.",condiments.sauce,0.3,condiments.sauce
+c4db0ebb-4efb-4c72-a419-59a0902ec231,"Ризотто четыре сыра ""Ризо Галло"" (0,175 кг) кор. .",dairy.сыр,0.3,dairy.сыр
+c5af0c53-0369-4140-a06a-5130f1a827ae,"Паста сакеттини с курицей ЗАМ (0,500 кг) Соло фреско",meat.chicken,0.3,meat.chicken
+343d63a9-5bd1-4485-a39d-03ca69b294cf,"МАКАРОННЫЕ ИЗДЕЛИЯ БЫСТРОГО ПРИГОТОВЛЕНИЯ С ТРЮФЕЛЕМ И СЫРОМ Т.З. ""TARTUFI"" (0,070 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+0032f1ac-d0c0-4eb6-83a3-bb4a2af47cfb,"Мука из мягких сортов пшеницы ""OO"" для пиццы Molino Grassi ONZ (1 кг) /кор",staples.мука,0.3,staples.мука
+694a86ae-8b06-422f-a6c3-e89c5a0f30da,Мука из мягких сортов пшеницы Спиди H10 (Speedy H10) Molino Grassi (25кг),staples.мука,0.3,staples.мука
+27b276ca-0303-4d72-8db9-c0363405ab41,Мука из твердых сортов пшеницы Семола Molino Grassi (25кг),staples.мука,0.3,staples.мука
+e0e63dc8-9c4c-4c36-b0fd-d2a187865a8f,"Мука из мягких сортов пшеницы ""ОО"" для пасты Molino Grassi (25 кг)",staples.мука,0.3,staples.мука
+5515c59a-2186-4cf6-9094-f064d7bebf0a,"Мука из мягких сортов пшеницы ""ОО"" для пасты Molino Grassi (1 кг) /кор",staples.мука,0.3,staples.мука
+80b95a2d-1e88-49b5-b271-b05128f91f66,"Мука из мягких сортов пшеницы ""ОО"" для пасты Molino Grassi (1 кг) /кор",staples.мука,0.3,staples.мука
+84b06d55-aa18-4f4a-9584-7324b2cab218,"Мука из мягких сортов пшеницы ""ОО"" Манитоба Molino Grassi (1 кг) /кор",staples.мука,0.3,staples.мука
+dd7b097c-a026-496e-b879-d5d1da0af977,"Мука из твердых сортов пшеницы Семола Molino Grassi (1,000кг) /кор",staples.мука,0.3,staples.мука
+26f50d89-3e4f-4ead-b026-40f833c05ea2,"Мука из мягких сортов пшеницы для выпечки ""ОО"" Манитоба Мука Molino Grassi (25 кг)",staples.мука,0.3,staples.мука
+6681221e-b3bd-4836-a4ee-db0870cfefc6,Мешок бумажный 3сл. с печатью Мука для пиццы SUPERIORE,staples.мука,0.3,staples.мука
+dd6dcc9d-d628-4899-8a92-436491784268,Мешок бумажный 3сл. с печатью Мука для пиццы CLASSICA,staples.мука,0.3,staples.мука
+a18ab31b-9624-4216-a437-7cf1b6af0ca5,Мука для пиццы Artigiano La Farina per la pizza classica -W250 мешок 25 кг СКС-торг,staples.мука,0.3,staples.мука
+40b44680-1b2b-4b2a-9dd8-805a9f8d6247,Мука для пиццы в/с сбалансированная W330 Artigiano La Farina Superiore мешок 25 кг СКС-торг,staples.мука,0.3,staples.мука
+54e56dba-06d8-4dae-beab-be9e4c8cb4f5,Мука из твердых сортов пшеницы КГМ+ бум мешок (черная этикетка) 25 кг,staples.мука,0.3,staples.мука
+53fef1cb-0c0b-43aa-a77c-c9e11d976863,Мука хлебопекарная в/с Mamma Mia Pizza упак. 10 кг,staples.мука,0.3,staples.мука
+8d7431d7-5795-467e-b00c-5a5cb604ab63,Мука темпурная Kaneshiro мешок 5 кг Россия,staples.мука,0.3,staples.мука
+5d6dbc22-fa1c-4a56-bd52-1a8601c7f56a,"Мука Французская штучка Экстра в/с (2,000 кг) упак. (квант 6) отгрузка коробами",staples.мука,0.3,staples.мука
+f21c05f4-10ec-4042-a472-74d644de6edd,"Миндальная мука VAL'DE (1,000 кг) упак.",staples.мука,0.3,staples.мука
+87a1a947-b8fe-4c62-ba10-c7fab008f67f,"Соус ""Табаско"" перечный красный (350 мл) упак. .",condiments.sauce,0.3,condiments.sauce
+6e566235-40b8-4319-9f84-fb7d6a670a27,"Соус ""Табаско"" перечный Чипотле (150 мл) упак. .",condiments.sauce,0.3,condiments.sauce
+282cba8a-88c5-4528-a446-98967797ce16,"Соус ""Табаско"" перечный красный (150 мл) упак. .",condiments.sauce,0.3,condiments.sauce
+63348a1b-9169-4140-a1bc-d965bcf93e35,"Соус ""Табаско"" перечный Чипотле ст./бут. (60 мл) упак. .",condiments.sauce,0.3,condiments.sauce
+8efb6b84-e023-4ad4-849e-195cd0400da9,"Соус ""Табаско"" красный перечный Хабанеро (150 мл) упак. .",condiments.sauce,0.3,condiments.sauce
+f5d5159c-d1af-405e-9899-58a3de704430,"Соус ""Табаско"" перечный красный ст./бут. (60 мл) упак. .",condiments.sauce,0.3,condiments.sauce
+1b87c7b6-98be-4dbd-8652-65990883a56a,"Соус ""Табаско"" перечный зеленый ст./бут. (60 мл) упак. .",condiments.sauce,0.3,condiments.sauce
+b9dd8c28-3fe1-4c20-9648-69124dd8c31c,"Соус гранатовый ""Наршараб"" EVOD ст./бут. (0,400 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+c69513a0-766f-4752-9df4-e98f76e0cd12,"Соус гранатовый ""Наршараб"" ""Грандэлитез"" ст./бут. (0,400 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+075155d6-3cd5-48c3-8a86-8e153947e789,Соус бальзамический с гранатом Delphi пл/б 250мл Греция,condiments.sauce,0.3,condiments.sauce
+79eb78d8-1f47-473b-8c61-846ddf607986,Соус бальзамический Delphi (Balsamic Cream) пл/б 250мл Греция,condiments.sauce,0.3,condiments.sauce
+1072bd4c-d591-4b86-9a9c-2df4bf4d9573,Соус бальзамический с инжиром Delphi пл/б 250мл Греция,condiments.sauce,0.3,condiments.sauce
+769585e6-ae78-49bf-ac69-85b1eb026ec8,"Соус Шанхайский вустерский ""Tai Kang Huang"" ст/б (1,167 кг/0,630 мл) Китай",condiments.sauce,0.3,condiments.sauce
+d8bbfd5f-7a7e-4d0c-9481-9eb166dd7946,"Соус Ворчестер (0,140кг/0,345кг) /кор",condiments.sauce,0.3,condiments.sauce
+4a0b772f-02fe-4e0f-9c00-f5aa5be82e67,"Соус Песто Россо на основе подсолнечного масла ""Понти"" ст/б (135 г) упак. .",condiments.sauce,0.3,condiments.sauce
+fd845f97-f0c7-4a4c-8394-f1992c30ef8f,Соус бальзамический с инжиром Kalamata Papadimitriou пл/б 250мл Греция,condiments.sauce,0.3,condiments.sauce
+88807a42-111a-466e-8e3f-e3f29f6a7fe1,"Соус Песто ""alla Genovese"" на основе подсолнечного масла Ponti ст/б (0,135кг/0,270мл)",condiments.sauce,0.3,condiments.sauce
+9836bdcd-f568-496e-aaaf-58c59e1d41fe,"Соус ASTORIA Огуречный Релиш PRO балк (1,000 кг) упак. . Россия",condiments.sauce,0.3,condiments.sauce
+3d774079-b369-4336-86a6-b5745410de19,"Соус ""ASTORIA"" Барбекю PRO балк (1,000 кг) упак. . Россия",condiments.sauce,0.3,condiments.sauce
+a0d22698-2024-430a-a135-5abbc302dc15,"Соус ""EFKO FOOD""professional Чиз Веганский 35% балк (1,000 кг) упак.",condiments.sauce,0.3,condiments.sauce
+aa2e2c6a-d9fb-4f36-b4fe-80111df4d29c,"Соус ""EFKO FOOD"" special Барбекю м.д.ж 30% балк (1,000 кг) упак..",condiments.sauce,0.3,condiments.sauce
+75e4d925-c3d0-4a8f-8fad-27a1b89cb33e,"Соус ХАЙНЦ Барбекю классический балк (1,000 кг)",condiments.sauce,0.3,condiments.sauce
+4bd31171-ad44-4961-8b3c-bfe3a27cf5b3,"Соус Сырный PIKADOR PRO (1,000 кг)",condiments.sauce,0.3,condiments.sauce
+6efd44e6-4fe7-48b9-a83e-0dc7c5140739,"Соус ""ХАЙНЦ"" Кисло-сладкий балк (1,000 кг/1,060 кг) упак. . Россия_Франклинс бургер",condiments.sauce,0.3,condiments.sauce
+1962e25b-3a6a-4e20-909e-2d67e9788bde,"Соус Чесночный PIKADOR PRO (1,000 кг)",condiments.sauce,0.3,condiments.sauce
+3ef7bc5c-2974-4ac1-9d11-2a50b0fcdd5a,"Соус ""ХАЙНЦ"" на основе растительных масел Цезарь для салата балк (2,000 кг/ 2,021 кг) упак. 6",condiments.sauce,0.3,condiments.sauce
+dca84f60-3c74-4c95-b332-dd36c85b0a26,"Соус ""ХАЙНЦ"" на основе растительных масел Цезарь для салата балк (2,000 кг/ 2,021 кг)",condiments.sauce,0.3,condiments.sauce
+284b0d76-ec82-41d3-b4ec-e92686815713,"Соус Сальса жгуче-острый оригинальный Heinz (1,000кг/1,013кг)",condiments.sauce,0.3,condiments.sauce
+6b256a58-31ef-4050-83d3-12eaa560ad3b,"Соус Терияки деликатесный балк Heinz (1,000кг/1,060кг)",condiments.sauce,0.3,condiments.sauce
+18106046-c17f-4829-a8fa-64da6ec58197,"Соус Кисло-сладкий оригинальный деликатесный балк Heinz (1,000кг/1,060кг)",condiments.sauce,0.3,condiments.sauce
+280c78a2-7444-480a-bbef-a8c51c6a1f26,"Соус ""ХАЙНЦ"" Сырный ""Parmegiano"" дип-пот (25мл) упак. .",condiments.sauce,0.3,condiments.sauce
+e0935cc7-28c1-4319-b3d9-d67bc640fce0,"Соус ""ХАЙНЦ"" Кисло-сладкий оригинальный дип-пот (25 мл) кор. .",condiments.sauce,0.3,condiments.sauce
+ab78fe7f-5ef7-4ab9-9f2c-60158797854d,"Соус ""ХАЙНЦ"" горчичный оригинальный дип-пот (25 мл) кор. .",condiments.sauce,0.3,condiments.sauce
+b5676184-9e48-49c9-8f84-dfae6a7387a1,"Соус ""ХАЙНЦ"" сырный оригинальный на основе растительных масел балк (1,000 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+ea9bb0df-5133-4dad-a806-f1036f8492d0,"Соус ""ХАЙНЦ"" Горчичный специальный (0,700 кг) упак. . Россия",condiments.sauce,0.3,condiments.sauce
+6976520e-fec7-485e-ab63-494571e16110,"Соус ""ХАЙНЦ"" ""Parmegiano"" сырный на основе растительных масел (1,000 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+274d4d1d-d3b1-43df-b9af-613ead20fbae,"Соус Цезарь для салата на основе раст/масел балк Heinz (2,000кг/2,021кг)",condiments.sauce,0.3,condiments.sauce
+e565ebbe-5d29-4d12-9122-00fbd0c3d33f,"Соус трюфельный 3% ст./банка Tartufi Jimmy (0,180 кг)",condiments.sauce,0.3,condiments.sauce
+cc734675-9384-4f00-b8b3-06555cfed0fd,"Соус ягодно-пряный гурмэ виноградный ""Furore"" (0,060 кг) кор. .",condiments.sauce,0.3,condiments.sauce
+a3669b3e-e3b9-449b-92af-4c3236b87ec7,"Соус фруктово-пряный гурмэ грушевый ""Furore"" (0,060 кг) кор. .",condiments.sauce,0.3,condiments.sauce
+2245b57b-021b-4e86-8466-f20b02238631,"Соус фруктово-пряный гурмэ яблоко и кальвадос ""Furore"" ст./бан. (0,060 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+2e8f87e6-be7d-4f5a-9837-8d424e5550fc,"Соус фруктово-пряный гурмэ апельсиновый ""Furore"" ст./бан. (0,060 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+8097f057-977c-4ece-a798-507d03aa2abc,"Соус фруктово-пряный гурмэ абрикос и миндаль ""Furore"" ст./бан. (0,060 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+9c88fd32-4668-47d1-9071-3ebbea5e09ed,"Соус фруктово-пряный гурмэ айва и кунжут ""Furore"" ст./бан. (0,060 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+26a1f22d-1cd8-4fdd-acce-ae97aa6f93d5,"Соус Ткемали Классический MADLI ст/б (0,270 кг)",condiments.sauce,0.3,condiments.sauce
+9b5f9620-a4b9-4df8-b032-03479af968b4,"Соус Бургер-соус Гурмикс (2,000 кг) 2-",condiments.sauce,0.3,condiments.sauce
+46c1cbdd-cbc2-4ee1-95fa-5eb8ddedebf1,"Соус Медово-Горчичный Гурмикс (2,000 кг )",condiments.sauce,0.3,condiments.sauce
+f4966d6a-3b2f-4744-9291-86a2142fc7ea,"Смесь панировочная Оригинальная Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+9ebc4525-eb74-474c-945b-b99823007bca,"Соус сладкий Чили классический Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+c47e07cd-46a4-4edd-a703-492e794161a8,"Соус Барбекю Гурмикс серия Food Service (1,000 кг)",condiments.sauce,0.3,condiments.sauce
+583305ea-2e1d-4f13-8360-078066ec64a7,"Соус Кисло-сладкий Гурмикс 5,000 кг",condiments.sauce,0.3,condiments.sauce
+615f251a-3396-490e-b23e-6af0dddf2f16,"Рассол для копчения курицы Гурмикс канистра 5кг/4,35л",meat.chicken,0.3,meat.chicken
+e17d1647-b98a-4ba9-8e7d-6bacd85884c0,"Соус Перцовый жгучий Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+56e7c2a4-4e6a-4833-a648-cf29fd92621a,"Соус Песто с итальянскими травами Гурмикс дой-пак (2,000 кг )",condiments.sauce,0.3,condiments.sauce
+7939beb2-9b13-4e31-9cee-3ce5c9cbd755,"Соус Белый Барбекю Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+65e6465c-9897-4ce4-9f94-72f9366bec74,"Основа для супа Том КХА Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+e18eaa79-514c-4325-9d9f-8f81a518a6c3,"Соус Ворчестер Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+57e1d985-1009-4807-b5fa-c1886574132d,"Соус чеддер для запекания Гурмикс серия Food Service (1,000 кг)",condiments.sauce,0.3,condiments.sauce
+cc3cb9f7-826e-434a-8f0a-e65baed14229,"Соус черный перец Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+fe7bd169-225a-46a9-87e7-8cc1f6c42c3b,"Смесь панировочная Острая Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+2f92a58c-99bb-40a6-a771-05b9755ad76d,"Соус карри Гурмикс серия Food Service (1,000 кг)",condiments.sauce,0.3,condiments.sauce
+392d8a7a-904f-4835-910b-338e9c2c4d2c,"Соус горчичный Гурмикс серия Food Service (1,000 кг)",condiments.sauce,0.3,condiments.sauce
+0dc33030-154c-4667-9507-e9c42c5507bb,"Смесь панировочная Нежная Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+d938b63b-9b8b-4517-acd8-3ff5ce0e850e,"Соус Сеульский с арахисом Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+d85ec905-8ff3-4fee-b1d9-064bf1b397c1,"Маринад Грузинский Гурмикс серия Люкс (5,000 кг)",condiments.sauce,0.3,condiments.sauce
+0f0dd076-2ce6-4016-ae4a-9b27ead89b00,"Соус Перцовый жгучий Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+6fdf9ba4-4c15-4dad-bfce-f8ac0163adf1,"Соус Чили-манго Гурмикс"" Food Service ( 1,000 кг ) упак.",condiments.sauce,0.3,condiments.sauce
+b2a5c2bc-f1d9-4ebd-836c-cd541c4c7cfc,"Основа для супа Фо Бо Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+30726789-cbf0-4990-ba45-1f4370f0b377,"Соус Брусничный Гурмикс (2,000 кг)",condiments.sauce,0.3,condiments.sauce
+f086cd2a-64aa-4157-9b61-e1fd23079cbd,"Соус Glassa с добавлением бальзамического уксуса МОДЕНЫ с ароматом чеснока и розмарина пл/бут.(0,250 мл/0,313 кг)",condiments.sauce,0.3,condiments.sauce
+f8f38369-a976-4721-b430-9620f9a9d1c1,"Соус Glassa с доб бальз укс МОДЕНЫ с аром белого трюфеля пл/б (0,250 мл/0,313 кг)",condiments.sauce,0.3,condiments.sauce
+a6e8ea12-3f2c-4b8a-8535-f79c94939a56,Соус Glassa с добавлением бальзамического уксуса МОДЕНЫ пл/б (500 мл) Carandini,condiments.sauce,0.3,condiments.sauce
+eeb63550-2b72-40cd-b008-1cd94884d5cc,Соус Glassa белый на основе концентрированного виноградного сусла и винного уксуса пл.б (500 мл) “CARANDINI”,condiments.sauce,0.3,condiments.sauce
+be8a2e9d-fb63-4e27-820a-01d26f4208be,"Соус с добавлением бальзамического уксуса МОДЕНЫ со вкусом и ароматом лесных ягод CARANDINI пл.бут (0,250 мл) кор. .",condiments.sauce,0.3,condiments.sauce
+4977b33e-a919-4ab6-abb4-0716ac20638f,"Смесь для пригот мясного соуса Деми Глас "" АРИКОН ПРОФИ"" ведро (1,500 кг) упак.",condiments.sauce,0.3,condiments.sauce
+c6e80b8c-81de-46bb-833c-bfca34c57d6e,"Кумин молотый (зира) банка 0,450 кг Рубикон",condiments.spice,0.3,condiments.spice
+b0342e74-552f-40a9-973b-ac824bcb2de7,"Смесь специй 5 перцев дробленая банка 0,500 кг Рубикон",condiments.spice,0.3,condiments.spice
+f84b13f2-8e59-4238-9d21-eb0ad5366c34,"Смесь специй Карри Золотой п/банка 0,500 кг Рубикон",condiments.spice,0.3,condiments.spice
+00c8a669-29b2-44f8-8932-9b378a1fef5c,"Смесь специй Тикка Масала банка 0,560 кг Рубикон",condiments.spice,0.3,condiments.spice
+09e6a345-b48d-486a-87b8-7535ecb51dc0,"Смесь специй для плова пакет 1,000 кг Рубикон",condiments.spice,0.3,condiments.spice
+63c927f6-7bbf-4888-8d7f-7fddeef94509,"Смесь специй для картофеля банка 0,500 кг Рубикон",condiments.spice,0.3,condiments.spice
+c92c520c-9329-4112-944f-781ec6d17da3,"Смесь специй для глинтвейна 1,000 кг",condiments.spice,0.3,condiments.spice
+6392dbe5-ebd8-4551-b2e1-c751053d6fd1,"Смесь специй Особая (ТАКО) банка 0,460 кг Рубикон",condiments.spice,0.3,condiments.spice
+109aea32-4e64-4145-9fac-edf1b160e33a,"Гвоздика молотая пакет 1,000кг Рубикон",condiments.spice,0.3,condiments.spice
+5fb19299-9b43-49a9-b7d5-18366a191da0,"Кумин целый (зира) банка 0,450 кг Рубикон",condiments.spice,0.3,condiments.spice
+4f6768bb-9a00-4598-b543-87f32d876786,"Смесь специй для гриля пакет 1,000 кг Рубикон",condiments.spice,0.3,condiments.spice
+6d797b20-682e-4702-a9b4-b7ad612b7639,"Можжевельник ягоды банка 0,300 кг Рубикон",condiments.spice,0.3,condiments.spice
+9e134711-cfdc-416f-b6c6-179743cf4dcf,"Корица палочки банка 0,180кг Рубикон",condiments.spice,0.3,condiments.spice
+15d68d93-35d1-4732-a732-43c6fe56b46c,"Смесь специй особая Уцхо-сунели пакет 0,500кг Рубикон",condiments.spice,0.3,condiments.spice
+2ea72f6c-e498-4013-b189-d5a19d2151aa,"Смесь специй для курицы п/банка 0,500кг Рубикон",meat.chicken,0.3,meat.chicken
+2d68fed6-9994-402d-b70c-41219e00f94f,"Смесь специй Хмели-сунели пакет 1,000кг Рубикон",condiments.spice,0.3,condiments.spice
+9baff289-5f48-4f41-af09-1f1898390126,"Смесь специй Тандури банка 0,460 кг Рубикон",condiments.spice,0.3,condiments.spice
+69ab96ae-49ab-40c6-b15d-732f9de96f9e,"Чеснок сушеный дробленый 8/16 п/банка 0,500кг Рубикон",condiments.spice,0.3,condiments.spice
+a3834614-2203-422e-81bf-ccee74f2b626,"Чеснок сушеный гранулированный 40/60 банка 0,500кг",condiments.spice,0.3,condiments.spice
+8a5fbcb7-5bda-4afb-bdc5-34b1a9ea3cfe,"Смесь пряностей Мексика Фахита SpicExpert п/п (1,000кг/1,010кг)",condiments.spice,0.3,condiments.spice
+618e889a-9834-473f-8bf0-5977014d5ac4,"Глюкоза""SpicExpert"" пакет (1,000 кг/1,030 кг) кор. .",condiments.spice,0.3,condiments.spice
+29ff5ae3-2244-4823-ae8a-643725264347,"Зира (кумин) SpicExpert п/п (1,000кг/1,030кг)",condiments.spice,0.3,condiments.spice
+69bb1e92-c673-4c44-8aa1-efd107553fd1,"Зира (кумин) ""SpicExpert"" молотый пакет (1,000 кг/1,030 кг) упак. .",condiments.spice,0.3,condiments.spice
+0cee9816-7583-4233-a99c-1f37a61136d1,"Ванилин ""SpicExpert""пакет (1,000 кг/1,010 кг) упак. .",condiments.spice,0.3,condiments.spice
+1225184b-4e53-4ddf-8ac6-d31402b7f5de,"Чеснок гранулированный SpicExpert п/пакет (1,000кг/1,030кг)",condiments.spice,0.3,condiments.spice
+41d98f27-535c-4893-acc7-4e47f854ff01,"Хмели-сунели SpicExpert п/п (1,000кг/1,010кг)",condiments.spice,0.3,condiments.spice
+4bf259ea-8140-4ec8-bd8b-0503c213bdb6,"Хмели-сунели SpicExpert п/п (1,000кг/1,010кг)",condiments.spice,0.3,condiments.spice
+daf92ae6-1c70-44a4-91f2-f0b1ef186567,"Сухари панировочные белые 0,6 см SpicExpert п/п (1,000кг/1,010кг) 15-",condiments.spice,0.3,condiments.spice
+969a4bf7-4135-4018-9dc3-a9e8dc1b279b,"Агар SpicExpert п/банка (0,500кг/0,562кг)",condiments.spice,0.3,condiments.spice
+e6796dcd-ffdd-4b57-8ab2-70127a0218ff,"Разрыхлитель теста SpicExpert п/п (1,000кг/1,010кг)",condiments.spice,0.3,condiments.spice
+6a7e02e9-0708-4337-82bb-bab672cf2922,"Пудра сахарная ""SpicExpert"" пл. пакет (1,000 кг/1,010 кг) кор. .",condiments.spice,0.3,condiments.spice
+f7885998-4dcb-43f6-ad3b-5f842ac85c61,"Пудра сахарная ""SpicExpert"" пл. пакет (1,000 кг/1,010 кг) кор. .",condiments.spice,0.3,condiments.spice
+e43f208c-0427-448b-a08d-174bef82c7dc,"Итальянские травы (для пиццы) SpicExpert п/банка (0,200кг/0,262кг)",condiments.spice,0.3,condiments.spice
+355de72a-ef97-49c5-b1c9-f922307f133a,"Лавровый лист Экстра SpicExpert п/п (0,100кг/0,110кг)",condiments.spice,0.3,condiments.spice
+7fbaef5e-988a-4733-9380-67e123e6f323,"Крахмал кукурузный ""SpicExpert"" пл. пакет (1,000 кг/1,030 кг) кор. .",condiments.spice,0.3,condiments.spice
+b8d4aba0-aac6-4718-89cb-a244c4256150,"Крахмал картофельный SpicExpert п/п (1,000кг/1,030кг)",condiments.spice,0.3,condiments.spice
+1d104c9b-0173-463c-ae5e-d262a8b99cb8,"Корица в палочках SpicExpert п/банка (0,250кг/0,312кг)",condiments.spice,0.3,condiments.spice
+fd31facf-2a5f-47d1-a597-0d6f96332a4b,"Кокосовая стружка SpicExpert п/п (0,500кг/0,530кг)",condiments.spice,0.3,condiments.spice
+4ebd242c-d080-4253-8626-223359ed3689,"Карри Золотой SpicExpert п/п (1,000кг/1,030кг) 10-",condiments.spice,0.3,condiments.spice
+faf34727-8c91-4430-9d48-6e4b20824058,"Карри Золотой SpicExpert п/п (1,000кг/1,030кг) 10-",condiments.spice,0.3,condiments.spice
+95c2878b-81a3-4198-8a5b-22e9f6b7fd05,"Карри Золотой SpicExpert п/п (1,000кг/1,030кг) 10-",condiments.spice,0.3,condiments.spice
+308e66dd-6399-4e9d-a83b-3ef54ebabeeb,"Кардамон молотый SpicExpert п/банка (0,500кг)",condiments.spice,0.3,condiments.spice
+9455f50a-2042-4fcb-8e71-032f30f823c1,"Кардамон молотый SpicExpert п/банка (0,500кг)",condiments.spice,0.3,condiments.spice
+e550eb53-75fb-4ad1-a2da-354ea3dbd993,"Какао SpicExpert п/п (1,000кг/1,030кг)",condiments.spice,0.3,condiments.spice
+9ed7f361-d827-4db7-a0ca-eba3dccc6b18,"Барбарис красный Премиум SpicExpert п/банка (0,250кг/0,312кг)",condiments.spice,0.3,condiments.spice
+783bb451-25a0-477a-a9fd-c49d1513a348,"Бадьян (анис звездчатый) целый SpicExpert п/банка (0,200кг/0,262кг)",condiments.spice,0.3,condiments.spice
+7d59e644-4884-4d77-a421-65e5c67f8019,"Ваниль в стручках Exellent SpicExpert пакет (0,050 кг)",condiments.spice,0.3,condiments.spice
+927be9cc-cb94-499a-84f4-7f2765aca7bd,"Фенхель семя SpicExpert п/банка (0,300кг/0,360кг) 6-",condiments.spice,0.3,condiments.spice
+f04050d6-ed10-48a3-8224-4c4e6841c1ff,"Укроп SpicExpert п/п (1,000кг/1,030кг)",condiments.spice,0.3,condiments.spice
+be91c923-7821-4aa7-971d-e61bd8b2288c,"Тимьян SpicExpert п/банка (0.200кг/0,265кг)",condiments.spice,0.3,condiments.spice
+eead5073-f9a8-42df-8108-1ab3bdb85df0,"Тимьян SpicExpert п/банка (0.200кг/0,265кг)",condiments.spice,0.3,condiments.spice
+21ed99fd-afb2-4d48-aee5-d3c9e17cd0c0,"Корица молотая ""SpicExpert"" банка (1000мл ) (0,400 кг) упак.",condiments.spice,0.3,condiments.spice
+e31d3953-8f63-45fe-a341-08e109f8a89a,"Мускатный орех целый SpicExpert п/банка (0,300кг/0,362кг)",condiments.spice,0.3,condiments.spice
+da52a488-f1f7-452f-8e8b-850c50e287e6,"Можжевеловая ягода SpicExpert п/банка (0,300кг/0,362кг)",condiments.spice,0.3,condiments.spice
+7187b0b4-6db6-416f-bdce-cddfe7c6e199,"Зира (кумин) молотый SpicExpert п/банка (0,450кг/0,512кг)",condiments.spice,0.3,condiments.spice
+a69da38d-1422-45d8-b9dd-ad9d17102ce1,"Гвоздика целая SpicExpert п/банка (0,300кг/0,362кг)",condiments.spice,0.3,condiments.spice
+3f4a9b72-fa68-4e22-8d5d-779147ac781c,"Гвоздика молотая SpicExpert п/банка (0,500кг/0,562кг)",condiments.spice,0.3,condiments.spice
+14c2d03c-f580-4c4e-87c2-f2cd33251f9a,"Смесь пяти перцев дробленые SpicExpert п/банка (0,500кг/0,560кг)",condiments.spice,0.3,condiments.spice
+9cb1a314-3809-4d61-a8e8-808b2714394e,"Горчичный порошок SpicExpert п/п (1,000кг)",condiments.spice,0.3,condiments.spice
+a890a6a3-659e-4b68-be5f-2016c206d8e0,"Мускатный орех целый пакет ""SpicExpert"" (1,000 кг) упак. .",condiments.spice,0.3,condiments.spice
+5360bbdb-67ac-4bc0-bae4-3beaf59131db,"Кардамон целый банка ""SpicExpert"" (0,160 кг/360 мл) упак. .",condiments.spice,0.3,condiments.spice
+79f90414-6463-4ec3-ba90-9ae32fb3313d,"Мак пищевой голубой VAL'DE ( 1,000 кг) упак.",dairy.сыр,0.3,dairy.сыр
+58f255ec-06f3-4c14-87ed-79a85c7ce3b5,"Сироп Корица со вкусом и ароматом ст/б (1,340 кг/1,934 кг/1,000 мл) Barinoff",condiments.spice,0.3,condiments.spice
+69e25a4e-41cd-4b50-bbe3-9a479bbeb810,"Картофель фри 8/12 мм Фарм Фритес с кожурой ""Finest"" (2 кг) упак. . (для соусов) (402.005) UN",condiments.sauce,0.3,condiments.sauce
+18d9c69b-2066-41b4-bc47-7c44c4a6e14a,"Сухари панировочные Панко Tamaki ( 1,000 кг ) упак.",condiments.sauce,0.3,condiments.sauce
+1756bd50-7ab5-424d-bf3c-3a5096fd06ed,"Соус рыбный ""AROY-D"" пл/канистра (5,400 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+b585dd77-0f93-4ed1-bc13-f3b663e8c5a2,"Соус Ворчестер ТМ Luxuria пл/б 1,000 л 6-",condiments.sauce,0.3,condiments.sauce
+173281b6-f578-4724-8a52-ca5def655464,"Соус Ворчестер ТМ Luxuria пл/б 1,000 л 6-",condiments.sauce,0.3,condiments.sauce
+64b1d47f-1d3d-4d62-99bc-f9df17de39da,"Соус сладкий чили GOT2EAT пакет (1,000 кг)",condiments.sauce,0.3,condiments.sauce
+5c442b41-0e6c-483f-a1f0-b0a1d1b4aceb,"Соус Манго с перцем чили Tamaki ( 0,470 мл ) упак.Россия",condiments.sauce,0.3,condiments.sauce
+b2ce8dae-92cb-45a3-975b-df54899c767b,"Соус устричный PEARL RIVER BRIDGE (2,400 кг/2,600 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+68590d36-bc50-4058-9a11-5ca8e58326d9,"Соус Кимчи Tamaki (0,536 кг) упак.Россия",condiments.sauce,0.3,condiments.sauce
+3a0f79af-bf76-4063-9d12-dfaf8c7d6715,"Соус Пад Тай Aroy-D (1,000 кг) Таиланд",condiments.sauce,0.3,condiments.sauce
+0aeb449f-001b-4e15-8e1d-f40f73d40c5a,"Соус сладкий чили для курицы проф. упак ( 5,400 кг/5,900 кг) упак.Таиланд",condiments.sauce,0.3,condiments.sauce
+d5eb2670-c20a-4b71-9d87-3b2f831c1528,"Соус Чили сладкий для курицы AROY-D (0,920кг/1,390кг/0,720мл)",condiments.sauce,0.3,condiments.sauce
+1ba3fe9c-fdf9-4124-a1ef-68e6af9c5f0a,"Соус устричный PEARL RIVER BRIDGE ст/бут (0,510кг/0,875кг)",condiments.sauce,0.3,condiments.sauce
+4409302c-41ca-4881-8fcd-2dbf91f2aa1f,"Соус рыбный ""AROY-D"" ст/бут (700 мл/0,840 кг) кор. .",condiments.sauce,0.3,condiments.sauce
+79c5de62-1358-4924-8f31-f883df6d9f7a,"Соус Для Шаурмы на основе растительных масел Tamaki (0,470 кг) упак.Россия",condiments.sauce,0.3,condiments.sauce
+64fa527f-c509-4ee4-96fd-35df986859f1,"Соус ""Тако"" UNI DAN пл/ведро ( 1,000 кг ) упак.",condiments.sauce,0.3,condiments.sauce
+e055e53c-b0e1-4731-a085-51ab37cec7d6,"Соус Унаги ""Genso"" (1,500 л/1,700 кг) упак. .",condiments.sauce,0.3,condiments.sauce
+6b3504e2-82af-4a50-b4fa-92e1af744e7c,"Соус Кимчи Tamaki 1уп (1,8 л) упак.Россия",condiments.sauce,0.3,condiments.sauce
+fbe8d26f-1e58-44c7-9c3b-5555bd8da63c,Соус сладкий чили для курицы Tamaki (470 мл) упак.Россия,condiments.sauce,0.3,condiments.sauce
+8a02f1ef-2466-4489-87c1-b2d7dd6a6745,"Соус ореховый Tamaki Pro (1,5 л) упак. . Россия",condiments.sauce,0.3,condiments.sauce
+9487f67b-9e94-4f15-ac77-aad1242035ad,"Соус ""Шрирача"" Uni-Eagle пл. бут. (0,475кг/430 мл) кор. .",condiments.sauce,0.3,condiments.sauce
+8969c034-9aaa-4108-843f-6fef4cb13144,"Соус Юдзу Yuzu ESORO (1,000 кг) упак.. Корея",condiments.sauce,0.3,condiments.sauce
+58fc4a08-c248-429f-91eb-620ed7fdaa80,"Соус Чили сладкий для курицы AROY-D пл/ канистра ( 2,4л ) упак. .",condiments.sauce,0.3,condiments.sauce
+74c331d4-904b-454e-abd3-fc665acf5c3b,"Соус ""Шрирача"" Uni-Eagle пл. бут. (0,815кг/740мл) кор. .",condiments.sauce,0.3,condiments.sauce
+1b5b2add-3a25-4175-942e-a689b2470bca,"Соус Медово-горчичный на основе растительных маселTamaki (0,500 кг) упак.Россия",condiments.sauce,0.3,condiments.sauce
+96b12ea7-4cc9-4faf-a427-00c093614817,"Соус Медово-горчичный Hellmans ведро 1,000кг",condiments.sauce,0.3,condiments.sauce
+b3c21010-fbd6-4e60-af1f-b77a91479ad3,"Смесь для сырников Chef""s Mate 10 кг/упак Россия (546036)",dairy.сыр,0.3,dairy.сыр
+5c2574a2-deff-4ec4-808f-6b9239fdf306,"Концентрат пищевой Соус сырный ""Камамбер"" Chef's Mate(2,000 кг) упак Россия 546082",condiments.sauce,0.3,condiments.sauce
+cb2a1c93-4ee4-4b7a-b557-a13886ff6a19,"Концентрат пищевой Смесь для соуса ""Бургер"" Chef's Mate (2,000 кг) упак Россия",condiments.sauce,0.3,condiments.sauce
+faf7836f-9a26-490a-bd32-de3615e426df,"Концентрат пищевой Универсальный загуститель для соусов"" Chef's Mate (2,000 кг) упак Россия",condiments.sauce,0.3,condiments.sauce
+bdb9449c-059f-46e4-be5f-2908cff26d79,"Смесь пищевая ""Для греческого соуса Дзадзики"" Chef's Mateпак/зип-лок (2,000 кг) упак.Россия",condiments.sauce,0.3,condiments.sauce
+4b2a2788-d62d-4e51-aa48-a79e70b3e0ae,"Концентрат пищевой Соус ""Трюфельный"" Chef's Mate (2,000 кг) упак Россия",condiments.sauce,0.3,condiments.sauce
+5177987c-6b01-4987-abac-9891c28bfc98,Сырники зам 7кг (*70гр) Корона Фуд,dairy.сыр,0.3,dairy.сыр
+52f95e97-b6ca-4571-b572-a6e50c989ca2,"Шарики из тапиоки для баббл-ти готовые Papa Boba ЗАМ (0,200 кг ) упак.Отгрузка коробами",dairy.сыр,0.3,dairy.сыр
+7531c28b-c2e8-4386-a14b-e76182b928bb,"Перчики черри красные, фаршированные сливочным сыром и трюфелем ТМ ""ЖАН"" в/у (0,200 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+c6f91729-f821-48af-a4b6-43cec9573b52,"Вяленые томаты, фаршированные сливочным сыром ТМ ""ЖАН"" в/у (0,200 кг) упак. .",dairy.сыр,0.3,dairy.сыр
+75acdaeb-0066-4cf7-885c-31e44ee06984,"c/г в/п с/м 8/12 шт/кг c/м ""RISMA""",seafood.shrimp,0.3,seafood.shrimp
+3937834f-64c2-432e-b821-f7bd5c1d64ed,"c/г в/п с/м 13/15 шт/кг c/м ""RISMA""",seafood.shrimp,0.3,seafood.shrimp
+e2d69ec3-d0cc-4c19-b50c-3c434b355974,"тигр. c/г в/п с/м 16/20 шт/кг c/м ""RISMA""",seafood.shrimp,0.3,seafood.shrimp
+0945f742-bfcd-4234-9bb6-564916492fcd,"корол. с/г в/п 50/70 шт/кг ""VICI"" в/м вес.",seafood.shrimp,0.3,seafood.shrimp
+53acddb1-f4eb-4ad9-934b-fb42f09b0970,"ванамей б/г в/п 16/20 шт/ф ""WAHYU""",seafood.shrimp,0.3,seafood.shrimp
+f4132c6c-9218-44c9-a2f4-dcec050bc9b3,"ванамей б/г в/п 16/20 шт/ф ""CASTLE ROCK""",seafood.shrimp,0.3,seafood.shrimp
+75725d77-5a59-425c-942b-c3abf42a25a6,"ванамей б/г в/п 21/25 шт/ф ""RISMA""",seafood.shrimp,0.3,seafood.shrimp
+1f30733a-4f8b-4ec0-98ff-fe686f7c250a,"ванамей б/г в/п 21/25 шт/ф ""COFOODs""",seafood.shrimp,0.3,seafood.shrimp
+6f5c88c7-2c4c-4996-8dbb-5e54acbaa266,"тигр. б/г в/п с/м 8/12 шт/ф c/м ""RISMA""",seafood.shrimp,0.3,seafood.shrimp
+6d1db6e1-2708-4619-b2d2-445b21a3db00,"тигр. б/г в/п с/м 13/15 шт/ф c/м ""RISMA""",seafood.shrimp,0.3,seafood.shrimp
+6b0b0a97-d859-47cf-978e-34bebd621515,"тигр. б/г в/п с/м 16/20 шт/ф c/м ""RISMA""",seafood.shrimp,0.3,seafood.shrimp
+7f1d9d48-07a3-4103-9a43-ef0a7d8f87ff,"ванамей очищ.с/х 16/20 шт/ф c/м ""IFB agro""",seafood.shrimp,0.3,seafood.shrimp
+ce2d78d6-1699-4d31-8546-603f16b0f21c,"ванамей очищ.с/х 16/20 шт/ф c/м ""CASTLE ROCK""",seafood.shrimp,0.3,seafood.shrimp
+c8168e22-a2cf-415b-bfd0-f1e756339815,"ванамей очищ.с/х 21/25 шт/ф c/м ""CASTLE ROCK""",seafood.shrimp,0.3,seafood.shrimp
+8cec4dc0-462c-4633-aa69-e2f768244fe5,"ванамей очищ.с/х 26/30 шт/ф c/м ""CASTLE ROCK""",seafood.shrimp,0.3,seafood.shrimp
+433a39fd-8931-4b5a-a5ff-77f4e5e9d093,"ванамей очищ.с/х 26/30 шт/ф c/м ""IFB ROYAL""",seafood.shrimp,0.3,seafood.shrimp
+589251e6-2722-4576-af3a-f9df4086b4cf,"ванамей очищ.с/х 31/40 шт/ф c/м ""COFOODs""",seafood.shrimp,0.3,seafood.shrimp
+079139ee-4486-40d2-a57f-4388b258129c,"ванамей очищ.с/х 31/40 шт/ф c/м ""CASTLE ROCK""",seafood.shrimp,0.3,seafood.shrimp
+7459d914-5578-4cbc-82d1-6ac432f94c04,"ванамей,очищ.б/х 16/20 шт/ф, с/м  ""IFB AGRO I""",seafood.shrimp,0.3,seafood.shrimp
+646f5983-ef3e-485b-854f-8d8b8c1d5ffe,"ванамей,очищ.б/х 21/25 шт/ф, с/м ""IFB AGRO I""",seafood.shrimp,0.3,seafood.shrimp
+edc4a96f-6cf3-4fd7-9d67-c5894a1a1a85,"ванамей,очищ.б/х 26/30 шт/ф, с/м ""CASTLE ROCK""",seafood.shrimp,0.3,seafood.shrimp
+c7015df6-1fac-4364-aeaa-f37496f22b87,"ванамей,очищ.б/х 26/30 шт/ф, с/м ""COFOODs""",seafood.shrimp,0.3,seafood.shrimp
+c1df98fa-cb43-4d3a-8fb0-2df7d8cea20a,"ванамей,очищ.б/х 31/40 шт/ф, с/м ""CASTLE ROCK""",seafood.shrimp,0.3,seafood.shrimp
+e4799138-7a76-4fb2-b465-b13f7a4cf909,"Улитка по-бургундски в чесноч.соусе, Россия",condiments.sauce,0.3,condiments.sauce
+f85417e4-b965-4c6a-a6ef-00cc00afcf26,"Крабовые палочки ""Снежный краб"" охл.",dairy.сыр,0.3,dairy.сыр
+68598e3e-52a0-4d35-9870-4443b77c2b8e,"Карт. дольки с кожурой со специями,""Farm Frites"" с/м",condiments.spice,0.3,condiments.spice
+96fb8137-a1f3-44dc-a920-4b4ca97b3c12,"Сыр тверд. Рarmezan""Сармич""45% ~130г (12 мес)",dairy.сыр,0.3,dairy.сыр
+6755381c-3b7b-442e-a0fa-e2a17dc17334,"Сыр тверд. Рarmezan""Сармич""45% ~7кг (12 мес)",dairy.сыр,0.3,dairy.сыр
+c94517f3-54d2-4563-9f78-ef705131066f,"Сыр твердый ""PALERMO"" 40% (12 мес.),  ~2,5кг",dairy.сыр,0.3,dairy.сыр
+51c321d7-4632-45c9-98fe-e116a37a58d6,"Сыр ""Гауда"" ""1М молочный"" 45% ~4 кг",dairy.сыр,0.3,dairy.сыр
+4cab1c3f-a9f3-4a33-b12b-106a5db52445,"Сыр ""Гауда"" ""Ферма Босконе"" 50% ~5 кг",dairy.сыр,0.3,dairy.сыр
+e0c6e0a6-f0cc-480e-8510-04decaf3b259,"Продукт сырный ""ФРЭСКОЧИЗ"" 500% ~1,3кг",dairy.сыр,0.3,dairy.сыр
+10d3f9ae-22aa-44f6-8c28-bfee1a29d76c,"Сыр с голубой плесенью ""ВЮРД""  ~1 кг",dairy.сыр,0.3,dairy.сыр
+6cb28133-e2d0-4ce4-beb6-c546e3d28f9d,"Сыр с голубой плесенью РЕЗАНЫЙ  ~2,5 кг",dairy.сыр,0.3,dairy.сыр
+6a7b48b6-889d-4bba-b691-f823a9528c81,"Сыр с голубой плесенью ""BERGER""  ~2,7 кг",dairy.сыр,0.3,dairy.сыр
+a09e5769-cb09-4a21-9c92-99a865768f12,"Сыр с голубой плесенью ""РОКФОРТИ""  ~3 кг",dairy.сыр,0.3,dairy.сыр
+e2cd734f-b5e6-4e7f-b506-ec23ff809807,"Соус BBQ (барбекю) ""HELMANS""",condiments.sauce,0.3,condiments.sauce
+84e98448-574e-4402-adb7-1f8d4255a042,"Соус ""ДЕМИГЛАС"" ""МИРАТОРГ"" с/м",condiments.sauce,0.3,condiments.sauce
+37584f1e-fdc3-41a3-8ee7-2d98c9f0f1bd,"Соус сырный ""Печагин""",condiments.sauce,0.3,condiments.sauce
+b84da4b9-6c4b-4939-8229-6b280ef07b96,"Мука хлебопекарная ""Раменская"" в/с",staples.мука,0.3,staples.мука
+62a28c18-a30c-484a-a7b6-b2b17bcf765a,"Мука для пиццы в/с ""MAMMA MIA""",staples.мука,0.3,staples.мука
+369bf490-9dc1-41b7-ada2-2af01a40423c,"Мука для пиццы ""00"" Molino Grassi""",staples.мука,0.3,staples.мука
+8f335afe-bdb9-424a-8268-42865ff6069d,"Сыр ""Cremette"" 65% (туба)",dairy.сыр,0.3,dairy.сыр
+8f725de1-03b6-4b0e-89a2-e1dc1239acff,"Сыр Кремчиз ""COOKING"" 70%",dairy.сыр,0.3,dairy.сыр
+921f829c-ca30-46be-b6b5-799fb1fe0cd0,"Салат из водорослей Чука ""TAMAKI""",condiments.sauce,0.3,condiments.sauce
+012e1800-2a2a-43f3-80e6-ce18055826df,"Салат из водорослей Чука ""TAMAKI""",condiments.sauce,0.3,condiments.sauce
+acb49516-4cd1-4bf6-9720-bbc55d48f58f,"Кунжутное семя белое сырое, Россия",dairy.сыр,0.3,dairy.сыр
+bad06499-d5d4-4d98-b630-6aa0c073ed47,"Соус рисовый Мирин ""ToDoFood""",condiments.sauce,0.3,condiments.sauce
+177f4481-1795-49dc-8973-61f522c4783b,"Соус кунжутный ""TAMAKI""",condiments.sauce,0.3,condiments.sauce
+e0dabaeb-b7e2-4a54-ba49-4ade7f59a897,"Соус ПАД ТАЙ ""AROY-D"" .",condiments.sauce,0.3,condiments.sauce
+41f68eaa-8da0-4c1f-b845-b718bb584a60,"Соус ПАД ТАЙ ""AROY-D"" .",condiments.sauce,0.3,condiments.sauce
+02db3d2c-8c2f-46ca-8a2a-13d1a8bd3b18,"Сухари паниров. ""Panko Gold"" ""TAMAKI""",condiments.sauce,0.3,condiments.sauce
+d13675a1-df81-4326-b8bf-f41516c72e51,"Мука темпура  ""SEVENCO""",staples.мука,0.3,staples.мука
+e3e40f2a-17c3-424e-85ca-921cd15e5602,"Мука темпура ""КЛЯР""",staples.мука,0.3,staples.мука
+35004468-e18e-4062-8ad8-cc2d154196c7,"Анис звездчатый (Бадьян), пл/бан. 70г",condiments.spice,0.3,condiments.spice
+b8cc8f85-65dd-4f0b-b7ca-3221a4ba9258,"Гвоздика целая KOTANYI, пл/бан. 400г",condiments.spice,0.3,condiments.spice
+7796c57d-7b3a-4c65-a670-8baf10778846,Корица целая п/бан. 350г,condiments.spice,0.3,condiments.spice
+bcd64f24-5d8e-4380-9a53-df86bb5b4bff,"Корица молотая, пакет 500г",condiments.spice,0.3,condiments.spice
+42e5571a-8732-4eb9-9d47-df08b7f563a2,Прованские травы банка 250г,condiments.spice,0.3,condiments.spice
+877bca22-f59f-4e1b-b17a-c2a4ba46379d,Кунжут семя черное SpiceExpert пакет 1кг ФГИС,condiments.spice,0.3,condiments.spice
+cb9bb490-0b97-43bf-8b8e-d33f3d8848c5,Смесь пряностей Мексика (Фахита) SpicExpert п/п 1кг,condiments.spice,0.3,condiments.spice
+ae53f6d7-46a8-4fbf-a2c9-eabcfd26d461,"МИНДАЛЬ бланшированный AYDIN, лепестки 1кг",staples.мука,0.3,staples.мука
+599df6d8-6221-4252-ac5b-92387f2e1e00,"Тортилья сырная 10.5' (51641), пакет 12шт. (12 шт)",dairy.сыр,0.3,dairy.сыр
+59e48630-34f9-4547-b526-f1a8615be48e,"Тортилья сырная 12' (5902), пак. 12шт (6 шт)",dairy.сыр,0.3,dairy.сыр
+a1b9060b-a383-474c-afb8-dd29d04f5b3a,Крем на растительных маслах Сансет Глейз НЕО 1л,condiments.sauce,0.3,condiments.sauce
+e830c38b-792c-48e4-86fd-cc96f36ea097,Крем на растительных маслах Шантипак 1л,condiments.sauce,0.3,condiments.sauce
+3bd979b8-5b1e-4638-975b-77f21617964f,"Пирожное Макарон сырный ""Благородный сыр"" 15г (12 шт)",dairy.сыр,0.3,dairy.сыр
+0aceacd0-ba41-473e-ad8c-9ba38bd88dd3,"Пирожное ""Эклер  глазированный"" (с сырным кремом)"" 10шт 600г",dairy.сыр,0.3,dairy.сыр
+3edd835b-17f3-42e5-be1c-fd298111a9c6,"Наполеон с клубнично-земляничной начинкой (17101), 1,2кг",dairy.сыр,0.3,dairy.сыр
+327a9a53-a015-46c1-afbc-a17fc763e522,"Спред растительно-жировой ""Полтавский"" м.д.ж. 82% 5 кг",dairy.сыр,0.3,dairy.сыр
+abc172d7-fb8e-40db-8392-b9b0460d1e57,"Продукт сыросодержащий ""Гауда"" м.д.ж. 40% (брус ок. 2,5кг), ВЕСОВОЙ",dairy.сыр,0.3,dairy.сыр
+818eea83-2bd9-4fd7-9fdf-fda0c88cfd6f,"Сыр полутвердый ""Российский молодой"" брусковый м.д.ж. 50% (ок. 3.5кг), Весовой ВетИС",dairy.сыр,0.3,dairy.сыр
+b26fab10-0e08-4f37-91c8-60b56d28d9b2,Сырные монетки с томатом (50шт х20г) пакет 1кг,dairy.сыр,0.3,dairy.сыр
+cd98b8f3-fe1a-4c60-a82e-187ae0fe0e5f,Сырные монетки с халапеньо (50шт х20г) пакет 1кг,dairy.сыр,0.3,dairy.сыр
+90ab9c05-32c8-4258-84f3-a199e0755206,Колбаски Гриль Сыркатен с говядиной Рамай (5447) зам. б/о в/уп. 560г ВетИС,dairy.сыр,0.3,dairy.сыр
+ae584332-65a1-431c-b6ab-577232cde424,Гёдза со свининой YOSHIMI 500г ВетИС,meat.pork,0.3,meat.pork
+54796208-eb4a-4ecd-9bf9-d676f4514f1c,Сырники творожные классические 70г ВетИС (50 шт),dairy.сыр,0.3,dairy.сыр
+cb8234a9-8a35-4b00-b85a-de32f376372d,Сырники (гот/зам.) 60г ВетИС (100 шт),dairy.сыр,0.3,dairy.сыр
+db641731-8595-4824-88f6-a0bde3297ea1,Сырники (гот/зам.) 70г ВетИС (100 шт),dairy.сыр,0.3,dairy.сыр
+9a97cc5c-1909-424d-8574-ca91f9193a59,Сырники замороженные с вишневой начинкой 70г ВетИС (100 шт),dairy.сыр,0.3,dairy.сыр
+57cee2e0-5754-49ff-a4a2-719764c64f78,"Сырники с малиновой начинкой, зам. 70г ВетИС (100 шт)",dairy.сыр,0.3,dairy.сыр
+ebd3719e-9e95-430f-92f1-0bcce99f9d4a,Сырники СВЧ (60199) ТМ Вилон 50г ВетИС (100 шт),dairy.сыр,0.3,dairy.сыр
+d40c173b-09c3-485e-977a-deafff61fa8a,"Креветки очищенные с хвостиком, сырые, в панировке ""TORPEDO"" 1кг ВетИС",dairy.сыр,0.3,dairy.сыр
+4656b19b-4a4f-46f4-9791-f8108ce8c30b,"Угорь унаги, жареный тех.соус, с/м, 16-20унц (450-560г) 5кг",condiments.sauce,0.3,condiments.sauce
+ace03dff-1318-4476-85e5-bd65873a3da1,"Маринад Тайский чили ""Гурмикс"" 5кг",condiments.sauce,0.3,condiments.sauce
+b27fa94e-7211-4340-ad4a-463c501b0db1,"Соус ""Карри"" Гурмикс серия ""Food Service"" дой-пак 1кг",condiments.sauce,0.3,condiments.sauce
+1631dd10-082a-4f08-904e-049789731a4f,Соус «Glassa» с добавлением бальзамического уксуса модены 500 мл,condiments.sauce,0.3,condiments.sauce
+9b47f947-9ec9-424b-9dfd-991f8463f1db,"Соус для курицы сладкий чили п/б 5,4кг",condiments.sauce,0.3,condiments.sauce
+9073bf7d-b172-4692-8c77-a485a33007ba,"Соус огуречный Релиш ""Бояринъ"" ж/бан 850мл",condiments.sauce,0.3,condiments.sauce
+428ea405-ea12-41d0-8235-e2f673bfa496,Соус на основе растительных масел горчичный специальный балк. 700г,condiments.sauce,0.3,condiments.sauce
+529d94aa-a386-4985-9eb9-1715c4ec9646,Соус на основе растительных масел гриль Хайнц 1кг,condiments.sauce,0.3,condiments.sauce
+3ac5ce71-8097-42e1-97be-a2a430c48235,Соус на основе растительных масел Чесночный Ранч 1кг,condiments.sauce,0.3,condiments.sauce
+bc125be7-542a-415c-ab17-6c1f7817bb0a,"Соус сырный ""Parmegiano"" балк. 1кг",condiments.sauce,0.3,condiments.sauce
+f57067fa-6963-417c-a8b9-d07a43fdf023,Соус Хайнц сырный ориг. на основе растит. масел 1кг,condiments.sauce,0.3,condiments.sauce
+396e35fb-3d4f-4e64-9d89-359ba108e98f,"Соус деликатесный ""Терияки Восточный"" 1кг",condiments.sauce,0.3,condiments.sauce
+6214082b-eab4-4f7c-9948-766e2d7a2961,"Анис звездчатый (Бадьян), пл/бан. 70г",condiments.spice,0.3,condiments.spice
+ba601eda-951d-4c3a-8af1-cb0aa5bf9d84,"Гвоздика целая KOTANYI, пл/бан. 400г",condiments.spice,0.3,condiments.spice
+0d2dffaa-dc07-45c1-9783-047fbae2b84c,Корица целая п/бан. 350г,condiments.spice,0.3,condiments.spice
+ae0d2a7c-1193-4511-98e2-5da55f18b915,"Корица молотая, пакет 500г",condiments.spice,0.3,condiments.spice
+4dd6dff7-d005-4ad6-af19-88ff6f6fb9a5,Прованские травы банка 250г,condiments.spice,0.3,condiments.spice
+81552b00-9827-47f1-a438-aa745612d5e8,Кунжут семя черное SpiceExpert пакет 1кг ФГИС,condiments.spice,0.3,condiments.spice
+00e479cf-ee49-4563-b7a8-159de148e45d,Смесь пряностей Мексика (Фахита) SpicExpert п/п 1кг,condiments.spice,0.3,condiments.spice
+c735833f-952a-42dc-b2e1-abf28de1a8da,"МИНДАЛЬ бланшированный AYDIN, лепестки 1кг",staples.мука,0.3,staples.мука
+db25a0bc-58d4-4994-838c-2f82a11d820b,"Тортилья сырная 10.5' (51641), пакет 12шт. (12 шт)",dairy.сыр,0.3,dairy.сыр
+e963da21-2e22-4e03-b492-4f4b7528f93b,"Тортилья сырная 12' (5902), пак. 12шт (6 шт)",dairy.сыр,0.3,dairy.сыр
+0b350da4-7cd3-4120-9776-11cd289e6842,Крем на растительных маслах Сансет Глейз НЕО 1л,condiments.sauce,0.3,condiments.sauce
+efab63c4-0499-46cf-aa4f-201ee320f507,Крем на растительных маслах Шантипак 1л,condiments.sauce,0.3,condiments.sauce
+df4404aa-290e-4409-9c15-8fbdba7fd958,"Пирожное Макарон сырный ""Благородный сыр"" 15г (12 шт)",dairy.сыр,0.3,dairy.сыр
+43340b55-c92d-4db5-829c-879ae9fbd5e6,"Пирожное ""Эклер  глазированный"" (с сырным кремом)"" 10шт 600г",dairy.сыр,0.3,dairy.сыр
+5f4d8803-2e55-4347-805f-4a8d549ebbdc,"Наполеон с клубнично-земляничной начинкой (17101), 1,2кг",dairy.сыр,0.3,dairy.сыр
+25fcd61a-241d-4861-839e-426427be19ef,"Спред растительно-жировой ""Полтавский"" м.д.ж. 82% 5 кг",dairy.сыр,0.3,dairy.сыр
+ec2bdbfa-2ccf-4699-a217-3227c239c5da,"Продукт сыросодержащий ""Гауда"" м.д.ж. 40% (брус ок. 2,5кг), ВЕСОВОЙ",dairy.сыр,0.3,dairy.сыр
+2c9e4897-755f-4331-8aad-a0e381db214a,"Сыр полутвердый ""Российский молодой"" брусковый м.д.ж. 50% (ок. 3.5кг), Весовой ВетИС",dairy.сыр,0.3,dairy.сыр
+c8c8b0bf-4673-4a6f-9b8b-d9ef66f12563,Сырные монетки с томатом (50шт х20г) пакет 1кг,dairy.сыр,0.3,dairy.сыр
+7a1fcbc1-76fb-4035-84ae-0711d10656d1,Сырные монетки с халапеньо (50шт х20г) пакет 1кг,dairy.сыр,0.3,dairy.сыр
+6a41832d-38f7-4982-a961-fecc14d0e831,Колбаски Гриль Сыркатен с говядиной Рамай (5447) зам. б/о в/уп. 560г ВетИС,dairy.сыр,0.3,dairy.сыр
+f2912ac8-0fa6-4fd3-9358-8914d30b2962,Гёдза со свининой YOSHIMI 500г ВетИС,meat.pork,0.3,meat.pork
+afa90b83-b36d-4abf-bcb2-ddd162a50d50,Сырники творожные классические 70г ВетИС (50 шт),dairy.сыр,0.3,dairy.сыр
+c833778a-1947-44fb-b906-5c6e6973d826,Сырники (гот/зам.) 60г ВетИС (100 шт),dairy.сыр,0.3,dairy.сыр
+dd16441c-59a1-4500-a8dc-5e2fe741d7f9,Сырники (гот/зам.) 70г ВетИС (100 шт),dairy.сыр,0.3,dairy.сыр
+bb1543ca-21dd-4d0a-b9e6-8b3329e0afeb,Сырники замороженные с вишневой начинкой 70г ВетИС (100 шт),dairy.сыр,0.3,dairy.сыр
+279d1739-7151-407c-9118-1975cc84fdbb,"Сырники с малиновой начинкой, зам. 70г ВетИС (100 шт)",dairy.сыр,0.3,dairy.сыр
+a6c7be5a-4a94-43a3-9716-c58f90beda00,Сырники СВЧ (60199) ТМ Вилон 50г ВетИС (100 шт),dairy.сыр,0.3,dairy.сыр
+759a6408-1bd3-4c48-940e-8a4d2a1b5e23,"Креветки очищенные с хвостиком, сырые, в панировке ""TORPEDO"" 1кг ВетИС",dairy.сыр,0.3,dairy.сыр
+517fdb71-ce91-48a7-b02c-c4dca84624a7,"Угорь унаги, жареный тех.соус, с/м, 16-20унц (450-560г) 5кг",condiments.sauce,0.3,condiments.sauce
+c7e1fe3d-9d29-40b1-97b3-d1614ab9fdc7,"Маринад Тайский чили ""Гурмикс"" 5кг",condiments.sauce,0.3,condiments.sauce
+7ec710f0-560d-4560-9c90-da6746fbca9f,"Соус ""Карри"" Гурмикс серия ""Food Service"" дой-пак 1кг",condiments.sauce,0.3,condiments.sauce
+df6f2a47-55ba-4d05-910a-17f8575a86f5,Соус «Glassa» с добавлением бальзамического уксуса модены 500 мл,condiments.sauce,0.3,condiments.sauce
+6b79b43a-9c6f-4cc8-a49a-80c09eb0f11b,"Соус для курицы сладкий чили п/б 5,4кг",condiments.sauce,0.3,condiments.sauce
+e1716bcf-0c97-4959-b220-6b5275f4f880,"Соус огуречный Релиш ""Бояринъ"" ж/бан 850мл",condiments.sauce,0.3,condiments.sauce
+e5d5a8b6-e5a7-4644-bbb9-13efccb182eb,Соус на основе растительных масел горчичный специальный балк. 700г,condiments.sauce,0.3,condiments.sauce
+0e1773a3-df71-43f8-8ae6-af8f3809e7d8,Соус на основе растительных масел гриль Хайнц 1кг,condiments.sauce,0.3,condiments.sauce
+6cbd5984-7ff2-44b1-ac48-23d8eacdfd73,Соус на основе растительных масел Чесночный Ранч 1кг,condiments.sauce,0.3,condiments.sauce
+957bef18-f593-4dcd-84f8-0c976d5c4e68,"Соус сырный ""Parmegiano"" балк. 1кг",condiments.sauce,0.3,condiments.sauce
+a3fd0a07-e3b5-4457-b9d8-b20566520a6f,Соус Хайнц сырный ориг. на основе растит. масел 1кг,condiments.sauce,0.3,condiments.sauce
+48d18210-e541-461f-a055-28b3b535eeb7,"Соус деликатесный ""Терияки Восточный"" 1кг",condiments.sauce,0.3,condiments.sauce
+5ebe88bb-1db6-42f9-9b47-25c7e09592ae,Бастурма из говядины с/в в/у 200-300 гр Останкино ОМПК,meat.beef,0.3,meat.beef
+fcfdc59c-a604-4bce-ae9e-fe06f9889c0a,Суджук из говядины с/к Элиста ~350 гр Ломоносовский МК,meat.beef,0.3,meat.beef
+4cde6151-1e1d-4c7d-8fae-ff76113882ba,Колбаски зам. из курицы с сушеными томатами н/о п/э пакет ~1 кг/уп (1 шт ~100 гр) ~4 кг/кор. АМТ,meat.chicken,0.3,meat.chicken
+71002785-1e62-47a1-a6bd-d8ee45e143bf,Колбаски зам. из свинины и говядины по рецепту из Чехии н/о п/э пакет ~1 кг (1 шт ~100 гр) ~4 кг/кор. АМТ,meat.beef,0.3,meat.beef
+33edabe0-416c-489b-bbfb-4a3feb39d525,Угорь в соусе (40%) Унаги жареный с/м ~700 гр*12 шт 16-19 унц. ~8 кг/кор. Креветка,condiments.sauce,0.3,condiments.sauce
+9cb19e53-3486-4e6a-a414-ca662bbc4280,Угорь в соусе (техн.глазурь) Унаги жареный с/м 450-560 гр 16-20 унц. вал. 5 кг/кор. Китай,condiments.sauce,0.3,condiments.sauce
+2965543a-ff55-4af0-8f26-a488e6866ee6,Угорь в соусе (техн.глазурь) Унаги жареный с/м 550-750 гр 21-26 унц. вал. 2*5 кг/кор. Китай,condiments.sauce,0.3,condiments.sauce
+a7792a31-db7b-424f-86de-552a7026823b,"Лосось филе (семга) н/ш с/м трим. С в/у 1,8+ кг (4/5) ~14 кг/кор. на золотой подложке (сырье Мурманск) ВРК",dairy.сыр,0.3,dairy.сыр
+cffaf6aa-e6eb-49f1-a5d3-bf81fca712fe,Гребешок морской не отбел. (Курильское сырье) 8% 30/40 с/м 1 кг (10) Don Kreveton,dairy.сыр,0.3,dairy.сыр
+0d09d4cd-9ab7-455f-84c4-5e1cf8ff0d02,Улитки в маслянно-чесночном соусе по-бургундски в/м 170 гр (10) Маxima,condiments.sauce,0.3,condiments.sauce
+20b377ee-3186-490d-addc-f8ee47ca8148,"Спред растительно-жировой 72,58% 400 гр (12) Домашнее удовольствие",dairy.сыр,0.3,dairy.сыр
+dd1f6f78-0ee2-466e-8eec-5f918a9e3f9f,Сыр Бри 60% 125 гр (8) Президент,dairy.сыр,0.3,dairy.сыр
+a9e36e0e-5aab-4dd7-9c7d-fcff5a860968,Сыр Гауда 45% брус ~5 кг Навруз,dairy.сыр,0.3,dairy.сыр
+f4af4f05-85a0-45b1-9367-860061690bf1,"Сыр Кавказский (типа Адыгейский) 45% ~1,2 кг (12) Стародуб",dairy.сыр,0.3,dairy.сыр
+af77605e-bf82-4e8b-b5d2-162dd14f9af3,Сыр Камамбер 45% 125 гр (8) Президент,dairy.сыр,0.3,dairy.сыр
+451c105f-ff53-46a5-a267-4f1078614b36,"Сыр Маасдам 45% ~1,5 кг (6) Сыровар (5685)",dairy.сыр,0.3,dairy.сыр
+aca6e62e-ce76-4c86-972d-4226f64f3291,"Сыр Манчего полутвердый 45% 2,5кг Сыроварня Трубецких",dairy.сыр,0.3,dairy.сыр
+d658abf6-343e-442e-8406-ce134531bd7d,Сыр Маскарпоне 80% 500 гр (12) Гальбани,dairy.сыр,0.3,dairy.сыр
+b6da7cea-21c2-4b2e-adb4-b143f568f966,Сыр Маскарпоне 80% 500 гр (6) Pretto,dairy.сыр,0.3,dairy.сыр
+87206cdf-ae6b-43bc-82a5-ccaa445cfacb,Сыр Рикотта 45% 500 гр (6) Pretto,dairy.сыр,0.3,dairy.сыр
+5e0a06c7-d5c2-4cec-9c9b-ae8b6f126e99,"Сыр с голубой плесенью 55% ~2,5 кг ММЗ№1 РБ",dairy.сыр,0.3,dairy.сыр
+42c7d9c8-3436-4462-b5b1-01690ee33009,Сыр с голубой плесенью Гранд Блю 56% 100 гр (5) Милкана,dairy.сыр,0.3,dairy.сыр
+10d770e5-4843-4229-894d-172153845838,Сыр с голубой плесенью Дор Блю По-Итальянски 50% куб ~1 кг (4) (Калининград),dairy.сыр,0.3,dairy.сыр
+ec58a6b8-be1d-4a97-9ff1-8aaa005ca1f3,Сыр Страчателла 250 гр (4) Гальбани,dairy.сыр,0.3,dairy.сыр
+df7e8185-0290-4f7f-8d5f-7407853afafe,Сыр творожный Козий Chevre из козьего молока 65% 140 гр (8) Президент,dairy.сыр,0.3,dairy.сыр
+422b74e5-bee8-4eb2-8ffc-c334086d53cc,Сыр Тильзитер 45% брус ~5 кг Навруз,dairy.сыр,0.3,dairy.сыр
+5d06a8f5-c133-420d-a621-79baca0893df,Сыр Чечил Белый спагетти 35% 100 гр (12) Президент  Глеб,dairy.сыр,0.3,dairy.сыр
+6dc93aab-bd67-45ef-a514-6617cc3ae9c1,Сырный продукт белково-жировой Гауда 45% ~5 кг Стародуб (НДС 20%),dairy.сыр,0.3,dairy.сыр
+302520f6-f552-486f-b4a0-49210a572df9,"Сырный продукт колбасный копченый 40% ~1,3 кг (8) Порховский МЗС",dairy.сыр,0.3,dairy.сыр
+530cc833-e342-4500-bf43-9a1ed2c9dfef,Сырный продукт полутвердый Гауда 50% ~4 кг Ферма Босконе (Молочные горки),dairy.сыр,0.3,dairy.сыр
+3880fc65-031f-4ce7-beef-2d2363335252,Сырный продукт полутвердый Гауда Халлиген 50% ~4 кг Ферма Босконе (Молочные горки),dairy.сыр,0.3,dairy.сыр
+bdc261cb-2dfb-49e6-aa65-a7e30f089b36,Бобы очищенные зеленые Эдамаме вес.,seafood.shrimp,0.3,seafood.shrimp
+0a0e781e-d608-45c0-bf38-2219a4025df6,Шпинат листовой целый с/м,condiments.spice,0.3,condiments.spice
+e26adbdb-4ec1-438b-8e50-17bf489c060a,Сырники обжаренные 7 кг/кор. Mr.Food,dairy.сыр,0.3,dairy.сыр
+0f042f46-3ab3-4e3a-9536-2fba5a24544e,"Соус для пиццы 4,1 кг ж/б (6) Pikador Pro",condiments.sauce,0.3,condiments.sauce
+7a11ee86-46c8-4117-9066-f2b35329fe0e,Соус для пиццы без специй классический 3000 мл/2900 гр ж/б (4) Кубань продукт,condiments.sauce,0.3,condiments.sauce
+c3b74928-7dcf-4066-b53f-5280e63abadc,Перец Чипотле в соусе Адобо 312 гр ж/б San Marcos,condiments.sauce,0.3,condiments.sauce
+4fa8185d-7a05-4bbe-91c7-7860bccbf5fa,"Соус бальзамический белый 250 мл пл/б (6) PAPADIMITRIOU (12.0013,1)",condiments.sauce,0.3,condiments.sauce
+275117cc-955b-473c-a47c-ff375e62c825,Соус с добавл бальзамического уксуса Модены 500 мл пл/б (12) Карандини,condiments.sauce,0.3,condiments.sauce
+70843c12-ecbf-4f20-abea-89e3ad2f162b,"Соус бальзамический темный 250 мл пл/б (6) PAPADIMITRIOU (12.0012,1)",condiments.sauce,0.3,condiments.sauce
+83829bbe-ac29-49fa-841e-70a7accb7324,Соус барбекю 1 кг ведро Хеллманн'с,condiments.sauce,0.3,condiments.sauce
+9ed02f2a-a103-463d-9f22-2a4f433fa72b,Соус Барбекю 1 л (6) Dunkan,condiments.sauce,0.3,condiments.sauce
+04faa08f-fe65-4283-a000-0253f93c8fa1,Соус Брусничный 2 кг пакет (3) Гурмикс,condiments.sauce,0.3,condiments.sauce
+154f4cad-fc37-456c-b252-9b2cedf052cb,Соус Ворчестер 140 гр ст/б (12) Apple,condiments.sauce,0.3,condiments.sauce
+b93bcf2f-0da4-4e6b-86c4-b3a9896b1e60,Соус Ворчестер 2 кг дой-пак (3) Гурмикс,condiments.sauce,0.3,condiments.sauce
+ae544481-4351-4de0-8495-97da7ec3f40b,Соус Ворчестер Шанхайский 630 гр ст/б (12) TAI KANG HUANG,condiments.sauce,0.3,condiments.sauce
+9b01f75e-7832-4ab7-8a7d-973cc467d910,Соус Домашний Сацебели 300 гр ст/б (6) Кинто 238588,condiments.sauce,0.3,condiments.sauce
+649f0d72-8026-461d-a5fd-fb388fa13a74,Соус из черного перца 840 гр пл/б Сэн Сой,condiments.sauce,0.3,condiments.sauce
+f60e85c9-eb5e-4e19-8d6a-999ca199cd8c,Соус Карри 1 кг пакет (6) Гурмикс,condiments.sauce,0.3,condiments.sauce
+ff2115b1-9cc2-4be9-9aa1-59f83b122408,Соус Медово-горчичный 2 кг дой-пак (3) Гурмикс,condiments.sauce,0.3,condiments.sauce
+c16f896f-5f62-447d-a6e0-74aedf7bbc11,Соус Наршараб Гранатовый 400 гр ст/б (6) EVOD,condiments.sauce,0.3,condiments.sauce
+bb52cd12-6f90-419c-aa5d-f1b7f5c72e78,Соус Песто классический 190 гр (6) Filippo Berio,condiments.sauce,0.3,condiments.sauce
+1c7cc652-c3e8-4bef-86b8-412e09c6fca0,Соус Понзу с юдзу 2 кг дой-пак (2) Гурмикс,condiments.sauce,0.3,condiments.sauce
+819e8785-f021-4f90-8234-108bafc99fb6,Соус Релиш огуречный 850 г ж/б (12) Бояринъ,condiments.sauce,0.3,condiments.sauce
+c91a9941-365b-4f8c-be7a-5ce8c2fc6f1c,Соус сырный Food Service 1 кг пакет (4) Гурмикс,condiments.sauce,0.3,condiments.sauce
+3debc0b2-67e8-4d72-89d6-713e0a2e40dc,Соус сырный Чеддер для запекания 1 кг пакет (6) Гурмикс,condiments.sauce,0.3,condiments.sauce
+11828321-1a8c-42ab-af3f-09b903ba524f,Соус Табаско красный перечный 150 мл ст/б (12) McILHENNY Company,condiments.sauce,0.3,condiments.sauce
+5a329438-9692-41f8-85c7-f2c4fd10e95f,Соус Ткемали классический 300 гр ст/б (6) Кинто,condiments.sauce,0.3,condiments.sauce
+73c004ca-3373-446a-94ef-16fd254ebe74,Соус Ткемали ранний (зеленый) 300 гр ст/б (6) Кинто,condiments.sauce,0.3,condiments.sauce
+98b39a05-fc81-43c4-a021-59909696b894,Соус Чесночный 1 кг пакет (4) Гурмикс,condiments.sauce,0.3,condiments.sauce
+1850d6ba-4591-48dc-bb57-4b82762608da,Соус Чили Острый 280 мл пл/б (12) Стебель Бамбука,condiments.sauce,0.3,condiments.sauce
+5fdac0e2-5705-4733-9b96-381bcfe1fc85,Соус Чили-Манго 1 кг пакет (6) Гурмикс,condiments.sauce,0.3,condiments.sauce
+4d63fae3-8c30-471b-9bb9-f61f8953f90a,"Сырный соус Блю чиз  0,5 кг (10) Hochland",condiments.sauce,0.3,condiments.sauce
+59513c09-c93c-4eb4-9884-78d366c010df,Сырный соус плавленый Чеддер 1 кг (6) Hochland,condiments.sauce,0.3,condiments.sauce
+03dcbfee-a42c-4cc1-aa91-c9bb02c972d8,Соус Барбекю балк. 1 кг (6) 76019557,condiments.sauce,0.3,condiments.sauce
+dbcb1a57-770e-4cc8-8ace-ecc3e7dfe3ea,Соус Барбекю порционный дип-пот 25 мл*125 шт/кор. Heinz 76021118,condiments.sauce,0.3,condiments.sauce
+9614b7cf-ff08-4408-9442-ecff0bd1f717,Соус Бургер балк. 1 кг (6) Heinz 76023658,condiments.sauce,0.3,condiments.sauce
+c879235f-4831-4d16-a6b2-6b057c32f30b,Соус Горчичный балк. 700 гр (7) Heinz 76016512,condiments.sauce,0.3,condiments.sauce
+a0016f13-e0a1-4e91-8e09-6eebeee46e42,Соус Гриль балк. 1 кг (6) Heinz     76022217,condiments.sauce,0.3,condiments.sauce
+6d156e3d-55ed-4fc6-951b-f12a81d6da0d,Соус Кисло-сладкий балк. 1 кг (6) Heinz 76012563,condiments.sauce,0.3,condiments.sauce
+e058932c-5368-4450-9a0c-1c2532338b45,Соус Сальса балк. 1 кг (6) Heinz 76014342,condiments.sauce,0.3,condiments.sauce
+47164da0-60df-47f7-9e09-823295af0cd5,Соус Сырный балк. 1 кг (6) Heinz 76021117,condiments.sauce,0.3,condiments.sauce
+a70fb9dd-e017-439f-82c2-7afa06c505c5,Соус Сырный порционный дип-пот 25 мл*125 шт/кор. Heinz 76021118,condiments.sauce,0.3,condiments.sauce
+a017164b-15db-4b1f-9faf-630a98b75cdc,Соус Терияки балк. 1 кг (6) Heinz 76019171,condiments.sauce,0.3,condiments.sauce
+e8d98d5a-bd58-4777-8691-aaa3ce7ebd43,Бадьян (анис) целый 70 гр (400 мл) пл/б (6) Kotanyi,condiments.spice,0.3,condiments.spice
+6a6d5d9d-8582-40bc-b33b-1b57a5306882,Гвоздика целая 400 гр пл/б (6) Kotanyi,condiments.spice,0.3,condiments.spice
+aeea5858-3f05-481e-9570-dab745437de8,Корица в палочках 350 гр пл/б (6) Kotanyi,condiments.spice,0.3,condiments.spice
+1b38862f-41ed-4c9f-9ab2-e5d0ea5d5083,Корица молотая 600 гр пл/б (6) Kotanyi,condiments.spice,0.3,condiments.spice
+44fd3d04-3f33-4ed1-b709-37898bb27b83,Бадьян целый 250 гр пакет Роспланта,condiments.spice,0.3,condiments.spice
+ea026e0c-c0e4-4ab3-a4c0-417f89886568,Гвоздика целая 350 гр пл/б Роспланта,condiments.spice,0.3,condiments.spice
+5decef27-ddd6-43e0-aa64-ef2ad39529db,Корица в палочках 250 гр пл/б (6) Роспланта,condiments.spice,0.3,condiments.spice
+f0086965-1f0e-49ea-9880-6a754621fe49,Корица молотая 500 гр пл/б Роспланта,condiments.spice,0.3,condiments.spice
+2b61bcc2-d250-45db-903a-69c5165232e0,Хмели-сунели 1 кг (8) АРИKON,condiments.spice,0.3,condiments.spice
+b5de626e-4d56-4a09-a8ba-9f5b00ae0b54,"Соус Голландский 1,7 кг пл/в (4) Кнорр",condiments.sauce,0.3,condiments.sauce
+5e5b6a00-aa19-415c-a2ee-50abd3300d44,"Соус деми гляс Говяжий PURE BEEF 1 кг с/м (5) Chef""s label",condiments.sauce,0.3,condiments.sauce
+706a11b8-19f4-4494-bfb9-33d4daa37d6c,"Соус деми гляс Куриный BASIC 1 кг с/м (5) Chef""s label",condiments.sauce,0.3,condiments.sauce
+265cdd45-a4b7-4661-aec2-589094b09e50,"Соус Деми гляс сухой 1,5 кг пл/б (4) АРИKON PROFI",condiments.sauce,0.3,condiments.sauce
+6337c91c-e560-40b3-8f64-4c1b20987ae4,"Соус Crab Bisque 1 кг с/м (5) Chef""s label",condiments.sauce,0.3,condiments.sauce
+74709b58-1b00-4eb6-b45c-dd2933e7f53c,Ванилин 4 гр (75) Домашнее Бистро,dairy.сыр,0.3,dairy.сыр
+e0e17ee6-b8a6-4ba2-8a47-fc91167b5abc,Декстроза (глюкоза) моногидрат 1 кг СТОИНГ,condiments.spice,0.3,condiments.spice
+3aa4b95a-cbc8-4178-b947-1b983d2e2617,Крупа манная 50 кг ГОСТ марки М ЭЛИТМУКА,staples.мука,0.3,staples.мука
+1f9d0e8a-1d9a-41c2-82f3-81c56ca6488b,Мюсли фруктово-ореховые 250 гр (8) Домашнее Бистро,dairy.сыр,0.3,dairy.сыр
+64b1504d-f482-44b3-8f76-7bdffe51b4e5,Мюсли фруктовые 250 гр (8) Домашнее Бистро,dairy.сыр,0.3,dairy.сыр
+f543ad84-3d7d-42ab-a19b-b35992a70b92,Шарики шоколадные 200 гр (10) Любятово,dairy.сыр,0.3,dairy.сыр
+8a4c8b8e-3fc9-481b-8fac-bf2e73bf31af,Мука д/пиццы в/с 2 кг ГОСТ (6) Печенов,staples.мука,0.3,staples.мука
+74450ad7-e54c-4b82-ab96-089fb06bf911,Мука д/пиццы в/с 20 кг ГОСТ Печенов,staples.мука,0.3,staples.мука
+16dd9402-3845-4d6e-a07b-2d8b5583f281,"Мука д/пиццы из мягких сортов ""00"" 1 кг (10) Molino Grassi ONZ",staples.мука,0.3,staples.мука
+ae5b5529-c302-4b86-9130-82b29dfce0c1,"Мука д/пиццы из мягких сортов ""00"" 25 кг Molino Grassi ONZ H6",staples.мука,0.3,staples.мука
+5c3f9799-f92f-478b-857d-f6466d4410be,"Мука из мягких сортов Манитоба ""00"" 1 кг (10) Molino Grassi",staples.мука,0.3,staples.мука
+b8401001-5d2e-4d51-bea2-2258a1491e1e,Мука Семола из твердых сортов пшеницы 1 кг (10) Molino Grassi,staples.мука,0.3,staples.мука
+383072d3-a63e-47eb-a59a-815525fd98b5,Арахис бланшированный 1 кг Суприм,dairy.сыр,0.3,dairy.сыр
+d05e45c6-9f83-47f6-a310-d2aa3c912095,Кешью целый очищенный сырой 1 кг Суприм,dairy.сыр,0.3,dairy.сыр
+17f98ee5-63eb-4a53-97e3-528faa1d1e7e,Мак пищевой голубой 1 кг Суприм,dairy.сыр,0.3,dairy.сыр
+579ef077-daf3-4533-b5db-f19a809223d5,Миндаль лепестки 1 кг Суприм,staples.мука,0.3,staples.мука
+03aceb4c-6bbe-4efe-8bbf-8e7cd01e146b,Мука миндальная мелкая экстра файн 1 кг (10) Manolet Испания,staples.мука,0.3,staples.мука
+6c8d2fc6-5c5a-49ad-9a6d-ba6151a5f7c6,Пекан очищ. 1 кг Суприм,seafood.shrimp,0.3,seafood.shrimp
+fa644611-ae96-497a-a954-0f6b14e061db,Фисташки очищенные 1 кг Ореховая аллея,seafood.shrimp,0.3,seafood.shrimp
+2ec86cd2-aeac-4db6-932e-dab2922428a9,"Вафельная крошка 2,5 кг (4) Callebaut (M-7PAIL-E0-401)",dairy.сыр,0.3,dairy.сыр
+319b6afd-07e8-4925-858a-ba976288cf66,Паста из миндаля (сырой миндаль 100%) 1 кг (6) Джоли,dairy.сыр,0.3,dairy.сыр
+b7473e75-5cec-4410-a91e-ad38e36658d4,"Зефир сливочный в шоколаде 3,5 кг КФ Нева",dairy.сыр,0.3,dairy.сыр
+fb64aabe-2038-447e-8741-38edd1043cdf,Гипфель мини с кремом (зам) 40 гр*60 шт/кор. Яркий вкус,dairy.сыр,0.3,dairy.сыр
+26052a8b-4e0a-4f01-bb0c-109b9adfbc4a,Мини слойка ветчина-сыр (зам) 45 гр*60 шт/кор. Яркий вкус,dairy.сыр,0.3,dairy.сыр
+6a43d81d-35e2-44f2-8be6-939cd647020b,Основа для римской пиццы 20*30 см (зам) 200 гр*20 шт/кор. GIOS,dairy.сыр,0.3,dairy.сыр
+bc337eed-8ed5-4cd0-ae0d-44d5925f5e42,Мука темпурная 1 кг (12) Космос Россия,staples.мука,0.3,staples.мука
+4b73f704-7a82-4e9c-8e3e-1216fec26247,Соус Кимчи 1 л (6) Akiso,condiments.sauce,0.3,condiments.sauce
+022d7ead-b315-4a48-95bc-df9e0f3d8a43,Соус Кимчи 1 л (6) DUNKAN,condiments.sauce,0.3,condiments.sauce
+d1250000-c58d-45ff-9cf2-82dadd6a5bf8,"Соус Кимчи 1,8 л (6) PRB",condiments.sauce,0.3,condiments.sauce
+9a4209cc-883f-4b3b-9e47-4865e92a06ab,Соус креветочный 500мл (12) HADAY,condiments.sauce,0.3,condiments.sauce
+7cb0a127-7028-45ee-829f-61d78071ba7b,Соус ореховый 1 л (6) DUNKAN,condiments.sauce,0.3,condiments.sauce
+25570cdb-0a7b-47d9-8a0e-6356810c982d,Соус Рисовый МИРИН ФУ 1 л (6) Dunkan,condiments.sauce,0.3,condiments.sauce
+fe925233-a9a9-4170-b6bd-a61f2805a2d7,"Соус рыбный 4,5 кг (4) Aroy-D",condiments.sauce,0.3,condiments.sauce
+d2591be6-178e-4869-9afb-50e871d318b1,Соус рыбный 840 гр (12) Aroy-D,condiments.sauce,0.3,condiments.sauce
+1ad5e4e7-11f3-46bf-b20d-603992fc179c,"Соус сладкий для курицы Чили 2,4 кг (6) Aroy-D",condiments.sauce,0.3,condiments.sauce
+2abdff0f-85a9-4d94-b66c-8c4be6e3051d,Соус сладкий для курицы Чили 920 гр (12) Aroy-D,condiments.sauce,0.3,condiments.sauce
+bf71fa53-9e4d-4c3f-b5cc-18e98668ee7e,"Соус сладкий Чили 1 кг (6) Chef""s label",condiments.sauce,0.3,condiments.sauce
+aaeb695c-22bf-446e-a29d-7a62169a9f6a,"Соус сладкий Чили 1,8 л (6) DUNKAN",condiments.sauce,0.3,condiments.sauce
+841a5954-7ec0-41cb-9a50-169a6ae186b6,"Соус Табаджан 0,92 кг (12) Yumart",condiments.sauce,0.3,condiments.sauce
+d34982a6-e043-4347-9218-81045e354b73,"Соус Терияки 1,8 л (6) DUNKAN",condiments.sauce,0.3,condiments.sauce
+7c98d7ad-57cf-4f36-b0c0-45588b8c6b8b,"Соус Тонкацу 1,8 л (1) PRB",condiments.sauce,0.3,condiments.sauce
+bab9be2d-5269-4657-8866-69df6e2c9320,"Соус Тонкацу 1,8 л (1) БаркоГрупп",condiments.sauce,0.3,condiments.sauce
+70a2008b-0e0a-48eb-a90f-c990ddeba516,"Соус Унаги 1,8 л (6) DUNKAN",condiments.sauce,0.3,condiments.sauce
+6accf978-bceb-416f-9ec2-f5b9c70726dd,"Соус Унаги 1,8 л (6) PRB",condiments.sauce,0.3,condiments.sauce
+f2c1d30e-83fe-416f-9eb4-73540e3111a3,"Соус Унаги 1,8 л Barco Group",condiments.sauce,0.3,condiments.sauce
+14139dc3-54c7-463c-ad84-47033db0e06d,"Соус Устричный 2,4 кг (6) PRB",condiments.sauce,0.3,condiments.sauce
+92f5d615-13ba-4f3f-93ba-88cd81daa900,Соус Устричный 510 гр (12) PRB,condiments.sauce,0.3,condiments.sauce
+2a75d0b4-85e0-4dc5-aa28-dfe647fd92e4,"Соус Хойсин 1,8 л/2,2 кг (6) PRB",condiments.sauce,0.3,condiments.sauce
+77aacdc5-5e42-4614-9b22-6b981eb42df4,Соус Шрирача 510 гр (перца чили 35%) (12) Aroy-D,condiments.sauce,0.3,condiments.sauce
+c7f7d00c-fa1b-485e-bdb6-d48c265f6af2,Соус Шрирача 815 гр (перца чили 56%) (12) Uni-Eagle,condiments.sauce,0.3,condiments.sauce
+6f5f7f62-7a52-4936-9312-0f405327c7d1,Чеснок,condiments.spice,0.3,condiments.spice
+c2414b3e-d1af-4895-ab86-66f210ca38f4,Тимьян (чабрец),condiments.spice,0.3,condiments.spice
+1acd8d4d-f24c-44fe-863b-8f88d4f67ec8,Лангустины Lanzal с Головой Свежемороженые Аргентина L2 21/30 2кг,seafood.shrimp,0.3,seafood.shrimp
+1cdc7e57-9f53-4d56-9bc8-6941c596eb5c,Краб Камчатский Конечности Варено-Мороженый L3,seafood.shrimp,0.3,seafood.shrimp
+3bc1946b-89e3-4709-a740-3b4f1086dd80,Сливки Петмол Ультрапастеризованные для Супа и Соуса 22% 1л,condiments.sauce,0.3,condiments.sauce

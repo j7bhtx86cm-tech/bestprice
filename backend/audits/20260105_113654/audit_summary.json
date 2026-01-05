@@ -1,0 +1,105 @@
+{
+  "timestamp": "20260105_113654",
+  "database": "test_database",
+  "total_items": 8218,
+  "coverage": {
+    "product_core": "100%",
+    "super_class": "100%",
+    "brand": "5%",
+    "pack": "89%",
+    "unit_type": "89%"
+  },
+  "product_core_confidence": {
+    "high": 493,
+    "medium": 6699,
+    "low": 1026
+  },
+  "issues": {
+    "no_product_core": 0,
+    "no_brand": 7743,
+    "no_pack": 832,
+    "low_core_conf": 1026
+  },
+  "top_product_cores": [
+    [
+      "other",
+      1136
+    ],
+    [
+      "condiments.sauce",
+      485
+    ],
+    [
+      "dairy.сыр",
+      273
+    ],
+    [
+      "staples.рис",
+      235
+    ],
+    [
+      "staples.сахар",
+      234
+    ],
+    [
+      "canned.говядина.тушеная",
+      224
+    ],
+    [
+      "seafood.shrimp",
+      201
+    ],
+    [
+      "vegetables.картофель",
+      181
+    ],
+    [
+      "staples.макароны",
+      147
+    ],
+    [
+      "condiments.spice",
+      146
+    ],
+    [
+      "staples.масло.оливковое",
+      127
+    ],
+    [
+      "condiments.seasoning",
+      125
+    ],
+    [
+      "pasta",
+      123
+    ],
+    [
+      "dairy.молоко",
+      123
+    ],
+    [
+      "beverages.water",
+      117
+    ],
+    [
+      "dairy.сливки",
+      115
+    ],
+    [
+      "canned.перец.консервированный",
+      112
+    ],
+    [
+      "beverages.tea",
+      110
+    ],
+    [
+      "condiments.broth",
+      96
+    ],
+    [
+      "bakery.bread",
+      94
+    ]
+  ]
+}
