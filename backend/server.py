@@ -3267,12 +3267,14 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             'price_per_base_unit': winner.get('price_per_base_unit') or winner.get('price'),  # ИСПРАВЛЕНО
             'total_cost': winner.get('price') * request.qty,
             'need_packs': request.qty,
-            'match_percent': min(95.0, confidence * 100),  # ИСПРАВЛЕНО: 0..100 range
+            'match_percent': match_percent,  # ИСПРАВЛЕНО: используем calculate_match_percent()
             'explanation': {
                 'total_candidates': total_candidates,
-                'after_super_class_filter': len(step1),  # ОБНОВЛЕНО
+                'after_super_class_filter': len(step1),
                 'after_brand_filter': len(step2),
-                'after_pack_filter': len(step3)
+                'after_pack_filter': len(step3),
+                'confidence_raw': round(confidence, 2),
+                'match_percent_final': match_percent  # int 0..100
             }
         })()
         
