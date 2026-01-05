@@ -49,11 +49,21 @@ NEGATIVE_KEYWORDS = {
 }
 
 def has_negative_keywords(product_name: str, super_class: str) -> Tuple[bool, str]:
-    """Check if product contains negative keywords for this category
+    """Check if product contains FORBIDDEN tokens for this category
     
     Returns:
         (has_negative, keyword_found)
     """
+    if not super_class or super_class not in NEGATIVE_KEYWORDS:
+        return False, ""
+    
+    name_lower = product_name.lower()
+    
+    for neg_keyword in NEGATIVE_KEYWORDS[super_class]:
+        if neg_keyword in name_lower:
+            return True, neg_keyword
+    
+    return False, ""
 
 
 # REQUIRED ANCHORS - обязательные токены (если НЕТ = кандидат выкидывается)
@@ -90,17 +100,6 @@ def has_required_anchors(product_name: str, super_class: str) -> Tuple[bool, str
     for anchor in REQUIRED_ANCHORS[super_class]:
         if anchor in name_lower:
             return True, anchor
-    
-    return False, ""
-
-    if not super_class or super_class not in NEGATIVE_KEYWORDS:
-        return False, ""
-    
-    name_lower = product_name.lower()
-    
-    for neg_keyword in NEGATIVE_KEYWORDS[super_class]:
-        if neg_keyword in name_lower:
-            return True, neg_keyword
     
     return False, ""
 

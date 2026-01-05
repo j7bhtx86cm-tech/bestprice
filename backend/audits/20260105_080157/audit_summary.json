@@ -1,0 +1,25 @@
+{
+  "timestamp": "20260105_080157",
+  "total_items": 8218,
+  "sampled_for_matching": 1028,
+  "data_quality": {
+    "super_class_other": 2380,
+    "no_pack": 1052,
+    "no_brand": 7743,
+    "top_issues": {
+      "NO_BRAND": 7743,
+      "SUPER_CLASS_OTHER": 2380,
+      "NO_PACK": 1052,
+      "NEGATIVE_KEYWORD": 24
+    }
+  },
+  "matching_quality": {
+    "ok": 780,
+    "not_found": 248,
+    "bad_matches": 0,
+    "not_found_reasons": {
+      "INSUFFICIENT_CLASSIFICATION": 217,
+      "NO_CANDIDATES_AFTER_GUARDS": 31
+    }
+  }
+}
