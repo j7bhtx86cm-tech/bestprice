@@ -110,6 +110,37 @@ PRODUCT_CORE_RULES = {
         (['пармезан', 'parmesan'], 'dairy.cheese.parmesan'),
         (['чеддер', 'cheddar'], 'dairy.cheese.cheddar'),
     ],
+    
+    # Vegetables - Овощи/Бобовые
+    'vegetables.beans': [
+        (['бобы', 'beans', 'эдамаме'], 'vegetables.beans'),
+    ],
+    'vegetables.peas': [
+        (['горох', 'peas'], 'vegetables.peas'),
+    ],
+    'vegetables.lentils': [
+        (['чечевиц', 'lentils'], 'vegetables.lentils'),
+    ],
+    
+    # Disposables - Расходники
+    'disposables.paper': [
+        (['бумага', 'paper', 'пергамент'], 'disposables.paper'),
+    ],
+    'disposables.napkins': [
+        (['салфетк', 'полотенц', 'napkin', 'towel'], 'disposables.napkins'),
+    ],
+    
+    # Canned goods
+    'canned.фрукты': [
+        (['персик', 'peach'], 'canned.peaches'),
+        (['ананас', 'pineapple'], 'canned.pineapple'),
+        (['груш', 'pear'], 'canned.pears'),
+    ],
+    
+    # Seaweed - Морские водоросли
+    'seafood.seaweed': [
+        (['чука', 'вакаме', 'нори', 'водоросл'], 'seafood.seaweed'),
+    ],
 }
 
 
