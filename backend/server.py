@@ -3640,9 +3640,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     {
                         'name_raw': c.get('name_raw', '')[:50],
                         'price': c.get('price'),
-                        'supplier': company_map.get(c.get('supplier_company_id'), 'Unknown')
+                        'supplier': company_map.get(c.get('supplier_company_id'), 'Unknown'),
+                        'packs_needed': c.get('_packs_needed'),
+                        'pack_explanation': c.get('_pack_explanation', '')
                     }
-                    for c in step4_pack[:5]
+                    for c in step4_unit_compatible[:5]
                 ],
                 debug_log={
                     'request_id': request_id,
@@ -3655,11 +3657,16 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                         'rejected_by_forbidden': rejected_forbidden,
                         'rejected_by_missing_anchor': rejected_anchors,
                         'after_brand': len(step3_brand),
-                        'after_pack': len(step4_pack)
+                        'after_unit_filter': len(step4_unit_compatible),
+                        'rejected_unit_mismatch': unit_mismatch_count,
+                        'pack_calculated': pack_calculated_count
                     },
                     'selected_item_id': winner.get('id'),
                     'confidence_raw': round(confidence, 2),
-                    'match_percent_final': match_percent
+                    'match_percent_final': match_percent,
+                    'packs_needed': packs_needed,
+                    'total_cost': actual_total_cost,
+                    'pack_explanation': pack_explanation
                 },
                 message="Товар добавлен в корзину"
             )
