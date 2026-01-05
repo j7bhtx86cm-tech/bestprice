@@ -3596,21 +3596,41 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 upsert=True
             )
             
-            # Build SelectedOffer for response
+            # Build SelectedOffer for response with P0 unit fields
+            cand_pack = winner.get('_pack_info')
+            pack_explanation = winner.get('_pack_explanation', '')
+            
+            # Determine unit string for display
+            if ref_pack_info.unit_type == UnitType.WEIGHT:
+                ref_unit = "g"
+                cand_unit = "g"
+            elif ref_pack_info.unit_type == UnitType.VOLUME:
+                ref_unit = "ml"
+                cand_unit = "ml"
+            elif ref_pack_info.unit_type == UnitType.PIECE:
+                ref_unit = "шт"
+                cand_unit = "шт"
+            else:
+                ref_unit = "?"
+                cand_unit = "?"
+            
             selected_offer = SelectedOffer(
                 supplier_id=result.supplier_id,
                 supplier_name=result.supplier_name,
                 supplier_item_id=result.supplier_item_id,
                 name_raw=result.name_raw,
                 price=result.price,
-                currency='RUB',
-                unit_norm='kg',
-                pack_value=winner.get('pack_base', 1.0),
-                pack_unit=winner.get('base_unit', 'kg'),
                 price_per_base_unit=result.price_per_base_unit or result.price,
-                total_cost=result.total_cost,
-                units_needed=result.need_packs or 1.0,
-                score=result.match_percent or 0
+                total_cost=actual_total_cost,  # P0: Correct total_cost
+                need_packs=float(packs_needed) if packs_needed else 1.0,
+                score=match_percent,
+                # P0: New unit fields
+                selected_pack_base_qty=cand_pack.base_qty if cand_pack else None,
+                selected_pack_unit=cand_unit,
+                required_base_qty=ref_pack_info.base_qty,
+                required_unit=ref_unit,
+                packs_needed=packs_needed,
+                pack_explanation=pack_explanation
             )
             
             return AddFromFavoriteResponse(
