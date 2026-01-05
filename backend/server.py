@@ -3202,7 +3202,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         # Rule: Match ONLY by product_core_id
         # If no product_core or no matches → NOT_FOUND
         
-        if not ref_product_core or ref_core_conf < 0.5:
+        if not ref_product_core or ref_core_conf < 0.3:
             # Cannot determine product_core reliably
             logger.error(f"❌ Cannot determine product_core for '{reference_name}' (conf={ref_core_conf:.2f})")
             search_logger.set_outcome('not_found', 'CORE_NOT_DETECTED')
@@ -3210,6 +3210,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             return AddFromFavoriteResponse(
                 status="not_found",
                 message=f"Не удалось определить категорию товара (product_core)",
+                build_sha=BUILD_SHA,
+                request_id=request_id,
+                ref_product_core=ref_product_core,
+                ref_unit_type=ref_pack_info.unit_type.value if ref_pack_info else None,
                 debug_log={
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
