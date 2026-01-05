@@ -12,6 +12,7 @@ PRODUCT_CORE_RULES = {
     'meat.beef': [
         (['фарш', 'minced', 'ground'], 'meat.beef.ground'),
         (['стейк', 'steak'], 'meat.beef.steak'),
+        (['рибай', 'ribeye', 'rib-eye', 'рибей'], 'meat.beef.ribeye'),  # P1: Added ribeye
         (['рёбр', 'ribs', 'ребра'], 'meat.beef.ribs'),
         (['филе', 'fillet', 'вырезка'], 'meat.beef.fillet'),
         (['грудк', 'brisket'], 'meat.beef.brisket'),
