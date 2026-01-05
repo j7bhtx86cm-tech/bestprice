@@ -3021,6 +3021,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
     """
     import logging
     import uuid
+    import json
     
     logger = logging.getLogger(__name__)
     
