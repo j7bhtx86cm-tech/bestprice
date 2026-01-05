@@ -3085,8 +3085,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   unit={unit_norm}, pack={pack_size}, qty={request.qty}")
         
         # Step 4: Get all SUPPLIER_ITEMS (candidates) - ПРАВИЛЬНАЯ КОЛЛЕКЦИЯ!
-        supplier_items_cursor = db.supplier_items.find({"active": True}, {"_id": 0})
+        # FIX: Changed from {"active": True} to {"offer_status": "ACTIVE"}
+        supplier_items_cursor = db.supplier_items.find({"offer_status": "ACTIVE"}, {"_id": 0})
         supplier_items = await supplier_items_cursor.to_list(length=None)
+        
+        logger.info(f"   📊 Loaded {len(supplier_items)} ACTIVE supplier_items")
         
         # Build candidates from supplier_items
         candidates = []
