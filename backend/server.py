@@ -3342,20 +3342,46 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 }
             )
         
-        # Filter 4: Pack ±20% (IMPROVED parsing)
+        # Filter 4: Pack ±20% (FLEXIBLE - штрафуем score вместо отсечения)
         ref_pack_size = parse_pack_value(reference_name) if not pack_size else pack_size
         
         if ref_pack_size:
             min_pack = ref_pack_size * 0.8
             max_pack = ref_pack_size * 1.2
             step4_pack = []
+            pack_penalty_count = 0
+            
             for c in step3_brand:
-                # Get pack from net_weight_kg or net_volume_l
+                # Get pack from DB
                 c_pack = c.get('net_weight_kg') or c.get('net_volume_l')
-                if c_pack and min_pack <= c_pack <= max_pack:
+                
+                # If DB pack missing, try parse from name_raw
+                if not c_pack:
+                    c_pack = parse_pack_value(c.get('name_raw', ''))
+                    if c_pack:
+                        c['_pack_parsed'] = True
+                
+                if c_pack:
+                    # Check if in range
+                    if min_pack <= c_pack <= max_pack:
+                        c['_pack_score_penalty'] = 0
+                        step4_pack.append(c)
+                    else:
+                        # OUT of range - ШТРАФУЕМ, но не отрезаем
+                        c['_pack_score_penalty'] = 10  # -10 к match_percent
+                        c['_pack_out_of_range'] = True
+                        step4_pack.append(c)
+                        pack_penalty_count += 1
+                else:
+                    # Pack unknown - ШТРАФУЕМ минимально
+                    c['_pack_score_penalty'] = 5  # -5 к match_percent
+                    c['_pack_unknown'] = True
                     step4_pack.append(c)
-            logger.info(f"   После pack filter (±20% от {ref_pack_size}): {len(step4_pack)}")
+                    pack_penalty_count += 1
+            
+            logger.info(f"   После pack filter (±20% от {ref_pack_size}): {len(step4_pack)} ({pack_penalty_count} с штрафом)")
             search_logger.set_count('after_pack_filter', len(step4_pack))
+            search_logger.set_count('pack_penalized', pack_penalty_count)
         else:
             step4_pack = step3_brand
             logger.info(f"   Pack filter: SKIP (pack_size unknown)")
