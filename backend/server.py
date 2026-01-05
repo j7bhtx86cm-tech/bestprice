@@ -3542,11 +3542,24 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                         'price': c.get('price'),
                         'supplier': company_map.get(c.get('supplier_company_id'), 'Unknown')
                     }
-                    for c in step3[:5]
+                    for c in step4_pack[:5]
                 ],
                 debug_log={
-                    **result.explanation,
-                    'request_id': request_id  # Добавляем request_id
+                    'request_id': request_id,
+                    'build_sha': BUILD_SHA,
+                    'guards_applied': True,
+                    'counts': {
+                        'total': total_candidates,
+                        'after_super_class': len(step1),
+                        'after_guards': len(step2_guards),
+                        'rejected_by_forbidden': rejected_forbidden,
+                        'rejected_by_missing_anchor': rejected_anchors,
+                        'after_brand': len(step3_brand),
+                        'after_pack': len(step4_pack)
+                    },
+                    'selected_item_id': winner.get('id'),
+                    'confidence_raw': round(confidence, 2),
+                    'match_percent_final': match_percent
                 },
                 message="Товар добавлен в корзину"
             )
