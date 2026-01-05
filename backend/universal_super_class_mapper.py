@@ -160,6 +160,8 @@ def detect_super_class(product_name, min_confidence=0.3):
         'желатин': 'additives.gelatin',
         'агар': 'additives.agar',
         'пектин': 'additives.pectin',
+        # Salt - often comes in "пакет" packaging
+        'соль': 'condiments.salt',
     }
     
     # Check priority direct mappings FIRST
