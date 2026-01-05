@@ -229,7 +229,12 @@ for i, ref_item in enumerate(sample_items):
 print(f"\n   Saving matching_audit.csv...")
 with open(f'{AUDIT_DIR}/matching_audit.csv', 'w', newline='', encoding='utf-8') as f:
     if matching_results:
-        writer = csv.DictWriter(f, fieldnames=matching_results[0].keys())
+        # Get all unique keys
+        all_keys = set()
+        for m in matching_results:
+            all_keys.update(m.keys())
+        
+        writer = csv.DictWriter(f, fieldnames=sorted(all_keys))
         writer.writeheader()
         writer.writerows(matching_results)
 
