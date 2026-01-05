@@ -3364,50 +3364,48 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 }
             )
         
-        # Filter 4: Pack ±20% (FLEXIBLE - штрафуем score вместо отсечения)
-        ref_pack_size = parse_pack_value(reference_name) if not pack_size else pack_size
+        # Filter 4: Unit Compatibility + Pack Calculation (P0 NEW LOGIC)
+        step4_unit_compatible = []
+        unit_mismatch_count = 0
+        pack_calculated_count = 0
         
-        if ref_pack_size:
-            min_pack = ref_pack_size * 0.8
-            max_pack = ref_pack_size * 1.2
-            step4_pack = []
-            pack_penalty_count = 0
+        for c in step3_brand:
+            candidate_name = c.get('name_raw', '')
             
-            for c in step3_brand:
-                # Get pack from DB
-                c_pack = c.get('net_weight_kg') or c.get('net_volume_l')
-                
-                # If DB pack missing, try parse from name_raw
-                if not c_pack:
-                    c_pack = parse_pack_value(c.get('name_raw', ''))
-                    if c_pack:
-                        c['_pack_parsed'] = True
-                
-                if c_pack:
-                    # Check if in range
-                    if min_pack <= c_pack <= max_pack:
-                        c['_pack_score_penalty'] = 0
-                        step4_pack.append(c)
-                    else:
-                        # OUT of range - ШТРАФУЕМ, но не отрезаем
-                        c['_pack_score_penalty'] = 10  # -10 к match_percent
-                        c['_pack_out_of_range'] = True
-                        step4_pack.append(c)
-                        pack_penalty_count += 1
-                else:
-                    # Pack unknown - ШТРАФУЕМ минимально
-                    c['_pack_score_penalty'] = 5  # -5 к match_percent
-                    c['_pack_unknown'] = True
-                    step4_pack.append(c)
-                    pack_penalty_count += 1
+            # Parse candidate pack
+            cand_pack_info = parse_pack_from_text(candidate_name)
             
-            logger.info(f"   После pack filter (±20% от {ref_pack_size}): {len(step4_pack)} ({pack_penalty_count} с штрафом)")
-            search_logger.set_count('after_pack_filter', len(step4_pack))
-            search_logger.set_count('pack_penalized', pack_penalty_count)
-        else:
-            step4_pack = step3_brand
-            logger.info(f"   Pack filter: SKIP (pack_size unknown)")
-            search_logger.set_count('after_pack_filter', len(step4_pack))
+            # Calculate packs_needed
+            packs_needed, total_cost_mult, calc_reason = calculate_packs_needed(
+                ref_pack_info, cand_pack_info
+            )
+            
+            # Check for UNIT_MISMATCH (critical rejection)
+            if "UNIT_MISMATCH" in calc_reason:
+                unit_mismatch_count += 1
+                logger.debug(f"   ❌ UNIT_MISMATCH: {candidate_name[:40]} - {calc_reason}")
+                continue  # REJECT this candidate
+            
+            # Store pack calculation info
+            c['_pack_info'] = cand_pack_info
+            c['_packs_needed'] = packs_needed
+            c['_total_cost_mult'] = total_cost_mult
+            c['_calc_reason'] = calc_reason
+            c['_pack_explanation'] = format_pack_explanation(ref_pack_info, cand_pack_info, packs_needed) if packs_needed else ""
+            
+            # Calculate pack penalty for match_percent
+            pack_penalty = calculate_pack_penalty(packs_needed, cand_pack_info.unit_type)
+            c['_pack_score_penalty'] = pack_penalty
+            
+            step4_unit_compatible.append(c)
+            if packs_needed:
+                pack_calculated_count += 1
+        
+        logger.info(f"   После unit compatibility filter: {len(step4_unit_compatible)} (rejected: {unit_mismatch_count} unit_mismatch)")
+        logger.info(f"   Pack calculated: {pack_calculated_count}")
+        search_logger.set_count('after_unit_filter', len(step4_unit_compatible))
+        search_logger.set_count('rejected_unit_mismatch', unit_mismatch_count)
+        search_logger.set_count('pack_calculated', pack_calculated_count)
         
         if len(step4_pack) == 0:
             search_logger.set_outcome('not_found', 'PACK_NOT_COMPATIBLE')
