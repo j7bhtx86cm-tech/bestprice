@@ -3004,28 +3004,28 @@ class AddFromFavoriteResponse(BaseModel):
 async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_user: dict = Depends(get_current_user)):
     """Add item from favorites to cart with ENHANCED BEST PRICE SEARCH
     
-    VERSION 3.0 (Final Stabilization):
-    - Score thresholds: ≥85% for brand_critical=ON, ≥70% for brand_critical=OFF
-    - Pack range filter: 0.5x - 2x of reference pack
-    - Guard rules: кетчуп ≠ соус, лосось ≠ курица
-    - Economics: total_cost = requested_qty × price_per_base_unit
-    - Selection by total_cost, token match is tie-breaker
-    - Schema v2 support: brand_critical (boolean)
+    VERSION 4.0 (P0 Guards Fix):
+    - Guards applied to CANDIDATE, not reference
+    - Fixed active filter: offer_status="ACTIVE"
+    - Diagnostic fields: build_sha, request_id, counts, guards_applied
+    - SEARCH_SUMMARY log for tracing
     
     CRITICAL RULES:
     1. NEVER use supplier_item_id from favorite directly
     2. ALWAYS run full search
-    3. brand_critical=false: brand COMPLETELY IGNORED
-    4. brand_critical=true: filter by brand_id + ≥85% threshold
-    5. brand_critical=false: no brand filter + ≥70% threshold
-    6. Pack must be in range: 0.5x - 2x of reference
+    3. Guards check CANDIDATE.name_raw (forbidden + required_anchors)
+    4. brand_critical=false: brand COMPLETELY IGNORED
+    5. brand_critical=true: filter by brand_id
+    6. Pack must be in range: ±20% of reference
     7. Return structured response (never 500)
     """
     import logging
-    from search_engine_v12 import SearchEngineV12, extract_pack_value
-    import search_engine_v12
+    import uuid
     
     logger = logging.getLogger(__name__)
+    
+    # Generate unique request_id for tracing
+    request_id = str(uuid.uuid4())[:8]
     
     try:
         # Step 1: Get favorite from DB
