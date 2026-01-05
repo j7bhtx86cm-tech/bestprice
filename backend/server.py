@@ -3189,13 +3189,45 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         total_candidates = len(candidates)
         logger.info(f"   Total candidates: {total_candidates}")
         
-        # Filter 1: super_class match
-        step1 = [
-            c for c in candidates 
-            if c.get('super_class') == ref_super_class
-            and c.get('price', 0) > 0
-        ]
-        logger.info(f"   После super_class filter ({ref_super_class}): {len(step1)}")
+        # Filter 1: Product Core Match (P1 STRICT MATCHING)
+        # Rule: Match by product_core_id if confidence is high (>=0.7)
+        # Fallback to super_class if core confidence is low
+        
+        if ref_product_core and ref_core_conf >= 0.7:
+            # STRICT: Match only by product_core
+            step1 = [
+                c for c in candidates 
+                if c.get('product_core_id') == ref_product_core
+                and c.get('price', 0) > 0
+            ]
+            logger.info(f"   После product_core filter (STRICT, core={ref_product_core}): {len(step1)}")
+            search_logger.set_count('after_product_core_strict', len(step1))
+            
+            # If no matches by core, try fallback to super_class with warning
+            if len(step1) == 0:
+                logger.warning(f"   ⚠️ No matches for product_core={ref_product_core}, trying super_class fallback...")
+                step1_fallback = [
+                    c for c in candidates 
+                    if c.get('super_class') == ref_super_class
+                    and c.get('price', 0) > 0
+                ]
+                if len(step1_fallback) > 0:
+                    logger.info(f"   Fallback to super_class ({ref_super_class}): {len(step1_fallback)}")
+                    step1 = step1_fallback
+                    # Mark as fallback for scoring penalty
+                    for c in step1:
+                        c['_fallback_to_super_class'] = True
+        else:
+            # LOW CONFIDENCE: Use super_class with warning
+            logger.warning(f"   ⚠️ Low product_core confidence ({ref_core_conf:.2f}), using super_class")
+            step1 = [
+                c for c in candidates 
+                if c.get('super_class') == ref_super_class
+                and c.get('price', 0) > 0
+            ]
+            logger.info(f"   После super_class filter ({ref_super_class}): {len(step1)}")
+        
+        search_logger.set_count('after_super_class', len(step1))
         search_logger.set_count('after_super_class', len(step1))
         
         # P0.2 FALLBACK: Если не найдено по super_class, пробуем 'other' с keyword matching  
