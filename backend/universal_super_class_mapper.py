@@ -113,6 +113,7 @@ def detect_super_class(product_name, min_confidence=0.3):
     
     # GUARD RULES: Hard negative filters to prevent false positives
     # These keywords EXCLUDE certain super_classes regardless of other matches
+    # NOTE: Guard rules should be specific enough to avoid false positives
     guard_rules = {
         # Vegetables/Legumes - NOT seafood
         'бобы': {'exclude': ['seafood'], 'assign': 'vegetables.beans'},
@@ -129,13 +130,13 @@ def detect_super_class(product_name, min_confidence=0.3):
         'абрикос': {'exclude': ['seafood'], 'assign': 'canned.фрукты'},
         
         # Paper/Disposables - NOT staples/food
+        # NOTE: Removed 'пакет' - too generic, appears in product descriptions like "желатин пакет 1кг"
         'бумага для выпечки': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.paper'},
-        'бумага': {'exclude': ['staples.рис', 'seafood'], 'assign': 'disposables.paper'},
+        'бумага туалетная': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.paper'},
         'полотенц': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.napkins'},
         'салфетк': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.napkins'},
         'перчатк': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.gloves'},
-        'пакет': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.bags'},
-        'пленк': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.film'},
+        'пленк пищев': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.film'},
         'фольг': {'exclude': ['staples', 'seafood', 'meat'], 'assign': 'disposables.foil'},
         
         # Seaweed salads - special category, not shrimp
@@ -150,7 +151,21 @@ def detect_super_class(product_name, min_confidence=0.3):
         'пангасиус': {'exclude': ['seafood.shrimp'], 'assign': 'seafood.pangasius'},
     }
     
-    # Check GUARD RULES first - highest priority
+    # DIRECT MAPPINGS - Check these FIRST before guard rules
+    # These have highest priority for specific product types
+    direct_map_priority = {
+        # Additives that may contain "пакет" in name
+        'желатин': 'additives.gelatin',
+        'агар': 'additives.agar',
+        'пектин': 'additives.pectin',
+    }
+    
+    # Check priority direct mappings FIRST
+    for key, super_class in direct_map_priority.items():
+        if key in name_norm:
+            return super_class, 1.0
+    
+    # Check GUARD RULES second
     for guard_key, guard_rule in guard_rules.items():
         if guard_key in name_norm:
             # This keyword triggers a guard rule
