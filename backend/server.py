@@ -3164,17 +3164,57 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 message=f"Не найдено товаров с категорией '{ref_super_class}'"
             )
         
-        # Filter 2: Brand (if brand_critical=ON)
+        # Filter 2: Brand (if brand_critical=ON) - STRICT + TEXT FALLBACK
         if brand_critical and brand_id:
-            step2 = [c for c in step1 if c.get('brand_id') == brand_id]
-            logger.info(f"   После brand filter (brand_id={brand_id}): {len(step2)}")
-            search_logger.set_count('after_brand_filter', len(step2))
+            from p0_hotfix_stabilization import load_brand_aliases, extract_brand_from_text
             
-            # Диагностика если 0
+            # Step A: Strict brand_id filter
+            step2_strict = [c for c in step1 if c.get('brand_id') == brand_id]
+            logger.info(f"   После brand_id filter (strict, brand_id={brand_id}): {len(step2_strict)}")
+            search_logger.set_count('after_brand_id_strict', len(step2_strict))
+            
+            # Step B: Text fallback если strict дал 0
+            if len(step2_strict) == 0:
+                logger.warning(f"   ⚠️ Пробуем brand text fallback...")
+                
+                brand_aliases = load_brand_aliases()
+                step2_fallback = []
+                
+                for c in step1:
+                    # Extract brand from text
+                    brand_from_text = extract_brand_from_text(c.get('name_raw', ''), brand_aliases)
+                    c['_brand_from_text'] = brand_from_text
+                    
+                    if brand_from_text == brand_id:
+                        step2_fallback.append(c)
+                
+                logger.info(f"   После brand text fallback: {len(step2_fallback)}")
+                search_logger.set_count('after_brand_text_fallback', len(step2_fallback))
+                
+                step2 = step2_fallback
+            else:
+                step2 = step2_strict
+            
+            # Brand diagnostics
             if len(step2) == 0:
-                brands_available = list(set(c.get('brand_id') for c in step1 if c.get('brand_id')))[:5]
-                logger.warning(f"   Бренд '{brand_id}' не найден. Доступные бренды: {brands_available}")
-                search_logger.set_context(available_brands=brands_available)
+                # Collect available brands for diagnostics
+                brands_by_id = [c.get('brand_id') for c in step1 if c.get('brand_id')]
+                top_brands_id = list(set(brands_by_id))[:5]
+                
+                brands_by_text = [c.get('_brand_from_text') for c in step1 if c.get('_brand_from_text')]
+                top_brands_text = list(set(brands_by_text))[:5]
+                
+                logger.warning(f"   Бренд '{brand_id}' не найден")
+                logger.warning(f"   Available brands (by ID): {top_brands_id}")
+                logger.warning(f"   Available brands (by text): {top_brands_text}")
+                
+                search_logger.set_brand_diagnostics(
+                    requested_brand_id=brand_id,
+                    available_brands_id=top_brands_id,
+                    available_brands_text=top_brands_text
+                )
+            
+            search_logger.set_count('after_brand_filter', len(step2))
         else:
             step2 = step1
             logger.info(f"   Brand filter: SKIP (brand_critical={brand_critical})")

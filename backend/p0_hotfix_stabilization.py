@@ -145,6 +145,105 @@ def parse_pack_value(product_name: str) -> Optional[float]:
     return None
 
 
+# ==================== 4) BRAND TEXT EXTRACTION ====================
+
+def normalize_brand_text(text: str) -> str:
+    """Normalize brand text for matching
+    
+    - Lowercase
+    - ё→е
+    - Remove punctuation, quotes, ™, ®
+    - Collapse spaces
+    """
+    if not text:
+        return ""
+    
+    text = str(text).upper()
+    text = text.replace('Ё', 'Е').replace('ё', 'е')
+    
+    # Remove trademark symbols
+    text = text.replace('™', '').replace('®', '').replace('©', '')
+    
+    # Remove punctuation and quotes
+    text = re.sub(r'["\'\«\»\.\,\;\:\!\?]', ' ', text)
+    text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
+    
+    # Collapse spaces
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    return text.lower()
+
+
+def extract_brand_from_text(product_name: str, brand_aliases: dict) -> Optional[str]:
+    """Extract brand_id from product name using brand_aliases
+    
+    Args:
+        product_name: Product name
+        brand_aliases: dict {alias_norm: brand_id}
+    
+    Returns:
+        brand_id or None
+    """
+    if not product_name or not brand_aliases:
+        return None
+    
+    name_norm = normalize_brand_text(product_name)
+    name_words = set(name_norm.split())
+    
+    # Sort by length (longest first) for better matching
+    sorted_aliases = sorted(brand_aliases.items(), key=lambda x: len(x[0]), reverse=True)
+    
+    for alias_norm, brand_id in sorted_aliases:
+        # Short aliases require exact word match
+        if len(alias_norm) < 4:
+            if alias_norm in name_words:
+                return brand_id
+        else:
+            # Longer aliases - substring at word boundary
+            if alias_norm in name_norm:
+                # Check word boundary
+                pattern = r'(^|\s)' + re.escape(alias_norm) + r'($|\s)'
+                if re.search(pattern, name_norm):
+                    return brand_id
+    
+    return None
+
+
+# Global brand aliases cache
+_brand_aliases_cache = None
+
+def load_brand_aliases() -> dict:
+    """Load brand aliases from MongoDB
+    
+    Returns:
+        dict {alias_norm: brand_id}
+    """
+    global _brand_aliases_cache
+    
+    if _brand_aliases_cache is not None:
+        return _brand_aliases_cache
+    
+    try:
+        from pymongo import MongoClient
+        import os
+        
+        DB_NAME = os.environ.get('DB_NAME', 'test_database')
+        db = MongoClient(os.environ.get('MONGO_URL'))[DB_NAME]
+        
+        # Load from brand_aliases collection
+        aliases_cursor = db.brand_aliases.find({}, {'_id': 0, 'alias_norm': 1, 'brand_id': 1})
+        _brand_aliases_cache = {doc['alias_norm']: doc['brand_id'] 
+                                for doc in aliases_cursor if doc.get('alias_norm')}
+        
+        logger.info(f"📚 Loaded {len(_brand_aliases_cache)} brand aliases for text extraction")
+        
+    except Exception as e:
+        logger.warning(f"⚠️ Could not load brand aliases: {e}")
+        _brand_aliases_cache = {}
+    
+    return _brand_aliases_cache
+
+
 # ==================== 4) STRUCTURED LOGGING ====================
 
 class SearchLogger:
@@ -167,8 +266,11 @@ class SearchLogger:
     def set_count(self, stage: str, count: int):
         self.log_data['pipeline_counts'][stage] = count
     
-    def set_selection(self, **kwargs):
-        self.log_data['selection'].update(kwargs)
+    def set_brand_diagnostics(self, **kwargs):
+        """Set brand diagnostics for debugging brand matching"""
+        if 'brand_diagnostics' not in self.log_data:
+            self.log_data['brand_diagnostics'] = {}
+        self.log_data['brand_diagnostics'].update(kwargs)
     
     def set_outcome(self, outcome: str, reason_code: str = None):
         self.log_data['outcome'] = outcome
