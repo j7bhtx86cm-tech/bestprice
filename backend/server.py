@@ -3167,6 +3167,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             and c.get('price', 0) > 0
         ]
         logger.info(f"   После super_class filter ({ref_super_class}): {len(step1)}")
+        search_logger.set_count('after_super_class', len(step1))
         
         # P0.2 FALLBACK: Если не найдено по super_class, пробуем 'other' с keyword matching  
         if len(step1) == 0:
@@ -3197,15 +3198,73 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         if len(step1) == 0:
             logger.error(f"❌ NO CANDIDATES after super_class filter")
             logger.error(f"   Reference super_class: {ref_super_class}")
-            logger.error(f"   Total active: {sum(1 for si in supplier_items if si.get('active') == True)}")
+            logger.error(f"   Total active: {sum(1 for si in supplier_items if si.get('offer_status') == 'ACTIVE')}")
             logger.error(f"   With super_class: {sum(1 for c in candidates if c.get('super_class'))}")
             logger.error(f"   Sample super_classes: {list(set(c.get('super_class') for c in candidates if c.get('super_class')))[:10]}")
+            search_logger.set_outcome('not_found', 'NO_MATCHING_SUPER_CLASS')
+            search_logger.log()
             return AddFromFavoriteResponse(
                 status="not_found",
-                message=f"Не найдено товаров с категорией '{ref_super_class}'"
+                message=f"Не найдено товаров с категорией '{ref_super_class}'",
+                debug_log={
+                    'request_id': request_id,
+                    'build_sha': BUILD_SHA,
+                    'counts': {'total': total_candidates, 'after_super_class': 0}
+                }
             )
         
-        # Filter 2: Brand (if brand_critical=ON) - STRICT + TEXT FALLBACK
+        # Filter 2: GUARDS (FORBIDDEN + REQUIRED ANCHORS) - Applied to CANDIDATE!
+        step2_guards = []
+        rejected_forbidden = 0
+        rejected_anchors = 0
+        
+        for c in step1:
+            candidate_name = c.get('name_raw', '')
+            
+            # Check 1: Forbidden tokens (e.g., растительн, веган, сырник)
+            has_forbidden, forbidden_word = has_negative_keywords(candidate_name, ref_super_class)
+            if has_forbidden:
+                rejected_forbidden += 1
+                logger.debug(f"   ❌ FORBIDDEN: '{candidate_name[:40]}' contains '{forbidden_word}'")
+                continue
+            
+            # Check 2: Required anchors (e.g., васаби must contain васаби/wasabi)
+            has_anchor, found_anchor = has_required_anchors(candidate_name, ref_super_class)
+            if not has_anchor:
+                rejected_anchors += 1
+                logger.debug(f"   ❌ MISSING_ANCHOR: '{candidate_name[:40]}' missing required anchor for {ref_super_class}")
+                continue
+            
+            # Passed guards
+            step2_guards.append(c)
+        
+        logger.info(f"   После guards filter: {len(step2_guards)} (rejected: {rejected_forbidden} forbidden, {rejected_anchors} missing_anchor)")
+        search_logger.set_count('after_guards', len(step2_guards))
+        search_logger.set_count('rejected_by_forbidden', rejected_forbidden)
+        search_logger.set_count('rejected_by_missing_anchor', rejected_anchors)
+        
+        if len(step2_guards) == 0:
+            logger.error(f"❌ NO CANDIDATES after guards filter")
+            search_logger.set_outcome('not_found', 'REJECTED_BY_GUARDS')
+            search_logger.log()
+            return AddFromFavoriteResponse(
+                status="not_found",
+                message=f"Не найдено товаров, прошедших guards (forbidden={rejected_forbidden}, missing_anchor={rejected_anchors})",
+                debug_log={
+                    'request_id': request_id,
+                    'build_sha': BUILD_SHA,
+                    'guards_applied': True,
+                    'counts': {
+                        'total': total_candidates,
+                        'after_super_class': len(step1),
+                        'after_guards': 0,
+                        'rejected_by_forbidden': rejected_forbidden,
+                        'rejected_by_missing_anchor': rejected_anchors
+                    }
+                }
+            )
+        
+        # Filter 3: Brand (if brand_critical=ON) - STRICT + TEXT FALLBACK
         if brand_critical and brand_id:
             from p0_hotfix_stabilization import load_brand_aliases, extract_brand_from_text
             
