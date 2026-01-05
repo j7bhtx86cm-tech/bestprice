@@ -3417,9 +3417,13 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             )
         
         # Filter 4: Unit Compatibility + Pack Calculation (P0 NEW LOGIC)
+        # Added: pack_outlier rule (reject if packs_needed > 20)
         step4_unit_compatible = []
         unit_mismatch_count = 0
         pack_calculated_count = 0
+        pack_outlier_count = 0
+        
+        PACK_OUTLIER_THRESHOLD = 20  # Reject if > 20 упаковок
         
         for c in step3_brand:
             candidate_name = c.get('name_raw', '')
@@ -3438,6 +3442,12 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 logger.debug(f"   ❌ UNIT_MISMATCH: {candidate_name[:40]} - {calc_reason}")
                 continue  # REJECT this candidate
             
+            # Check for pack_outlier (>20 упаковок)
+            if packs_needed and packs_needed > PACK_OUTLIER_THRESHOLD:
+                pack_outlier_count += 1
+                logger.debug(f"   ❌ PACK_OUTLIER: {candidate_name[:40]} - packs_needed={packs_needed} > {PACK_OUTLIER_THRESHOLD}")
+                continue  # REJECT this candidate
+            
             # Store pack calculation info
             c['_pack_info'] = cand_pack_info
             c['_packs_needed'] = packs_needed
@@ -3453,10 +3463,12 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             if packs_needed:
                 pack_calculated_count += 1
         
-        logger.info(f"   После unit compatibility filter: {len(step4_unit_compatible)} (rejected: {unit_mismatch_count} unit_mismatch)")
+        logger.info(f"   После unit compatibility filter: {len(step4_unit_compatible)}")
+        logger.info(f"   Rejected: {unit_mismatch_count} unit_mismatch, {pack_outlier_count} pack_outlier")
         logger.info(f"   Pack calculated: {pack_calculated_count}")
         search_logger.set_count('after_unit_filter', len(step4_unit_compatible))
         search_logger.set_count('rejected_unit_mismatch', unit_mismatch_count)
+        search_logger.set_count('rejected_pack_outlier', pack_outlier_count)
         search_logger.set_count('pack_calculated', pack_calculated_count)
         
         if len(step4_unit_compatible) == 0:
