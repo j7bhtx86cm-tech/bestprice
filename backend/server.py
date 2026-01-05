@@ -3015,6 +3015,15 @@ class AddFromFavoriteResponse(BaseModel):
     top_candidates: Optional[List[dict]] = None
     debug_log: Optional[dict] = None
     message: Optional[str] = None
+    # P0+P1 Diagnostic fields (UI visible)
+    build_sha: Optional[str] = None
+    request_id: Optional[str] = None
+    ref_product_core: Optional[str] = None
+    selected_product_core: Optional[str] = None
+    ref_unit_type: Optional[str] = None
+    selected_unit_type: Optional[str] = None
+    packs_needed: Optional[int] = None
+    computed_total_cost: Optional[float] = None
 
 
 @api_router.post("/cart/add-from-favorite", response_model=AddFromFavoriteResponse)
