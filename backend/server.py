@@ -3469,9 +3469,12 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 message="Internal error: supplier_company_id missing"
             )
         
-        logger.info(f"✅ НАЙДЕНО: {len(step4_pack)} кандидатов")
+        logger.info(f"✅ НАЙДЕНО: {len(step4_unit_compatible)} кандидатов")
         logger.info(f"   Победитель: {winner.get('name_raw', '')[:40]}")
         logger.info(f"   Цена: {winner.get('price')}₽")
+        logger.info(f"   Packs needed: {winner.get('_packs_needed')}")
+        logger.info(f"   Total cost mult: {winner.get('_total_cost_mult')}")
+        logger.info(f"   Pack explanation: {winner.get('_pack_explanation')}")
         logger.info(f"   Бренд: {winner.get('brand_id', 'NONE')}")
         logger.info(f"   Supplier ID: {supplier_id}")
         logger.info(f"   Pack penalty: {winner.get('_pack_score_penalty', 0)}")
@@ -3480,6 +3483,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         base_match_percent = calculate_match_percent(confidence)
         pack_penalty = winner.get('_pack_score_penalty', 0)
         match_percent = max(0, min(100, base_match_percent - pack_penalty))
+        
+        # Calculate actual total_cost
+        packs_needed = winner.get('_packs_needed', 1)
+        total_cost_mult = winner.get('_total_cost_mult', 1.0)
+        actual_total_cost = winner.get('price', 0) * total_cost_mult
         
         # Log selection
         search_logger.set_selection(
