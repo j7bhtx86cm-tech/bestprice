@@ -3086,6 +3086,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         from p0_hotfix_stabilization import (
             calculate_match_percent, 
             has_negative_keywords,
+            has_required_anchors,  # ДОБАВЛЕНО
             parse_pack_value,
             SearchLogger
         )

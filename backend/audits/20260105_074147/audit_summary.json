@@ -1,0 +1,27 @@
+{
+  "timestamp": "20260105_074147",
+  "total_items": 8218,
+  "sampled_for_matching": 1028,
+  "data_quality": {
+    "super_class_other": 2380,
+    "no_pack": 1052,
+    "no_brand": 7743,
+    "top_issues": {
+      "NO_BRAND": 7743,
+      "SUPER_CLASS_OTHER": 2380,
+      "NO_PACK": 1052,
+      "NEGATIVE_KEYWORD": 24
+    }
+  },
+  "matching_quality": {
+    "ok": 783,
+    "not_found": 245,
+    "bad_matches": 62,
+    "not_found_reasons": {
+      "INSUFFICIENT_CLASSIFICATION": 217,
+      "BAD_MATCH_сыр→сырники": 45,
+      "NO_CANDIDATES_AFTER_SUPER_CLASS": 28,
+      "BAD_MATCH_говядина→растительные": 17
+    }
+  }
+}
