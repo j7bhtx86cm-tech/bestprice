@@ -17,6 +17,16 @@ import io
 from enum import Enum
 import os
 
+# P0: Unit normalization
+from unit_normalizer import (
+    parse_pack_from_text,
+    calculate_packs_needed,
+    format_pack_explanation,
+    calculate_pack_penalty,
+    UnitType,
+    PackInfo
+)
+
 # Build info for debugging
 BUILD_SHA = os.popen("cd /app && git rev-parse --short HEAD 2>/dev/null").read().strip() or "unknown"
 BUILD_TIME = datetime.now(timezone.utc).isoformat()
