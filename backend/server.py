@@ -3265,43 +3265,44 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             )
         
         # Filter 3: Brand (if brand_critical=ON) - STRICT + TEXT FALLBACK
+        # Filter 3: Brand (if brand_critical=ON) - STRICT + TEXT FALLBACK
         if brand_critical and brand_id:
             from p0_hotfix_stabilization import load_brand_aliases, extract_brand_from_text
             
             # Step A: Strict brand_id filter
-            step2_strict = [c for c in step1 if c.get('brand_id') == brand_id]
-            logger.info(f"   После brand_id filter (strict, brand_id={brand_id}): {len(step2_strict)}")
-            search_logger.set_count('after_brand_id_strict', len(step2_strict))
+            step3_brand_strict = [c for c in step2_guards if c.get('brand_id') == brand_id]
+            logger.info(f"   После brand_id filter (strict, brand_id={brand_id}): {len(step3_brand_strict)}")
+            search_logger.set_count('after_brand_id_strict', len(step3_brand_strict))
             
             # Step B: Text fallback если strict дал 0
-            if len(step2_strict) == 0:
+            if len(step3_brand_strict) == 0:
                 logger.warning(f"   ⚠️ Пробуем brand text fallback...")
                 
                 brand_aliases = load_brand_aliases()
-                step2_fallback = []
+                step3_brand_fallback = []
                 
-                for c in step1:
+                for c in step2_guards:
                     # Extract brand from text
                     brand_from_text = extract_brand_from_text(c.get('name_raw', ''), brand_aliases)
                     c['_brand_from_text'] = brand_from_text
                     
                     if brand_from_text == brand_id:
-                        step2_fallback.append(c)
+                        step3_brand_fallback.append(c)
                 
-                logger.info(f"   После brand text fallback: {len(step2_fallback)}")
-                search_logger.set_count('after_brand_text_fallback', len(step2_fallback))
+                logger.info(f"   После brand text fallback: {len(step3_brand_fallback)}")
+                search_logger.set_count('after_brand_text_fallback', len(step3_brand_fallback))
                 
-                step2 = step2_fallback
+                step3_brand = step3_brand_fallback
             else:
-                step2 = step2_strict
+                step3_brand = step3_brand_strict
             
             # Brand diagnostics
-            if len(step2) == 0:
+            if len(step3_brand) == 0:
                 # Collect available brands for diagnostics
-                brands_by_id = [c.get('brand_id') for c in step1 if c.get('brand_id')]
+                brands_by_id = [c.get('brand_id') for c in step2_guards if c.get('brand_id')]
                 top_brands_id = list(set(brands_by_id))[:5]
                 
-                brands_by_text = [c.get('_brand_from_text') for c in step1 if c.get('_brand_from_text')]
+                brands_by_text = [c.get('_brand_from_text') for c in step2_guards if c.get('_brand_from_text')]
                 top_brands_text = list(set(brands_by_text))[:5]
                 
                 logger.warning(f"   Бренд '{brand_id}' не найден")
@@ -3314,18 +3315,29 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     available_brands_text=top_brands_text
                 )
             
-            search_logger.set_count('after_brand_filter', len(step2))
+            search_logger.set_count('after_brand_filter', len(step3_brand))
         else:
-            step2 = step1
+            step3_brand = step2_guards
             logger.info(f"   Brand filter: SKIP (brand_critical={brand_critical})")
-            search_logger.set_count('after_brand_filter', len(step2))
+            search_logger.set_count('after_brand_filter', len(step3_brand))
         
-        if len(step2) == 0:
+        if len(step3_brand) == 0:
             search_logger.set_outcome('not_found', 'BRAND_REQUIRED_NOT_FOUND')
             search_logger.log()
             return AddFromFavoriteResponse(
                 status="not_found",
-                message=f"Не найдено товаров бренда {brand_id}"
+                message=f"Не найдено товаров бренда {brand_id}",
+                debug_log={
+                    'request_id': request_id,
+                    'build_sha': BUILD_SHA,
+                    'guards_applied': True,
+                    'counts': {
+                        'total': total_candidates,
+                        'after_super_class': len(step1),
+                        'after_guards': len(step2_guards),
+                        'after_brand': 0
+                    }
+                }
             )
         
         # Filter 3: Pack ±20% (IMPROVED parsing)
