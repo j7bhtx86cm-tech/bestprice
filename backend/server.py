@@ -3517,10 +3517,27 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   Supplier ID: {supplier_id}")
         logger.info(f"   Pack penalty: {winner.get('_pack_score_penalty', 0)}")
         
-        # Calculate match_percent with STRICT CLAMP 0..100 and pack penalty
-        base_match_percent = calculate_match_percent(confidence)
+        # Calculate match_percent with STRICT CLAMP 0..100 and penalties
+        # P1: New scoring logic
+        base_score = 60  # Base for any match
+        
+        # Product core bonus
+        if winner.get('product_core_id') == ref_product_core and ref_core_conf >= 0.7:
+            base_score += 20  # Perfect core match
+        elif winner.get('_fallback_to_super_class'):
+            base_score -= 20  # Penalty for fallback
+        
+        # Anchors bonus (already applied via guards)
+        base_score += 10  # Passed guards
+        
+        # Pack penalty
         pack_penalty = winner.get('_pack_score_penalty', 0)
-        match_percent = max(0, min(100, base_match_percent - pack_penalty))
+        
+        # Brand bonus (if brand_critical and matched)
+        if brand_critical and winner.get('brand_id') == brand_id:
+            base_score += 10
+        
+        match_percent = max(0, min(100, base_score - pack_penalty))
         
         # Calculate actual total_cost
         packs_needed = winner.get('_packs_needed', 1)
