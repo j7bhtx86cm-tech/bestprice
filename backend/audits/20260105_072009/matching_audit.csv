@@ -1,0 +1,7 @@
+reference_name,ref_super_class,status,selected_name,selected_super_class,price,match_percent,candidates_after_super_class,is_bad_match,bad_match_reason
+БУЛГУР 3 кг. Агро-Альянс,staples.рис,ok,"Рис круглозерный 0,900 гр Наш урожай",staples.рис,63.6,37,177,False,
+РИС жасмин экстра 3 кг. Агро-Альянс,staples.рис,ok,"Рис круглозерный 0,900 гр Наш урожай",staples.рис,63.6,63,176,False,
+BORGES Масло оливковое Extra Virgin нерафинированное высшего качества 1 л ПЭТ,staples.масло.оливковое,ok,Масло оливковое нераф в/кач Экстра Коста Доро (250 мл),staples.масло.оливковое,253.8,100,77,False,
+МАСЛО подсолнечное рафинированное дезодорированное фритюрное 5 л. IFry,oils.frying,ok,"Кокосовое масло рафинированное ROI THAI 100% (1000 мл/1,100 кг) упак.",other,493.8,100,22,False,
+ГОРЧИЦА русская ведро 1 кг. Бастион,condiments.mustard,ok,Горчица русская 170 гр ст/б (18) Uni Dan,condiments.mustard,35.38,100,41,False,
+КЕТЧУП томатный пакет 2 кг. Heinz,condiments.ketchup,ok,Кетчуп томатный 900 гр п/бут(2 категория) (8) Царский,condiments.ketchup,83.92,100,42,False,
