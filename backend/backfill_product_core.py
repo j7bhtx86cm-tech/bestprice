@@ -45,12 +45,16 @@ for i, item in enumerate(items, 1):
     name_raw = item.get('name_raw', '')
     current_super_class = item.get('super_class')
     
-    # Step 1: Ensure super_class exists
-    if not current_super_class or current_super_class == 'other':
-        # Detect super_class
-        super_class, conf_super = detect_super_class(name_raw)
+    # Step 1: ALWAYS re-detect super_class using GUARD RULES
+    # This fixes corrupted data (e.g., "бобы" with seafood.shrimp)
+    detected_super_class, conf_super = detect_super_class(name_raw)
+    
+    # Use detected class if it has high confidence, otherwise keep current
+    if conf_super >= 0.7:
+        current_super_class = detected_super_class
+    elif not current_super_class or current_super_class == 'other':
         if conf_super >= 0.3:
-            current_super_class = super_class
+            current_super_class = detected_super_class
     
     if current_super_class:
         stats['with_super_class'] += 1
