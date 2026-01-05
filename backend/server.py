@@ -3440,9 +3440,12 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   Цена: {winner.get('price')}₽")
         logger.info(f"   Бренд: {winner.get('brand_id', 'NONE')}")
         logger.info(f"   Supplier ID: {supplier_id}")
+        logger.info(f"   Pack penalty: {winner.get('_pack_score_penalty', 0)}")
         
-        # Calculate match_percent with STRICT CLAMP 0..100
-        match_percent = calculate_match_percent(confidence)
+        # Calculate match_percent with STRICT CLAMP 0..100 and pack penalty
+        base_match_percent = calculate_match_percent(confidence)
+        pack_penalty = winner.get('_pack_score_penalty', 0)
+        match_percent = max(0, min(100, base_match_percent - pack_penalty))
         
         # Log selection
         search_logger.set_selection(
