@@ -738,6 +738,7 @@ test_plan:
     - "Best Price Search - Final Stabilization (Schema V2 + Brand Critical + Origin Support)"
     - "Clean Technical Specification - Final Acceptance Testing"
     - "Photo Scenarios - Final Comprehensive Test (Overlap Coefficient + Unit-Aware Pricing)"
+    - "Match Percent Display Fix (0-100% Range)"
 
 agent_communication:
   - agent: "testing"
