@@ -41,6 +41,7 @@ from universal_super_class_mapper import detect_super_class
 from p0_hotfix_stabilization import (
     parse_pack_value,
     has_negative_keywords,
+    has_required_anchors,  # ДОБАВЛЕНО
     load_brand_aliases,
     extract_brand_from_text
 )
@@ -101,10 +102,13 @@ for i, item in enumerate(all_items):
     
     # Check negative keywords
     if super_class_db:
-        has_neg, neg_kw = has_negative_keywords(name_raw, super_class_db)
-        if has_neg:
-            data_issues.append(f'NEGATIVE_KEYWORD_{neg_kw}')
-            issue_codes_counter[f'NEGATIVE_KEYWORD'] += 1
+        try:
+            has_neg, neg_kw = has_negative_keywords(name_raw, super_class_db)
+            if has_neg:
+                data_issues.append(f'NEGATIVE_KEYWORD_{neg_kw}')
+                issue_codes_counter[f'NEGATIVE_KEYWORD'] += 1
+        except:
+            pass  # SAFE
     
     data_quality_results.append({
         'supplier_item_id': item_id,
@@ -161,11 +165,23 @@ for i, ref_item in enumerate(sample_items):
         not_found_reasons['INSUFFICIENT_CLASSIFICATION'] += 1
         continue
     
-    # Filter by super_class
-    candidates = [c for c in all_items 
-                 if c.get('super_class') == ref_super_class 
-                 and c.get('price', 0) > 0
-                 and c.get('id') != ref_item.get('id')]  # Exclude self
+    # Filter by super_class + GUARDS
+    candidates = []
+    for c in all_items:
+        if c.get('super_class') == ref_super_class and c.get('price', 0) > 0 and c.get('id') != ref_item.get('id'):
+            # Apply guards
+            try:
+                has_neg, _ = has_negative_keywords(c.get('name_raw', ''), ref_super_class)
+                if has_neg:
+                    continue  # REJECT forbidden
+                
+                has_anchor, _ = has_required_anchors(c.get('name_raw', ''), ref_super_class)
+                if not has_anchor:
+                    continue  # REJECT missing anchor
+            except:
+                pass  # SAFE - if guard fails, allow candidate
+            
+            candidates.append(c)
     
     # Fallback to 'other'
     if len(candidates) == 0 and ref_super_class != 'other':
