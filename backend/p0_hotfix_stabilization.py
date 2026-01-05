@@ -90,25 +90,72 @@ REQUIRED_ANCHORS = {
 }
 
 
-def has_required_anchors(product_name: str, super_class: str) -> Tuple[bool, str]:
-    """Check if product contains REQUIRED anchor tokens for this category
+def has_required_anchors(candidate_name: str, super_class: str, reference_name: str = None) -> Tuple[bool, str]:
+    """Check if candidate contains REQUIRED anchor tokens for this category
     
-    If super_class requires anchors, candidate MUST contain at least ONE anchor.
+    ENHANCED: If super_class is wide (e.g., condiments.spice), use reference_name 
+    to detect specific product and require it in candidate.
+    
+    Args:
+        candidate_name: Candidate product name
+        super_class: Product category
+        reference_name: Optional reference name for dynamic anchor detection
     
     Returns:
         (has_anchor, found_anchor) or (True, '') if anchors not required
     """
-    if not super_class or super_class not in REQUIRED_ANCHORS:
-        return True, ""  # No anchors required = pass
+    if not super_class:
+        return True, ""
     
-    name_lower = product_name.lower()
+    candidate_lower = candidate_name.lower()
     
-    # At least ONE anchor must be present
-    for anchor in REQUIRED_ANCHORS[super_class]:
-        if anchor in name_lower:
-            return True, anchor
+    # Strategy 1: Pre-defined REQUIRED_ANCHORS
+    if super_class in REQUIRED_ANCHORS:
+        anchors = REQUIRED_ANCHORS[super_class]
+        
+        # If no anchors defined (e.g., condiments.spice), fall through to Strategy 2
+        if not anchors:
+            pass
+        else:
+            # At least ONE anchor must be present
+            for anchor in anchors:
+                if anchor in candidate_lower:
+                    return True, anchor
+            return False, ""
     
-    return False, ""
+    # Strategy 2: DYNAMIC anchors from reference (for wide categories)
+    # Extract specific product words from reference (e.g., "васаби", "соль", "перец")
+    if reference_name and super_class in ['condiments.spice', 'other']:
+        ref_lower = reference_name.lower()
+        
+        # List of specific condiment/spice words
+        specific_products = [
+            'васаби', 'wasabi',
+            'соль', 'salt', 'нитритн',
+            'перец', 'pepper',
+            'горчиц', 'mustard',
+            'имбир', 'ginger',
+            'кунжут', 'sesame',
+            'кориандр', 'coriander',
+            'куркум', 'turmeric',
+            'паприк', 'paprika',
+            'базилик', 'basil',
+            'орегано', 'oregano',
+            'тимьян', 'thyme',
+            'розмарин', 'rosemary'
+        ]
+        
+        # Check if reference contains any specific product
+        for product in specific_products:
+            if product in ref_lower:
+                # Candidate MUST also contain this product
+                if product in candidate_lower:
+                    return True, f"dynamic:{product}"
+                else:
+                    return False, f"missing:{product}"
+    
+    # No anchors required = pass
+    return True, ""
 
 
 # ==================== 3) IMPROVED PACK PARSING ====================
