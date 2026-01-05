@@ -123,7 +123,7 @@ def detect_super_class(product_name, min_confidence=0.3):
         'аджик': 'condiments.adjika',
         
         # Spices & Seasonings
-        'васаби': 'condiments.spice',
+        'васаби': 'condiments.wasabi',  # Специфичная категория для васаби
         'бадьян': 'condiments.spice',
         'кардамон': 'condiments.spice',
         'корица': 'condiments.spice',
