@@ -247,7 +247,7 @@ def load_brand_aliases() -> dict:
 # ==================== 4) STRUCTURED LOGGING ====================
 
 class SearchLogger:
-    """Structured logger for search operations"""
+    """Structured logger for search operations - SAFE (never breaks search)"""
     
     def __init__(self, reference_id: str):
         self.reference_id = reference_id
@@ -257,14 +257,61 @@ class SearchLogger:
             'request_context': {},
             'pipeline_counts': {},
             'selection': {},
+            'brand_diagnostics': {},
             'outcome': 'unknown'
         }
     
     def set_context(self, **kwargs):
-        self.log_data['request_context'].update(kwargs)
+        """SAFE: Set request context"""
+        try:
+            self.log_data['request_context'].update(kwargs)
+        except Exception:
+            pass
     
     def set_count(self, stage: str, count: int):
-        self.log_data['pipeline_counts'][stage] = count
+        """SAFE: Set pipeline count"""
+        try:
+            self.log_data['pipeline_counts'][stage] = count
+        except Exception:
+            pass
+    
+    def set_selection(self, **kwargs):
+        """SAFE: Set selection data"""
+        try:
+            self.log_data['selection'].update(kwargs)
+        except Exception:
+            pass
+    
+    def set_brand_diagnostics(self, **kwargs):
+        """SAFE: Set brand diagnostics"""
+        try:
+            self.log_data['brand_diagnostics'].update(kwargs)
+        except Exception:
+            pass
+    
+    def set_outcome(self, outcome: str, reason_code: str = None):
+        """SAFE: Set outcome"""
+        try:
+            self.log_data['outcome'] = outcome
+            if reason_code:
+                self.log_data['reason_code'] = reason_code
+        except Exception:
+            pass
+    
+    def get_log(self) -> Dict:
+        """Get log data"""
+        return self.log_data
+    
+    def log(self):
+        """SAFE: Write structured log (never raises)"""
+        try:
+            logger.info(f"SEARCH_LOG: {json.dumps(self.log_data, ensure_ascii=False)}")
+        except Exception as e:
+            # Fallback: minimal log
+            try:
+                logger.warning(f"SearchLogger error: {str(e)}")
+            except:
+                pass  # Silent fail - logging cannot break search
     
     def set_brand_diagnostics(self, **kwargs):
         """Set brand diagnostics for debugging brand matching"""
