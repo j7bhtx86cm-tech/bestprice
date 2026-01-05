@@ -1,0 +1,26 @@
+{
+  "timestamp": "20260105_124027",
+  "total_favorites": 35,
+  "processed": 35,
+  "success_rate": "85.0%",
+  "found": 30,
+  "not_found": 5,
+  "not_found_breakdown": {
+    "core_not_detected": 5,
+    "core_no_candidates": 0,
+    "core_mismatch": 0,
+    "unit_mismatch": 0,
+    "pack_outlier": 0,
+    "other": 0
+  },
+  "score_distribution": {
+    "65": 1,
+    "80": 4,
+    "90": 25
+  },
+  "packs_needed_distribution": {
+    "1": 25,
+    "3": 4,
+    "20": 1
+  }
+}

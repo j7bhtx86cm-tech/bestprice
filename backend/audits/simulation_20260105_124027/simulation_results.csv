@@ -1,0 +1,36 @@
+fav_id,ref_name,status,reason,ref_product_core,winner_name,winner_core,price,packs_needed,total_cost,score,candidates_count,after_filter_count
+92d49ffc-cd09-42d9-abe9-f661d07e5e54,"СОУС Кимчи 1,5 л. GENSO Asian style",NOT_FOUND,CORE_NOT_DETECTED,condiments.sauce,,,,,,,,
+a31fc74a-6192-4bdd-a6ef-34f86898d0de,Кетчуп томатный Heinz 800г,FOUND,,condiments.ketchup,Кетчуп томатный 900 гр п/бут(2 категория) (8) Царский,condiments.ketchup,83.92,1,83.92,90,43,43
+065f484d-1a13-494e-9111-ca6f4bd3f96b,"ЛОСОСЬ филе на шкуре 4/5 трим Д Чили с/м вес 1,8 кг.",FOUND,,seafood.salmon.fillet,"СЕМГА свежемороженая филе Trim D 1,5-2,0 кг вакуумная упаковка, СAMANCHACA, ЧИЛИ",seafood.salmon.fillet,1600.0,1,1600.0,90,10,10
+4f18e7fc-7af5-46f8-9f29-ac43b759c72e,МИНТАЙ рыбные порции филе в панировке с/м 300 гр. VICI,FOUND,,seafood.pollock,МИНТАЙ рыбные порции филе в панировке с/м 300 гр. VICI,seafood.pollock,226.22,1,226.22,90,17,17
+fav_ketchup_test,Кетчуп томатный 800 гр. Heinz,FOUND,,condiments.ketchup,Кетчуп томатный 900 гр п/бут(2 категория) (8) Царский,condiments.ketchup,83.92,1,83.92,90,43,43
+b2e77567-d357-4717-802f-f62942a43f25,"ГОВЯДИНА фарш 80/20 5 кг I, ФЛАГМАН, РОССИЯ (-C-)",FOUND,,meat.beef.ground,ФАРШ из мраморной говядины 80/20 с/м вес 2 кг. Эталон,meat.beef.ground,542.4,3,1627.1999999999998,80,10,10
+test_product_1,Кетчуп томатный 800 гр. Heinz,FOUND,,condiments.ketchup,Кетчуп томатный 900 гр п/бут(2 категория) (8) Царский,condiments.ketchup,83.92,1,83.92,90,43,43
+test_product_3,ЛОСОСЬ филе трим D Чили с/м вес 1.5 кг,FOUND,,seafood.salmon.fillet,"СЕМГА свежемороженая филе Trim D 1,5-2,0 кг вакуумная упаковка, СAMANCHACA, ЧИЛИ",seafood.salmon.fillet,1600.0,1,1600.0,90,10,10
+test_product_4,Креветки 16/20 варено-мороженые 1 кг,FOUND,,seafood.shrimp,БОБЫ соевые зелёные Эдамаме очищенные с/м 1 кг.,seafood.shrimp,347.7,1,347.7,90,201,169
+test_product_6,Масло оливковое Extra Virgin 1 л,FOUND,,staples.масло.оливковое,"ПОЛОТЕНЦА бумажные двухслойные Z-сложения H2 5083803 EXTRA 200 листов (24*21,5 см) 20уп/кр FOCUS",staples.масло.оливковое,130.82,1,130.82,90,127,64
+test_product_7,Мука пшеничная высший сорт 2 кг,FOUND,,staples.flour.wheat,"МУКА пшеничная для пиццы 10 кг, ПЕЧЕНОВ, РОССИЯ (-C-)",staples.flour.wheat,46.0,1,46.0,90,28,28
+test_product_8,Рис басмати 1 кг,FOUND,,staples.рис,БУМАГА для выпечки листами 260*210мм 52гр/м2 1000шт/кр,staples.рис,0.85,20,17.0,65,235,226
+test_product_9,Молоко 3.2% 1 л,FOUND,,dairy.молоко,"Молоко Умный Баланс Ультрапастеризованное 3,2% 1л",dairy.молоко,74.0,1,74.0,90,123,54
+test_product_10,Сыр моцарелла 125 г,FOUND,,dairy.cheese.mozzarella,СЫР Моцарелла 45% 125 гр. Unagrande,dairy.cheese.mozzarella,115.72,1,115.72,90,55,55
+test_wasabi,ВАСАБИ зеленая 1кг,FOUND,,condiments.wasabi,ВАСАБИ зеленая 1 кг. OSHI,condiments.wasabi,274.5,1,274.5,90,15,13
+test_sesame_oil,"МАСЛО Кунжутное 1,8 л. BG",FOUND,,oils.sesame,Кунжут светлый вес,oils.sesame,270.0,1,270.0,90,28,13
+test_mintai,МИНТАЙ рыбные порции филе в панировке с/м 300 гр. VICI,FOUND,,seafood.pollock,МИНТАЙ рыбные порции филе в панировке с/м 300 гр. VICI,seafood.pollock,226.22,1,226.22,90,17,17
+test_gelatin,ЖЕЛАТИН пакет 1 кг. SpicеExpert,FOUND,,additives.gelatin,"Желатин пищевой П-180, пакет 1кг",additives.gelatin,1028.96,1,1028.96,90,12,12
+test_horseradish,ХРЕН сливочный ст/б 250 гр. Kuhne,FOUND,,condiments.horseradish,"Хрен Столовый Gustoff Cook Pr. 0,250 кг Бастион",condiments.horseradish,74.31,1,74.31,90,16,16
+reg_ketchup_off,Кетчуп томатный 800 гр. Heinz,FOUND,,condiments.ketchup,Кетчуп томатный 900 гр п/бут(2 категория) (8) Царский,condiments.ketchup,83.92,1,83.92,90,43,43
+reg_ketchup_on,Кетчуп томатный 800 гр. Heinz,FOUND,,condiments.ketchup,Кетчуп томатный 900 гр п/бут(2 категория) (8) Царский,condiments.ketchup,83.92,1,83.92,90,43,43
+reg_beef_flagman,ГОВЯДИНА фарш 80/20 5 кг ФЛАГМАН,FOUND,,meat.beef.ground,ФАРШ из мраморной говядины 80/20 с/м вес 2 кг. Эталон,meat.beef.ground,542.4,3,1627.1999999999998,80,10,10
+reg_beef_ribai,Говядина РИБАЙ PRIME ~5кг,NOT_FOUND,CORE_NOT_DETECTED,meat.beef,,,,,,,,
+reg_shrimp,Креветки 16/20 1 кг,FOUND,,seafood.shrimp,БОБЫ соевые зелёные Эдамаме очищенные с/м 1 кг.,seafood.shrimp,347.7,1,347.7,90,201,169
+reg_cheese,Сыр моцарелла 125 г,FOUND,,dairy.cheese.mozzarella,СЫР Моцарелла 45% 125 гр. Unagrande,dairy.cheese.mozzarella,115.72,1,115.72,90,55,55
+5bf3eb77-a7e4-44ea-9ad0-7a984f271751,"Говядина РИБАЙ ""PRIME"",  c/м ~5кг",NOT_FOUND,CORE_NOT_DETECTED,meat.beef,,,,,,,,
+01dfb3f5-1409-4634-9fe4-17ba68feb73a,"Говядина РИБАЙ ""CHOICE"",  c/м ~4кг",NOT_FOUND,CORE_NOT_DETECTED,meat.beef,,,,,,,,
+debug_1_ok,Кетчуп томатный 800г Heinz,FOUND,,condiments.ketchup,Кетчуп томатный 900 гр п/бут(2 категория) (8) Царский,condiments.ketchup,83.92,1,83.92,90,43,43
+debug_2_not_found,ГОВЯДИНА РИБАЙ PRIME ~5кг,NOT_FOUND,CORE_NOT_DETECTED,meat.beef,,,,,,,,
+debug_3_brand_fail,Говядина фарш ФЛАГМАН 5кг,FOUND,,meat.beef.ground,ФАРШ из мраморной говядины 80/20 с/м вес 2 кг. Эталон,meat.beef.ground,542.4,3,1627.1999999999998,80,10,10
+test_farsh,Говядина фарш 80/20 5кг,FOUND,,meat.beef.ground,ФАРШ из мраморной говядины 80/20 с/м вес 2 кг. Эталон,meat.beef.ground,542.4,3,1627.1999999999998,80,10,10
+test_muka,Мука пшеничная высший сорт 2кг,FOUND,,staples.flour.wheat,"МУКА пшеничная для пиццы 10 кг, ПЕЧЕНОВ, РОССИЯ (-C-)",staples.flour.wheat,46.0,1,46.0,90,28,28
+test_wasabi_1,ВАСАБИ порошок 1кг,FOUND,,condiments.wasabi,ВАСАБИ зеленая 1 кг. OSHI,condiments.wasabi,274.5,1,274.5,90,15,13
+test_flour_wheat_1,МУКА пшеничная высший сорт 1кг,FOUND,,staples.flour.wheat,"МУКА пшеничная для пиццы 10 кг, ПЕЧЕНОВ, РОССИЯ (-C-)",staples.flour.wheat,46.0,1,46.0,90,28,28
+test_beef_minced_1,ГОВЯДИНА фарш охлажденный 1кг,FOUND,,meat.beef.ground,ФАРШ из мраморной говядины 80/20 с/м вес 2 кг. Эталон,meat.beef.ground,542.4,1,542.4,90,10,10
