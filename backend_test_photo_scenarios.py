@@ -18,7 +18,7 @@ import json
 from typing import Dict, Optional, List
 
 # Backend URL from environment
-BACKEND_URL = "https://findsaver.preview.emergentagent.com/api"
+BACKEND_URL = "https://smartbuy-39.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_USER = {

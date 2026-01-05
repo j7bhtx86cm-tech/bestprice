@@ -1,0 +1,47 @@
+[
+  {
+    "case_id": "debug_1_ok",
+    "reference_name": "Кетчуп томатный 800г Heinz",
+    "status": "ok",
+    "message": "Товар добавлен в корзину",
+    "debug_log": {
+      "total_candidates": 8218,
+      "after_super_class_filter": 43,
+      "after_brand_filter": 43,
+      "after_pack_filter": 10,
+      "confidence_raw": 1.0,
+      "match_percent_final": 100
+    },
+    "selected_offer": {
+      "supplier_id": "0c7aeb1e-fdf8-4e62-ada6-3bc5914c00fc",
+      "supplier_name": "Ромакс",
+      "supplier_item_id": "f58dca2e-ee1f-4105-bf8e-985eafe9b052",
+      "name_raw": "Кетчуп томатный 900 гр п/бут(2 категория) (8) Царский",
+      "price": 83.92,
+      "currency": "RUB",
+      "unit_norm": "kg",
+      "pack_value": 1.0,
+      "pack_unit": "kg",
+      "price_per_base_unit": 83.92,
+      "total_cost": 83.92,
+      "units_needed": 1.0,
+      "score": 100.0
+    }
+  },
+  {
+    "case_id": "debug_2_not_found",
+    "reference_name": "ГОВЯДИНА РИБАЙ PRIME ~5кг",
+    "status": "not_found",
+    "message": "Не найдено товаров с подходящей фасовкой",
+    "debug_log": null,
+    "selected_offer": null
+  },
+  {
+    "case_id": "debug_3_brand_fail",
+    "reference_name": "Говядина фарш ФЛАГМАН 5кг",
+    "status": "not_found",
+    "message": "Не найдено товаров бренда flagman",
+    "debug_log": null,
+    "selected_offer": null
+  }
+]

@@ -15,6 +15,11 @@ import jwt
 import pandas as pd
 import io
 from enum import Enum
+import os
+
+# Build info for debugging
+BUILD_SHA = os.popen("cd /app && git rev-parse --short HEAD 2>/dev/null").read().strip() or "unknown"
+BUILD_TIME = datetime.now(timezone.utc).isoformat()
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -415,6 +420,38 @@ MOCK_INN_DATA = {
         "ogrn": "1027703456789"
     }
 }
+
+# ==================== DEBUG/VERSION ROUTES ====================
+
+@api_router.get("/debug/version")
+async def get_version():
+    """Debug endpoint: deployment version info"""
+    
+    # Check if v12 master file exists
+    v12_file = ROOT_DIR / 'BESTPRICE_IDEAL_MASTER_v12_PATCH_FULL.xlsx'
+    sot_file = v12_file.name if v12_file.exists() else "NOT_FOUND"
+    
+    # Check guards enabled
+    try:
+        from p0_hotfix_stabilization import REQUIRED_ANCHORS, NEGATIVE_KEYWORDS
+        guards_enabled = len(REQUIRED_ANCHORS) > 0 and len(NEGATIVE_KEYWORDS) > 0
+    except:
+        guards_enabled = False
+    
+    return {
+        "build_sha": BUILD_SHA,
+        "build_time": BUILD_TIME,
+        "env": os.environ.get('ENV', 'production'),
+        "db_name": os.environ.get('DB_NAME'),
+        "collection_name": "supplier_items",
+        "sot_file": sot_file,
+        "guards_enabled": guards_enabled,
+        "guards_categories": {
+            "required_anchors": len(REQUIRED_ANCHORS) if guards_enabled else 0,
+            "forbidden_tokens": len(NEGATIVE_KEYWORDS) if guards_enabled else 0
+        }
+    }
+
 
 # ==================== AUTH ROUTES ====================
 
@@ -2992,7 +3029,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
     
     try:
         # Step 1: Get favorite from DB
-        logger.info(f"🔍 ADD_FROM_FAVORITE: Looking for favorite_id={request.favorite_id}, userId={current_user['id']}")
+        logger.info(f"🔍 ADD_FROM_FAVORITE [request_id={request_id}]: Looking for favorite_id={request.favorite_id}, userId={current_user['id']}")
         favorite = await db.favorites.find_one({"id": request.favorite_id, "userId": current_user['id']}, {"_id": 0})
         
         if not favorite:
@@ -3322,7 +3359,31 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         # result already set above
         result_status = result.status  # Compatibility
         
-        logger.info(f"   Search result: {result_status}")
+        # Structured log line (ONE LINE JSON for easy parsing)
+        try:
+            log_summary = {
+                'request_id': request_id,
+                'build_sha': BUILD_SHA,
+                'db_name': os.environ.get('DB_NAME'),
+                'collection': 'supplier_items',
+                'reference_name': reference_name,
+                'brand_critical': brand_critical,
+                'super_class': ref_super_class,
+                'confidence': round(confidence, 2),
+                'counts': {
+                    'total': total_candidates,
+                    'after_super_class_guards': len(step1) if 'step1' in locals() else 0,
+                    'after_brand': len(step2) if 'step2' in locals() else 0,
+                    'after_pack': len(step3) if 'step3' in locals() else 0
+                },
+                'outcome': result_status if 'result_status' in locals() else 'unknown',
+                'selected_id': winner.get('id') if result_status == 'ok' and 'winner' in locals() else None,
+                'price': winner.get('price') if result_status == 'ok' and 'winner' in locals() else None,
+                'match_percent': match_percent if 'match_percent' in locals() else 0
+            }
+            logger.info(f"SEARCH_SUMMARY: {json.dumps(log_summary, ensure_ascii=False)}")
+        except Exception as log_err:
+            logger.warning(f"Log summary failed: {log_err}")  # SAFE
         
         # Step 8: Return response
         if result_status == "ok":
@@ -3385,7 +3446,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     }
                     for c in step3[:5]
                 ],
-                debug_log=result.explanation,
+                debug_log={
+                    **result.explanation,
+                    'request_id': request_id  # Добавляем request_id
+                },
                 message="Товар добавлен в корзину"
             )
         else:
