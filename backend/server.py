@@ -3164,6 +3164,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             parse_pack_value,
             SearchLogger,
             check_seed_dict_match,  # NEW: seed_dict_rules support
+            check_price_sanity,     # NEW: price sanity check
         )
         
         # Initialize structured logger
