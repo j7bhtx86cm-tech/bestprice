@@ -8,7 +8,9 @@
 - Ошибки расчета: запрос "1 кг" удовлетворялся товаром "5 г"
 - Бессмысленные `match_percent` scores
 
-## Текущий статус: ✅ All Quality Targets Met
+## Текущий статус: ✅ All Quality Targets Met + Critical Fixes
+
+### Build SHA: 82319db
 
 ### Full Batch Audit Results (2026-01-06)
 | Метрика | Начало | Финал | Цель | Статус |
@@ -17,6 +19,11 @@
 | Pack parsing | 89% | **95%** | 95%+ | ✅ |
 | Low Confidence | 13% | **9%** | <10% | ✅ |
 | Brand coverage | 0% | **52%** | 50%+ | ✅ |
+
+### Critical Fixes (2026-01-06)
+1. **Креветки с размером** (16/20, 21/25) — теперь размер является обязательным атрибутом
+2. **МУКА пшеничная** — добавлена в direct_map_priority
+3. **seed_dict_rules** — загружены 421 правило из Excel
 
 ### Data Coverage (8218 items)
 - Product Core: 100%
