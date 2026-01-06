@@ -80,6 +80,8 @@ def parse_pack_from_text(text: str) -> PackInfo:
         # Миллилитры
         (r'(\d+[\.,]?\d*)\s*мл', 1.0, UnitType.VOLUME, 1.0),
         (r'(\d+[\.,]?\d*)\s*ml', 1.0, UnitType.VOLUME, 1.0),
+        # Дробное число в конце без единицы (часто литры): "0,5", "0,25"
+        (r'\b(0[,\.]\d+)\s*$', 1000.0, UnitType.VOLUME, 0.7),
     ]
     
     # Piece patterns
