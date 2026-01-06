@@ -3162,7 +3162,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             has_negative_keywords,
             has_required_anchors,  # ДОБАВЛЕНО
             parse_pack_value,
-            SearchLogger
+            SearchLogger,
+            check_seed_dict_match,  # NEW: seed_dict_rules support
         )
         
         # Initialize structured logger
