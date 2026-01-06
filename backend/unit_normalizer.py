@@ -69,6 +69,7 @@ def parse_pack_from_text(text: str) -> PackInfo:
         (r'(\d+)[-–]\d+\s*г', 1.0, UnitType.WEIGHT, 0.8),
         # Дробь: 4/5 кг
         (r'(\d+)/\d+\s*кг', 1000.0, UnitType.WEIGHT, 0.8),
+        # Процент жирности: 33% - это не вес, пропускаем
     ]
     
     # Volume patterns (в миллилитры)
