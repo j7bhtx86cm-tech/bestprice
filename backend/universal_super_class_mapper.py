@@ -170,9 +170,14 @@ def detect_super_class(product_name, min_confidence=0.3):
         # Vegetables that may incorrectly get staples.рис
         'тыква': 'vegetables.тыква',
         'кабачок': 'vegetables.кабачок',
-        # Seafood imitation products
-        'крабов': 'seafood.crab_sticks',
-        'сурими': 'seafood.surimi',
+        # Crab - CRITICAL: Distinguish natural crab from imitation
+        'краб камчат': 'seafood.crab.kamchatka',  # Натуральный камчатский краб
+        'краб натур': 'seafood.crab.natural',     # Натуральный краб
+        'king crab': 'seafood.crab.king',          # King crab
+        'крабов палочк': 'seafood.crab_sticks',    # Крабовые палочки (имитация)
+        'сурими': 'seafood.crab_sticks',           # Сурими (имитация)
+        'снежный краб': 'seafood.crab_sticks',     # Снежный краб VICI = имитация
+        'краб': 'seafood.crab',                    # Generic crab (will be refined)
         # Sugar
         'сахар': 'staples.сахар',
         
