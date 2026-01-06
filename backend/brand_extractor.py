@@ -111,14 +111,34 @@ KNOWN_BRANDS = {
     'санта бремор': 'santabremor',
     'polar': 'polar',
     'agama': 'agama',
+    'risma': 'risma',
     
-    # Other known brands
-    'maggi': 'maggi',
+    # Confectionery/Bakery
+    'irca': 'irca',
+    'callebaut': 'callebaut',
+    'puratos': 'puratos',
+    'lesaffre': 'lesaffre',
+    'lutik': 'lutik',
+    'falcone': 'falcone',
+    
+    # Canned goods
+    'mamminger': 'mamminger',
     'bonduelle': 'bonduelle',
     'horeca select': 'horecaselect',
     'metro chef': 'metrochef',
     'aro': 'aro',
     'fine life': 'finelife',
+    'got2eat': 'got2eat',
+    
+    # Additional brands from catalog
+    'agrobar': 'agrobar',
+    'textoplast': 'textoplast',
+    'сырникофф': 'syrnikoff',
+    'казанский': 'kazansky',
+    'клинский': 'klinsky',
+    'кинг': 'king',
+    'long men': 'longmen',
+    'печагин': 'pechagin',
 }
 
 # Country names to exclude from brand detection
