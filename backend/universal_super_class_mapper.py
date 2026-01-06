@@ -297,6 +297,46 @@ def detect_super_class(product_name, min_confidence=0.3):
         
         # Beverages
         'пепси': 'beverages.pepsi',
+        
+        # === NEW: Fix misclassifications ===
+        # Syrniki are NOT cheese
+        'сырник': 'frozen.syrniki',
+        
+        # Ready dishes with meat - not meat category
+        'плов': 'ready_meals.pilaf',
+        'гёдза': 'frozen.gyoza',
+        'блины': 'frozen.bliny',
+        
+        # Decor/confectionery - not beverages
+        'глазурь': 'confectionery.glaze',
+        'декор': 'confectionery.decor',
+        
+        # Spices - specific
+        'анис': 'condiments.spice.anise',
+        'бадьян': 'condiments.spice.star_anise',
+        'кориандр': 'condiments.spice.coriander',
+        'тмин': 'condiments.spice.cumin',
+        'зира': 'condiments.spice.cumin',
+        'орегано': 'condiments.spice.oregano',
+        'базилик': 'condiments.spice.basil',
+        'розмарин': 'condiments.spice.rosemary',
+        'тимьян': 'condiments.spice.thyme',
+        'мускат': 'condiments.spice.nutmeg',
+        
+        # Sauces - more specific
+        'соус бонито': 'condiments.sauce.bonito',
+        'бургер': 'condiments.sauce.burger',
+        'ворчестер': 'condiments.sauce.worcester',
+        'гриль': 'condiments.sauce.grill',
+        'луков': 'condiments.sauce.onion',
+        'сырн': 'condiments.sauce.cheese',
+        'наполи': 'condiments.sauce.napoli',
+        'деми глас': 'condiments.sauce.demi_glace',
+        'песто': 'condiments.sauce.pesto',
+        
+        # Seafood cocktail
+        'коктейль морск': 'seafood.cocktail',
+        'лангустин': 'seafood.langoustine',
     }
     
     # Check priority direct mappings FIRST
