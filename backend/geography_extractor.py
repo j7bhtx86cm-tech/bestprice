@@ -208,11 +208,14 @@ def extract_geography_from_text(text: str) -> Dict[str, Optional[str]]:
         'geo_confidence': 0.0
     }
     
-    # Extract country
+    # Extract country (with false positive check)
     for country, patterns in COUNTRY_PATTERNS.items():
         for pattern in patterns:
             # Use word boundary matching where possible
             if re.search(rf'\b{re.escape(pattern)}\b', text_lower) or pattern in text_lower:
+                # Check for false positives (e.g., "чили" in "соус чили")
+                if is_false_positive(text_lower, pattern):
+                    continue
                 result['origin_country'] = country
                 result['geo_confidence'] = 0.9
                 break
