@@ -3896,6 +3896,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
                     'guards_applied': True,
+                    'country_as_brand': country_as_brand,
                     'counts': {
                         'total': total_candidates,
                         'after_product_core': len(step1),
