@@ -3393,32 +3393,36 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         if brand_critical and brand_id:
             from p0_hotfix_stabilization import load_brand_aliases, extract_brand_from_text
             
-            # Check if we're in COUNTRY_AS_BRAND mode
-            if country_as_brand:
-                # COUNTRY_AS_BRAND: фильтруем по origin_country кандидата
-                logger.info(f"   🌍 COUNTRY_AS_BRAND mode: filtering by origin_country='{brand_id}'")
+            # Check if we're in GEO_AS_BRAND mode (city/region/country cascade)
+            if geo_as_brand:
+                # GEO_AS_BRAND: фильтруем по соответствующему географическому полю
+                logger.info(f"   🌍 GEO_AS_BRAND mode: filtering by {geo_filter_field}='{geo_filter_value}'")
                 
                 step3_brand = []
                 for c in step2_guards:
-                    cand_country = (c.get('origin_country') or '').strip().upper()
-                    if cand_country == brand_id:
+                    cand_geo_value = (c.get(geo_filter_field) or '').strip().upper()
+                    if cand_geo_value == geo_filter_value:
                         step3_brand.append(c)
                 
-                logger.info(f"   После country filter (country='{brand_id}'): {len(step3_brand)}")
-                search_logger.set_count('after_country_filter', len(step3_brand))
+                logger.info(f"   После geo filter ({geo_filter_type}='{geo_filter_value}'): {len(step3_brand)}")
+                search_logger.set_count('after_geo_filter', len(step3_brand))
                 
-                # Country diagnostics if no matches
+                # Geo diagnostics if no matches
                 if len(step3_brand) == 0:
-                    available_countries = list(set(
-                        (c.get('origin_country') or '').strip().upper() 
+                    available_values = list(set(
+                        (c.get(geo_filter_field) or '').strip().upper() 
                         for c in step2_guards 
-                        if c.get('origin_country')
+                        if c.get(geo_filter_field)
                     ))[:10]
-                    logger.warning(f"   ❌ Страна '{brand_id}' не найдена среди кандидатов")
-                    logger.warning(f"   Available countries: {available_countries}")
+                    
+                    geo_type_labels = {'city': 'Город', 'region': 'Регион', 'country': 'Страна'}
+                    geo_label = geo_type_labels.get(geo_filter_type, 'Локация')
+                    
+                    logger.warning(f"   ❌ {geo_label} '{geo_filter_value}' не найден среди кандидатов")
+                    logger.warning(f"   Available {geo_filter_type}s: {available_values}")
                     search_logger.set_brand_diagnostics(
-                        requested_brand_id=f"COUNTRY:{brand_id}",
-                        available_brands_id=available_countries,
+                        requested_brand_id=f"{geo_filter_type.upper()}:{geo_filter_value}",
+                        available_brands_id=available_values,
                         available_brands_text=[]
                     )
             else:
