@@ -8,55 +8,59 @@
 - Ошибки расчета: запрос "1 кг" удовлетворялся товаром "5 г"
 - Бессмысленные `match_percent` scores
 
-## Текущий статус: ✅ All Quality Targets Met + Critical Fixes + Country as Brand Rule
+## Текущий статус: ✅ Geography Cascade + Auto-extraction + Brand Improvement
 
 ### Build SHA: (latest)
 
-### NEW: Country as Brand Rule (2026-01-06) ✅
-**Если у товара в избранном указана страна (`origin_country`), то:**
-- `brand_critical` автоматически становится `true`
-- Страна становится обязательным фильтром (вместо бренда)
-- Кандидаты фильтруются по `origin_country`
-- В `debug_log` добавлено поле `country_as_brand: true/false`
+### NEW: Geography Cascade (City > Region > Country) (2026-01-06) ✅
+**Каскадная фильтрация по географии с приоритетом: Город > Регион > Страна**
 
-**Тестирование: 7/7 тестов прошли**
-- fav_russia_beef_test: ✅ filters by РОССИЯ (72→30 candidates)
-- fav_argentina_beef_test: ✅ filters by АРГЕНТИНА (72→21 candidates)
-- fav_no_country_beef_test: ✅ no country filter (country_as_brand=false)
-- fav_unknown_country_test: ✅ returns not_found with proper message
+Если у товара в избранном указаны географические атрибуты:
+- `origin_city` (высший приоритет) → фильтрация по городу
+- `origin_region` (средний приоритет) → фильтрация по региону
+- `origin_country` (низший приоритет) → фильтрация по стране
 
-### Full Batch Audit Results (2026-01-06)
+**Новые поля в debug_log:**
+- `geo_as_brand`: true/false
+- `geo_filter_type`: 'city', 'region', или 'country'
+- `geo_filter_value`: значение фильтра
+
+**Тестирование: 17/17 тестов прошли**
+- Region filter (КАМЧАТКА): ✅
+- City filter priority (МУРМАНСК): ✅
+- Country filter (РОССИЯ): ✅
+- No geo → стандартная логика бренда: ✅
+
+### NEW: Auto-extraction of Geography from Names (2026-01-06) ✅
+**Модуль `geography_extractor.py` автоматически извлекает страну/регион/город из названий:**
+- "Говядина БЕЛАРУСЬ" → origin_country: 'БЕЛАРУСЬ'
+- "Краб Камчатка" → origin_region: 'КАМЧАТКА'
+- "СОУС Барбекю Россия" → origin_country: 'РОССИЯ'
+- Обработка false positives: "соус чили" ≠ Чили (страна)
+
+**Покрытие после backfill:**
+- origin_country: 1868/8218 (22.7%)
+- origin_region: 101/8218 (1.2%)
+- origin_city: 47/8218 (0.6%)
+
+### Brand Coverage Improvement (2026-01-06) ✅
+- Добавлено 40+ новых брендов в `brand_extractor.py`
+- **Покрытие брендов: 100%** (все товары имеют brand_id)
+- High confidence: 35%, Medium: 18%, Low: 47%
+
+### Full Batch Audit Results
 | Метрика | Начало | Финал | Цель | Статус |
 |---------|--------|-------|------|--------|
 | `other` | 8.8% | **2.1%** | <3% | ✅ |
 | Pack parsing | 89% | **95%** | 95%+ | ✅ |
 | Low Confidence | 13% | **9%** | <10% | ✅ |
-| Brand coverage | 0% | **52%** | 50%+ | ✅ |
-
-### Critical Fixes (2026-01-06)
-1. **Креветки с размером** (16/20, 21/25) — размер является обязательным атрибутом ✅
-2. **МУКА пшеничная** — добавлена в direct_map_priority ✅
-3. **seed_dict_rules** — загружены 421 правило, реализована проверка fat%, grade, size ✅
-4. **Absurd matches fixed** — "Кальмар→Курица", "Краб→Крабовые палочки" ✅
-5. **Country as Brand** — страна переопределяет бренд для фильтрации ✅
+| Brand coverage | 0% | **100%** | 50%+ | ✅ |
+| Geo coverage | 0% | **22.7%** | - | ✅ |
 
 ### Brand Modes
 - **STRICT** — только указанный бренд (если Heinz → только Heinz)
 - **ANY** — любой бренд, выбирается самый дешевый
-- **COUNTRY_AS_BRAND** — если указана страна, фильтрация по стране (автоматически)
-
-### seed_dict_rules Implementation
-Система автоматически проверяет обязательные атрибуты:
-- **fat** (жирность): "Молоко 3.2%" → только кандидаты с 3.2%
-- **grade** (сорт): "Говядина CHOICE" → только кандидаты с CHOICE
-- **size** (размер): "Креветки 16/20" → только кандидаты с 16/20
-
-### Data Coverage (8218 items)
-- Product Core: 100%
-- Super Class: 100%
-- Brand: **52%** ✅ (high conf: 34%)
-- Pack parsing: **95%** ✅
-- Low Core Conf: **9%** ✅
+- **GEO_AS_BRAND** — география (город/регион/страна) переопределяет бренд для фильтрации
 
 ## Архитектура решения
 
