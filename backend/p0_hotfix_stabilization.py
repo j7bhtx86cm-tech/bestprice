@@ -127,7 +127,7 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
     
     # Strategy 2: DYNAMIC anchors from reference (for wide categories)
     # Extract specific product words from reference (e.g., "васаби", "соль", "перец", "пшеничная", "ржаная", "фарш")
-    if reference_name and super_class in ['condiments.spice', 'staples.flour', 'staples.мука', 'meat.beef', 'other']:
+    if reference_name and super_class in ['condiments.spice', 'staples.flour', 'staples.мука', 'meat.beef', 'seafood.shrimp', 'other']:
         ref_lower = reference_name.lower()
         
         # List of specific product types
