@@ -272,7 +272,6 @@ def detect_super_class(product_name, min_confidence=0.3):
         # Meat products - more specific
         'пепперони': 'meat.pepperoni',
         'паштет': 'meat.pate',
-        'бекон': 'meat.bacon',
         'байтс': 'meat.bites',
         'голубц': 'frozen.golubcy',
         
