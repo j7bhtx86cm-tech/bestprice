@@ -225,6 +225,24 @@ def detect_super_class(product_name, min_confidence=0.3):
         'лимонад': 'beverages.lemonade',
         'газиров': 'beverages.carbonated',
         
+        # JUICES - Соки (CRITICAL FIX)
+        'сок': 'beverages.juice',
+        'сок юдзу': 'beverages.juice.yuzu',
+        'сок yuzu': 'beverages.juice.yuzu',
+        'сок апельсин': 'beverages.juice.orange',
+        'сок яблок': 'beverages.juice.apple',
+        'сок томат': 'beverages.juice.tomato',
+        'сок ананас': 'beverages.juice.pineapple',
+        'сок грейпфрут': 'beverages.juice.grapefruit',
+        'сок виноград': 'beverages.juice.grape',
+        'сок гранат': 'beverages.juice.pomegranate',
+        'сок лимон': 'beverages.juice.lemon',
+        'сок лайм': 'beverages.juice.lime',
+        'сок манго': 'beverages.juice.mango',
+        'сок мультифрукт': 'beverages.juice',
+        'фреш': 'beverages.juice',
+        'нектар': 'beverages.nectar',
+        
         # Concentrates (10 items)
         'концентрат': 'beverages.concentrate',
         
