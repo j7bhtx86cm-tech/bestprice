@@ -86,6 +86,15 @@ def parse_pack_from_text(text: str) -> PackInfo:
         (r'(\d+)\s*шт', 1.0, UnitType.PIECE, 1.0),
         (r'(\d+)\s*pcs', 1.0, UnitType.PIECE, 1.0),
         (r'(\d+)\s*штук', 1.0, UnitType.PIECE, 1.0),
+        # Листы (бумага, полотенца)
+        (r'(\d+)\s*лист', 1.0, UnitType.PIECE, 0.9),
+        # Рулоны
+        (r'(\d+)\s*рул', 1.0, UnitType.PIECE, 0.9),
+        # Упаковки
+        (r'(\d+)\s*уп', 1.0, UnitType.PIECE, 0.8),
+        (r'(\d+)\s*пач', 1.0, UnitType.PIECE, 0.8),  # пачек
+        # Порции
+        (r'(\d+)\s*порц', 1.0, UnitType.PIECE, 0.8),
     ]
     
     # Проверяем сложные форматы: 10x200г, 200 шт x 5 г
