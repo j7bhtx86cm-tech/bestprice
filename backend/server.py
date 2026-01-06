@@ -3481,9 +3481,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         if len(step3_brand) == 0:
             # Determine error message based on mode
-            if country_as_brand:
-                error_message = f"Не найдено товаров из страны '{brand_id}'"
-                reason_code = 'COUNTRY_REQUIRED_NOT_FOUND'
+            if geo_as_brand:
+                geo_type_labels = {'city': 'города', 'region': 'региона', 'country': 'страны'}
+                geo_label = geo_type_labels.get(geo_filter_type, 'локации')
+                error_message = f"Не найдено товаров из {geo_label} '{geo_filter_value}'"
+                reason_code = f'{geo_filter_type.upper()}_REQUIRED_NOT_FOUND'
             else:
                 error_message = f"Не найдено товаров бренда '{brand_id}'"
                 reason_code = 'BRAND_REQUIRED_NOT_FOUND'
@@ -3497,7 +3499,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
                     'guards_applied': True,
-                    'country_as_brand': country_as_brand,
+                    'geo_as_brand': geo_as_brand,
+                    'geo_filter_type': geo_filter_type,
+                    'geo_filter_value': geo_filter_value,
+                    'country_as_brand': country_as_brand,  # Legacy
                     'counts': {
                         'total': total_candidates,
                         'after_super_class': len(step1),
