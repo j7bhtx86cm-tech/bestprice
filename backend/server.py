@@ -3380,55 +3380,85 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             )
         
         # Filter 3: Brand (if brand_critical=ON) - STRICT + TEXT FALLBACK
-        # Filter 3: Brand (if brand_critical=ON) - STRICT + TEXT FALLBACK
+        # P0 NEW: COUNTRY_AS_BRAND mode - фильтрация по стране вместо бренда
         if brand_critical and brand_id:
             from p0_hotfix_stabilization import load_brand_aliases, extract_brand_from_text
             
-            # Step A: Strict brand_id filter
-            step3_brand_strict = [c for c in step2_guards if c.get('brand_id') == brand_id]
-            logger.info(f"   После brand_id filter (strict, brand_id={brand_id}): {len(step3_brand_strict)}")
-            search_logger.set_count('after_brand_id_strict', len(step3_brand_strict))
-            
-            # Step B: Text fallback если strict дал 0
-            if len(step3_brand_strict) == 0:
-                logger.warning(f"   ⚠️ Пробуем brand text fallback...")
+            # Check if we're in COUNTRY_AS_BRAND mode
+            if country_as_brand:
+                # COUNTRY_AS_BRAND: фильтруем по origin_country кандидата
+                logger.info(f"   🌍 COUNTRY_AS_BRAND mode: filtering by origin_country='{brand_id}'")
                 
-                brand_aliases = load_brand_aliases()
-                step3_brand_fallback = []
-                
+                step3_brand = []
                 for c in step2_guards:
-                    # Extract brand from text
-                    brand_from_text = extract_brand_from_text(c.get('name_raw', ''), brand_aliases)
-                    c['_brand_from_text'] = brand_from_text
-                    
-                    if brand_from_text == brand_id:
-                        step3_brand_fallback.append(c)
+                    cand_country = (c.get('origin_country') or '').strip().upper()
+                    if cand_country == brand_id:
+                        step3_brand.append(c)
                 
-                logger.info(f"   После brand text fallback: {len(step3_brand_fallback)}")
-                search_logger.set_count('after_brand_text_fallback', len(step3_brand_fallback))
+                logger.info(f"   После country filter (country='{brand_id}'): {len(step3_brand)}")
+                search_logger.set_count('after_country_filter', len(step3_brand))
                 
-                step3_brand = step3_brand_fallback
+                # Country diagnostics if no matches
+                if len(step3_brand) == 0:
+                    available_countries = list(set(
+                        (c.get('origin_country') or '').strip().upper() 
+                        for c in step2_guards 
+                        if c.get('origin_country')
+                    ))[:10]
+                    logger.warning(f"   ❌ Страна '{brand_id}' не найдена среди кандидатов")
+                    logger.warning(f"   Available countries: {available_countries}")
+                    search_logger.set_brand_diagnostics(
+                        requested_brand_id=f"COUNTRY:{brand_id}",
+                        available_brands_id=available_countries,
+                        available_brands_text=[]
+                    )
             else:
-                step3_brand = step3_brand_strict
-            
-            # Brand diagnostics
-            if len(step3_brand) == 0:
-                # Collect available brands for diagnostics
-                brands_by_id = [c.get('brand_id') for c in step2_guards if c.get('brand_id')]
-                top_brands_id = list(set(brands_by_id))[:5]
+                # Standard brand matching
+                # Step A: Strict brand_id filter
+                step3_brand_strict = [c for c in step2_guards if c.get('brand_id') == brand_id]
+                logger.info(f"   После brand_id filter (strict, brand_id={brand_id}): {len(step3_brand_strict)}")
+                search_logger.set_count('after_brand_id_strict', len(step3_brand_strict))
                 
-                brands_by_text = [c.get('_brand_from_text') for c in step2_guards if c.get('_brand_from_text')]
-                top_brands_text = list(set(brands_by_text))[:5]
+                # Step B: Text fallback если strict дал 0
+                if len(step3_brand_strict) == 0:
+                    logger.warning(f"   ⚠️ Пробуем brand text fallback...")
+                    
+                    brand_aliases = load_brand_aliases()
+                    step3_brand_fallback = []
+                    
+                    for c in step2_guards:
+                        # Extract brand from text
+                        brand_from_text = extract_brand_from_text(c.get('name_raw', ''), brand_aliases)
+                        c['_brand_from_text'] = brand_from_text
+                        
+                        if brand_from_text == brand_id:
+                            step3_brand_fallback.append(c)
+                    
+                    logger.info(f"   После brand text fallback: {len(step3_brand_fallback)}")
+                    search_logger.set_count('after_brand_text_fallback', len(step3_brand_fallback))
+                    
+                    step3_brand = step3_brand_fallback
+                else:
+                    step3_brand = step3_brand_strict
                 
-                logger.warning(f"   Бренд '{brand_id}' не найден")
-                logger.warning(f"   Available brands (by ID): {top_brands_id}")
-                logger.warning(f"   Available brands (by text): {top_brands_text}")
-                
-                search_logger.set_brand_diagnostics(
-                    requested_brand_id=brand_id,
-                    available_brands_id=top_brands_id,
-                    available_brands_text=top_brands_text
-                )
+                # Brand diagnostics
+                if len(step3_brand) == 0:
+                    # Collect available brands for diagnostics
+                    brands_by_id = [c.get('brand_id') for c in step2_guards if c.get('brand_id')]
+                    top_brands_id = list(set(brands_by_id))[:5]
+                    
+                    brands_by_text = [c.get('_brand_from_text') for c in step2_guards if c.get('_brand_from_text')]
+                    top_brands_text = list(set(brands_by_text))[:5]
+                    
+                    logger.warning(f"   Бренд '{brand_id}' не найден")
+                    logger.warning(f"   Available brands (by ID): {top_brands_id}")
+                    logger.warning(f"   Available brands (by text): {top_brands_text}")
+                    
+                    search_logger.set_brand_diagnostics(
+                        requested_brand_id=brand_id,
+                        available_brands_id=top_brands_id,
+                        available_brands_text=top_brands_text
+                    )
             
             search_logger.set_count('after_brand_filter', len(step3_brand))
         else:
