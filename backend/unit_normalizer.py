@@ -200,6 +200,35 @@ def parse_pack_from_text(text: str) -> PackInfo:
         if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр', 'шт']):
             return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.3)
     
+    # 12. Морепродукты с размерами: "21/25", "16/20", "30/40"
+    seafood_size = re.search(r'\b(\d+)/(\d+)\s*$', text)
+    if seafood_size:
+        return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.4)  # Size notation = 1kg
+    
+    # 13. Хлеб/батон без веса - обычно ~400г
+    bread_keywords = ['батон', 'хлеб', 'булк', 'багет']
+    for kw in bread_keywords:
+        if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр']):
+            return PackInfo(UnitType.WEIGHT, 400.0, text, 0.3)
+    
+    # 14. Сухофрукты/смеси без веса
+    dried_keywords = ['груша суш', 'компотн', 'смесь', 'сухар', 'пудр']
+    for kw in dried_keywords:
+        if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр']):
+            return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.3)
+    
+    # 15. Рыба с указанием способа: "хол.копч", "охл"
+    fish_keywords = ['копчен', 'охл', 'мидии', 'гребешок', 'палтус', 'скумбрия', 'лосось тушк']
+    for kw in fish_keywords:
+        if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр']):
+            return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.3)
+    
+    # 16. Рис/крупы без веса
+    grain_keywords = ['рис ', 'рис,', 'гречк', 'пшен', 'овсян', 'манк', 'перлов']
+    for kw in grain_keywords:
+        if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр']):
+            return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.3)
+    
     # Ничего не найдено
     return PackInfo(UnitType.UNKNOWN, None, text, 0.0)
 
