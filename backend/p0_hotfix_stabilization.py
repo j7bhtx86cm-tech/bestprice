@@ -123,6 +123,57 @@ def check_seed_dict_match(reference_name: str, candidate_name: str) -> Tuple[boo
     
     return True, ""
 
+
+# Price sanity thresholds by category (min expected price per kg/unit)
+CATEGORY_PRICE_THRESHOLDS = {
+    # Expensive natural products
+    'seafood.crab.kamchatka': 2000,  # Камчатский краб: min 2000₽/кг
+    'seafood.crab.natural': 1500,    # Натуральный краб: min 1500₽/кг
+    'seafood.crab.king': 2500,       # King crab: min 2500₽/кг
+    'seafood.lobster': 2000,         # Лобстер: min 2000₽/кг
+    'meat.beef.ribeye': 1000,        # Рибай: min 1000₽/кг
+    'meat.beef.wagyu': 3000,         # Вагю: min 3000₽/кг
+    # Cheap imitation products
+    'seafood.crab_sticks': 50,       # Крабовые палочки: max ~300₽/кг
+}
+
+
+def check_price_sanity(reference_name: str, ref_price: float, candidate_name: str, cand_price: float, super_class: str) -> Tuple[bool, str]:
+    """
+    Check if candidate price makes sense compared to reference.
+    Prevents absurd matches like natural crab (2500₽) → crab sticks (200₽).
+    
+    Returns:
+        (is_sane, reason) - True if price is reasonable
+    """
+    if not ref_price or not cand_price or ref_price <= 0 or cand_price <= 0:
+        return True, ""
+    
+    # Check 1: If reference is expensive category, candidate can't be too cheap
+    if super_class in CATEGORY_PRICE_THRESHOLDS:
+        min_price = CATEGORY_PRICE_THRESHOLDS[super_class]
+        if cand_price < min_price * 0.5:  # Allow 50% margin
+            return False, f"price_too_low:{cand_price}<{min_price*0.5}"
+    
+    # Check 2: Price ratio sanity
+    # If candidate is 5x cheaper than reference, it's suspicious
+    price_ratio = ref_price / cand_price if cand_price > 0 else 999
+    if price_ratio > 5:
+        # Check if this is expected (e.g., bulk discount)
+        ref_lower = reference_name.lower()
+        cand_lower = candidate_name.lower()
+        
+        # Keywords that indicate premium/natural products
+        premium_keywords = ['натур', 'камчат', 'king', 'премиум', 'prime', 'choice', 'wagyu']
+        ref_is_premium = any(kw in ref_lower for kw in premium_keywords)
+        cand_is_premium = any(kw in cand_lower for kw in premium_keywords)
+        
+        # If reference is premium but candidate is not, reject
+        if ref_is_premium and not cand_is_premium:
+            return False, f"premium_mismatch:ratio={price_ratio:.1f}"
+    
+    return True, ""
+
 # ==================== 1) MATCH PERCENT FIX ====================
 
 def calculate_match_percent(confidence: float, score_raw: float = None) -> int:
