@@ -3467,15 +3467,24 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             search_logger.set_count('after_brand_filter', len(step3_brand))
         
         if len(step3_brand) == 0:
-            search_logger.set_outcome('not_found', 'BRAND_REQUIRED_NOT_FOUND')
+            # Determine error message based on mode
+            if country_as_brand:
+                error_message = f"Не найдено товаров из страны '{brand_id}'"
+                reason_code = 'COUNTRY_REQUIRED_NOT_FOUND'
+            else:
+                error_message = f"Не найдено товаров бренда '{brand_id}'"
+                reason_code = 'BRAND_REQUIRED_NOT_FOUND'
+            
+            search_logger.set_outcome('not_found', reason_code)
             search_logger.log()
             return AddFromFavoriteResponse(
                 status="not_found",
-                message=f"Не найдено товаров бренда {brand_id}",
+                message=error_message,
                 debug_log={
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
                     'guards_applied': True,
+                    'country_as_brand': country_as_brand,
                     'counts': {
                         'total': total_candidates,
                         'after_super_class': len(step1),
