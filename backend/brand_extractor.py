@@ -47,13 +47,21 @@ KNOWN_BRANDS = {
     'shinaki': 'shinaki',
     'oshi': 'oshi',
     'sen soy': 'sensoy',
+    'prb': 'prb',
+    'pearl river bridge': 'prb',
+    'bg': 'bg',
+    'chang': 'chang',
+    'yoshimi': 'yoshimi',
+    'todoford': 'todoford',
+    'midori': 'midori',
     
     # Spice/Seasoning brands
     'spiceexpert': 'spiceexpert',
-    'spicеexpert': 'spiceexpert',  # with cyrillic 'е'
+    'spicеexpert': 'spiceexpert',
     'суприм': 'suprim',
     'pikador': 'pikador',
     'provil': 'provil',
+    'cea': 'cea',
     
     # Oil brands
     'sunny gold': 'sunnygold',
@@ -62,6 +70,7 @@ KNOWN_BRANDS = {
     'granoliva': 'granoliva',
     'borges': 'borges',
     'filippo berio': 'filippoberio',
+    'solpro': 'solpro',
     
     # Dairy brands
     'unagrande': 'unagrande',
@@ -70,12 +79,20 @@ KNOWN_BRANDS = {
     'galbani': 'galbani',
     'parmalat': 'parmalat',
     'valio': 'valio',
+    'петмол': 'petmol',
+    'домашний': 'domashny',
     
     # Meat brands  
     'флагман': 'flagman',
     'primebeef': 'primebeef',
     'мираторг': 'miratorg',
     'черкизово': 'cherkizovo',
+    'рузком': 'ruzkom',
+    'праймфудс': 'primefoods',
+    'останкино': 'ostankino',
+    'ветис': 'vetis',
+    'рубикон': 'rubicon',
+    'qummy': 'qummy',
     
     # Beverage brands
     'coca-cola': 'cocacola',
