@@ -170,8 +170,31 @@ def parse_pack_from_text(text: str) -> PackInfo:
     # 7. Мясо/рыба без указания веса (обычно весовые) - 1кг default
     meat_fish_keywords = ['говядин', 'свинин', 'курин', 'индейк', 'утк', 'гуся', 
                           'кролик', 'баранин', 'телятин', 'окорок', 'филе', 'вырезк',
-                          'голень', 'бедр', 'грудк', 'печень', 'сердц', 'язык']
+                          'голень', 'бедр', 'грудк', 'печень', 'сердц', 'язык', 'шея', 'шейк']
     for kw in meat_fish_keywords:
+        if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр', 'шт']):
+            return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.3)
+    
+    # 8. Сыр/молочка без веса - обычно продается на вес, 1кг default
+    dairy_keywords = ['сыр ', 'сливки', 'сметан', 'творог', 'масло ', 'молоко']
+    for kw in dairy_keywords:
+        if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр', 'л ', 'мл', 'шт']):
+            return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.3)
+    
+    # 9. Специи/сыпучие без указания веса - обычно 100г
+    spice_keywords = ['базилик', 'ваниль', 'кориандр', 'корица', 'паприка', 'перец', 
+                      'орех', 'изюм', 'арахис', 'кешью', 'фисташ', 'миндал', 'груша суш']
+    for kw in spice_keywords:
+        if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр', 'шт']):
+            return PackInfo(UnitType.WEIGHT, 100.0, text, 0.3)  # 100g default for spices
+    
+    # 10. "кг" в конце без числа (брус, палочки)
+    if text_lower.strip().endswith(' кг') or text_lower.strip().endswith(' кг.'):
+        return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.4)
+    
+    # 11. Сосиски/колбасы без веса
+    sausage_keywords = ['сосиск', 'колбас', 'сардельк', 'ветчин']
+    for kw in sausage_keywords:
         if kw in text_lower and not any(x in text_lower for x in ['кг', 'г ', 'гр', 'шт']):
             return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.3)
     
