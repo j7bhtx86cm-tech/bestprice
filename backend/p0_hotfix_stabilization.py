@@ -86,7 +86,9 @@ REQUIRED_ANCHORS = {
     'condiments.wasabi': ['васаби', 'wasabi'],  # Васаби специфичные anchors
     'condiments.spice': [],  # Wide category - use dynamic anchors from reference
     'staples.flour': [],  # Wide category - use dynamic anchors from reference
-    'staples.мука': [],  # Wide category (Russian) - use dynamic anchors from reference
+    'staples.мука': ['мука', 'flour'],  # МУКА must contain мука/flour
+    'staples.мука.пшеничная': ['мука', 'flour', 'пшенич', 'wheat'],  # Пшеничная мука
+    'staples.мука.ржаная': ['мука', 'flour', 'ржан', 'rye'],  # Ржаная мука
     'staples.flour.wheat': ['пшенич', 'wheat'],  # Пшеничная мука
     'staples.flour.rye': ['ржан', 'rye'],  # Ржаная мука
 }
