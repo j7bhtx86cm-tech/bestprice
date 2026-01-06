@@ -3327,13 +3327,22 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 logger.debug(f"   ❌ MISSING_ANCHOR: '{candidate_name[:40]}' missing required anchor '{found_anchor}' for {ref_super_class}")
                 continue
             
+            # Check 3: seed_dict_rules attributes (fat%, grade, size)
+            # e.g., "Молоко 3.2%" must match "3.2%", "Креветки 16/20" must match "16/20"
+            seed_match, seed_reason = check_seed_dict_match(reference_name, candidate_name)
+            if not seed_match:
+                rejected_seed_dict += 1
+                logger.debug(f"   ❌ SEED_DICT_MISMATCH: '{candidate_name[:40]}' - {seed_reason}")
+                continue
+            
             # Passed guards
             step2_guards.append(c)
         
-        logger.info(f"   После guards filter: {len(step2_guards)} (rejected: {rejected_forbidden} forbidden, {rejected_anchors} missing_anchor)")
+        logger.info(f"   После guards filter: {len(step2_guards)} (rejected: forbidden={rejected_forbidden}, anchor={rejected_anchors}, seed_dict={rejected_seed_dict})")
         search_logger.set_count('after_guards', len(step2_guards))
         search_logger.set_count('rejected_by_forbidden', rejected_forbidden)
         search_logger.set_count('rejected_by_missing_anchor', rejected_anchors)
+        search_logger.set_count('rejected_by_seed_dict', rejected_seed_dict)
         
         if len(step2_guards) == 0:
             logger.error(f"❌ NO CANDIDATES after guards filter")
