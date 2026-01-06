@@ -3089,6 +3089,18 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         origin_region = favorite.get('origin_region')
         origin_city = favorite.get('origin_city')
         
+        # P0 NEW RULE: "Страна = Бренд" - если указана страна, бренд критичен и равен стране
+        # Это правило переопределяет brand_critical и brand_id
+        country_as_brand = False
+        if origin_country and origin_country.strip():
+            country_as_brand = True
+            brand_critical = True
+            # Сохраняем оригинальный brand_id для логирования
+            original_brand_id = brand_id
+            # Страна становится "брендом" для поиска
+            brand_id = origin_country.strip().upper()
+            logger.info(f"   🌍 COUNTRY_AS_BRAND: origin_country='{origin_country}' → brand_critical=True, brand_id='{brand_id}' (was: '{original_brand_id}')")
+        
         reference_item = {
             'name_raw': reference_name,
             'brand_id': brand_id,
