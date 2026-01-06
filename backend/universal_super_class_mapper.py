@@ -175,6 +175,47 @@ def detect_super_class(product_name, min_confidence=0.3):
         'сурими': 'seafood.surimi',
         # Sugar
         'сахар': 'staples.сахар',
+        
+        # === NEW: Categories from "other" analysis ===
+        # Syrups (110 items)
+        'сироп': 'beverages.syrup',
+        
+        # Asian noodles (9 items)
+        'лапша': 'pasta.noodles',
+        'соба': 'pasta.soba',
+        'удон': 'pasta.udon',
+        'рамен': 'pasta.ramen',
+        'фунчоза': 'pasta.glass_noodles',
+        
+        # Nuts (12 items)
+        'миндал': 'nuts.almonds',
+        'фундук': 'nuts.hazelnuts',
+        'кешью': 'nuts.cashews',
+        'фисташ': 'nuts.pistachios',
+        'грецк': 'nuts.walnuts',
+        'арахис': 'nuts.peanuts',
+        'кедров': 'nuts.pine_nuts',
+        
+        # Dried fruits (3 items)
+        'чернослив': 'dried_fruits.prunes',
+        'курага': 'dried_fruits.apricots',
+        'изюм': 'dried_fruits.raisins',
+        'инжир': 'dried_fruits.figs',
+        'финик': 'dried_fruits.dates',
+        
+        # Soft drinks (31 items)
+        'кола': 'beverages.cola',
+        'эвервесс': 'beverages.soft_drinks',
+        'спрайт': 'beverages.soft_drinks',
+        'фанта': 'beverages.soft_drinks',
+        'лимонад': 'beverages.lemonade',
+        'газиров': 'beverages.carbonated',
+        
+        # Concentrates (10 items)
+        'концентрат': 'beverages.concentrate',
+        
+        # Exotic spices
+        'галангал': 'condiments.spice',
     }
     
     # Check priority direct mappings FIRST
