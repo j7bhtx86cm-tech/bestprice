@@ -182,22 +182,43 @@ REQUIRED_ANCHORS = {
     'dairy.cheese': ['сыр', 'cheese', 'mozzarella', 'пармезан'],
     'meat.beef': ['говядин', 'beef'],
     'meat.pork': ['свинин', 'pork'],
-    'meat.chicken': ['курин', 'chicken', 'цыпл'],
+    'meat.chicken': ['курин', 'chicken', 'цыпл', 'кура', 'бройлер'],  # FIX: добавлена "кура"
     'meat.turkey': ['индейк', 'turkey'],
-    'seafood.salmon': ['лосос', 'семг', 'salmon'],
+    'seafood.salmon': ['лосос', 'семг', 'salmon', 'форел', 'нерк', 'кижуч', 'горбуш'],  # Extended
     'seafood.shrimp': ['креветк', 'shrimp', 'prawn'],
+    'seafood.squid': ['кальмар', 'squid', 'calamari'],  # FIX: кальмар обязателен!
     'seafood.seabass': ['сибас', 'seabass'],
     'seafood.pollock': ['минтай', 'pollock'],
+    # Crab categories - CRITICAL distinction
+    'seafood.crab': ['краб', 'crab'],
+    'seafood.crab.kamchatka': ['камчат', 'king crab', 'натур'],  # Натуральный камчатский
+    'seafood.crab.natural': ['натур', 'камчат', 'king'],  # Натуральный краб
+    'seafood.crab_sticks': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],  # Имитация
+    # Condiments
     'condiments.ketchup': ['кетчуп', 'ketchup'],
     'condiments.mayo': ['майонез', 'mayo'],
-    'condiments.wasabi': ['васаби', 'wasabi'],  # Васаби специфичные anchors
-    'condiments.spice': [],  # Wide category - use dynamic anchors from reference
-    'staples.flour': [],  # Wide category - use dynamic anchors from reference
-    'staples.мука': ['мука', 'flour'],  # МУКА must contain мука/flour
-    'staples.мука.пшеничная': ['мука', 'flour', 'пшенич', 'wheat'],  # Пшеничная мука
-    'staples.мука.ржаная': ['мука', 'flour', 'ржан', 'rye'],  # Ржаная мука
-    'staples.flour.wheat': ['пшенич', 'wheat'],  # Пшеничная мука
-    'staples.flour.rye': ['ржан', 'rye'],  # Ржаная мука
+    'condiments.wasabi': ['васаби', 'wasabi'],
+    'condiments.spice': [],  # Wide category - use dynamic anchors
+    'staples.flour': [],  # Wide category - use dynamic anchors
+    'staples.мука': ['мука', 'flour'],
+    'staples.мука.пшеничная': ['мука', 'flour', 'пшенич', 'wheat'],
+    'staples.мука.ржаная': ['мука', 'flour', 'ржан', 'rye'],
+    'staples.flour.wheat': ['пшенич', 'wheat'],
+    'staples.flour.rye': ['ржан', 'rye'],
+}
+
+# FORBIDDEN CROSS-MATCHES - эти пары НИКОГДА не должны матчиться
+FORBIDDEN_CROSS_MATCHES = {
+    # Натуральный краб vs имитация
+    'seafood.crab.kamchatka': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],
+    'seafood.crab.natural': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],
+    # Имитация vs натуральный
+    'seafood.crab_sticks': ['камчат', 'натур', 'king crab'],
+    # Кальмар vs птица
+    'seafood.squid': ['курин', 'кура', 'chicken', 'цыпл', 'индейк', 'утк', 'гус'],
+    # Морепродукты vs мясо
+    'seafood.shrimp': ['говядин', 'свинин', 'курин', 'chicken'],
+    'seafood.salmon': ['говядин', 'свинин', 'курин', 'chicken'],
 }
 
 
