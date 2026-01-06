@@ -129,6 +129,11 @@ def detect_super_class(product_name, min_confidence=0.3):
         'груша': {'exclude': ['seafood'], 'assign': 'canned.фрукты'},
         'абрикос': {'exclude': ['seafood'], 'assign': 'canned.фрукты'},
         
+        # CRITICAL: Meat cuts should NOT be classified as vegetables
+        # "внутренняя часть" contains "нут" but it's MEAT, not chickpeas
+        'внутренняя часть': {'exclude': ['vegetables', 'staples'], 'assign': 'meat.beef.round'},
+        'тазобедренн': {'exclude': ['vegetables', 'staples', 'chicken'], 'assign': 'meat.beef.round'},
+        
         # Paper/Disposables - NOT staples/food
         # NOTE: Removed 'пакет' - too generic, appears in product descriptions like "желатин пакет 1кг"
         # NOTE: 'бумага рисовая' is food (rice paper), not disposables
