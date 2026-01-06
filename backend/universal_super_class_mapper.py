@@ -216,6 +216,34 @@ def detect_super_class(product_name, min_confidence=0.3):
         
         # Exotic spices
         'галангал': 'condiments.spice',
+        'имбирь': 'condiments.ginger',
+        
+        # Fish & Seafood (detailed)
+        'угорь': 'seafood.eel',
+        'судак': 'seafood.pike_perch',
+        'окунь': 'seafood.perch',
+        'гребеш': 'seafood.scallop',
+        'краб': 'seafood.crab',
+        
+        # Meat products
+        'бекон': 'meat.bacon',
+        'стрипс': 'meat.strips',
+        'фрикадельк': 'meat.meatballs',
+        
+        # Vegetables
+        'шпинат': 'vegetables.spinach',
+        'вишн': 'canned.cherries',
+        
+        # Desserts/Bakery
+        'мороженое': 'frozen.ice_cream',
+        'пирожное': 'bakery.pastry',
+        'чизкейк': 'bakery.cheesecake',
+        
+        # Disposables
+        'мешки': 'disposables.bags',
+        
+        # Colorants/Additives
+        'краситель': 'additives.colorant',
     }
     
     # Check priority direct mappings FIRST
