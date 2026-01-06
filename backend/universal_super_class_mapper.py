@@ -251,11 +251,11 @@ def detect_super_class(product_name, min_confidence=0.3):
         'дрожжи': 'additives.yeast',
         
         # Fish - more specific
-        'филе': 'seafood.fillet',
         'щука': 'seafood.pike',
         'сайда': 'seafood.pollock',
         'кета': 'seafood.chum_salmon',
         'изумидай': 'seafood.tilapia',
+        # NOTE: 'филе' is too generic - removed, use fish-specific names
         
         # Berries
         'брусника': 'frozen.berries',
