@@ -141,6 +141,54 @@ PRODUCT_CORE_RULES = {
     'seafood.seaweed': [
         (['чука', 'вакаме', 'нори', 'водоросл'], 'seafood.seaweed'),
     ],
+    
+    # === NEW: Categories for "other" reduction ===
+    # Beverages - Syrups
+    'beverages.syrup': [
+        (['сироп', 'syrup'], 'beverages.syrup'),
+    ],
+    
+    # Asian noodles
+    'pasta.noodles': [
+        (['лапша', 'noodle'], 'pasta.noodles'),
+    ],
+    'pasta.soba': [
+        (['соба', 'soba'], 'pasta.soba'),
+    ],
+    'pasta.udon': [
+        (['удон', 'udon'], 'pasta.udon'),
+    ],
+    'pasta.ramen': [
+        (['рамен', 'ramen'], 'pasta.ramen'),
+    ],
+    'pasta.glass_noodles': [
+        (['фунчоза', 'glass noodle', 'стеклян'], 'pasta.glass_noodles'),
+    ],
+    
+    # Nuts
+    'nuts.almonds': [(['миндал', 'almond'], 'nuts.almonds')],
+    'nuts.hazelnuts': [(['фундук', 'hazelnut'], 'nuts.hazelnuts')],
+    'nuts.cashews': [(['кешью', 'cashew'], 'nuts.cashews')],
+    'nuts.pistachios': [(['фисташ', 'pistachio'], 'nuts.pistachios')],
+    'nuts.walnuts': [(['грецк', 'walnut'], 'nuts.walnuts')],
+    'nuts.peanuts': [(['арахис', 'peanut'], 'nuts.peanuts')],
+    'nuts.pine_nuts': [(['кедров', 'pine nut'], 'nuts.pine_nuts')],
+    
+    # Dried fruits
+    'dried_fruits.prunes': [(['чернослив', 'prune'], 'dried_fruits.prunes')],
+    'dried_fruits.apricots': [(['курага', 'dried apricot'], 'dried_fruits.apricots')],
+    'dried_fruits.raisins': [(['изюм', 'raisin'], 'dried_fruits.raisins')],
+    'dried_fruits.figs': [(['инжир', 'fig'], 'dried_fruits.figs')],
+    'dried_fruits.dates': [(['финик', 'date'], 'dried_fruits.dates')],
+    
+    # Soft drinks
+    'beverages.cola': [(['кола', 'cola', 'пепси', 'pepsi'], 'beverages.cola')],
+    'beverages.soft_drinks': [(['эвервесс', 'спрайт', 'фанта', 'sprite', 'fanta'], 'beverages.soft_drinks')],
+    'beverages.lemonade': [(['лимонад', 'lemonade'], 'beverages.lemonade')],
+    'beverages.carbonated': [(['газиров', 'carbonated'], 'beverages.carbonated')],
+    
+    # Concentrates
+    'beverages.concentrate': [(['концентрат', 'concentrate'], 'beverages.concentrate')],
 }
 
 
