@@ -98,6 +98,8 @@ def parse_pack_from_text(text: str) -> PackInfo:
         (r'(\d+)\s*пач', 1.0, UnitType.PIECE, 0.8),  # пачек
         # Порции
         (r'(\d+)\s*порц', 1.0, UnitType.PIECE, 0.8),
+        # Пакетики чая: "100п", "25п"
+        (r'(\d+)\s*п\b', 1.0, UnitType.PIECE, 0.7),
     ]
     
     # Проверяем сложные форматы: 10x200г, 200 шт x 5 г
