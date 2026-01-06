@@ -8,9 +8,22 @@
 - Ошибки расчета: запрос "1 кг" удовлетворялся товаром "5 г"
 - Бессмысленные `match_percent` scores
 
-## Текущий статус: ✅ All Quality Targets Met + Critical Fixes + Full Brand & Seed Dict Support
+## Текущий статус: ✅ All Quality Targets Met + Critical Fixes + Country as Brand Rule
 
 ### Build SHA: (latest)
+
+### NEW: Country as Brand Rule (2026-01-06) ✅
+**Если у товара в избранном указана страна (`origin_country`), то:**
+- `brand_critical` автоматически становится `true`
+- Страна становится обязательным фильтром (вместо бренда)
+- Кандидаты фильтруются по `origin_country`
+- В `debug_log` добавлено поле `country_as_brand: true/false`
+
+**Тестирование: 7/7 тестов прошли**
+- fav_russia_beef_test: ✅ filters by РОССИЯ (72→30 candidates)
+- fav_argentina_beef_test: ✅ filters by АРГЕНТИНА (72→21 candidates)
+- fav_no_country_beef_test: ✅ no country filter (country_as_brand=false)
+- fav_unknown_country_test: ✅ returns not_found with proper message
 
 ### Full Batch Audit Results (2026-01-06)
 | Метрика | Начало | Финал | Цель | Статус |
@@ -24,10 +37,13 @@
 1. **Креветки с размером** (16/20, 21/25) — размер является обязательным атрибутом ✅
 2. **МУКА пшеничная** — добавлена в direct_map_priority ✅
 3. **seed_dict_rules** — загружены 421 правило, реализована проверка fat%, grade, size ✅
+4. **Absurd matches fixed** — "Кальмар→Курица", "Краб→Крабовые палочки" ✅
+5. **Country as Brand** — страна переопределяет бренд для фильтрации ✅
 
 ### Brand Modes
 - **STRICT** — только указанный бренд (если Heinz → только Heinz)
 - **ANY** — любой бренд, выбирается самый дешевый
+- **COUNTRY_AS_BRAND** — если указана страна, фильтрация по стране (автоматически)
 
 ### seed_dict_rules Implementation
 Система автоматически проверяет обязательные атрибуты:
