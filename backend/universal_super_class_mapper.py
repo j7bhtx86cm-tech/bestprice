@@ -241,9 +241,62 @@ def detect_super_class(product_name, min_confidence=0.3):
         
         # Disposables
         'мешки': 'disposables.bags',
+        'стакан': 'disposables.cups',
+        'бутылка': 'disposables.bottles',
+        'коробка': 'disposables.boxes',
+        'крышк': 'disposables.lids',
         
         # Colorants/Additives
         'краситель': 'additives.colorant',
+        'дрожжи': 'additives.yeast',
+        
+        # Fish - more specific
+        'филе': 'seafood.fillet',
+        'щука': 'seafood.pike',
+        'сайда': 'seafood.pollock',
+        'кета': 'seafood.chum_salmon',
+        'изумидай': 'seafood.tilapia',
+        
+        # Berries
+        'брусника': 'frozen.berries',
+        'облепиха': 'frozen.berries',
+        'клюква': 'frozen.berries',
+        'черника': 'frozen.berries',
+        'малина': 'frozen.berries',
+        'клубника': 'frozen.berries',
+        
+        # Vegetables
+        'шампиньон': 'vegetables.mushrooms',
+        'грибы': 'vegetables.mushrooms',
+        
+        # Meat products - more specific
+        'пепперони': 'meat.pepperoni',
+        'паштет': 'meat.pate',
+        'бекон': 'meat.bacon',
+        'байтс': 'meat.bites',
+        'голубц': 'frozen.golubcy',
+        
+        # Chicken parts
+        'грудк': 'meat.chicken.breast',
+        'бедр': 'meat.chicken.thigh',
+        'крыл': 'meat.chicken.wings',
+        'куриная': 'meat.chicken',
+        
+        # Bakery
+        'круассан': 'bakery.croissant',
+        'багет': 'bakery.baguette',
+        'панини': 'bakery.panini',
+        'тарталетк': 'bakery.tartlet',
+        'сухар': 'bakery.breadcrumbs',
+        'маршмеллоу': 'confectionery.marshmallow',
+        
+        # Ready meals
+        'суп': 'ready_meals.soup',
+        'запеканк': 'ready_meals.casserole',
+        'пюре': 'ready_meals.puree',
+        
+        # Beverages
+        'пепси': 'beverages.pepsi',
     }
     
     # Check priority direct mappings FIRST
