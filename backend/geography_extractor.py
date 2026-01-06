@@ -158,6 +158,32 @@ CITY_PATTERNS = {
     'ПЕТРОПАВЛОВСК-КАМЧАТСКИЙ': ['петропавловск-камчатск', 'петропавловск'],
 }
 
+# Patterns that should NOT be matched as countries (false positives)
+# These are common product words that match country patterns
+FALSE_POSITIVE_EXCLUSIONS = {
+    # "чили" в соусах - это перец, не страна Чили
+    'чили': ['соус', 'перец', 'перца', 'острый', 'сладкий', 'chili', 'chilli', 'sweet chili', 'курицы'],
+    # "голланд" может быть в названии соуса (Голландский соус)
+    'голланд': ['соус', 'голландез', 'hollandaise'],
+    # "америк" может быть в названии стиля блюда
+    'америк': ['стиль', 'style'],
+    # "мексик" может быть в названии стиля
+    'мексик': ['стиль', 'style', 'микс'],
+    # "грец" может быть грецкий орех
+    'грец': ['орех', 'орешки'],
+    # "индийск" может быть индийский рис/специи как стиль
+    'инди': ['стиль', 'style', 'карри'],
+}
+
+
+def is_false_positive(text_lower: str, pattern: str) -> bool:
+    """Check if the matched pattern is likely a false positive based on context."""
+    exclusions = FALSE_POSITIVE_EXCLUSIONS.get(pattern, [])
+    for excl in exclusions:
+        if excl in text_lower:
+            return True
+    return False
+
 
 def extract_geography_from_text(text: str) -> Dict[str, Optional[str]]:
     """
