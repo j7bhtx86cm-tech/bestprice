@@ -3914,7 +3914,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
                     'guards_applied': True,
-                    'country_as_brand': country_as_brand,
+                    'geo_as_brand': geo_as_brand,
+                    'geo_filter_type': geo_filter_type,
+                    'geo_filter_value': geo_filter_value,
+                    'country_as_brand': country_as_brand,  # Legacy
                     'counts': {
                         'total': total_candidates,
                         'after_product_core': len(step1),
