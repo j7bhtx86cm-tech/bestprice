@@ -3445,15 +3445,21 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         # Filter 4: Unit Compatibility + Pack Calculation (P0 NEW LOGIC)
         # Added: pack_outlier rule (reject if packs_needed > 20)
+        # Added: price_sanity rule (reject if price is absurdly low)
         step4_unit_compatible = []
         unit_mismatch_count = 0
         pack_calculated_count = 0
         pack_outlier_count = 0
+        price_sanity_rejected = 0
         
         PACK_OUTLIER_THRESHOLD = 20  # Reject if > 20 упаковок
         
+        # Get reference price for sanity check (estimate from product name/category)
+        ref_price_estimate = None
+        
         for c in step3_brand:
             candidate_name = c.get('name_raw', '')
+            candidate_price = c.get('price', 0)
             
             # Parse candidate pack
             cand_pack_info = parse_pack_from_text(candidate_name)
@@ -3474,6 +3480,22 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 pack_outlier_count += 1
                 logger.debug(f"   ❌ PACK_OUTLIER: {candidate_name[:40]} - packs_needed={packs_needed} > {PACK_OUTLIER_THRESHOLD}")
                 continue  # REJECT this candidate
+            
+            # NEW: Price sanity check
+            # Use first valid candidate price as reference for comparison
+            if ref_price_estimate is None and candidate_price > 0:
+                ref_price_estimate = candidate_price * 2  # Assume reference is ~2x average price
+            
+            if ref_price_estimate:
+                price_sane, price_reason = check_price_sanity(
+                    reference_name, ref_price_estimate,
+                    candidate_name, candidate_price,
+                    ref_super_class
+                )
+                if not price_sane:
+                    price_sanity_rejected += 1
+                    logger.debug(f"   ❌ PRICE_INSANE: {candidate_name[:40]} - {price_reason}")
+                    continue  # REJECT this candidate
             
             # Store pack calculation info
             c['_pack_info'] = cand_pack_info
