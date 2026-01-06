@@ -139,6 +139,34 @@ KNOWN_BRANDS = {
     'кинг': 'king',
     'long men': 'longmen',
     'печагин': 'pechagin',
+    
+    # More Russian brands
+    'адреналин': 'adrenalin_rush',
+    'аква минерале': 'aqua_minerale',
+    'дж7': 'j7',
+    'j7': 'j7',
+    'липтон': 'lipton',
+    'липтон': 'lipton',
+    'добрый': 'dobry',
+    'моя семья': 'moya_semya',
+    'фруктовый сад': 'fruktovy_sad',
+    'святой источник': 'svyatoy_istochnik',
+    'бонаква': 'bonaqua',
+    'эвервесс': 'evervess',
+    'фанта': 'fanta',
+    'спрайт': 'sprite',
+    'кока-кола': 'cocacola',
+    
+    # More food brands
+    'хондаши': 'hondashi',
+    'панко': 'panko',
+    'токи-поки': 'tokipoki',
+    'шичими': 'shichimi',
+    'bagerstat': 'bagerstat',
+    
+    # Suppliers/distributors that act as brands
+    'horeca': 'horeca',
+    'metro': 'metro',
 }
 
 # Country names to exclude from brand detection
