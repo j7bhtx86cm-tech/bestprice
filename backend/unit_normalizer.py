@@ -130,6 +130,34 @@ def parse_pack_from_text(text: str) -> PackInfo:
             except (ValueError, IndexError):
                 continue
     
+    # Специальные форматы:
+    # 1. Весовой товар ("вес" в конце) - устанавливаем 1кг по умолчанию
+    if re.search(r'\bвес\s*$', text_lower) or re.search(r'\sвес\b', text_lower):
+        return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.5)  # 1кг default
+    
+    # 2. "с/м вес" - замороженные весовые
+    if 'с/м вес' in text_lower or 'см вес' in text_lower:
+        return PackInfo(UnitType.WEIGHT, 1000.0, text, 0.5)  # 1кг default
+    
+    # 3. Банки с указанием объёма в мл через запятую: "2,650" = 2650мл
+    bank_match = re.search(r'(\d+)[,.](\d{3})\s*$', text)
+    if bank_match:
+        liters = int(bank_match.group(1))
+        ml = int(bank_match.group(2))
+        total_ml = liters * 1000 + ml
+        return PackInfo(UnitType.VOLUME, float(total_ml), text, 0.7)
+    
+    # 4. Размер в см для бумаги: "22 см" - считаем как штуки
+    cm_match = re.search(r'(\d+)\s*см\b', text_lower)
+    if cm_match and ('бумаг' in text_lower or 'рисов' in text_lower):
+        return PackInfo(UnitType.PIECE, 1.0, text, 0.6)  # 1 упаковка
+    
+    # 5. Метры для рулонов: "11м", "15м"  
+    meter_match = re.search(r'(\d+)\s*м\b', text_lower)
+    if meter_match and ('рулон' in text_lower or 'рул' in text_lower):
+        meters = float(meter_match.group(1))
+        return PackInfo(UnitType.PIECE, meters, text, 0.7)
+    
     # Ничего не найдено
     return PackInfo(UnitType.UNKNOWN, None, text, 0.0)
 
