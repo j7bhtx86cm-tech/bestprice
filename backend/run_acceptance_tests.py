@@ -5,7 +5,7 @@ Based on AT-1 to AT-5 from specification
 import requests
 import os
 
-API_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://pricematch-pro-1.preview.emergentagent.com')
+API_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://bestprice-match.preview.emergentagent.com')
 API = f"{API_URL}/api"
 
 print("=" * 80)
