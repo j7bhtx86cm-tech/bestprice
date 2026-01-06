@@ -112,28 +112,19 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
         return True, ""
     
     candidate_lower = candidate_name.lower()
+    ref_lower = reference_name.lower() if reference_name else ""
     
-    # Strategy 1: Pre-defined REQUIRED_ANCHORS
-    if super_class in REQUIRED_ANCHORS:
-        anchors = REQUIRED_ANCHORS[super_class]
+    # Strategy 1: Check DYNAMIC anchors FIRST for specific categories
+    # (for shrimp sizes, flour types, etc.)
+    if reference_name and super_class in ['condiments.spice', 'staples.flour', 'staples.мука', 'staples.мука.пшеничная', 
+                                           'staples.мука.ржаная', 'meat.beef', 'seafood.shrimp', 'other']:
         
-        # If no anchors defined (e.g., condiments.spice), fall through to Strategy 2
-        if not anchors:
-            pass
-        else:
-            # At least ONE anchor must be present
-            for anchor in anchors:
-                if anchor in candidate_lower:
-                    return True, anchor
-            return False, ""
-    
-    # Strategy 2: DYNAMIC anchors from reference (for wide categories)
-    # Extract specific product words from reference (e.g., "васаби", "соль", "перец", "пшеничная", "ржаная", "фарш")
-    if reference_name and super_class in ['condiments.spice', 'staples.flour', 'staples.мука', 'meat.beef', 'seafood.shrimp', 'other']:
-        ref_lower = reference_name.lower()
-        
-        # List of specific product types
-        specific_products = [
+        # List of specific product attributes that MUST match
+        specific_attributes = [
+            # Размеры креветок (CRITICAL for seafood.shrimp)
+            '16/20', '21/25', '26/30', '31/35', '31/40', '41/50', '51/60', '61/70',
+            '71/90', '90/120', '100/150', '150/200', '200/300', '300/500',
+            # Специи
             'васаби', 'wasabi',
             'соль', 'salt', 'нитритн',
             'перец', 'pepper',
@@ -161,19 +152,31 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
             'рёбр', 'ribs',
             'грудк', 'breast',
             'бедр', 'thigh',
-            # Размеры креветок (CRITICAL)
-            '16/20', '21/25', '26/30', '31/35', '31/40', '41/50', '51/60', '61/70',
-            '71/90', '90/120', '100/150', '150/200', '200/300', '300/500',
         ]
         
-        # Check if reference contains any specific product
-        for product in specific_products:
-            if product in ref_lower:
-                # Candidate MUST also contain this product
-                if product in candidate_lower:
-                    return True, f"dynamic:{product}"
+        # Check if reference contains any specific attribute
+        for attr in specific_attributes:
+            if attr in ref_lower:
+                # Candidate MUST also contain this attribute
+                if attr in candidate_lower:
+                    # Continue checking (may have multiple attributes)
+                    continue
                 else:
-                    return False, f"missing:{product}"
+                    return False, f"missing:{attr}"
+    
+    # Strategy 2: Pre-defined REQUIRED_ANCHORS (base product type)
+    if super_class in REQUIRED_ANCHORS:
+        anchors = REQUIRED_ANCHORS[super_class]
+        
+        # If no anchors defined, pass
+        if not anchors:
+            return True, ""
+        
+        # At least ONE anchor must be present
+        for anchor in anchors:
+            if anchor in candidate_lower:
+                return True, anchor
+        return False, ""
     
     # No anchors required = pass
     return True, ""
