@@ -79,6 +79,18 @@ PRODUCT_CORE_RULES = {
         (['соев', 'soy'], 'condiments.soy_sauce'),
         (['томат', 'tomato'], 'condiments.tomato_sauce'),
         (['горчиц', 'mustard'], 'condiments.mustard'),
+        # New: More specific sauce types to reduce low confidence
+        (['барбекю', 'bbq', 'barbecue'], 'condiments.sauce.bbq'),
+        (['терияки', 'teriyaki'], 'condiments.sauce.teriyaki'),
+        (['кимчи', 'kimchi'], 'condiments.sauce.kimchi'),
+        (['кисло-сладк', 'sweet.*sour'], 'condiments.sauce.sweet_sour'),
+        (['цезар', 'caesar'], 'condiments.sauce.caesar'),
+        (['карри', 'curry'], 'condiments.sauce.curry'),
+        (['бальзамич', 'balsamic'], 'condiments.sauce.balsamic'),
+        (['чили', 'chili'], 'condiments.sauce.chili'),
+        (['шашлыч', 'marinade'], 'condiments.sauce.marinade'),
+        (['бешамель', 'bechamel'], 'condiments.sauce.bechamel'),
+        (['голландез', 'hollandaise'], 'condiments.sauce.hollandaise'),
     ],
     
     # Seafood - Морепродукты
