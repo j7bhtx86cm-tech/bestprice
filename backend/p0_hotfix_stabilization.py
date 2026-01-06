@@ -231,26 +231,59 @@ def has_negative_keywords(product_name: str, super_class: str) -> Tuple[bool, st
 REQUIRED_ANCHORS = {
     'dairy.сыр': ['сыр', 'cheese', 'mozzarella', 'моцарелл', 'пармезан', 'гауда', 'чеддер', 'фета', 'брынз', 'сулугун'],
     'dairy.cheese': ['сыр', 'cheese', 'mozzarella', 'пармезан'],
-    'meat.beef': ['говядин', 'beef'],
-    'meat.pork': ['свинин', 'pork'],
-    'meat.chicken': ['курин', 'chicken', 'цыпл', 'кура', 'бройлер'],  # FIX: добавлена "кура"
+    
+    # MEAT - Critical meat type anchors
+    'meat.beef': ['говядин', 'beef', 'говяж'],
+    'meat.pork': ['свинин', 'pork', 'свиной', 'свиная'],
+    'meat.chicken': ['курин', 'chicken', 'цыпл', 'кура', 'бройлер', 'куриц'],
     'meat.turkey': ['индейк', 'turkey'],
-    'seafood.salmon': ['лосос', 'семг', 'salmon', 'форел', 'нерк', 'кижуч', 'горбуш'],  # Extended
+    'meat.lamb': ['баранин', 'ягнятин', 'lamb', 'mutton'],
+    'meat.mutton': ['баранин', 'ягнятин', 'lamb', 'mutton'],
+    'meat.duck': ['утк', 'утин', 'duck'],
+    'meat.venison': ['оленин', 'venison'],
+    
+    # Meat cuts - require meat type OR cut name
+    'meat.pork.loin': ['свинин', 'pork', 'корейк', 'карбонад'],
+    'meat.pork.leg': ['свинин', 'pork', 'окорок'],
+    'meat.pork.shoulder': ['свинин', 'pork', 'лопатк'],
+    'meat.pork.belly': ['свинин', 'pork', 'грудинк'],
+    'meat.pork.neck': ['свинин', 'pork', 'шея', 'шей'],
+    'meat.pork.ribs': ['свинин', 'pork', 'ребр'],
+    'meat.pork.tenderloin': ['свинин', 'pork', 'вырезк'],
+    'meat.pork.shank': ['свинин', 'pork', 'голяшк'],
+    
+    'meat.beef.round': ['говядин', 'beef', 'тазобедр', 'окорок'],
+    'meat.beef.loin': ['говядин', 'beef', 'филей', 'вырезк'],
+    'meat.beef.brisket': ['говядин', 'beef', 'грудинк'],
+    'meat.beef.shoulder': ['говядин', 'beef', 'лопатк'],
+    'meat.beef.ribs': ['говядин', 'beef', 'ребр'],
+    
+    'meat.lamb.rack': ['баранин', 'ягнятин', 'lamb', 'корейк'],
+    'meat.lamb.leg': ['баранин', 'ягнятин', 'lamb', 'окорок'],
+    'meat.lamb.shoulder': ['баранин', 'ягнятин', 'lamb', 'лопатк'],
+    
+    # Seafood
+    'seafood.salmon': ['лосос', 'семг', 'salmon', 'форел', 'нерк', 'кижуч', 'горбуш'],
     'seafood.shrimp': ['креветк', 'shrimp', 'prawn'],
-    'seafood.squid': ['кальмар', 'squid', 'calamari'],  # FIX: кальмар обязателен!
+    'seafood.squid': ['кальмар', 'squid', 'calamari'],
     'seafood.seabass': ['сибас', 'seabass'],
     'seafood.pollock': ['минтай', 'pollock'],
+    'seafood.fillet': ['филе', 'fillet'],  # Only for fish fillets
+    
     # Crab categories - CRITICAL distinction
     'seafood.crab': ['краб', 'crab'],
-    'seafood.crab.kamchatka': ['камчат', 'king crab', 'натур'],  # Натуральный камчатский
-    'seafood.crab.natural': ['натур', 'камчат', 'king'],  # Натуральный краб
-    'seafood.crab_sticks': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],  # Имитация
+    'seafood.crab.kamchatka': ['камчат', 'king crab', 'натур'],
+    'seafood.crab.natural': ['натур', 'камчат', 'king'],
+    'seafood.crab_sticks': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],
+    
     # Condiments
     'condiments.ketchup': ['кетчуп', 'ketchup'],
     'condiments.mayo': ['майонез', 'mayo'],
     'condiments.wasabi': ['васаби', 'wasabi'],
-    'condiments.spice': [],  # Wide category - use dynamic anchors
-    'staples.flour': [],  # Wide category - use dynamic anchors
+    'condiments.spice': [],
+    
+    # Flour
+    'staples.flour': [],
     'staples.мука': ['мука', 'flour'],
     'staples.мука.пшеничная': ['мука', 'flour', 'пшенич', 'wheat'],
     'staples.мука.ржаная': ['мука', 'flour', 'ржан', 'rye'],
@@ -263,13 +296,35 @@ FORBIDDEN_CROSS_MATCHES = {
     # Натуральный краб vs имитация
     'seafood.crab.kamchatka': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],
     'seafood.crab.natural': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],
-    # Имитация vs натуральный
     'seafood.crab_sticks': ['камчат', 'натур', 'king crab'],
-    # Кальмар vs птица
-    'seafood.squid': ['курин', 'кура', 'chicken', 'цыпл', 'индейк', 'утк', 'гус'],
-    # Морепродукты vs мясо
-    'seafood.shrimp': ['говядин', 'свинин', 'курин', 'chicken'],
-    'seafood.salmon': ['говядин', 'свинин', 'курин', 'chicken'],
+    
+    # Кальмар vs птица/мясо
+    'seafood.squid': ['курин', 'кура', 'chicken', 'цыпл', 'индейк', 'утк', 'гус', 'говядин', 'свинин', 'баранин'],
+    
+    # Морепродукты vs мясо (any seafood should not match with meat)
+    'seafood.shrimp': ['говядин', 'свинин', 'курин', 'chicken', 'баранин', 'ягнятин'],
+    'seafood.salmon': ['говядин', 'свинин', 'курин', 'chicken', 'баранин', 'ягнятин'],
+    'seafood.fillet': ['курин', 'chicken', 'цыпл'],  # Fish fillet vs chicken
+    
+    # CRITICAL: Different meat types should NOT cross-match
+    # Lamb/Mutton should not match with Pork
+    'meat.lamb': ['свинин', 'pork', 'свиной', 'свиная'],
+    'meat.lamb.rack': ['свинин', 'pork', 'свиной', 'свиная'],
+    'meat.lamb.leg': ['свинин', 'pork', 'свиной', 'свиная'],
+    'meat.mutton': ['свинин', 'pork', 'свиной', 'свиная'],
+    
+    # Pork should not match with Lamb
+    'meat.pork': ['баранин', 'ягнятин', 'lamb', 'mutton'],
+    'meat.pork.loin': ['баранин', 'ягнятин', 'lamb', 'mutton'],
+    'meat.pork.leg': ['баранин', 'ягнятин', 'lamb', 'mutton'],
+    
+    # Beef should not match with Pork or Lamb
+    'meat.beef': ['свинин', 'pork', 'баранин', 'ягнятин'],
+    'meat.beef.round': ['свинин', 'pork', 'баранин', 'ягнятин'],
+    
+    # Chicken should not match with other meats in cuts context
+    'meat.chicken.thigh': ['говядин', 'свинин', 'баранин', 'тазобедр'],  # тазобедренный is beef/pork, not chicken!
+    'meat.chicken.breast': ['говядин', 'свинин', 'баранин'],
 }
 
 
