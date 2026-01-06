@@ -105,6 +105,29 @@ PRODUCT_CORE_RULES = {
         (['креветк', 'shrimp', 'prawn'], 'seafood.shrimp'),
     ],
     
+    # Crab - CRITICAL: Separate natural from imitation
+    'seafood.crab': [
+        (['камчат', 'kamchatka'], 'seafood.crab.kamchatka'),
+        (['king crab', 'королевск'], 'seafood.crab.king'),
+        (['натур'], 'seafood.crab.natural'),
+        (['снежн', 'vici', 'вичи'], 'seafood.crab_sticks'),  # Snow crab = imitation in RU
+        (['палочк', 'сурими', 'surimi', 'имит'], 'seafood.crab_sticks'),
+    ],
+    
+    'seafood.crab_sticks': [
+        (['палочк', 'stick'], 'seafood.crab_sticks'),
+        (['сурими', 'surimi'], 'seafood.crab_sticks'),
+        (['снежн', 'vici'], 'seafood.crab_sticks'),
+    ],
+    
+    # Squid - кальмар
+    'seafood.squid': [
+        (['кальмар', 'squid', 'calamari'], 'seafood.squid'),
+        (['тушк', 'body'], 'seafood.squid.body'),
+        (['филе', 'fillet'], 'seafood.squid.fillet'),
+        (['кольц', 'ring'], 'seafood.squid.rings'),
+    ],
+    
     # Dairy - Молочные продукты
     'dairy.сыр': [
         (['моцарелл', 'mozzarella'], 'dairy.cheese.mozzarella'),
