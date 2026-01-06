@@ -156,6 +156,15 @@ def detect_super_class(product_name, min_confidence=0.3):
     # DIRECT MAPPINGS - Check these FIRST before guard rules
     # These have highest priority for specific product types
     direct_map_priority = {
+        # === PUREE - Пюре (HIGHEST PRIORITY to avoid sugar conflicts) ===
+        'пюре': 'ready_meals.puree',
+        'пюре юдзу': 'ready_meals.puree.yuzu',
+        'пюре манго': 'ready_meals.puree.mango',
+        'пюре малин': 'ready_meals.puree.raspberry',
+        'пюре клубник': 'ready_meals.puree.strawberry',
+        'пюре маракуй': 'ready_meals.puree.passionfruit',
+        'пюре персик': 'ready_meals.puree.peach',
+        
         # === JUICES - Соки (HIGHEST PRIORITY to avoid salt/sugar conflicts) ===
         'сок томат': 'beverages.juice.tomato',  # Must be before 'соль' 
         'сок юдзу': 'beverages.juice.yuzu',
