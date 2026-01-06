@@ -289,6 +289,10 @@ def detect_super_class(product_name, min_confidence=0.3):
         'бедр': 'meat.chicken.thigh',
         'крыл': 'meat.chicken.wings',
         'куриная': 'meat.chicken',
+        'кура': 'meat.chicken',  # FIX: "кура тушка" должна быть chicken
+        'курин': 'meat.chicken',
+        'цыпл': 'meat.chicken',  # цыпленок
+        'бройлер': 'meat.chicken',
         
         # Bakery
         'круассан': 'bakery.croissant',
