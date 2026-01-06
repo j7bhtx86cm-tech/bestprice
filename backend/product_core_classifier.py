@@ -218,6 +218,34 @@ PRODUCT_CORE_RULES = {
     
     # Soft drinks
     'beverages.cola': [(['кола', 'cola', 'пепси', 'pepsi'], 'beverages.cola')],
+    
+    # JUICES - Соки (CRITICAL FIX)
+    'beverages.juice': [
+        (['юдзу', 'yuzu'], 'beverages.juice.yuzu'),
+        (['апельсин', 'orange'], 'beverages.juice.orange'),
+        (['яблок', 'apple'], 'beverages.juice.apple'),
+        (['томат', 'tomato'], 'beverages.juice.tomato'),
+        (['ананас', 'pineapple'], 'beverages.juice.pineapple'),
+        (['грейпфрут', 'grapefruit'], 'beverages.juice.grapefruit'),
+        (['виноград', 'grape'], 'beverages.juice.grape'),
+        (['гранат', 'pomegranate'], 'beverages.juice.pomegranate'),
+        (['лимон', 'lemon'], 'beverages.juice.lemon'),
+        (['лайм', 'lime'], 'beverages.juice.lime'),
+        (['манго', 'mango'], 'beverages.juice.mango'),
+        (['вишн', 'cherry'], 'beverages.juice.cherry'),
+        (['персик', 'peach'], 'beverages.juice.peach'),
+        (['груш', 'pear'], 'beverages.juice.pear'),
+        (['мультифрукт', 'multifruit'], 'beverages.juice'),
+    ],
+    'beverages.juice.yuzu': [
+        (['юдзу', 'yuzu'], 'beverages.juice.yuzu'),
+    ],
+    'beverages.juice.orange': [
+        (['апельсин', 'orange'], 'beverages.juice.orange'),
+    ],
+    'beverages.juice.apple': [
+        (['яблок', 'apple'], 'beverages.juice.apple'),
+    ],
     'beverages.soft_drinks': [(['эвервесс', 'спрайт', 'фанта', 'sprite', 'fanta'], 'beverages.soft_drinks')],
     'beverages.lemonade': [(['лимонад', 'lemonade'], 'beverages.lemonade')],
     'beverages.carbonated': [(['газиров', 'carbonated'], 'beverages.carbonated')],
