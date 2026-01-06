@@ -176,7 +176,16 @@ def detect_super_class(product_name, min_confidence=0.3):
         # Sugar
         'сахар': 'staples.сахар',
         
-        # === NEW: Categories from "other" analysis ===
+        # === FLOUR - МУКА (CRITICAL FIX) ===
+        'мука': 'staples.мука',
+        'мука пшеничная': 'staples.мука.пшеничная',
+        'мука ржаная': 'staples.мука.ржаная',
+        'мука кукурузная': 'staples.мука.кукурузная',
+        'мука рисовая': 'staples.мука.рисовая',
+        'мука гречневая': 'staples.мука.гречневая',
+        'макфа': 'staples.мука',  # Brand often indicates flour
+        
+        # === Categories from "other" analysis ===
         # Syrups (110 items)
         'сироп': 'beverages.syrup',
         
