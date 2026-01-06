@@ -1,0 +1,105 @@
+{
+  "timestamp": "20260106_083652",
+  "database": "test_database",
+  "total_items": 8218,
+  "coverage": {
+    "product_core": "100%",
+    "super_class": "100%",
+    "brand": "52%",
+    "pack": "94%",
+    "unit_type": "94%"
+  },
+  "product_core_confidence": {
+    "high": 1661,
+    "medium": 5771,
+    "low": 786
+  },
+  "issues": {
+    "no_product_core": 0,
+    "no_brand": 3932,
+    "no_pack": 418,
+    "low_core_conf": 786
+  },
+  "top_product_cores": [
+    [
+      "condiments.sauce",
+      238
+    ],
+    [
+      "beverages.syrup",
+      214
+    ],
+    [
+      "staples.сахар",
+      196
+    ],
+    [
+      "seafood.shrimp",
+      190
+    ],
+    [
+      "dairy.сыр",
+      181
+    ],
+    [
+      "other",
+      169
+    ],
+    [
+      "canned.томаты.консервированные",
+      151
+    ],
+    [
+      "beverages.cola",
+      147
+    ],
+    [
+      "condiments.spice",
+      140
+    ],
+    [
+      "condiments.pepper",
+      136
+    ],
+    [
+      "staples.макароны",
+      133
+    ],
+    [
+      "frozen.berries",
+      132
+    ],
+    [
+      "condiments.salt",
+      129
+    ],
+    [
+      "disposables.bags",
+      125
+    ],
+    [
+      "vegetables.картофель",
+      124
+    ],
+    [
+      "staples.рис",
+      121
+    ],
+    [
+      "staples.масло.оливковое",
+      114
+    ],
+    [
+      "condiments.seasoning",
+      99
+    ],
+    [
+      "dairy.сливки",
+      96
+    ],
+    [
+      "pasta",
+      91
+    ]
+  ]
+}
