@@ -8,9 +8,9 @@
 - Ошибки расчета: запрос "1 кг" удовлетворялся товаром "5 г"
 - Бессмысленные `match_percent` scores
 
-## Текущий статус: ✅ All Quality Targets Met + Critical Fixes
+## Текущий статус: ✅ All Quality Targets Met + Critical Fixes + Full Brand & Seed Dict Support
 
-### Build SHA: 82319db
+### Build SHA: (latest)
 
 ### Full Batch Audit Results (2026-01-06)
 | Метрика | Начало | Финал | Цель | Статус |
@@ -21,9 +21,19 @@
 | Brand coverage | 0% | **52%** | 50%+ | ✅ |
 
 ### Critical Fixes (2026-01-06)
-1. **Креветки с размером** (16/20, 21/25) — теперь размер является обязательным атрибутом
-2. **МУКА пшеничная** — добавлена в direct_map_priority
-3. **seed_dict_rules** — загружены 421 правило из Excel
+1. **Креветки с размером** (16/20, 21/25) — размер является обязательным атрибутом ✅
+2. **МУКА пшеничная** — добавлена в direct_map_priority ✅
+3. **seed_dict_rules** — загружены 421 правило, реализована проверка fat%, grade, size ✅
+
+### Brand Modes
+- **STRICT** — только указанный бренд (если Heinz → только Heinz)
+- **ANY** — любой бренд, выбирается самый дешевый
+
+### seed_dict_rules Implementation
+Система автоматически проверяет обязательные атрибуты:
+- **fat** (жирность): "Молоко 3.2%" → только кандидаты с 3.2%
+- **grade** (сорт): "Говядина CHOICE" → только кандидаты с CHOICE
+- **size** (размер): "Креветки 16/20" → только кандидаты с 16/20
 
 ### Data Coverage (8218 items)
 - Product Core: 100%
