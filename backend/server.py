@@ -3304,10 +3304,11 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 }
             )
         
-        # Filter 2: GUARDS (FORBIDDEN + REQUIRED ANCHORS) - Applied to CANDIDATE!
+        # Filter 2: GUARDS (FORBIDDEN + REQUIRED ANCHORS + SEED_DICT) - Applied to CANDIDATE!
         step2_guards = []
         rejected_forbidden = 0
         rejected_anchors = 0
+        rejected_seed_dict = 0
         
         for c in step1:
             candidate_name = c.get('name_raw', '')
