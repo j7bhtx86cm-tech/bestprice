@@ -3071,9 +3071,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             )
         
         # Step 2: Determine brand_critical (support both schema v1 and v2)
-        brand_critical = favorite.get('brand_critical', False)  # Schema v2
-        if not isinstance(brand_critical, bool):
-            # Fallback to legacy brandMode
+        brand_critical = favorite.get('brand_critical')
+        
+        # If brand_critical is not set or not boolean, use legacy brandMode
+        if brand_critical is None or not isinstance(brand_critical, bool):
             brand_mode = favorite.get('brandMode', 'ANY')
             brand_critical = (brand_mode == 'STRICT')
         
