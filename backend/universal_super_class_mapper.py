@@ -156,6 +156,23 @@ def detect_super_class(product_name, min_confidence=0.3):
     # DIRECT MAPPINGS - Check these FIRST before guard rules
     # These have highest priority for specific product types
     direct_map_priority = {
+        # === JUICES - Соки (HIGHEST PRIORITY to avoid salt/sugar conflicts) ===
+        'сок томат': 'beverages.juice.tomato',  # Must be before 'соль' 
+        'сок юдзу': 'beverages.juice.yuzu',
+        'сок yuzu': 'beverages.juice.yuzu',
+        'сок апельсин': 'beverages.juice.orange',
+        'сок яблок': 'beverages.juice.apple',
+        'сок ананас': 'beverages.juice.pineapple',
+        'сок грейпфрут': 'beverages.juice.grapefruit',
+        'сок виноград': 'beverages.juice.grape',
+        'сок гранат': 'beverages.juice.pomegranate',
+        'сок лимон': 'beverages.juice.lemon',
+        'сок лайм': 'beverages.juice.lime',
+        'сок манго': 'beverages.juice.mango',
+        'сок': 'beverages.juice',  # Generic juice after specific types
+        'фреш': 'beverages.juice',
+        'нектар': 'beverages.nectar',
+        
         # Additives that may contain "пакет" in name
         'желатин': 'additives.gelatin',
         'агар': 'additives.agar',
