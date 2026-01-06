@@ -3089,17 +3089,26 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         origin_region = favorite.get('origin_region')
         origin_city = favorite.get('origin_city')
         
-        # P0 NEW RULE: "Страна = Бренд" - если указана страна, бренд критичен и равен стране
-        # Это правило переопределяет brand_critical и brand_id
-        country_as_brand = False
-        if origin_country and origin_country.strip():
-            country_as_brand = True
+        # P0 NEW RULE: "География = Бренд" - каскадный приоритет: Город > Регион > Страна
+        # Если указан любой географический атрибут, он становится критичным фильтром
+        from geography_extractor import get_geo_filter_value
+        
+        geo_as_brand = False
+        geo_filter_value = None
+        geo_filter_field = None
+        geo_filter_type = None
+        original_brand_id = brand_id
+        
+        geo_filter_value, geo_filter_field, geo_filter_type = get_geo_filter_value(favorite)
+        
+        if geo_filter_value:
+            geo_as_brand = True
             brand_critical = True
-            # Сохраняем оригинальный brand_id для логирования
-            original_brand_id = brand_id
-            # Страна становится "брендом" для поиска
-            brand_id = origin_country.strip().upper()
-            logger.info(f"   🌍 COUNTRY_AS_BRAND: origin_country='{origin_country}' → brand_critical=True, brand_id='{brand_id}' (was: '{original_brand_id}')")
+            brand_id = geo_filter_value
+            logger.info(f"   🌍 GEO_AS_BRAND: {geo_filter_type}='{geo_filter_value}' → brand_critical=True (was brand_id='{original_brand_id}')")
+        
+        # Legacy alias for backward compatibility
+        country_as_brand = geo_as_brand and geo_filter_type == 'country'
         
         reference_item = {
             'name_raw': reference_name,
