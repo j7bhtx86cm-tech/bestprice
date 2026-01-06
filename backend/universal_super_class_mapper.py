@@ -161,6 +161,14 @@ def detect_super_class(product_name, min_confidence=0.3):
     # DIRECT MAPPINGS - Check these FIRST before guard rules
     # These have highest priority for specific product types
     direct_map_priority = {
+        # === MEAT CUTS (HIGHEST PRIORITY - prevent false matches) ===
+        # "внутренняя часть" contains "нут" which triggers chickpeas - WRONG!
+        'говядина внутрен': 'meat.beef.round',
+        'говядина тазобедр': 'meat.beef.round',
+        'свинина тазобедр': 'meat.pork.leg',
+        'тазобедренн': 'meat.beef.round',  # Default to beef
+        'внутренняя часть': 'meat.beef.round',
+        
         # === PUREE - Пюре (HIGHEST PRIORITY to avoid sugar conflicts) ===
         'пюре': 'ready_meals.puree',
         'пюре юдзу': 'ready_meals.puree.yuzu',
