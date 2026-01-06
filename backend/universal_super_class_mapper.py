@@ -297,7 +297,7 @@ def detect_super_class(product_name, min_confidence=0.3):
         'сайда': 'seafood.pollock',
         'кета': 'seafood.chum_salmon',
         'изумидай': 'seafood.tilapia',
-        # NOTE: 'филе' is too generic - removed, use fish-specific names
+        # NOTE: 'филе' is too generic - use with meat type
         
         # Berries
         'брусника': 'frozen.berries',
@@ -311,20 +311,88 @@ def detect_super_class(product_name, min_confidence=0.3):
         'шампиньон': 'vegetables.mushrooms',
         'грибы': 'vegetables.mushrooms',
         
+        # === CRITICAL FIX: MEAT CUTS (Generic cuts that need meat type context) ===
+        # These are meat cuts that should be classified based on the meat type
+        # NOT as chicken by default!
+        
+        # Pork cuts (свинина)
+        'свинина корейка': 'meat.pork.loin',
+        'свинина карбонад': 'meat.pork.loin',
+        'свинина окорок': 'meat.pork.leg',
+        'свинина лопатк': 'meat.pork.shoulder',
+        'свинина грудинк': 'meat.pork.belly',
+        'свинина шея': 'meat.pork.neck',
+        'свинина ребр': 'meat.pork.ribs',
+        'свинина вырезк': 'meat.pork.tenderloin',
+        'свинина голяшк': 'meat.pork.shank',
+        'свиной': 'meat.pork',
+        'свиная': 'meat.pork',
+        
+        # Beef cuts (говядина)
+        'говядина корейка': 'meat.beef.loin',
+        'говядина окорок': 'meat.beef.round',
+        'говядина лопатк': 'meat.beef.shoulder',
+        'говядина грудинк': 'meat.beef.brisket',
+        'говядина шея': 'meat.beef.neck',
+        'говядина ребр': 'meat.beef.ribs',
+        'говядина вырезк': 'meat.beef.tenderloin',
+        'говядина голяшк': 'meat.beef.shank',
+        'говядина тазобедр': 'meat.beef.round',
+        'говяжий': 'meat.beef',
+        'говяжья': 'meat.beef',
+        
+        # Lamb/Mutton cuts (баранина/ягнятина)
+        'баранина корейка': 'meat.lamb.rack',
+        'баранина окорок': 'meat.lamb.leg',
+        'баранина лопатк': 'meat.lamb.shoulder',
+        'баранина ребр': 'meat.lamb.ribs',
+        'баранина шея': 'meat.lamb.neck',
+        'баранина голяшк': 'meat.lamb.shank',
+        'ягнятина корейка': 'meat.lamb.rack',
+        'ягнятина окорок': 'meat.lamb.leg',
+        'ягнятина лопатк': 'meat.lamb.shoulder',
+        'ягнятина ребр': 'meat.lamb.ribs',
+        'баранина': 'meat.lamb',
+        'ягнятина': 'meat.lamb',
+        
+        # Venison (оленина)
+        'оленина': 'meat.venison',
+        'оленина филей': 'meat.venison.loin',
+        'оленина корейка': 'meat.venison.rack',
+        
+        # Duck (утка)
+        'утка': 'meat.duck',
+        'утиная': 'meat.duck',
+        'утиный': 'meat.duck',
+        
+        # Generic meat cuts (MUST come AFTER specific meat types!)
+        # These will be used as fallback
+        'корейка': 'meat.pork.loin',  # Default to pork if no meat type specified
+        'окорок': 'meat.pork.leg',
+        'лопатка': 'meat.pork.shoulder',
+        'грудинка': 'meat.pork.belly',
+        'шея': 'meat.pork.neck',
+        'вырезка': 'meat.pork.tenderloin',
+        'голяшка': 'meat.pork.shank',
+        'карбонад': 'meat.pork.loin',
+        'ребра': 'meat.pork.ribs',
+        'тазобедренный': 'meat.beef.round',  # Usually beef
+        'филей': 'meat.beef.loin',  # NOT seafood!
+        
         # Meat products - more specific
         'пепперони': 'meat.pepperoni',
         'паштет': 'meat.pate',
         'байтс': 'meat.bites',
         'голубц': 'frozen.golubcy',
         
-        # Chicken parts
-        'грудк': 'meat.chicken.breast',
-        'бедр': 'meat.chicken.thigh',
-        'крыл': 'meat.chicken.wings',
+        # Chicken parts (only with chicken context!)
+        'куриная грудка': 'meat.chicken.breast',
+        'куриное бедро': 'meat.chicken.thigh',
+        'куриные крылья': 'meat.chicken.wings',
         'куриная': 'meat.chicken',
-        'кура': 'meat.chicken',  # FIX: "кура тушка" должна быть chicken
+        'кура': 'meat.chicken',
         'курин': 'meat.chicken',
-        'цыпл': 'meat.chicken',  # цыпленок
+        'цыпл': 'meat.chicken',
         'бройлер': 'meat.chicken',
         
         # Bakery
