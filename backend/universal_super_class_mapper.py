@@ -167,7 +167,9 @@ def detect_super_class(product_name, min_confidence=0.3):
         'говядина тазобедр': 'meat.beef.round',
         'свинина тазобедр': 'meat.pork.leg',
         'тазобедренн': 'meat.beef.round',  # Default to beef
+        'тазобедр': 'meat.beef.round',  # Abbreviated form
         'внутренняя часть': 'meat.beef.round',
+        'внутр.': 'meat.beef.round',  # Short form like "внутр. б/к"
         
         # === PUREE - Пюре (HIGHEST PRIORITY to avoid sugar conflicts) ===
         'пюре': 'ready_meals.puree',
