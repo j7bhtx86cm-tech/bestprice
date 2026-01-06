@@ -1,0 +1,105 @@
+{
+  "timestamp": "20260106_080950",
+  "database": "test_database",
+  "total_items": 8218,
+  "coverage": {
+    "product_core": "100%",
+    "super_class": "100%",
+    "brand": "5%",
+    "pack": "89%",
+    "unit_type": "89%"
+  },
+  "product_core_confidence": {
+    "high": 1642,
+    "medium": 5433,
+    "low": 1143
+  },
+  "issues": {
+    "no_product_core": 0,
+    "no_brand": 7743,
+    "no_pack": 832,
+    "low_core_conf": 1143
+  },
+  "top_product_cores": [
+    [
+      "other",
+      546
+    ],
+    [
+      "condiments.sauce",
+      488
+    ],
+    [
+      "staples.сахар",
+      252
+    ],
+    [
+      "dairy.сыр",
+      230
+    ],
+    [
+      "beverages.syrup",
+      210
+    ],
+    [
+      "seafood.shrimp",
+      202
+    ],
+    [
+      "condiments.spice",
+      170
+    ],
+    [
+      "canned.томаты.консервированные",
+      166
+    ],
+    [
+      "staples.рис",
+      160
+    ],
+    [
+      "vegetables.картофель",
+      154
+    ],
+    [
+      "disposables.bags",
+      145
+    ],
+    [
+      "beverages.cola",
+      145
+    ],
+    [
+      "staples.макароны",
+      139
+    ],
+    [
+      "condiments.pepper",
+      136
+    ],
+    [
+      "condiments.salt",
+      129
+    ],
+    [
+      "staples.масло.оливковое",
+      123
+    ],
+    [
+      "condiments.seasoning",
+      122
+    ],
+    [
+      "bakery.bread",
+      104
+    ],
+    [
+      "dairy.молоко",
+      102
+    ],
+    [
+      "canned.говядина.тушеная",
+      101
+    ]
+  ]
+}
