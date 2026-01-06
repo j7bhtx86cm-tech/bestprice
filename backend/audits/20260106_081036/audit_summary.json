@@ -1,0 +1,105 @@
+{
+  "timestamp": "20260106_081036",
+  "database": "test_database",
+  "total_items": 8218,
+  "coverage": {
+    "product_core": "100%",
+    "super_class": "100%",
+    "brand": "5%",
+    "pack": "89%",
+    "unit_type": "89%"
+  },
+  "product_core_confidence": {
+    "high": 1636,
+    "medium": 5453,
+    "low": 1129
+  },
+  "issues": {
+    "no_product_core": 0,
+    "no_brand": 7743,
+    "no_pack": 832,
+    "low_core_conf": 1129
+  },
+  "top_product_cores": [
+    [
+      "condiments.sauce",
+      477
+    ],
+    [
+      "other",
+      353
+    ],
+    [
+      "staples.сахар",
+      248
+    ],
+    [
+      "dairy.сыр",
+      224
+    ],
+    [
+      "beverages.syrup",
+      219
+    ],
+    [
+      "seafood.shrimp",
+      197
+    ],
+    [
+      "condiments.spice",
+      169
+    ],
+    [
+      "canned.томаты.консервированные",
+      159
+    ],
+    [
+      "disposables.bags",
+      152
+    ],
+    [
+      "beverages.cola",
+      148
+    ],
+    [
+      "vegetables.картофель",
+      145
+    ],
+    [
+      "condiments.pepper",
+      136
+    ],
+    [
+      "staples.рис",
+      135
+    ],
+    [
+      "staples.макароны",
+      133
+    ],
+    [
+      "condiments.salt",
+      129
+    ],
+    [
+      "condiments.seasoning",
+      122
+    ],
+    [
+      "staples.масло.оливковое",
+      119
+    ],
+    [
+      "bakery.bread",
+      104
+    ],
+    [
+      "dairy.молоко",
+      101
+    ],
+    [
+      "dairy.сливки",
+      100
+    ]
+  ]
+}
