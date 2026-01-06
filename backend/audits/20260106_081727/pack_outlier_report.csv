@@ -1,0 +1,284 @@
+item_id,name_raw,pack_base_qty,unit_type,potential_packs_needed_for_1kg,issue
+a26624cf-9631-4f73-a2c8-0a6cd8b5b3a6,"Багет французский мини (0,130 г) упак. . Мираторг",0.13,WEIGHT,7692,SMALL_PACK_HIGH_COUNT_7692x
+9f3ae15c-cb75-4865-8884-9faceb5e784a,"Комплексная пищевая добавка столовый подсластитель жидкий (0,200 мл) упак.",0.2,VOLUME,5000,SMALL_VOLUME_HIGH_COUNT_5000x
+7e5591af-8a88-4654-afcc-ad3fca382c70,"Уксус бальзамический 3 Medaglie d'oro Ricardo Champagnotta 12 лет Giusti ст/б (0,250мл)",0.25,VOLUME,4000,SMALL_VOLUME_HIGH_COUNT_4000x
+56cd5be7-9b11-460e-9262-9f2aa8f5ea20,"Уксус бальзамический 1 Medaglia d'argento Il Profumato Champagnotta 6 лет Giusti ст/б (0,250мл)",0.25,VOLUME,4000,SMALL_VOLUME_HIGH_COUNT_4000x
+be8a2e9d-fb63-4e27-820a-01d26f4208be,"Соус с добавлением бальзамического уксуса МОДЕНЫ со вкусом и ароматом лесных ягод CARANDINI пл.бут (0,250 мл) кор. .",0.25,VOLUME,4000,SMALL_VOLUME_HIGH_COUNT_4000x
+c41c161a-28ee-4734-a6e9-5ce5e8032d39,"Уксус бальзамический Модены качество Д+ Ponti спрей ст/б (0,250мл)",0.25,VOLUME,4000,SMALL_VOLUME_HIGH_COUNT_4000x
+732a8c49-8be0-4784-8197-92a24d6ff15b,"ПЕРЕЦ черный молотый порционный в стиках 0,3гр 3000шт/кр CEA",0.3,WEIGHT,3333,SMALL_PACK_HIGH_COUNT_3333x
+fff46430-3da0-46ef-99c7-c0722c40d583,"Жидкий дым ""Классический"" (0,330 мл ) упак..",0.33,VOLUME,3030,SMALL_VOLUME_HIGH_COUNT_3030x
+a128fee8-741d-4d8d-ba6d-916c42839dbc,"Кокосовое молоко KARA 17% ж/б (0,400 мл) Индонезия",0.4,VOLUME,2500,SMALL_VOLUME_HIGH_COUNT_2500x
+5c442b41-0e6c-483f-a1f0-b0a1d1b4aceb,"Соус Манго с перцем чили Tamaki ( 0,470 мл ) упак.Россия",0.47,VOLUME,2127,SMALL_VOLUME_HIGH_COUNT_2127x
+ccade177-69a5-4144-bb33-3413cffa8e30,"Сметана 15% ГОСТ 0,5 гр",0.5,WEIGHT,2000,SMALL_PACK_HIGH_COUNT_2000x
+fc5f632b-b764-43d8-b1a7-b1d2c6eece15,"Сметана 20% ГОСТ 0,5 гр",0.5,WEIGHT,2000,SMALL_PACK_HIGH_COUNT_2000x
+d1d608ab-ffb3-454d-a8bd-b3e930ede380,"Уксус яблочный Лукерья 6% (0,500 мл)",0.5,VOLUME,2000,SMALL_VOLUME_HIGH_COUNT_2000x
+c33377a3-d969-46c1-94ed-4550259416bb,Уксус бальзамический Модены Carandini стекло 0.500мл,0.5,VOLUME,2000,SMALL_VOLUME_HIGH_COUNT_2000x
+5fd26eb0-909f-46fd-8762-9b1571e6b4f7,"Крупа ячневая фасованная 0,700гр Наш урожай",0.7,WEIGHT,1428,SMALL_PACK_HIGH_COUNT_1428x
+d5cc75d4-c983-48e3-8824-e2fb195adf2d,"Рис круглозерный 0,900 гр Наш урожай",0.9,WEIGHT,1111,SMALL_PACK_HIGH_COUNT_1111x
+636ed845-e6ca-4345-9bc7-cef104336492,"Греча ядрица 0,900 гр Наш урожай",0.9,WEIGHT,1111,SMALL_PACK_HIGH_COUNT_1111x
+a3015963-fa31-47aa-abf1-c27d6cef47b5,"Рис пропаренный длиннозерный 0,900гр Наш урожай",0.9,WEIGHT,1111,SMALL_PACK_HIGH_COUNT_1111x
+a5a4b128-010d-47c0-9ab0-a3b21e975ff0,"Пшено шлифованное 0,900гр Наш урожай",0.9,WEIGHT,1111,SMALL_PACK_HIGH_COUNT_1111x
+2d1a23a1-3469-4227-8766-0cfb367961cb,"Макароны вермишель 0,900 гр Вари Ешь",0.9,WEIGHT,1111,SMALL_PACK_HIGH_COUNT_1111x
+57a95e57-50e4-4de5-b3d8-b1764b1b1edd,"Уксус столовый Лукерья 9% (0,900 мл)",0.9,VOLUME,1111,SMALL_VOLUME_HIGH_COUNT_1111x
+0243139b-9255-4910-86fd-39d6bc2127e9,"Масло Авокадо рафинированное La Espanola ст/б (0,916г/1000 мл)",0.916,WEIGHT,1091,SMALL_PACK_HIGH_COUNT_1091x
+951376aa-2944-49c1-9118-8638eb0a51ad,СОЛЬ порционная в стиках 1гр 3000шт/кр CEA,1.0,WEIGHT,1000,SMALL_PACK_HIGH_COUNT_1000x
+07594684-2483-4c7f-940c-6c0305d7cb1f,Соль порционная 1гр,1.0,WEIGHT,1000,SMALL_PACK_HIGH_COUNT_1000x
+7a174e1b-1dd1-4540-809f-77a4d12a99c5,"Соль т.м ""Роспродукт"" порционная ( 0,001 кг) упак.",1.0,WEIGHT,1000,SMALL_PACK_HIGH_COUNT_1000x
+c0ac15a7-3081-4ff6-8e90-362b35fba53c,"Уксус винный красный 6% Ponti пл/б (1,000мл)",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+6117ed58-e55d-455e-9519-2fc4da3ab375,"Уксус винный белый 6% Ponti пл/б (1,000мл)",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+22c6c6c6-e578-40d3-8e9a-6d395724afdb,"Сироп Клюква со вкусом и ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+9769aa55-2945-4625-b7e4-c6e37fd9a5cc,"Сироп Сахарный тростник ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+de9ff5b5-3809-4b7e-b269-072e8d3be245,"Сироп Брауни со вкусом и ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+754a8005-c5ce-4efa-9d8a-38e9bba3cde2,"Сироп Ром с ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+db43ac61-4528-4cae-86fe-1e0c1ea07d9c,"Сироп Тоффи со вкусом и ароматом ст/б 1,000мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+97718f4a-ee8b-43e3-b4a9-690205dec0aa,"Сироп Изабелла со вкусом и ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+fa329f97-4b01-4ad4-9262-2a08c8564cc6,"Сироп Острый со вкусом и ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+a725aaed-d72b-49e9-bb99-54bdd3195b90,"Сироп Шоколадный батончик со вкусом и ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+57e72958-9a74-43d3-87fe-3ae43edd9a34,"Сироп Красный апельсин со вкусом и ароматом ст/б 1,000мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+ea47f8d9-d457-4222-b7d6-d4b4ee7cfbd8,"Сироп Медовый с ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+e372c8c1-38a4-463f-a639-24f206f08bb1,"Сироп Фиалка с ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+dbe9f2dc-0b77-40a8-b2ad-d60e33de29b8,"Сироп Лемонграсс со вкусом и ароматом ст/б 1,000 мл Barinoff",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+48e0f2dd-0f94-42af-9ab1-ac3abe60bf91,"Соус соевый классический 1,000 мл 6- ТМ Канимори",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+7105c245-e7b6-4adf-bdd2-0ba48aab5399,"Паста Карри красная Aroy-D пл/банка (1,000г) упак..Тайланд",1.0,WEIGHT,1000,SMALL_PACK_HIGH_COUNT_1000x
+6eaa8468-2895-485a-8cdc-81028a4dc8e5,"Концентрат Белый Глинтвейн 1,000 мл Stars Coffee (441746)",1.0,VOLUME,1000,SMALL_VOLUME_HIGH_COUNT_1000x
+758f58bc-dce4-4fd9-9e06-294871a91775,"Ванилин1,5гр",1.5,WEIGHT,666,SMALL_PACK_HIGH_COUNT_666x
+ddac6db1-3686-4b1f-b934-20b9a9ddc35b,"Чай черный Гринфилд Барбери Гарден (1,5гр*25пак) /кор",1.5,WEIGHT,666,SMALL_PACK_HIGH_COUNT_666x
+ebb6e7bb-e25e-4e34-875a-0eeb8bb8e102,"Чай зеленый Лайм Тесс (100п/1,5г) /кор 0920-09",1.5,WEIGHT,666,SMALL_PACK_HIGH_COUNT_666x
+ca8951dd-da4b-4591-a4f8-50e1770927de,"Чай зеленый Гринфилд Мелисса (1,5гр*100пак) пакет 0835-10",1.5,WEIGHT,666,SMALL_PACK_HIGH_COUNT_666x
+ac73bdc0-ed98-4ce9-aefe-9fc943881916,"ЧАЙ зеленый пакетики на чашку 300 шт х1,8 г,TEATONE,РОССИЯ (-C-)",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+f910885a-565d-4877-9cd6-fb6ee6fa3e53,"ЧАЙ черный аромат тропических фруктов стики 15 шт х1,8 г, TEATONE, РОССИЯ (-C-)",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+48294b05-b27c-4866-87fe-0bab92d7dd7d,"Чай зеленый Гринфилд Флаинг Драгон (1,8гр*100пак) /кор 0830-10-1",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+7e5fc7a5-5ee9-426f-a8a3-e349d51b55a2,"Чай зеленый Стайл Тесс (100п/1,8г) /кор 0988-10-1",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+bbb049e8-2fb4-4668-bbd7-74e5d544f06d,"Зеленый чай TEATONE (арт. 221), 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+10112df1-c95b-4e13-9add-222e0971cb96,"Зеленый чай TEATONE в стиках (арт. 736), 15шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+7f8d7c56-ee44-497d-8b52-4bfa9e0583fc,"Зеленый чай Аромат жасмина (арт. 180), 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+098ef750-1025-4f6e-a372-c7624609954f,"Зеленый чай Аромат жасмина TEATONE в стиках (арт. 737), 15шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+e699ab09-a0cd-40e9-9bac-c661dffb36ef,Зеленый чай с мятой (арт. 182) 300шт х1.8г,1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+a3193621-6284-4d75-9d85-ec225259f65b,"Чай зеленый с мятой TEATONE в стиках (арт. 738), 15шт х1,8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+0a5d79c9-c487-4aa5-b1b3-28561b2364af,"Чай черный Аромат тропических фруктов TEATONE в стиках (арт. 616), 15шт х1,8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+528abdb4-1872-44d4-a729-2335323362a7,"Чай черный Индийский TEATONE в стиках (арт. 742), 15шт х1,8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+e0e8c826-5fdb-4216-b755-1ca0818241a8,"Чай черный с чабрецом TEATONE в стиках, (арт. 745) 15шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+bc3377af-2463-4237-ae60-3c652c6715f1,"Черный чай Английский завтрак TEATONE (арт. 784), 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+9a920e5f-032e-46b1-80d6-54bfb09a071d,"Черный чай Аромат бергамота TEATONE (арт. 195), пачка 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+62b8d693-bb71-4627-b7f2-abc940feda86,"Черный чай Аромат бергамота TEATONE в стиках, (арт. 743) 15штх1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+bbe63c6f-4187-49fa-aa85-587dda599f19,"Черный чай Индийский TEATONE (арт. 219), пачка 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+2b897045-0655-43ea-a5b3-45527fdc671b,"Черный чай с ароматом барбариса TEATONE (арт. 1433), 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+72bd1bdd-cd24-4c3e-ab34-f5cd1af0def4,"Черный чай с чабрецом TEATONE (арт. 217), пачка 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+12b7bec5-72b1-49ec-bb81-82348d9ffdf5,"Зеленый чай TEATONE (арт. 221), 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+dafd00e1-84dc-44b0-95a8-e31f3812ff22,"Зеленый чай TEATONE в стиках (арт. 736), 15шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+b487729f-edc0-4117-9bcc-97b9e940d06d,"Зеленый чай Аромат жасмина (арт. 180), 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+60c6ebdc-0534-4533-8a0f-9157e5e1f5ae,"Зеленый чай Аромат жасмина TEATONE в стиках (арт. 737), 15шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+e08076f1-9efd-40c0-85c5-f99f74252a2c,Зеленый чай с мятой (арт. 182) 300шт х1.8г,1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+1c135d50-afc2-44ca-bbc6-9253becd9fed,"Чай зеленый с мятой TEATONE в стиках (арт. 738), 15шт х1,8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+6c095ca5-17d2-406d-9f02-575acd67e96f,"Чай черный Аромат тропических фруктов TEATONE в стиках (арт. 616), 15шт х1,8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+0624a7a1-dae9-4c3d-b100-066c7d4f404a,"Чай черный Индийский TEATONE в стиках (арт. 742), 15шт х1,8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+b248ce65-f185-4c46-95a6-e19365a20f97,"Чай черный с чабрецом TEATONE в стиках, (арт. 745) 15шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+72f254d2-f46a-4fe9-826a-adf568a70fab,"Черный чай Английский завтрак TEATONE (арт. 784), 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+62622f64-3238-4d4b-826b-41709bf14f91,"Черный чай Аромат бергамота TEATONE (арт. 195), пачка 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+965ec531-9c55-4cba-8c51-9fb3af2f132b,"Черный чай Аромат бергамота TEATONE в стиках, (арт. 743) 15штх1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+4d3228c3-f52d-4037-8875-20097d25c46f,"Черный чай Индийский TEATONE (арт. 219), пачка 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+4ee187c4-83ae-463a-8d61-5a9642b8056c,"Черный чай с ароматом барбариса TEATONE (арт. 1433), 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+8069581e-e35a-484b-9dad-f3fa07e76041,"Черный чай с чабрецом TEATONE (арт. 217), пачка 300шт х1.8г",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+57dfc24a-3d5e-41ab-9526-4257f5320189,"Чай зеленый Дабл Минт 1,8 гр*20 пак (8) Greenfield",1.8,WEIGHT,555,SMALL_PACK_HIGH_COUNT_555x
+58ced285-bc5a-45fc-a78e-bb88e5b0befd,Чай черный Индийский Гита (2гр*) 0249-16-1,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+9b2ad723-c76e-42df-9cd2-dc47a4f0ba97,Чай черный Кения Тесс (100п/2г) /кор 1264-09,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+fe2fb2d4-218c-473a-ad0c-2021747fb5d8,Чай черный Гринфилд Голден цейлон (2гр*100пак) /кор 0831-10,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+805724f9-d27b-4ef0-8ec0-562b415916a8,"Шафран ROMA (0,002 кг) упак. . (.*20)",2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+103822f9-e5cd-4540-8ce5-1874a1e5af8c,"Напиток чайный Лесные ягоды TEATONE в стиках, (арт. 618) 15шт х2г",2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+6affad6f-e770-4bd0-96fb-11f1db6c626b,"Напиток чайный Яблоко-Имбирь (арт. 668), 300шт х2г",2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+efaa0b19-efbc-4529-9b06-a04c28043c4f,"Чайный напиток «Пылающий Глинтвейн» TEATONE в стиках, (арт. 1050) 15шт х2г",2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+07aace62-c50d-4f3f-8823-a04adb05d1e8,"Напиток чайный Лесные ягоды TEATONE в стиках, (арт. 618) 15шт х2г",2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+aea63f38-5dae-4498-ac0a-96c261aac821,"Напиток чайный Яблоко-Имбирь (арт. 668), 300шт х2г",2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+4ac67e50-088f-4d90-9d8f-6c8041685ea4,"Чайный напиток «Пылающий Глинтвейн» TEATONE в стиках, (арт. 1050) 15шт х2г",2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+dc305aed-a4d0-480c-9cb2-2bd9dd707de5,Шафран нарезанный 2 гр кор. (10) Kotanyi,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+b514f349-dea7-44af-b72e-06ec7c5d0b69,Кофе растворимый Голд 2 гр*30 шт (8) Жардин,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+16ef1258-1b4e-4f99-95b3-cba25bc64955,Чай зеленый Традиционный 2 гр*100 пак (18) Принцесса Ява,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+0163170f-021a-4276-a08d-cb5659251b8b,Чай зеленый Фаинг Драгон 2 гр*100 пак (9) Greenfield,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+72661467-b05a-46c9-b70b-44356d9459b9,Чай малиновый Самма Букет 2 гр*100 пак (9) Greenfield,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+6eb66589-1138-405c-8b28-df7b105b27cd,Чай черный высокогорный 2 гр*100 пак с ярлыком (18) Принцесса Нури,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+ef91f354-9d6c-4c1e-909d-ae26a0135bb4,Чай черный Голден Цейлон 2 гр*100 пак (9) Greenfield,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+b9b47956-5618-4615-8e1c-1ffdc787e786,Чай черный Эрл Грей 2 гр*100 пак (9) Greenfield,2.0,WEIGHT,500,SMALL_PACK_HIGH_COUNT_500x
+8fd74bab-13b8-4426-9c25-1bb1ca4fc098,Перец черный молотый порционный 3гр,3.0,WEIGHT,333,SMALL_PACK_HIGH_COUNT_333x
+fee9e3d1-e79c-4540-a93a-5d43f3982b26,"Мандарины дольки в сиропе ARTIGIANO (3100 мл/3,000 г/1700 г) Zigui",3.0,WEIGHT,333,SMALL_PACK_HIGH_COUNT_333x
+81bda928-5b69-4f98-9e0d-d62561773c14,"Перец т.м ""Роспродукт"" ( 0,003 кг) упак.",3.0,WEIGHT,333,SMALL_PACK_HIGH_COUNT_333x
+a7e191b6-4580-4c0b-ac74-64d5a97fa39e,"Горошек зеленый из мозговых сортов Овощной край ж/б 3,100мл",3.1,VOLUME,322,SMALL_VOLUME_HIGH_COUNT_322x
+e5b99f5c-46cd-402c-a711-19fe2f5b6871,Чай черный с мятой TEATONE на чайник (арт. 149) 20шт х4г,4.0,WEIGHT,250,SMALL_PACK_HIGH_COUNT_250x
+bedc0c23-73de-4fd3-9213-79814dc8babe,"Чайный напиток Горные травы TEATONE в пакетиках, на чайник (арт. 157) 20шт х4г",4.0,WEIGHT,250,SMALL_PACK_HIGH_COUNT_250x
+42591d0c-d642-465d-b747-9c203bd55cd5,Чай черный с мятой TEATONE на чайник (арт. 149) 20шт х4г,4.0,WEIGHT,250,SMALL_PACK_HIGH_COUNT_250x
+8358b3f9-fdb8-4d3c-9b61-bb873e665f22,"Чайный напиток Горные травы TEATONE в пакетиках, на чайник (арт. 157) 20шт х4г",4.0,WEIGHT,250,SMALL_PACK_HIGH_COUNT_250x
+74709b58-1b00-4eb6-b45c-dd2933e7f53c,Ванилин 4 гр (75) Домашнее Бистро,4.0,WEIGHT,250,SMALL_PACK_HIGH_COUNT_250x
+c4cae862-50f9-4527-9913-4c387a4acf47,ВАСАБИ порционный 5 гр.,5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+889597e1-ce0b-4089-973d-1d2adef0a90e,САХАР порционный в стиках 5гр 1000шт/кр CEA,5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+8168596a-be26-42ab-b0f6-cce51fa992bf,Сахар порционный 5гр,5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+5e3def96-2f0e-4ad3-ad88-1c18cdac05ec,"САХАР фасованный 2000 шт х 5г трубочка,РОССИЯ (-C-)",5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+af54d158-8c43-448f-aef3-8a23c818c2d7,"Сахар порционный белый свекловичный ""Роспродукт"" цв. стик ( 0,005 кг ) упак. .",5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+42a17ca5-36dd-4124-a2ae-668b87fe62ed,Сахар порционный стик 5г  упак (2 000 шт ),5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+f955f582-2ddc-48ad-a9a7-961cebe482be,Сахар порционный стик 5г  упак (2 000 шт ),5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+1ed64a4f-346d-4bee-987e-a9835350e766,Васаби порционный 5 гр 168 шт/кор Имбирь,5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+c396f714-6a1e-40db-a16d-a0afc70e0d9e,"Сахар Smart Chef Порционный 2000*5г, НДС 10%",5.0,WEIGHT,200,SMALL_PACK_HIGH_COUNT_200x
+fadd10e2-528f-4797-8200-74f56a527f92,Агар-агар 6гр,6.0,WEIGHT,166,SMALL_PACK_HIGH_COUNT_166x
+90b17767-7586-49ff-9b02-fdabff2e0abf,Тарталетки д/икры 30 шт*6 гр/блок (12) КиТ,6.0,WEIGHT,166,SMALL_PACK_HIGH_COUNT_166x
+cb6b48c6-d290-4172-86e5-a821a3791190,"МАСЛО сладкосливочное Традиционное 82,5% 10 гр. АМК",10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+98b820b6-a257-4c11-b2f7-5a1a0501ebb7,"МАСЛО сладкосливочное Традиционное 82,5% 10 гр. Внуковское",10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+25301f54-b125-441d-be98-954a8824c225,МАСЛО сливочное 82% 10 гр. Natura,10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+f0cd70fa-53f3-45ab-a8d2-f384fefee933,"Масло оливковое нераф.в/к Ideal extra virgin ( 0,010 кг) упак.",10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+e1629a80-aeb8-405c-84c2-24b688ae4492,"Масло оливковое, саше, 10г упак (252 шт)",10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+54ba5b24-8453-4017-9d55-997c67826260,"Масло оливковое, саше, 10г упак (252 шт)",10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+1b8adc1e-4233-4934-8c9c-44905c5d2d97,Сливки порционные 10% 10 гр*10 шт/уп (20) ГОСТ Альпенгурт,10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+ef6ffff6-60d2-49b3-b107-cd6c1982ae27,"Масло сладкосливочное несоленое 82,5% порционное 10 гр (125) ГОСТ Оладушкино",10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+0670d110-442c-4185-9c0a-470e400af049,Разрыхлитель теста 10 гр (60) Домашнее Бистро,10.0,WEIGHT,100,SMALL_PACK_HIGH_COUNT_100x
+681489ff-dbb6-415c-8839-35ea493d4ca6,Дрожжи саф-момент 11гр,11.0,WEIGHT,90,SMALL_PACK_HIGH_COUNT_90x
+a2a54049-96ea-437f-9e2a-1cf67ba36ae1,"Дрожжи Саф-Момент упак. (0,011 кг*) кор. 18 упак. Россия",11.0,WEIGHT,90,SMALL_PACK_HIGH_COUNT_90x
+98ecabff-34ab-437f-a791-e0cb496d1488,Дрожжи сухие (красная пачка) 11 гр (60) Саф момент,11.0,WEIGHT,90,SMALL_PACK_HIGH_COUNT_90x
+8f32ce7a-6a4c-4436-a9c4-7f3215f88ce6,Тарталетки д/салата 15 шт*11 гр/блок (12) КиТ,11.0,WEIGHT,90,SMALL_PACK_HIGH_COUNT_90x
+f7571b9a-dbf4-4e00-8d0e-d6e1f47b4ad7,Разрыхлитель для теста 12гр,12.0,WEIGHT,83,SMALL_PACK_HIGH_COUNT_83x
+cf0e98e9-62dc-41b6-84e4-f4d6876ae82d,"Кофе жареный молотый в дрип-пакетах ""Восточная Африка ""(6 дрипов*12 г - 72 г) упак. . Stars Cof",12.0,WEIGHT,83,SMALL_PACK_HIGH_COUNT_83x
+63472b07-f818-4697-a570-1457a4db965c,"Пирожное Макарон ""Бейлиз"" 15г. (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+a6d4444a-8771-4bf2-94c0-6a56fc05d38e,"Пирожное макарон ""Кокос"" 15г. (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+3a374314-9f9e-4579-a5ce-8713a5badd0b,"Пирожное макарон ""Мята"" 15г. (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+37f5c580-70bc-4e0d-a5eb-450f201f0cae,"Пирожное макарон ""Шоколадный трюфель"" 15г. (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+16a2e2b6-9f85-4737-af18-2a8c7b4c01a4,Пирожное Макарон «Лимон» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+ec856e04-1cc0-4b88-9073-77de8a871b78,Пирожное Макарон «Малина» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+443c08b3-d08e-4135-acd8-c8827faf2c54,Пирожное Макарон «Манго-маракуйя» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+40dabc96-7856-4f87-b750-241e83661a17,Пирожное Макарон «Соленая карамель» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+47d62755-a5fe-452c-9cc8-42b754fce0c2,Пирожное Макарон «Фисташка» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+0eee0217-60cd-45b8-8007-efb180231386,Пирожное Макарон «Чёрная смородина» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+3bd979b8-5b1e-4638-975b-77f21617964f,"Пирожное Макарон сырный ""Благородный сыр"" 15г (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+dc4a8b00-76a3-4363-b983-d72319e30596,"Пирожное Макарон ""Бейлиз"" 15г. (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+94446aa0-be38-4efa-a6c8-37c9eb0b7b34,"Пирожное макарон ""Кокос"" 15г. (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+f5ee9c0a-c2fa-425c-abc9-1396819dcae0,"Пирожное макарон ""Мята"" 15г. (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+877a8e3d-89c9-4fd1-a67c-a27d8d407a81,"Пирожное макарон ""Шоколадный трюфель"" 15г. (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+d2a840aa-91ac-47a7-9d1a-038c12419172,Пирожное Макарон «Лимон» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+a5433303-743c-4443-8e63-40139f5340d4,Пирожное Макарон «Малина» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+e465b98a-ce69-4723-96d9-5796303fa0cd,Пирожное Макарон «Манго-маракуйя» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+6b072066-bb74-4104-918a-539667938e52,Пирожное Макарон «Соленая карамель» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+c8985e0b-b2eb-4521-b681-d55df64b4c8e,Пирожное Макарон «Фисташка» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+ae73a973-9440-42e4-a166-7f3a1010ebb5,Пирожное Макарон «Чёрная смородина» 15г (12 шт),15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+df4404aa-290e-4409-9c15-8fbdba7fd958,"Пирожное Макарон сырный ""Благородный сыр"" 15г (12 шт)",15.0,WEIGHT,66,SMALL_PACK_HIGH_COUNT_66x
+45fea68b-e98c-4317-a336-210a9e40b0ea,Драже ТикТак мята T24 (16 г/),16.0,WEIGHT,62,SMALL_PACK_HIGH_COUNT_62x
+ef0d300c-874f-4582-8ebf-3feb0d4964a7,Драже ТикТак апельсин T24 (16 г/),16.0,WEIGHT,62,SMALL_PACK_HIGH_COUNT_62x
+23a721dc-4c7f-4c1a-9c01-07e787eee490,"Джем персиковый дип-пот (25 мл/0,020 кг/0,021 кг) упак. .",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+925b0c2c-0a51-4683-9f1f-4da51d225694,"Джем вишневый дип-пот (25 мл/0,020 кг/0,021 кг) упак. .",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+473c3212-497d-4c48-bd1e-335c234f2f8d,"Джем малиновый дип-пот (25 мл/0,020 кг/0,021 кг) упак. .",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+d67e31dc-c68f-46eb-92a5-c575c6794024,"Джем клубничный дип-пот (25 мл/0,020 кг/0,021 кг) упак. .",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+94121586-d79e-4c66-8467-b935aabeb5a8,Сыр плавленый сливочный Burger 35% пласты *20гр/200гр,20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+98b6580e-893d-4d64-af04-cfb327eb8b04,"Молоко сгущеное с сахаром 8,5 % * 0,020 кг UPPO",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+7459957c-0b81-4177-aff1-a2861340cda6,"Мед натуральный цветочный ( 0,020 кг/0,021 кг ) упак.",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+21ef1947-ce15-432b-ad26-05cf699085da,"Яйцо мол.шок. ""Киндер Сюрприз"" с игрушкой Натунс/ДИНО (0,020 кг*) упак",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+f015a3b7-eccf-47d7-9d35-b0b0b173a5e3,"Шоколад гречишный молочный с бананом ""для детей""( 0,020 кг) упак.Stars Coffee",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+6e308ec8-4419-4073-9b8f-e044dbe4eb5b,"Шоколад гречишный белый с бананом и клубникой ""для детей""( 0,020 кг) упак.Stars Coffee",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+f1e4f88b-1a64-4432-974f-acb4367d5a3d,"Шоколад белый ""Сливочная карамель"" ( 0,020 кг) упак.Stars Coffee",20.0,WEIGHT,50,SMALL_PACK_HIGH_COUNT_50x
+2cd10c2d-8c5e-4796-95e3-b2ac1cdb8a9d,"Шоколад Киндер Кантри с молочно-злаковой начинкой (23,5г х 40) упак .Старс Коффе",23.5,WEIGHT,42,SMALL_PACK_HIGH_COUNT_42x
+d8156d59-6211-4539-a015-918ee6393094,КЕТЧУП томатный дип-пот 25 мл *125 шт. Heinz,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+a6024d12-b166-40d3-984c-424d682e48c5,СОУС барбекю дип-пот 25 мл *125 шт. Heinz,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+3ecdfa1b-6fa9-4031-b185-e72296a0673e,СОУС горчичный дип-пот 25 мл *125 шт. Heinz,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+7f9d55d9-d5d9-43b3-b997-f910d0f9692f,СОУС деликатесный Барбекью острый дип-пот 25 мл*125 шт. PIKADOR,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+04e3235f-ccd1-4528-9cb0-9f505a5819f2,СОУС деликатесный кисло-сладкий Чили дип-пот 25 мл*125 шт. PIKADOR,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+b82be619-ee53-4df0-a912-e2c3c0b7ee58,СОУС деликатесный терияки дип-пот 25 мл *125 шт. Heinz,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+1ac8056e-600d-4b53-b2e0-986643b507a1,СОУС кисло-сладкий дип-пот 25 мл*125 шт. Heinz,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+94453284-6c40-4ab2-9e03-dc051e641116,СОУС на основе растительных масел горчично-медовый дип-пот 25 мл*125 шт. PIKADOR,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+c47a545d-1048-484f-b52b-fa50f1f9259f,СОУС на основе растительных масел сырный с Халапеньо дип-пот 25 мл*125 шт. PIKADOR,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+5198b273-1a54-4fe0-a5ab-f09ba105efa0,СОУС на основе растительных масел Тысяча островов дип-пот 25 мл*125 шт. Heinz,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+c5d0aac4-e521-4c35-b273-25916e7e87dd,СОУС сырный дип-пот 25 мл*125 шт. Heinz,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+c7ee19c7-4de6-474a-bb74-663a33acd0d2,СОУС чесночный дип-пот 25 мл*125 шт. Heinz,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+3c6e9d23-ad6b-4685-87c0-eff1cb40e138,ГРИБЫ древесные сушеные Муэр Китай 25 гр*10 шт. NARUMA,25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+44ff962a-c785-494e-9705-a9f1a9e6c68a,ИМБИРЬ порционный маринованный белый 25 гр.,25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+cc73d2ac-599c-4901-a304-7a1a7b385868,КРУАССАН мини (18% сливочного масла) 25 гр*225шт/кор расстоянный Bridor,25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+48de9e5c-275d-4760-8728-df6a5d0d56a9,"МИНИ-КРУАССАН замороженный микс 25 г, BRIDOR, ФРАНЦИЯ",25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+1688bc38-a160-4ff8-abed-a4e5d6874191,"МИНИ-ПАН о шоколя замороженный Венуазин 25 г, DELIFRANCE, ФРАНЦИЯ",25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+727d6dbb-6492-4107-b7f1-82329314e4a2,"МИНИ-БУЛОЧКА шоколад замороженная 25 г, BRIDOR, ФРАНЦИЯ",25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+3c3a8fd3-d1d4-4dee-87d2-97cc88177e2b,"КЕТЧУП томатный 25 мл дип-пот,HEINZ,РОССИЯ (-F-)",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+44a4309d-8205-4aca-8855-747009b08299,"СОУС барбекю 25 мл дип-пот,HEINZ,РОССИЯ",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+be702791-c290-4564-a2c3-217319aff203,"СОУС барбекью острый 125 шт х25 г дип-пот, PIKADOR, РОССИЯ",25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+c2ea9eab-c8ca-451f-b272-297aaf145203,"СОУС горчичный 25 мл дип-пот, HEINZ, РОССИЯ",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+fea2cd70-907b-4758-b758-89bb6258d6c5,"СОУС кисло-сладкий 25 мл дип-пот,HEINZ,РОССИЯ",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+218c8f82-406c-4a18-8305-d754d9d6ce91,"СОУС сырный 25 мл дип-пот, HEINZ, РОССИЯ (-F-)",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+fc7e6b30-51bc-4aa6-9464-01b448ab99b3,"СОУС сырный Пармеджано 125 шт х25 мл дип-пот, HEINZ, РОССИЯ",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+634e34b5-85a2-4fd5-8d71-dbe47fdc5f6a,"СОУС сырный с халапеньо 125 шт х25 мл дип-пот, PIKADOR, РОССИЯ",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+5c66030e-6bb1-4bdd-a40a-b234e4017777,"СОУС Тысяча островов 25 мл дип-пот, HEINZ, РОССИЯ",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+e4c41854-860d-44e3-a0f4-deba51f40728,"СОУС Цезарь дрессинг 25 мл дип-пот,HEINZ,РОССИЯ",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+67eb1819-ba67-47e6-96c6-87d22c6a2333,"СОУС чесночный 25 мл дип-пот,HEINZ,РОССИЯ",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+0cf7723d-df9a-48ac-b111-4dff52d87b53,"Кетчуп ""Хайнц""томатный дип-пот (25 мл) упак. . _ПОМПОНЧИК",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+e9d73fdb-851f-48ad-8023-29792527ed16,"Соус ""ХАЙНЦ"" Кисло-сладкий дип-пот (25 мл) кор. .Россия_ ПОМПОНЧИК",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+13653f76-5030-470d-8c58-40370ec4e37f,"Соус ""ХАЙНЦ"" Сырный дип-пот (25 мл) упак. . Россия _ПОМПОНЧИК",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+280c78a2-7444-480a-bbef-a8c51c6a1f26,"Соус ""ХАЙНЦ"" Сырный ""Parmegiano"" дип-пот (25мл) упак. .",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+e0935cc7-28c1-4319-b3d9-d67bc640fce0,"Соус ""ХАЙНЦ"" Кисло-сладкий оригинальный дип-пот (25 мл) кор. .",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+ab78fe7f-5ef7-4ab9-9f2c-60158797854d,"Соус ""ХАЙНЦ"" горчичный оригинальный дип-пот (25 мл) кор. .",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+df4f5db6-1904-494a-adb8-03d4eb00cf77,"Соус ""ХАЙНЦ"" Горчичный дип-пот (25 мл) кор. . Россия _ПОМПОНЧИК",25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+3f940036-e704-4461-bb80-c4e6273e859c,Мини круассан ГКВ (арт. 19C06) 25г. (160 шт),25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+4f690264-5cd9-4208-b1ee-b21db181d00f,Мини круассан ГКВ (арт. 19C06) 25г. (160 шт),25.0,WEIGHT,40,SMALL_PACK_HIGH_COUNT_40x
+b665efd4-bc1e-4417-a5d1-1ec187de16ce,Кетчуп порционный дип-пот 25 мл*125 шт/кор. Heinz 76006586,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+dbcb1a57-770e-4cc8-8ace-ecc3e7dfe3ea,Соус Барбекю порционный дип-пот 25 мл*125 шт/кор. Heinz 76021118,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+a70fb9dd-e017-439f-82c2-7afa06c505c5,Соус Сырный порционный дип-пот 25 мл*125 шт/кор. Heinz 76021118,25.0,VOLUME,40,SMALL_VOLUME_HIGH_COUNT_40x
+30d252b1-b51d-4bc0-84a8-526d81b8a764,БАТОНЧИК Everest 26 гр. Milky Way,26.0,WEIGHT,38,SMALL_PACK_HIGH_COUNT_38x
+2279dae4-c44c-4557-986a-3cc5d85a6310,СОУС соевый порционный 30 гр.,30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+9918bff3-4328-4595-bbfe-9c5d6a1d8769,СОУС соевый порционный Black 30 гр.,30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+9e4cef5c-ef0b-4dbe-8698-53e9210819e3,ИМБИРЬ розовый порционный 30 гр.,30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+d9372e48-ef57-43f0-9111-6cc0c97a82f5,УЛИТКА с изюмом 30 гр*260 шт/кор п/ф расстоянный ТМ Bridor Франция,30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+8d931a9c-2f33-4e71-b7b4-8171996fd3ab,СОУСНИК 30 мл 1 блок/80 шт. Покровский полимер,30.0,VOLUME,33,SMALL_VOLUME_HIGH_COUNT_33x
+f874f7f0-3171-4ac5-aa31-bc55978a3637,МОЧАЛКА губка из стали maxi Т023 30 гр*1 шт. Textop,30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+21a9963b-90db-42a3-89e8-1bbeccaa0013,"МИНИ-УЛИТКА с изюмом замороженная 30 г, BRIDOR, ФРАНЦИЯ",30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+0c68e2e5-867c-42ea-ad81-78a2372a0528,"Зерна горчицы целые KOTANYI, пакет 30г",30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+3e3ebe76-d88d-465d-a8bd-36cb94b9ee35,"Зерна горчицы целые KOTANYI, пакет 30г",30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+554f092d-f2c1-4470-8256-54c6412960d2,Круассан (зам) 30 гр*120 шт/кор. Еврохлеб,30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+7b43f773-9b66-4130-bb9e-fa023356e133,Имбирь маринованный розовый порционный 30 гр 168 шт/кор Имбирь,30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+956756a1-344e-49fe-a17a-93dddc16514b,Соевый соус Премиум порционный 30 гр 168 шт/кор Имбирь,30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+71d6258e-ce8c-401c-8458-767c042728cb,"Печенье Orion Choсo Pie Оригинальное 12*30г, НДС 20%",30.0,WEIGHT,33,SMALL_PACK_HIGH_COUNT_33x
+4a14de94-333b-4b9e-a094-1f2ea2d010db,БУМАГА для выпечки 38 см*50 м силиконизированная коричневая (арт Т0020) 35 гр/м 1 шт. ТЕХТОР,35.0,WEIGHT,28,SMALL_PACK_HIGH_COUNT_28x
+63373333-98e5-4fe9-bdf2-845bcfe3db8a,"Приправа Чили острый KOTANYI, мельница 35г",35.0,WEIGHT,28,SMALL_PACK_HIGH_COUNT_28x
+8aca689d-1ae2-4559-9f7f-a8323ae1fc26,Пирожное Тарт лимонный (1690) 35г (24 шт),35.0,WEIGHT,28,SMALL_PACK_HIGH_COUNT_28x
+cc315618-e074-48a4-942c-0c6f51225850,"Приправа Чили острый KOTANYI, мельница 35г",35.0,WEIGHT,28,SMALL_PACK_HIGH_COUNT_28x
+c2696774-28d0-4d30-aa5e-204a668f989c,Пирожное Тарт лимонный (1690) 35г (24 шт),35.0,WEIGHT,28,SMALL_PACK_HIGH_COUNT_28x
+e748a8b4-d3bc-4524-80ca-a7e5b0bbe3a2,"Перец Черный KOTANYI,  мельница 36г",36.0,WEIGHT,27,SMALL_PACK_HIGH_COUNT_27x
+adf31c12-37ea-439d-abaa-16c11839129b,"Перец Черный KOTANYI,  мельница 36г",36.0,WEIGHT,27,SMALL_PACK_HIGH_COUNT_27x
+0c86d688-8492-41b9-be91-37b723c02fd6,"БУМАГА оберточная парафинированная ""Газета"" 400х400мм 40 г/м2 500 шт/уп Aviora",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+47fa5a26-9507-4111-b880-2f3129897b60,ПАКЕТ белый с V-дном 95*40*205мм ОДП 40 г 4000шт/кр,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+44ef8c7e-fa24-4894-9f7c-f82c0f1aee5d,Булочка Пражская 40гр/80шт,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+3294b9d4-d714-418d-94ed-76d06ea54517,Булочка Французская 40гр/80шт,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+cbe323c2-54da-447b-b68b-56dd8b2e0fd1,Грибы сухие Ассорти 40гр,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+573ab8ce-4803-4654-bbf6-4f8feb84d16b,Грибы сухие Белые 40гр,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+48f48ce4-2fe3-4269-9e44-baa52b73bd23,"ПИРОЖНОЕ дайфукумоти Фантазии о малиновом чизкейке 6 шт х40 гр, РОССИЯ",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+e41a4839-4def-4f97-adec-2373abb8b213,"ПИРОЖНОЕ дайфукумоти манго-маракуйя 6 шт х40 г, РОССИЯ",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+5ad46bec-8756-4e57-b5ce-598e02fe09fd,"ПИРОЖНОЕ дайфукумоти матча 6 шт х40 г, РОССИЯ",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+f67be524-afea-4397-a236-f0bc2b7e2ecd,"ПИРОЖНОЕ дайфукумоти шоколад 6 шт х 40 г, РОССИЯ",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+05727299-a947-4e9f-be8b-5ad6bc63ff38,"ПИРОЖНОЕ дайфукумоти черная смородина 6 шт х40 г, РОССИЯ",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+55ddfa0b-681c-4e86-ba7f-4481498b14e0,"ПИРОЖНОЕ дайфукумоти Пина колада 6 шт х40г, РОССИЯ",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+dc3404df-9780-449f-93b4-ee72283bf3bd,"МИНИ-ПЛЕТЕНКА вишня замороженная 40 г, BRIDOR, ФРАНЦИЯ",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+a8e27016-6f07-4ae4-b557-2645f972cc1d,Булочка мультизлаковая 40 гр /кор Европейский хлеб,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+6c136dd5-4af9-41b8-b87b-95b8c7d6da33,Булочка Деревенская 40гр /кор Европейский хлеб,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+a69420ef-3c51-477f-b49d-e589dc460a5f,Булочка французская 40гр /кор Европейский Хлеб,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+561cea96-a05f-4322-b623-31b0c8ea7c7a,Булочка Пражская 40гр /кор Европейский хлеб,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+75c324e6-b247-405f-9567-65dfe5227278,"Булочка Злаковая (8 злаков) Мириталь (0,040 кг) ЗАМ (5015)",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+22fe2475-70cb-4a7f-b18f-f8055a86800c,"Булочка Пшеничная Мириталь (0,040 кг)",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+afeda29e-c71c-431b-b674-7a962d0ff314,"Булочка Бородинская Мириталь (0,040 кг)",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+408c7049-0c0e-4267-8753-6d0dc42a64ce,Булочка для датского хот-дога замороженная (40 г) упак. (3175),40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+a74f3332-4900-4b2d-acd7-67e711c25e23,Печенье сэндвич с ШОКОЛАДНОЙ белковой начинкой без сахара (12х40г/480г ) упак.. Stars Coffee,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+bfe39288-755f-4102-855d-e28b76df9649,Булочка солод/кориандр (40 г),40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+b03966fc-9b45-483c-866d-954d2c63d149,Булочка деревенская 40г. (80 шт),40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+e4b7dc19-14f1-43bb-8d99-6cc7856b9f2b,Булочка Пражская 40г (80 шт),40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+9bb0b38b-440b-40d5-86da-830882453656,Булочка французская 40г. (80 шт),40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+0781063d-37b6-4399-bd2e-a28eabc73067,Пирожное Тарт шоколадный (1694) 39г (24 шт),39.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+c8698f21-3724-418d-9fce-834a50fd2c2d,Булочка деревенская 40г. (80 шт),40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+823ccd48-c38a-478f-b235-de555a0b090d,Булочка Пражская 40г (80 шт),40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+e31d7f0a-f991-49e8-901b-edb61a76d279,Булочка французская 40г. (80 шт),40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+088b4ef0-9fb1-48c4-a4b4-f622f0969c33,Пирожное Тарт шоколадный (1694) 39г (24 шт),39.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+50fa4cf0-7019-4758-9b8a-fa5a89010f50,Грибы сушеные Белые отборные 40 гр (10) Лесные угодья,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+2628a723-42b9-4210-8dd2-1a79582dfb82,Булочка мультизлаковая (зам) 40 гр*80 шт/кор. Европейский Хлеб,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+3c34f992-07d3-4ca3-aa5d-c15e9f832b7a,Булочка пражская с солодом и кориандром (зам) 40 гр*80 шт/кор. Европейский Хлеб,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+712e3248-3de6-4af5-8a45-f7d83c0cef48,Булочка французская (зам) 40 гр*80 шт/кор. Европейский Хлеб,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+ba6772d6-ad85-4ce4-b7a4-f585b75ef368,Гипфель мини с грушей (зам) 40 гр*60 шт/кор. Яркий вкус,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+6e83a2c8-ac93-41ad-a507-84ee947359c2,Гипфель мини с клубникой (зам) 40 гр*60 шт/кор. Яркий вкус,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+fb64aabe-2038-447e-8741-38edd1043cdf,Гипфель мини с кремом (зам) 40 гр*60 шт/кор. Яркий вкус,40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+7dd5577b-7cc2-487a-ba7c-1ed85d7a138c,"Шоколадный Батончик Яшкино Super 40г, НДС 20%",40.0,WEIGHT,25,SMALL_PACK_HIGH_COUNT_25x
+b1f4bdda-88e6-4e9f-a258-88c0eda5d3be,Вафли Киндер Буэно (43г х 30) упак.,43.0,WEIGHT,23,SMALL_PACK_HIGH_COUNT_23x
+73ffb120-a3ae-474a-a205-9c94b82814da,Вафли Киндер Буэно (43г х 30) упак.Stars Coffe,43.0,WEIGHT,23,SMALL_PACK_HIGH_COUNT_23x
+ac5c6b41-4ce3-44f1-8d3b-ce2d51c2d9d8,ПЕРЕЦ чили нити сушеные п/б 45 гр. KOTANYI,45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+375b028f-a725-4abe-a147-550f03ba5789,M&M's шоколад Everest 6*32*45г,45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+27cc56a9-5c38-4565-b05d-18bf8f1526b5,БУМАГА пищевая в листах 280*310мм 45гр/м2 подпергамент 1000шт/кр,45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+4164ca33-5281-48ce-b949-49636c58a667,"Чипсы картофельные со вкусом белого трюфеля ""Tartufi Jimmy"" (0,045 кг) упак. .",45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+de5c0390-a611-49e9-818c-8929a8938429,"Приправа Для глинтвейна SpicExpert крафт пакет ( 0,045 кг) упак.",45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+9382e27e-b19b-45f6-aadc-1574d8c0d635,Пирожное Тарт с вишней (1691) 45г (24 шт),45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+7fdbd109-c637-4f9e-9dcd-cc3107fcf11e,Пирожное Тарт с вишней (1691) 45г (24 шт),45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+d1bba61d-fd00-4d39-8ae2-bfa0407d8354,Нити чили сушеные 45 гр (400 мл) пл/б (6) Kotanyi,45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+75c2620c-3cf3-44be-ab8a-1dbb1addc782,Грибы сушеные Ассорти с белыми грибами 45 гр (10) Лесные угодья,45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
+26052a8b-4e0a-4f01-bb0c-109b9adfbc4a,Мини слойка ветчина-сыр (зам) 45 гр*60 шт/кор. Яркий вкус,45.0,WEIGHT,22,SMALL_PACK_HIGH_COUNT_22x
