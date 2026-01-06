@@ -242,6 +242,14 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
     candidate_lower = candidate_name.lower()
     ref_lower = reference_name.lower() if reference_name else ""
     
+    # Strategy 0: Check FORBIDDEN_CROSS_MATCHES first
+    # This prevents absurd matches like "кальмар" → "курица"
+    if super_class in FORBIDDEN_CROSS_MATCHES:
+        forbidden_tokens = FORBIDDEN_CROSS_MATCHES[super_class]
+        for forbidden in forbidden_tokens:
+            if forbidden in candidate_lower:
+                return False, f"cross_forbidden:{forbidden}"
+    
     # Strategy 1: Check DYNAMIC anchors FIRST for specific categories
     # (for shrimp sizes, flour types, etc.)
     if reference_name and super_class in ['condiments.spice', 'staples.flour', 'staples.мука', 'staples.мука.пшеничная', 
