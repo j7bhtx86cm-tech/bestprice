@@ -6,6 +6,7 @@ P0 HOTFIX - Критические исправления v12
 3. Improved pack parsing
 4. Better brand matching
 5. Structured logging
+6. SEED_DICT_RULES support for mandatory attributes
 """
 import os
 import re
@@ -13,8 +14,114 @@ import json
 import logging
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
+from pymongo import MongoClient
 
 logger = logging.getLogger(__name__)
+
+# Cache for seed_dict_rules
+_seed_dict_rules_cache = None
+
+def load_seed_dict_rules():
+    """Load seed_dict_rules from MongoDB (cached)"""
+    global _seed_dict_rules_cache
+    if _seed_dict_rules_cache is not None:
+        return _seed_dict_rules_cache
+    
+    try:
+        client = MongoClient(os.environ.get('MONGO_URL'))
+        db = client[os.environ.get('DB_NAME', 'test_database')]
+        rules = list(db.seed_dict_rules.find({}, {'_id': 0}))
+        
+        # Build lookup by type -> raw values (with action 'оставить' or 'обязательно')
+        _seed_dict_rules_cache = {
+            'fat': [],      # жирность: 0%, 1%, 3.2%, etc.
+            'grade': [],    # сорт: choice, prime, первый_сорт, etc.
+            'size': [],     # размер: 16/20, 21/25, etc. (for shrimp)
+            'form': [],     # форма: без_головы, очищенная, etc.
+            'process': [],  # обработка: сыровялен, варено_копчен, etc.
+        }
+        
+        for rule in rules:
+            rule_type = rule.get('type', '').lower()
+            raw_value = rule.get('raw', '').lower()
+            action = rule.get('action', '')
+            
+            if rule_type in _seed_dict_rules_cache and raw_value:
+                # Include rules with actions that mean "keep/mandatory"
+                if action in ['оставить', 'обязательно', 'учитывать']:
+                    _seed_dict_rules_cache[rule_type].append(raw_value)
+        
+        logger.info(f"Loaded seed_dict_rules: fat={len(_seed_dict_rules_cache['fat'])}, grade={len(_seed_dict_rules_cache['grade'])}, size={len(_seed_dict_rules_cache['size'])}")
+        return _seed_dict_rules_cache
+    except Exception as e:
+        logger.error(f"Failed to load seed_dict_rules: {e}")
+        _seed_dict_rules_cache = {'fat': [], 'grade': [], 'size': [], 'form': [], 'process': []}
+        return _seed_dict_rules_cache
+
+
+def extract_seed_dict_attributes(text: str) -> Dict[str, str]:
+    """
+    Extract seed_dict_rules attributes from product name.
+    Returns dict of found attributes by type.
+    """
+    rules = load_seed_dict_rules()
+    text_lower = text.lower()
+    found = {}
+    
+    # Check fat percentages (e.g., "3.2%", "0%")
+    fat_pattern = re.search(r'(\d+[,.]?\d*)\s*%', text)
+    if fat_pattern:
+        fat_value = fat_pattern.group(0).replace(',', '.')
+        found['fat'] = fat_value
+    
+    # Check grades (choice, prime, etc.)
+    for grade in rules.get('grade', []):
+        if grade in text_lower:
+            found['grade'] = grade
+            break
+    
+    # Check sizes (16/20, 21/25, etc.)
+    size_pattern = re.search(r'(\d+/\d+)', text)
+    if size_pattern:
+        found['size'] = size_pattern.group(1)
+    
+    return found
+
+
+def check_seed_dict_match(reference_name: str, candidate_name: str) -> Tuple[bool, str]:
+    """
+    Check if candidate matches seed_dict_rules attributes from reference.
+    
+    Returns:
+        (match, reason) - True if candidate has same attributes or reference has none
+    """
+    ref_attrs = extract_seed_dict_attributes(reference_name)
+    
+    if not ref_attrs:
+        return True, ""  # No seed_dict attributes to match
+    
+    cand_attrs = extract_seed_dict_attributes(candidate_name)
+    
+    # Check each attribute type
+    for attr_type, ref_value in ref_attrs.items():
+        cand_value = cand_attrs.get(attr_type)
+        
+        if attr_type == 'fat':
+            # Fat percentages must match exactly
+            if ref_value and cand_value != ref_value:
+                return False, f"fat_mismatch:{ref_value}!={cand_value}"
+        
+        elif attr_type == 'grade':
+            # Grades must match
+            if ref_value and cand_value != ref_value:
+                return False, f"grade_mismatch:{ref_value}!={cand_value}"
+        
+        elif attr_type == 'size':
+            # Sizes (shrimp) must match exactly
+            if ref_value and cand_value != ref_value:
+                return False, f"size_mismatch:{ref_value}!={cand_value}"
+    
+    return True, ""
 
 # ==================== 1) MATCH PERCENT FIX ====================
 
