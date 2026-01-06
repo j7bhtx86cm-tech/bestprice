@@ -158,7 +158,10 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
             'филе', 'fillet',
             'рёбр', 'ribs',
             'грудк', 'breast',
-            'бедр', 'thigh'
+            'бедр', 'thigh',
+            # Размеры креветок (CRITICAL)
+            '16/20', '21/25', '26/30', '31/35', '31/40', '41/50', '51/60', '61/70',
+            '71/90', '90/120', '100/150', '150/200', '200/300', '300/500',
         ]
         
         # Check if reference contains any specific product
