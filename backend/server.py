@@ -4957,6 +4957,7 @@ async def startup_validation():
             logger.error("⚠️ Critical validation errors detected! Check /api/debug/validation for details.")
     except Exception as e:
         logger.error(f"❌ Validation failed with error: {e}")
+        _validation_report = None
 
 @api_router.get("/debug/validation")
 async def get_validation_report():
@@ -4966,7 +4967,23 @@ async def get_validation_report():
         # Run validation if not done yet
         _validation_report = validate_all_rules(strict=False)
     
-    return _validation_report.to_dict()
+    return {
+        "timestamp": _validation_report.timestamp,
+        "summary": _validation_report.summary,
+        "has_critical_errors": _validation_report.has_critical_errors,
+        "stats": _validation_report.stats,
+        "critical_errors_count": len(_validation_report.critical_errors),
+        "warnings_count": len(_validation_report.warnings),
+        "issues": [
+            {
+                "severity": i.severity,
+                "category": i.category,
+                "message": i.message,
+                "details": i.details
+            }
+            for i in _validation_report.issues
+        ]
+    }
 
 @api_router.post("/debug/validate-rules")
 async def run_validation():
@@ -4977,7 +4994,7 @@ async def run_validation():
         "status": "completed",
         "summary": _validation_report.summary,
         "has_critical_errors": _validation_report.has_critical_errors,
-        "report": _validation_report.to_dict()
+        "stats": _validation_report.stats
     }
 
 @app.on_event("shutdown")
