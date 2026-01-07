@@ -27,6 +27,9 @@ from unit_normalizer import (
     PackInfo
 )
 
+# P1: Rules Validation at startup
+from rules_validator import validate_all_rules, print_validation_report
+
 # Build info for debugging
 BUILD_SHA = os.popen("cd /app && git rev-parse --short HEAD 2>/dev/null").read().strip() or "unknown"
 BUILD_TIME = datetime.now(timezone.utc).isoformat()
