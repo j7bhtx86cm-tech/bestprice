@@ -4925,6 +4925,51 @@ async def search_similar_products_endpoint(data: dict):
         "results": results
     }
 
+# ============================================================
+# VALIDATION ENDPOINTS (must be BEFORE app.include_router!)
+# ============================================================
+
+# Store validation report globally
+_validation_report = None
+
+@api_router.get("/debug/validation")
+async def get_validation_report():
+    """Get the latest rules validation report"""
+    global _validation_report
+    if _validation_report is None:
+        # Run validation if not done yet
+        _validation_report = validate_all_rules(strict=False)
+    
+    return {
+        "timestamp": _validation_report.timestamp,
+        "summary": _validation_report.summary,
+        "has_critical_errors": _validation_report.has_critical_errors,
+        "stats": _validation_report.stats,
+        "critical_errors_count": len(_validation_report.critical_errors),
+        "warnings_count": len(_validation_report.warnings),
+        "issues": [
+            {
+                "severity": i.severity,
+                "category": i.category,
+                "message": i.message,
+                "details": i.details
+            }
+            for i in _validation_report.issues
+        ]
+    }
+
+@api_router.post("/debug/validate-rules")
+async def run_validation():
+    """Manually trigger rules validation"""
+    global _validation_report
+    _validation_report = validate_all_rules(strict=False)
+    return {
+        "status": "completed",
+        "summary": _validation_report.summary,
+        "has_critical_errors": _validation_report.has_critical_errors,
+        "stats": _validation_report.stats
+    }
+
 # Include router
 app.include_router(api_router)
 
