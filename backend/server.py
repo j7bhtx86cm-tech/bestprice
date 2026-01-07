@@ -4942,6 +4942,44 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Store validation report globally
+_validation_report = None
+
+@app.on_event("startup")
+async def startup_validation():
+    """Run rules validation at server startup"""
+    global _validation_report
+    logger.info("🔍 Running rules validation at startup...")
+    try:
+        _validation_report = validate_all_rules(strict=False)
+        logger.info(f"✅ Validation complete: {_validation_report.summary}")
+        if _validation_report.has_critical_errors:
+            logger.error("⚠️ Critical validation errors detected! Check /api/debug/validation for details.")
+    except Exception as e:
+        logger.error(f"❌ Validation failed with error: {e}")
+
+@api_router.get("/debug/validation")
+async def get_validation_report():
+    """Get the latest rules validation report"""
+    global _validation_report
+    if _validation_report is None:
+        # Run validation if not done yet
+        _validation_report = validate_all_rules(strict=False)
+    
+    return _validation_report.to_dict()
+
+@api_router.post("/debug/validate-rules")
+async def run_validation():
+    """Manually trigger rules validation"""
+    global _validation_report
+    _validation_report = validate_all_rules(strict=False)
+    return {
+        "status": "completed",
+        "summary": _validation_report.summary,
+        "has_critical_errors": _validation_report.has_critical_errors,
+        "report": _validation_report.to_dict()
+    }
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
