@@ -10,9 +10,32 @@
 - **FIXED**: Дубли при повторной загрузке прайс-листов
 - **FIXED**: BestPrice не учитывал min_order_qty
 
-## Текущий статус: ✅ P0 + P1 COMPLETE
+## Текущий статус: ✅ P0 + P1 + Full Audit COMPLETE
 
 ### Build SHA: (latest)
+
+---
+
+## FULL BATCH AUDIT REPORT (2026-01-09)
+
+### Общая статистика
+- **Total active items**: 7907
+- **Inactive items**: 16
+- **Suppliers**: 9 (Алиди, Интегрита, Ромакс, Восток-Запад, Айфрут, Нордико, РБД, Сладкая жизнь, ПраймФудс)
+
+### Качество данных
+| Метрика | Значение | Статус |
+|---------|----------|--------|
+| Product core coverage | 67.9% (5371) | ✅ |
+| Brand coverage (total) | 77.4% (6119) | ✅ |
+| Brand high confidence | **34.8%** (2751) | ✅ TARGET 20%+ MET |
+| Brand medium confidence | 42.6% (3368) | ✅ |
+| Geography coverage | 22.4% (1768) | ⚠️ |
+
+### Unit type distribution
+- PIECE: 72.3% (5716)
+- WEIGHT: 25.6% (2025)
+- VOLUME: 2.1% (166)
 
 ---
 
@@ -23,11 +46,17 @@
 - Формула P0.5 работает корректно в UI
 - Тест: qty=3, min_order=2 → actual_qty=4, total_cost=price*4 ✅
 
-#### P1.2 - Brand Coverage 70%+ ✅
-- **Target**: 70%+ высокой/средней уверенности
-- **Achieved**: **77.4%** (654 high + 5465 medium)
-- 1660 брендов, 2601 алиасов в словаре
-- backfill supplier_items выполнен
+#### P1.2 - Brand Coverage Improvement ✅
+- **Original**: 8.3% high confidence
+- **Target**: 20%+ high confidence
+- **Achieved**: **34.8%** high confidence (2751 items)
+- Добавлено 73+ брендов в strict список
+- Total brand coverage: 77.4%
+
+#### P1.3 - Full Batch Audit ✅
+- Полный аудит всех 7907 активных позиций
+- Отчёт по поставщикам, категориям, брендам
+- Выявлены области для улучшения (geography 22.4%)
 
 ---
 
