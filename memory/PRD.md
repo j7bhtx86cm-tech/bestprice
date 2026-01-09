@@ -62,8 +62,18 @@
 #### P1.4 - Product Core Coverage Improvement ✅
 - **Original**: 67.9%
 - **Target**: 80%+
-- **Achieved**: **83.5%** (6602 items)
-- Добавлены правила для: круп (гречка, манка, пшено, булгур), бульонов, консервированных овощей, замороженных продуктов, макаронных изделий
+- **Achieved**: **95.8%** (7578 items)
+- Добавлены правила для: 
+  - ТЕСТО (bakery.dough, dough.puff, dough.yeast)
+  - Молочные продукты (dairy.cheese.*, dairy.cream, dairy.milk)
+  - Овощи и фрукты
+  - Выпечка (bakery.*, pizza)
+  - Напитки (beverages.tea, coffee, cocoa)
+  - Снеки
+  - Упаковка (packaging.*)
+  - Морепродукты (seafood.shellfish.*)
+  - Круп (staples.cereals.*)
+  - Бульоны (ready_meals.broth)
 
 ---
 
