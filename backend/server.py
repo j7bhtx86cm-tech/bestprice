@@ -1431,13 +1431,13 @@ async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = Non
     """Get supplier price lists with enhanced fuzzy search"""
     from enhanced_matching import normalize_with_synonyms, fuzzy_match
     
-    query = {"supplierId": supplier_id}
+    query = {"supplierId": supplier_id, "productId": {"$exists": True}}
     
-    # Get all pricelists for this supplier
+    # Get all pricelists for this supplier (only those with productId)
     pricelists = await db.pricelists.find(query, {"_id": 0}).to_list(10000)
     
     # Get all products
-    product_ids = [pl['productId'] for pl in pricelists]
+    product_ids = [pl['productId'] for pl in pricelists if 'productId' in pl]
     products = await db.products.find({"id": {"$in": product_ids}}, {"_id": 0}).to_list(10000)
     products_map = {p['id']: p for p in products}
     
