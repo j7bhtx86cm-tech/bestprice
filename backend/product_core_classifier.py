@@ -56,6 +56,24 @@ PRODUCT_CORE_RULES = {
         (['рисов', 'rice'], 'staples.flour.rice'),
     ],
     
+    # Grains/Cereals - Крупы
+    'staples.cereals': [
+        (['рис', 'rice'], 'staples.cereals.rice'),
+        (['гречк', 'грече', 'греч', 'buckwheat'], 'staples.cereals.buckwheat'),
+        (['пшен', 'millet'], 'staples.cereals.millet'),
+        (['манк', 'semolina', 'манн'], 'staples.cereals.semolina'),
+        (['булгур', 'bulgur'], 'staples.cereals.bulgur'),
+        (['кускус', 'couscous'], 'staples.cereals.couscous'),
+        (['овсян', 'oat', 'геркулес'], 'staples.cereals.oat'),
+        (['перловк', 'barley', 'ячмен', 'ячневая'], 'staples.cereals.barley'),
+        (['кукуруз', 'corn', 'полент'], 'staples.cereals.corn'),
+        (['горох', 'pea'], 'staples.cereals.peas'),
+        (['чечевиц', 'lentil'], 'staples.cereals.lentils'),
+        (['фасоль', 'bean', 'бобы'], 'staples.cereals.beans'),
+        (['нут', 'chickpea'], 'staples.cereals.chickpeas'),
+        (['киноа', 'quinoa'], 'staples.cereals.quinoa'),
+    ],
+    
     # Condiments - Приправы/Соусы
     'condiments.spice': [
         (['васаби', 'wasabi'], 'condiments.wasabi'),
