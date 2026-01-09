@@ -231,6 +231,60 @@ def detect_super_class(product_name, min_confidence=0.3):
         'мука гречневая': 'staples.мука.гречневая',
         'макфа': 'staples.мука',  # Brand often indicates flour
         
+        # === CEREALS/GRAINS - КРУПЫ ===
+        'гречк': 'staples.cereals',
+        'греча': 'staples.cereals',
+        'гречих': 'staples.cereals',
+        'манк': 'staples.cereals',
+        'манн': 'staples.cereals',
+        'пшено': 'staples.cereals',
+        'пшен': 'staples.cereals',
+        'булгур': 'staples.cereals',
+        'кускус': 'staples.cereals',
+        'перловк': 'staples.cereals',
+        'ячмен': 'staples.cereals',
+        'ячнев': 'staples.cereals',
+        'овсян': 'staples.cereals',
+        'геркулес': 'staples.cereals',
+        'горох': 'staples.cereals',
+        'чечевиц': 'staples.cereals',
+        'фасоль': 'staples.cereals',
+        'нут': 'staples.cereals',
+        'киноа': 'staples.cereals',
+        
+        # === BROTHS - БУЛЬОНЫ ===
+        'бульон': 'ready_meals.broth',
+        
+        # === CANNED VEGETABLES - КОНСЕРВЫ ОВОЩНЫЕ ===
+        'кукуруза ж': 'canned.vegetables',
+        'кукуруза консерв': 'canned.vegetables',
+        'маслин': 'canned.vegetables',
+        'олив': 'canned.vegetables',
+        'горошек': 'canned.vegetables',
+        'горох консерв': 'canned.vegetables',
+        'грибы маринов': 'canned.vegetables',
+        'редис маринов': 'canned.vegetables',
+        'редька маринов': 'canned.vegetables',
+        
+        # === FROZEN FOODS - ЗАМОРОЖЕННЫЕ ===
+        'картофел фри': 'frozen.vegetables',
+        'хэшбраун': 'frozen.vegetables',
+        'пельмен': 'frozen.ready_meals',
+        'варен': 'frozen.ready_meals',
+        'котлет с/м': 'frozen.ready_meals',
+        'гуляш с/м': 'frozen.ready_meals',
+        'борщ с/м': 'frozen.ready_meals',
+        'каша с/м': 'frozen.ready_meals',
+        'уха с/м': 'frozen.ready_meals',
+        
+        # === PASTA - МАКАРОННЫЕ ИЗДЕЛИЯ ===
+        'спагетти': 'pasta.spaghetti',
+        'пенне': 'pasta.penne',
+        'рожки': 'pasta.penne',
+        'тальятелле': 'pasta.tagliatelle',
+        'гнезда': 'pasta.tagliatelle',
+        'вермишель': 'pasta.vermicelli',
+        
         # === Categories from "other" analysis ===
         # Syrups (110 items)
         'сироп': 'beverages.syrup',
