@@ -108,15 +108,21 @@ def parse_file_columns(df: pd.DataFrame) -> Dict[str, int]:
         # Check if this row contains headers
         found_headers = 0
         temp_columns = {}
+        used_cols = set()  # Track which columns are already assigned
         
         for col_idx, cell in enumerate(row_str):
+            if col_idx in used_cols:
+                continue
             for field, patterns in column_patterns.items():
                 if field not in temp_columns:
                     for pattern in patterns:
                         if pattern in cell:
                             temp_columns[field] = col_idx
+                            used_cols.add(col_idx)
                             found_headers += 1
                             break
+                    if field in temp_columns:
+                        break  # Move to next column after finding match
         
         # If we found at least name and price, this is the header row
         if 'name' in temp_columns and 'price' in temp_columns:
