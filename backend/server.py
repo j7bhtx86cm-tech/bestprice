@@ -4170,7 +4170,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 required_base_qty=ref_pack_info.base_qty,
                 required_unit=ref_unit,
                 packs_needed=packs_needed,
-                pack_explanation=pack_explanation
+                pack_explanation=pack_explanation,
+                # P0.5: min_order_qty support
+                min_order_qty=result.min_order_qty,
+                actual_qty=result.actual_qty
             )
             
             return AddFromFavoriteResponse(
@@ -4182,7 +4185,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                         'price': c.get('price'),
                         'supplier': company_map.get(c.get('supplier_company_id'), 'Unknown'),
                         'packs_needed': c.get('_packs_needed'),
-                        'pack_explanation': c.get('_pack_explanation', '')
+                        'pack_explanation': c.get('_pack_explanation', ''),
+                        'min_order_qty': c.get('min_order_qty', 1)  # P0.5
                     }
                     for c in step4_unit_compatible[:5]
                 ],
@@ -4195,6 +4199,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 selected_unit_type=winner.get('_pack_info').unit_type.value if winner.get('_pack_info') else None,
                 packs_needed=packs_needed,
                 computed_total_cost=actual_total_cost,
+                # P0.5: min_order_qty in top-level response
+                min_order_qty=result.min_order_qty,
+                actual_qty=result.actual_qty,
                 debug_log={
                     'request_id': request_id,
                     'build_sha': BUILD_SHA,
