@@ -299,9 +299,15 @@ class PricelistImporter:
                     stats['skipped'] += 1
                     continue
                 
-                # Parse price
+                # Parse price (handle formats like "1 234,56")
                 try:
-                    price = float(price_raw)
+                    if isinstance(price_raw, (int, float)):
+                        price = float(price_raw)
+                    else:
+                        # Convert string price: "1 234,56" -> 1234.56
+                        price_str = str(price_raw).strip()
+                        price_str = price_str.replace(' ', '').replace(',', '.')
+                        price = float(price_str)
                 except (ValueError, TypeError):
                     stats['skipped'] += 1
                     continue
