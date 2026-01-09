@@ -7,14 +7,31 @@
 - Неверные матчи: "васаби" → "соль", "пшеничная мука" → "ржаная мука"
 - Ошибки расчета: запрос "1 кг" удовлетворялся товаром "5 г"
 - Бессмысленные `match_percent` scores
-- **NEW**: Дубли при повторной загрузке прайс-листов
-- **NEW**: BestPrice не учитывал min_order_qty
+- **FIXED**: Дубли при повторной загрузке прайс-листов
+- **FIXED**: BestPrice не учитывал min_order_qty
 
-## Текущий статус: ✅ P0 Import & BestPrice Refactor COMPLETE
+## Текущий статус: ✅ P0 + P1 COMPLETE
 
 ### Build SHA: (latest)
 
-### NEW: P0 Import & BestPrice Requirements (2026-01-09) ✅ COMPLETED
+---
+
+### P1 Tasks (2026-01-09) ✅ COMPLETED
+
+#### P1.1 - BestPrice UI min_order_qty ✅
+- API возвращает `min_order_qty`, `actual_qty` в response
+- Формула P0.5 работает корректно в UI
+- Тест: qty=3, min_order=2 → actual_qty=4, total_cost=price*4 ✅
+
+#### P1.2 - Brand Coverage 70%+ ✅
+- **Target**: 70%+ высокой/средней уверенности
+- **Achieved**: **77.4%** (654 high + 5465 medium)
+- 1660 брендов, 2601 алиасов в словаре
+- backfill supplier_items выполнен
+
+---
+
+### P0 Import & BestPrice Requirements (2026-01-09) ✅ COMPLETED
 
 **Все P0 задачи реализованы и протестированы (17/17 тестов):**
 
