@@ -3279,6 +3279,9 @@ class AddFromFavoriteResponse(BaseModel):
     selected_unit_type: Optional[str] = None
     packs_needed: Optional[int] = None
     computed_total_cost: Optional[float] = None
+    # P0.5: min_order_qty support
+    min_order_qty: Optional[int] = None
+    actual_qty: Optional[float] = None
 
 
 @api_router.post("/cart/add-from-favorite", response_model=AddFromFavoriteResponse)
