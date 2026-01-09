@@ -2842,6 +2842,9 @@ class SelectedOffer(BaseModel):
     required_unit: Optional[str] = None  # e.g., "g"
     packs_needed: Optional[int] = None  # e.g., 200
     pack_explanation: Optional[str] = None  # e.g., "200 × 5 г = 1000 г"
+    # P0.5: min_order_qty support
+    min_order_qty: Optional[int] = None
+    actual_qty: Optional[float] = None
 
 class SelectOfferResponse(BaseModel):
     selected_offer: Optional[SelectedOffer] = None
