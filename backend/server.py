@@ -4014,6 +4014,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         search_logger.log()
         
         # Build result object
+        min_order_qty = winner.get('min_order_qty', 1) or 1
+        actual_qty = winner.get('_actual_qty', request.qty)  # P0.5: actual qty with min_order_qty
+        
         result = type('obj', (object,), {
             'status': 'ok',
             'supplier_id': winner.get('supplier_company_id'),
@@ -4025,6 +4028,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             'total_cost': actual_total_cost,  # P0: Correct total_cost
             'need_packs': packs_needed or 1.0,
             'match_percent': match_percent,
+            'min_order_qty': min_order_qty,  # P0.5: min_order_qty
+            'actual_qty': actual_qty,  # P0.5: actual qty to order
             'explanation': {
                 'request_id': request_id,
                 'build_sha': BUILD_SHA,
@@ -4040,7 +4045,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 'match_percent_final': match_percent,
                 'selected_item_id': winner.get('id'),
                 'packs_needed': packs_needed,
-                'total_cost': actual_total_cost
+                'total_cost': actual_total_cost,
+                'min_order_qty': min_order_qty,  # P0.5
+                'actual_qty': actual_qty  # P0.5
             }
         })()
         
