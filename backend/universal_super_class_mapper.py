@@ -386,6 +386,44 @@ def detect_super_class(product_name, min_confidence=0.3):
         'пакет': 'packaging',
         'контейнер': 'packaging',
         'упаковк': 'packaging',
+        'лоток': 'packaging',
+        'тарелка одноразов': 'packaging',
+        'стакан одноразов': 'packaging',
+        
+        # === COOKING SPRAYS & OILS ===
+        'спрей': 'condiments.cooking_spray',
+        'спрей для жарки': 'condiments.cooking_spray',
+        
+        # === ASIAN INGREDIENTS ===
+        'каффир': 'condiments.spice',
+        'паста карри': 'condiments.curry_paste',
+        'карри': 'condiments.curry',
+        
+        # === READY MEALS (extended) ===
+        'борщ': 'ready_meals.soup',
+        'уха': 'ready_meals.soup',
+        'котлет': 'ready_meals.cutlets',
+        
+        # === SEAFOOD (extended) ===
+        'моллюск': 'seafood.shellfish',
+        'клем': 'seafood.shellfish.clams',
+        'вонголе': 'seafood.shellfish.clams',
+        'мидии': 'seafood.shellfish.mussels',
+        'устриц': 'seafood.shellfish.oysters',
+        'гребешок': 'seafood.shellfish.scallops',
+        
+        # === DAIRY (extended) ===
+        'крем взбит': 'dairy.cream.whipped',
+        'спред': 'dairy.spread',
+        'продукт белков': 'dairy.cheese',
+        
+        # === Equipment (not food) ===
+        'печь': 'equipment',
+        'микроволнов': 'equipment',
+        
+        # === RICE (ensure classified) ===
+        'рис шлиф': 'staples.cereals',
+        'рис ': 'staples.cereals',
         
         # === Categories from "other" analysis ===
         # Syrups (110 items)
