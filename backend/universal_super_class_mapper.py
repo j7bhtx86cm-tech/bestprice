@@ -389,6 +389,29 @@ def detect_super_class(product_name, min_confidence=0.3):
         'лоток': 'packaging',
         'тарелка одноразов': 'packaging',
         'стакан одноразов': 'packaging',
+        'банка': 'packaging',
+        'форма алюминиев': 'packaging',
+        'алюминиев': 'packaging',
+        'вилка': 'packaging.cutlery',
+        'ложка': 'packaging.cutlery',
+        'нож одноразов': 'packaging.cutlery',
+        'уголок': 'packaging',
+        'крышк': 'packaging',
+        
+        # === SNACKS (extended) ===
+        'шарики рисов': 'snacks.rice_snacks',
+        'crispy': 'snacks',
+        
+        # === SPICES (extended) ===
+        'ягода можжевел': 'condiments.spice',
+        'можжевел': 'condiments.spice',
+        
+        # === BEVERAGE MIX ===
+        'основа для коктейл': 'beverages.mix',
+        
+        # === SEAFOOD MIX ===
+        'ассорти тресков': 'seafood.cod',
+        'ассорти морепрод': 'seafood.mix',
         
         # === COOKING SPRAYS & OILS ===
         'спрей': 'condiments.cooking_spray',
