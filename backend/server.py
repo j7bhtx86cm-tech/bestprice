@@ -4003,26 +4003,31 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         match_percent = max(0, min(100, base_score - pack_penalty))
         
-        # Calculate actual total_cost
+        # P0.5: Calculate actual total_cost with min_order_qty
+        min_order_qty = winner.get('min_order_qty', 1) or 1
+        actual_qty = winner.get('_actual_qty', request.qty)  # P0.5: actual qty with min_order_qty
+        price = winner.get('price', 0)
+        
+        # Use P0.5 total_cost if available, otherwise calculate
+        if winner.get('_total_cost_p05'):
+            actual_total_cost = winner.get('_total_cost_p05')
+        else:
+            actual_total_cost = actual_qty * price
+        
         packs_needed = winner.get('_packs_needed', 1)
-        total_cost_mult = winner.get('_total_cost_mult', 1.0)
-        actual_total_cost = winner.get('price', 0) * total_cost_mult
         
         # Log selection
         search_logger.set_selection(
             selected_item_id=winner.get('id'),
             supplier_id=supplier_id,
-            price=winner.get('price'),
+            price=price,
             match_percent=match_percent,
-            total_cost=winner.get('price') * request.qty
+            total_cost=actual_total_cost
         )
         search_logger.set_outcome('ok')
         search_logger.log()
         
         # Build result object
-        min_order_qty = winner.get('min_order_qty', 1) or 1
-        actual_qty = winner.get('_actual_qty', request.qty)  # P0.5: actual qty with min_order_qty
-        
         result = type('obj', (object,), {
             'status': 'ok',
             'supplier_id': winner.get('supplier_company_id'),
