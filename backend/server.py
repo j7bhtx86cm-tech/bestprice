@@ -855,6 +855,13 @@ async def import_price_list(
     column_mapping: str = Form(...),
     current_user: dict = Depends(get_current_user)
 ):
+    """
+    P0-Compliant Price List Import
+    - P0.1: Upsert on import (no duplicates)
+    - P0.2: Deactivate old items
+    - P0.3: Import min_order_qty
+    - P0.4: Unit priority from file
+    """
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
     
@@ -862,8 +869,14 @@ async def import_price_list(
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
+    supplier_id = company['id']
+    supplier_name = company.get('companyName', company.get('name', 'Unknown'))
+    
     # Parse column mapping
     import json
+    import math
+    import unicodedata
+    import re
     mapping = json.loads(column_mapping)
     
     # Read file
@@ -877,25 +890,162 @@ async def import_price_list(
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
         
-        # Import products
-        imported_count = 0
-        for _, row in df.iterrows():
-            price_list = PriceList(
-                supplierCompanyId=company['id'],
-                productName=str(row[mapping.get('productName', 'productName')]),
-                article=str(row[mapping.get('article', 'article')]),
-                price=float(row[mapping.get('price', 'price')]),
-                unit=str(row[mapping.get('unit', 'unit')]),
-                availability=True,
-                active=True
-            )
-            price_dict = price_list.model_dump()
-            price_dict['createdAt'] = price_dict['createdAt'].isoformat()
-            price_dict['updatedAt'] = price_dict['updatedAt'].isoformat()
-            await db.price_lists.insert_one(price_dict)
-            imported_count += 1
+        # Generate new pricelist ID
+        new_pricelist_id = str(uuid.uuid4())
         
-        return {"message": f"Successfully imported {imported_count} products"}
+        # Helper functions for P0.1 unique key
+        def normalize_text(text: str) -> str:
+            if not text or pd.isna(text):
+                return ""
+            text = str(text).lower().strip()
+            text = re.sub(r'\s+', ' ', text)
+            text = unicodedata.normalize('NFKC', text)
+            return text
+        
+        def get_unit_type(unit_str: str) -> str:
+            unit_map = {
+                'шт': 'PIECE', 'шт.': 'PIECE', 'штук': 'PIECE', 'pcs': 'PIECE',
+                'кг': 'WEIGHT', 'кг.': 'WEIGHT', 'kg': 'WEIGHT', 'г': 'WEIGHT', 'гр': 'WEIGHT',
+                'л': 'VOLUME', 'л.': 'VOLUME', 'мл': 'VOLUME', 'l': 'VOLUME', 'ml': 'VOLUME',
+            }
+            return unit_map.get(str(unit_str).lower().strip(), 'PIECE')
+        
+        def get_unit_norm(unit_str: str) -> str:
+            norm_map = {
+                'шт': 'pcs', 'шт.': 'pcs', 'штук': 'pcs', 'pcs': 'pcs',
+                'кг': 'kg', 'кг.': 'kg', 'kg': 'kg', 'г': 'kg', 'гр': 'kg',
+                'л': 'l', 'л.': 'l', 'мл': 'l', 'l': 'l', 'ml': 'l',
+            }
+            return norm_map.get(str(unit_str).lower().strip(), 'pcs')
+        
+        def generate_unique_key(article, product_name, unit_type):
+            if article and str(article).strip() and str(article).strip() != 'nan':
+                return f"{supplier_id}:{str(article).strip()}"
+            else:
+                norm_name = normalize_text(product_name)
+                return f"{supplier_id}:{norm_name}:{unit_type}"
+        
+        # Import products with upsert (P0.1)
+        created_count = 0
+        updated_count = 0
+        skipped_count = 0
+        
+        for _, row in df.iterrows():
+            try:
+                # Extract fields
+                product_name = str(row[mapping.get('productName', 'productName')]).strip()
+                price_raw = row[mapping.get('price', 'price')]
+                unit_str = str(row[mapping.get('unit', 'unit')]).strip() if 'unit' in mapping else 'шт'
+                article = str(row[mapping.get('article', 'article')]).strip() if 'article' in mapping else None
+                
+                # Skip invalid rows
+                if not product_name or product_name == 'nan':
+                    skipped_count += 1
+                    continue
+                
+                try:
+                    price = float(price_raw)
+                except (ValueError, TypeError):
+                    skipped_count += 1
+                    continue
+                
+                if price <= 0:
+                    skipped_count += 1
+                    continue
+                
+                # P0.3: Import min_order_qty and pack_qty
+                min_order_qty = 1
+                if 'minOrderQty' in mapping:
+                    try:
+                        min_order_qty = max(1, int(float(row[mapping['minOrderQty']])))
+                    except:
+                        pass
+                
+                pack_qty = 1
+                if 'packQty' in mapping:
+                    try:
+                        pack_qty = max(1, int(float(row[mapping['packQty']])))
+                    except:
+                        pass
+                
+                # P0.4: Unit priority (file > parsed)
+                unit_type = get_unit_type(unit_str)
+                unit_norm = get_unit_norm(unit_str)
+                
+                # P0.1: Generate unique key
+                unique_key = generate_unique_key(article, product_name, unit_type)
+                
+                # Prepare item data
+                item_data = {
+                    'unique_key': unique_key,
+                    'supplier_company_id': supplier_id,
+                    'price_list_id': new_pricelist_id,
+                    'supplier_item_code': article or '',
+                    'name_raw': product_name,
+                    'name_norm': normalize_text(product_name),
+                    'unit_supplier': unit_str,
+                    'unit_norm': unit_norm,
+                    'unit_type': unit_type,
+                    'price': price,
+                    'pack_qty': pack_qty,
+                    'min_order_qty': min_order_qty,
+                    'active': True,
+                    'updated_at': datetime.now(timezone.utc),
+                }
+                
+                # P0.1: Upsert logic
+                existing = await db.supplier_items.find_one({'unique_key': unique_key})
+                
+                if existing:
+                    # Update existing
+                    await db.supplier_items.update_one(
+                        {'unique_key': unique_key},
+                        {'$set': item_data}
+                    )
+                    updated_count += 1
+                else:
+                    # Insert new
+                    item_data['id'] = str(uuid.uuid4())
+                    item_data['created_at'] = datetime.now(timezone.utc)
+                    await db.supplier_items.insert_one(item_data)
+                    created_count += 1
+                    
+            except Exception as e:
+                logger.warning(f"Error importing row: {e}")
+                skipped_count += 1
+                continue
+        
+        # P0.2: Deactivate old items from this supplier (not in new pricelist)
+        deactivate_result = await db.supplier_items.update_many(
+            {
+                'supplier_company_id': supplier_id,
+                'price_list_id': {'$ne': new_pricelist_id},
+                'active': True
+            },
+            {'$set': {'active': False, 'deactivated_at': datetime.now(timezone.utc)}}
+        )
+        deactivated_count = deactivate_result.modified_count
+        
+        # Create pricelist metadata
+        pricelist_meta = {
+            'id': new_pricelist_id,
+            'supplierId': supplier_id,
+            'supplierName': supplier_name,
+            'fileName': file.filename,
+            'itemsCount': created_count + updated_count,
+            'createdAt': datetime.now(timezone.utc).isoformat(),
+            'active': True,
+        }
+        await db.pricelists.insert_one(pricelist_meta)
+        
+        return {
+            "message": f"Successfully imported {created_count + updated_count} products",
+            "created": created_count,
+            "updated": updated_count,
+            "skipped": skipped_count,
+            "deactivated": deactivated_count,
+            "pricelist_id": new_pricelist_id
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error importing file: {str(e)}")
 
