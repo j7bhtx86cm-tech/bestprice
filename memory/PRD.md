@@ -1,18 +1,74 @@
 # Best Price Matching Engine - Product Requirements Document
 
-## Дата последнего обновления: 2026-01-06
+## Дата последнего обновления: 2026-01-09
 
 ## Оригинальная проблема
 Система "Best Price" для поиска лучших цен на товары из избранного работала некорректно:
 - Неверные матчи: "васаби" → "соль", "пшеничная мука" → "ржаная мука"
 - Ошибки расчета: запрос "1 кг" удовлетворялся товаром "5 г"
 - Бессмысленные `match_percent` scores
+- **NEW**: Дубли при повторной загрузке прайс-листов
+- **NEW**: BestPrice не учитывал min_order_qty
 
-## Текущий статус: ✅ Geography Cascade + Auto-extraction + Brand Improvement
+## Текущий статус: ✅ P0 Import & BestPrice Refactor COMPLETE
 
 ### Build SHA: (latest)
 
-### NEW: Geography Cascade (City > Region > Country) (2026-01-06) ✅
+### NEW: P0 Import & BestPrice Requirements (2026-01-09) ✅ COMPLETED
+
+**Все P0 задачи реализованы и протестированы (17/17 тестов):**
+
+#### P0.1 - Upsert on Import ✅
+- Заменён `insert_one` на `upsert` с уникальным ключом
+- Ключ: `supplier_id:article` (если есть артикул) или `supplier_id:normalize(productName):unitType`
+- Индекс `unique_key_1` создан в MongoDB
+- Результат: 7923 записи с unique_key, дубликаты невозможны
+
+#### P0.2 - One Active Pricelist per Supplier ✅
+- При импорте нового прайса автоматически деактивируются старые позиции
+- Поле `active: false` + `deactivated_at` для старых записей
+- Результат: 7907 активных, 16 неактивных позиций
+
+#### P0.3 - Import min_order_qty ✅
+- Колонки "Минимальный заказ" и "Количество в упаковке" импортируются
+- Поля `min_order_qty` и `pack_qty` добавлены в схему
+- Результат: 153 товара с min_order_qty > 1
+
+#### P0.4 - Unit Priority ✅
+- `unitType` из файла имеет приоритет над парсингом из названия
+- Поле `unit_type` (WEIGHT/VOLUME/PIECE) добавлено в схему
+- Результат: явная типизация единиц для всех товаров
+
+#### P0.5 - BestPrice total_cost Calculation ✅
+- Формула: `total_cost = ceil(user_qty / min_order_qty) * min_order_qty * price`
+- Сортировка кандидатов по `total_cost`, не по `price`
+- Реализовано в `sort_key` функции (server.py)
+
+#### P0.6 - Safe Pricelist Deactivation ✅
+- `POST /api/price-lists/{id}/deactivate` - деактивация прайс-листа
+- `DELETE /api/price-lists/{id}` - полное удаление (только admin)
+- `GET /api/price-lists/supplier/{id}` - список прайсов с counts
+
+### Новые файлы:
+- `/app/backend/pricelist_importer_v2.py` - P0-совместимый импортер
+- `/app/backend/tests/test_p0_requirements.py` - 17 тестов P0
+
+### Импортированные поставщики (9):
+| Поставщик | Позиций |
+|-----------|---------|
+| Алиди | 1587 |
+| Интегрита | 1984 |
+| Ромакс | 1310 |
+| Восток-Запад | 928 |
+| Айфрут | 789 |
+| Нордико | 629 |
+| РБД | 434 |
+| Сладкая жизнь | 217 |
+| ПраймФудс | 29 |
+
+---
+
+### Geography Cascade (City > Region > Country) (2026-01-06) ✅
 **Каскадная фильтрация по географии с приоритетом: Город > Регион > Страна**
 
 Если у товара в избранном указаны географические атрибуты:
