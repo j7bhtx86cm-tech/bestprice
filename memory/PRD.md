@@ -151,7 +151,15 @@
 
 ## Реализованные функции
 
-### P0 (Критичные) ✅
+### P0 Import & BestPrice (NEW 2026-01-09) ✅
+- [x] P0.1: Upsert on import (unique_key)
+- [x] P0.2: One active pricelist per supplier
+- [x] P0.3: Import min_order_qty
+- [x] P0.4: Unit priority (file > parsed)
+- [x] P0.5: total_cost = ceil(qty/min_order_qty) * min_order_qty * price
+- [x] P0.6: Safe pricelist deactivation endpoints
+
+### P0 Matching (Критичные) ✅
 - [x] Unit normalization (kg→g, l→ml, шт)
 - [x] Correct `packs_needed` calculation
 - [x] Correct `total_cost` calculation
