@@ -1501,13 +1501,18 @@ async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = Non
                 if not match_found:
                     continue
             
+            # Sanitize price (handle nan/inf)
+            price = pl['price']
+            if price is None or (isinstance(price, float) and (price != price or price == float('inf') or price == float('-inf'))):
+                price = 0.0
+            
             result.append({
                 "id": pl['id'],
                 "productId": pl['productId'],
                 "supplierCompanyId": pl['supplierId'],
                 "productName": product['name'],
                 "article": pl.get('supplierItemCode', ''),
-                "price": pl['price'],
+                "price": price,
                 "unit": product['unit'],
                 "minQuantity": pl.get('minQuantity', 1),
                 "availability": True,
