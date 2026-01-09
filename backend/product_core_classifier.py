@@ -201,6 +201,58 @@ PRODUCT_CORE_RULES = {
         (['сироп', 'syrup'], 'beverages.syrup'),
     ],
     
+    # Broths/Stocks - Бульоны
+    'ready_meals.broth': [
+        (['бульон', 'broth', 'stock'], 'ready_meals.broth'),
+        (['грибн', 'mushroom'], 'ready_meals.broth.mushroom'),
+        (['куриц', 'chicken'], 'ready_meals.broth.chicken'),
+        (['говяж', 'beef'], 'ready_meals.broth.beef'),
+        (['овощн', 'vegetable'], 'ready_meals.broth.vegetable'),
+        (['рыбн', 'fish'], 'ready_meals.broth.fish'),
+        (['баран', 'lamb'], 'ready_meals.broth.lamb'),
+    ],
+    
+    # Canned vegetables - Консервированные овощи
+    'canned.vegetables': [
+        (['кукуруз', 'corn'], 'canned.vegetables.corn'),
+        (['маслин', 'olives', 'olive'], 'canned.vegetables.olives'),
+        (['горош', 'peas'], 'canned.vegetables.peas'),
+        (['фасоль', 'beans'], 'canned.vegetables.beans'),
+        (['огурц', 'cucumber', 'pickle'], 'canned.vegetables.pickles'),
+        (['капуст', 'cabbage'], 'canned.vegetables.cabbage'),
+        (['грибы', 'mushroom'], 'canned.vegetables.mushrooms'),
+        (['редис', 'редьк', 'radish'], 'canned.vegetables.radish'),
+    ],
+    
+    # Frozen foods - Замороженные продукты
+    'frozen.vegetables': [
+        (['картофел', 'potato', 'фри'], 'frozen.vegetables.potatoes'),
+        (['овощ', 'vegetable'], 'frozen.vegetables'),
+    ],
+    'frozen.ready_meals': [
+        (['пельмен', 'dumpling'], 'frozen.ready_meals.dumplings'),
+        (['варен', 'vareniki'], 'frozen.ready_meals.vareniki'),
+        (['котлет', 'cutlet'], 'frozen.ready_meals.cutlets'),
+        (['гуляш', 'goulash'], 'frozen.ready_meals.goulash'),
+        (['борщ', 'borscht'], 'frozen.ready_meals.borscht'),
+        (['уха', 'soup'], 'frozen.ready_meals.soup'),
+        (['каша', 'porridge'], 'frozen.ready_meals.porridge'),
+    ],
+    
+    # Pasta - expanded
+    'pasta.spaghetti': [
+        (['спагетти', 'spaghetti'], 'pasta.spaghetti'),
+    ],
+    'pasta.penne': [
+        (['пенне', 'penne', 'рожки'], 'pasta.penne'),
+    ],
+    'pasta.tagliatelle': [
+        (['тальятелле', 'tagliatelle', 'гнезда'], 'pasta.tagliatelle'),
+    ],
+    'pasta.vermicelli': [
+        (['вермишель', 'vermicelli'], 'pasta.vermicelli'),
+    ],
+    
     # Asian noodles
     'pasta.noodles': [
         (['лапша', 'noodle'], 'pasta.noodles'),
