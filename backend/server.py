@@ -1049,6 +1049,103 @@ async def import_price_list(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error importing file: {str(e)}")
 
+
+# P0.6: Safe pricelist deactivation/deletion endpoints
+@api_router.post("/price-lists/{pricelist_id}/deactivate")
+async def deactivate_pricelist(
+    pricelist_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    P0.6: Safely deactivate a pricelist and all its items.
+    Does NOT delete data - just marks as inactive.
+    """
+    if current_user['role'] not in [UserRole.supplier, UserRole.admin]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Verify pricelist exists
+    pricelist = await db.pricelists.find_one({'id': pricelist_id})
+    if not pricelist:
+        raise HTTPException(status_code=404, detail="Pricelist not found")
+    
+    # If supplier, verify ownership
+    if current_user['role'] == UserRole.supplier:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+        if not company or company['id'] != pricelist.get('supplierId'):
+            raise HTTPException(status_code=403, detail="Not authorized to modify this pricelist")
+    
+    # Deactivate all items from this pricelist
+    items_result = await db.supplier_items.update_many(
+        {'price_list_id': pricelist_id, 'active': True},
+        {'$set': {'active': False, 'deactivated_at': datetime.now(timezone.utc)}}
+    )
+    
+    # Deactivate pricelist metadata
+    await db.pricelists.update_one(
+        {'id': pricelist_id},
+        {'$set': {'active': False, 'deactivatedAt': datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {
+        "message": f"Pricelist {pricelist_id} deactivated",
+        "items_deactivated": items_result.modified_count
+    }
+
+
+@api_router.delete("/price-lists/{pricelist_id}")
+async def delete_pricelist(
+    pricelist_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    P0.6: Permanently delete a pricelist and all its items.
+    WARNING: This action cannot be undone!
+    """
+    if current_user['role'] != UserRole.admin:
+        raise HTTPException(status_code=403, detail="Only admins can delete pricelists")
+    
+    # Verify pricelist exists
+    pricelist = await db.pricelists.find_one({'id': pricelist_id})
+    if not pricelist:
+        raise HTTPException(status_code=404, detail="Pricelist not found")
+    
+    # Delete all items from this pricelist
+    items_result = await db.supplier_items.delete_many({'price_list_id': pricelist_id})
+    
+    # Delete pricelist metadata
+    await db.pricelists.delete_one({'id': pricelist_id})
+    
+    return {
+        "message": f"Pricelist {pricelist_id} permanently deleted",
+        "items_deleted": items_result.deleted_count
+    }
+
+
+@api_router.get("/price-lists/supplier/{supplier_id}")
+async def get_supplier_pricelists(
+    supplier_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all pricelists for a supplier (for management UI)"""
+    pricelists = await db.pricelists.find(
+        {'supplierId': supplier_id},
+        {'_id': 0}
+    ).sort('createdAt', -1).to_list(100)
+    
+    # Add item counts
+    for pl in pricelists:
+        active_count = await db.supplier_items.count_documents({
+            'price_list_id': pl['id'],
+            'active': True
+        })
+        total_count = await db.supplier_items.count_documents({
+            'price_list_id': pl['id']
+        })
+        pl['activeItemsCount'] = active_count
+        pl['totalItemsCount'] = total_count
+    
+    return pricelists
+
 # ==================== DOCUMENT ROUTES ====================
 
 @api_router.get("/documents/my", response_model=List[Document])
