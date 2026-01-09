@@ -3629,21 +3629,35 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 }
             )
         
-        # КРИТИЧНО: Sort by TOTAL_COST (price * total_cost_mult + pack_penalty)
+        # P0.5: Sort by TOTAL_COST with min_order_qty consideration
+        # Formula: total_cost = ceil(user_qty / min_order_qty) * min_order_qty * price
         # 1. Товары с известным packs_needed → по total_cost
         # 2. Товары с неизвестным packs_needed → в конец
+        import math
+        
+        user_qty = request.qty or 1  # User requested quantity
+        
         def sort_key(c):
             packs = c.get('_packs_needed')
             mult = c.get('_total_cost_mult', 1.0)
             price = c.get('price', 999999)
             penalty = c.get('_pack_score_penalty', 0)
+            min_order_qty = c.get('min_order_qty', 1) or 1
             
             # Если packs не определены → штраф
             if not packs:
                 return (999999, penalty, price)
             
-            # Рассчитываем total_cost
-            total_cost = price * mult
+            # P0.5: Calculate total_cost with min_order_qty
+            # actual_qty = ceil(user_qty / min_order_qty) * min_order_qty
+            actual_qty = math.ceil(user_qty / min_order_qty) * min_order_qty
+            
+            # total_cost = actual_qty * price * pack_multiplier
+            total_cost = actual_qty * price * mult
+            
+            # Store for later use
+            c['_actual_qty'] = actual_qty
+            c['_total_cost_p05'] = total_cost
             
             # Учитываем penalty (higher penalty = higher cost)
             adjusted_cost = total_cost * (1 + penalty * 0.01)
@@ -3651,7 +3665,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             return (adjusted_cost, penalty, price)
         
         step4_unit_compatible.sort(key=sort_key)
-        logger.info(f"   Отсортировано по total_cost + pack penalty")
+        logger.info(f"   Отсортировано по total_cost (P0.5) с учётом min_order_qty, user_qty={user_qty}")
         
         winner = step4_unit_compatible[0]
         
