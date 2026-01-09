@@ -289,6 +289,120 @@ PRODUCT_CORE_RULES = {
     # Soft drinks
     'beverages.cola': [(['кола', 'cola', 'пепси', 'pepsi'], 'beverages.cola')],
     
+    # === DOUGH - ТЕСТО ===
+    'bakery.dough': [
+        (['слоен', 'puff'], 'bakery.dough.puff'),
+        (['дрожжев', 'yeast'], 'bakery.dough.yeast'),
+        (['песочн', 'shortcrust'], 'bakery.dough.shortcrust'),
+        (['фило', 'filo', 'phyllo'], 'bakery.dough.filo'),
+        (['тесто'], 'bakery.dough'),
+    ],
+    
+    # === DAIRY - МОЛОЧНЫЕ ===
+    'dairy.cheese': [
+        (['пармезан', 'parmesan'], 'dairy.cheese.parmesan'),
+        (['моцарел', 'mozzarella'], 'dairy.cheese.mozzarella'),
+        (['гауда', 'gouda'], 'dairy.cheese.gouda'),
+        (['чеддер', 'cheddar'], 'dairy.cheese.cheddar'),
+        (['российск', 'russian'], 'dairy.cheese.russian'),
+        (['маасдам', 'maasdam'], 'dairy.cheese.maasdam'),
+        (['бри', 'brie'], 'dairy.cheese.brie'),
+        (['камамбер', 'camembert'], 'dairy.cheese.camembert'),
+        (['горгонзол', 'gorgonzola'], 'dairy.cheese.gorgonzola'),
+        (['фета', 'feta'], 'dairy.cheese.feta'),
+        (['рикотт', 'ricotta'], 'dairy.cheese.ricotta'),
+        (['маскарпон', 'mascarpone'], 'dairy.cheese.mascarpone'),
+        (['филадельф', 'philadelphia'], 'dairy.cheese.cream_cheese'),
+        (['плавлен', 'processed'], 'dairy.cheese.processed'),
+        (['сыр'], 'dairy.cheese'),
+    ],
+    'dairy.cream': [
+        (['сливки'], 'dairy.cream'),
+        (['взбит', 'whipped'], 'dairy.cream.whipped'),
+        (['кулинарн', 'cooking'], 'dairy.cream.cooking'),
+    ],
+    'dairy.milk': [
+        (['молоко'], 'dairy.milk'),
+        (['молокосодерж', 'milk_product'], 'dairy.milk_product'),
+    ],
+    'dairy.sour_cream': [
+        (['сметан'], 'dairy.sour_cream'),
+    ],
+    'dairy.butter': [
+        (['масло сливочн', 'butter'], 'dairy.butter'),
+        (['маргарин', 'margarine'], 'dairy.margarine'),
+    ],
+    
+    # === VEGETABLES - ОВОЩИ ===
+    'vegetables.potato': [
+        (['картофел', 'potato'], 'vegetables.potato'),
+        (['фри', 'fries'], 'frozen.vegetables.fries'),
+    ],
+    'vegetables.cabbage': [
+        (['капуст', 'cabbage'], 'vegetables.cabbage'),
+        (['квашен', 'sauerkraut'], 'vegetables.cabbage.sauerkraut'),
+    ],
+    'vegetables.onion': [
+        (['лук ', 'onion'], 'vegetables.onion'),
+        (['жарен', 'fried'], 'vegetables.onion.fried'),
+    ],
+    
+    # === FRUITS & BERRIES - ФРУКТЫ ===
+    'fruits.currant': [(['смородин', 'currant'], 'fruits.currant')],
+    'fruits.strawberry': [(['клубник', 'strawberry'], 'fruits.strawberry')],
+    'fruits.raspberry': [(['малин', 'raspberry'], 'fruits.raspberry')],
+    'fruits.blueberry': [(['черник', 'голубик', 'blueberry'], 'fruits.blueberry')],
+    'fruits.cherry': [(['вишн', 'cherry'], 'fruits.cherry')],
+    
+    # === BAKERY - ВЫПЕЧКА ===
+    'bakery.bread': [(['хлеб', 'bread'], 'bakery.bread')],
+    'bakery.bun': [(['булочк', 'bun'], 'bakery.bun')],
+    'bakery.cake': [
+        (['торт', 'cake'], 'bakery.cake'),
+        (['кекс', 'cupcake'], 'bakery.cake.cupcake'),
+    ],
+    'bakery.pizza': [(['пицц', 'pizza'], 'bakery.pizza')],
+    
+    # === BEVERAGES - НАПИТКИ ===
+    'beverages.tea': [
+        (['чай', 'tea'], 'beverages.tea'),
+        (['черн', 'black'], 'beverages.tea.black'),
+        (['зелен', 'green'], 'beverages.tea.green'),
+        (['травян', 'herbal'], 'beverages.tea.herbal'),
+    ],
+    'beverages.coffee': [
+        (['кофе', 'coffee'], 'beverages.coffee'),
+        (['эспрессо', 'espresso'], 'beverages.coffee.espresso'),
+        (['капучино', 'cappuccino'], 'beverages.coffee.cappuccino'),
+    ],
+    'beverages.cocoa': [(['какао', 'cocoa'], 'beverages.cocoa')],
+    
+    # === SNACKS - СНЕКИ ===
+    'snacks.chips': [(['чипс', 'chips'], 'snacks.chips')],
+    'snacks.crackers': [(['сухар', 'крекер', 'cracker'], 'snacks.crackers')],
+    
+    # === HONEY - МЁД ===
+    'condiments.honey': [(['мед', 'мёд', 'honey'], 'condiments.honey')],
+    
+    # === MIXES - СМЕСИ ===
+    'ready_meals.mix': [
+        (['смесь'], 'ready_meals.mix'),
+        (['овощн', 'vegetable'], 'frozen.vegetables.mix'),
+        (['специй', 'spice'], 'condiments.spice_mix'),
+    ],
+    
+    # === PASTA (extended) ===
+    'pasta': [
+        (['макарон', 'macaroni'], 'pasta.macaroni'),
+        (['спагетти', 'spaghetti'], 'pasta.spaghetti'),
+        (['пенне', 'penne'], 'pasta.penne'),
+        (['фузилли', 'fusilli'], 'pasta.fusilli'),
+        (['фарфалле', 'farfalle'], 'pasta.farfalle'),
+        (['ригатони', 'rigatoni'], 'pasta.rigatoni'),
+        (['лазанья', 'lasagna'], 'pasta.lasagna'),
+        (['каннеллони', 'cannelloni'], 'pasta.cannelloni'),
+    ],
+    
     # JUICES - Соки (CRITICAL FIX)
     'beverages.juice': [
         (['юдзу', 'yuzu'], 'beverages.juice.yuzu'),
