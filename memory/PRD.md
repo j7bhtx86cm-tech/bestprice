@@ -26,7 +26,7 @@
 ### Качество данных (FINAL - All Targets Met)
 | Метрика | Значение | Target | Статус |
 |---------|----------|--------|--------|
-| Product core coverage | **83.5%** (6602) | 80%+ | ✅ |
+| Product core coverage | **95.8%** (7578) | 80%+ | ✅ |
 | Brand high confidence | **34.8%** (2751) | 20%+ | ✅ |
 | Brand coverage (total) | 77.4% (6119) | - | ✅ |
 | Geography coverage | **42.5%** (3361) | 40%+ | ✅ |
