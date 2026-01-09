@@ -3166,7 +3166,10 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 'origin_city': si.get('origin_city'),
                 'net_weight_kg': si.get('net_weight_kg'),
                 'net_volume_l': si.get('net_volume_l'),
-                'base_unit': si.get('base_unit', si['unit_norm'])
+                'base_unit': si.get('base_unit', si['unit_norm']),
+                # P0.3/P0.5: min_order_qty for total_cost calculation
+                'min_order_qty': si.get('min_order_qty', 1),
+                'pack_qty': si.get('pack_qty', 1),
             }
             candidates.append(candidate)
         
