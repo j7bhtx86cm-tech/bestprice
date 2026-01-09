@@ -88,12 +88,13 @@ def parse_file_columns(df: pd.DataFrame) -> Dict[str, int]:
     """
     columns = {}
     
-    # Standard column names (case-insensitive)
+    # Standard column names (case-insensitive) - ordered by specificity
+    # More specific patterns first to avoid false matches
     column_patterns = {
-        'supplier': ['поставщик', 'supplier'],
-        'article': ['код товара', 'код', 'артикул', 'article', 'code'],
+        'article': ['код товара поставщика', 'код товара', 'артикул', 'article', 'code'],
         'name': ['название', 'наименование', 'товар', 'name', 'product'],
-        'unit': ['единица', 'ед.', 'ед. изм.', 'unit'],
+        'supplier': ['поставщик', 'supplier'],
+        'unit': ['единица', 'ед. изм.', 'ед.', 'unit'],
         'pack_qty': ['количество в упаковки', 'количество в упаковке', 'кол-во в месте', 'pack_qty'],
         'min_order': ['минимальный заказ', 'мин. заказ', 'min_order'],
         'price': ['цена за единицу', 'цена', 'price', 'стоимость'],
