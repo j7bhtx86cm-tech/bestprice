@@ -384,6 +384,45 @@ PRODUCT_CORE_RULES = {
     # === HONEY - МЁД ===
     'condiments.honey': [(['мед', 'мёд', 'honey'], 'condiments.honey')],
     
+    # === COOKING SPRAY ===
+    'condiments.cooking_spray': [(['спрей', 'spray'], 'condiments.cooking_spray')],
+    
+    # === ASIAN INGREDIENTS ===
+    'condiments.curry_paste': [(['карри', 'curry'], 'condiments.curry_paste')],
+    
+    # === READY MEALS SOUP ===
+    'ready_meals.soup': [
+        (['борщ', 'borscht'], 'ready_meals.soup.borscht'),
+        (['уха', 'fish soup'], 'ready_meals.soup.ukha'),
+        (['суп', 'soup'], 'ready_meals.soup'),
+    ],
+    'ready_meals.cutlets': [(['котлет', 'cutlet'], 'ready_meals.cutlets')],
+    
+    # === SEAFOOD SHELLFISH ===
+    'seafood.shellfish': [
+        (['моллюск', 'shellfish'], 'seafood.shellfish'),
+        (['клем', 'clams'], 'seafood.shellfish.clams'),
+        (['вонголе', 'vongole'], 'seafood.shellfish.clams'),
+        (['мидии', 'mussels'], 'seafood.shellfish.mussels'),
+        (['устриц', 'oyster'], 'seafood.shellfish.oysters'),
+        (['гребешок', 'scallop'], 'seafood.shellfish.scallops'),
+    ],
+    
+    # === PACKAGING ===
+    'packaging': [
+        (['лоток', 'tray'], 'packaging.tray'),
+        (['тарелка', 'plate'], 'packaging.plate'),
+        (['стакан', 'cup'], 'packaging.cup'),
+        (['пакет', 'bag'], 'packaging.bag'),
+        (['контейнер', 'container'], 'packaging.container'),
+    ],
+    
+    # === EQUIPMENT ===
+    'equipment': [
+        (['печь', 'oven'], 'equipment.oven'),
+        (['микроволнов', 'microwave'], 'equipment.microwave'),
+    ],
+    
     # === MIXES - СМЕСИ ===
     'ready_meals.mix': [
         (['смесь'], 'ready_meals.mix'),
