@@ -284,6 +284,108 @@ def detect_super_class(product_name, min_confidence=0.3):
         'тальятелле': 'pasta.tagliatelle',
         'гнезда': 'pasta.tagliatelle',
         'вермишель': 'pasta.vermicelli',
+        'макарон': 'pasta',
+        
+        # === DOUGH - ТЕСТО ===
+        'тесто': 'bakery.dough',
+        'тесто слоеное': 'bakery.dough.puff',
+        'тесто дрожжевое': 'bakery.dough.yeast',
+        'тесто песочное': 'bakery.dough.shortcrust',
+        'тесто фило': 'bakery.dough.filo',
+        
+        # === DAIRY - МОЛОЧНЫЕ ПРОДУКТЫ ===
+        'сыр': 'dairy.cheese',
+        'сливки': 'dairy.cream',
+        'молоко': 'dairy.milk',
+        'молокосодержащий': 'dairy.milk_product',
+        'сметана': 'dairy.sour_cream',
+        'сметанн': 'dairy.sour_cream',
+        'творог': 'dairy.cottage_cheese',
+        'йогурт': 'dairy.yogurt',
+        'кефир': 'dairy.kefir',
+        'ряженка': 'dairy.ryazhenka',
+        'масло сливочн': 'dairy.butter',
+        'маргарин': 'dairy.margarine',
+        
+        # === VEGETABLES - ОВОЩИ ===
+        'картофел': 'vegetables.potato',
+        'картофель фри': 'frozen.vegetables.fries',
+        'картофель-фри': 'frozen.vegetables.fries',
+        'капуста': 'vegetables.cabbage',
+        'морковь': 'vegetables.carrot',
+        'свекла': 'vegetables.beet',
+        'лук ': 'vegetables.onion',
+        'чеснок': 'vegetables.garlic',
+        'перец болгарск': 'vegetables.bell_pepper',
+        'томат': 'vegetables.tomato',
+        'помидор': 'vegetables.tomato',
+        'огурец': 'vegetables.cucumber',
+        'баклажан': 'vegetables.eggplant',
+        'кабачок': 'vegetables.zucchini',
+        
+        # === FRUITS & BERRIES - ФРУКТЫ И ЯГОДЫ ===
+        'смородин': 'fruits.currant',
+        'клубник': 'fruits.strawberry',
+        'малин': 'fruits.raspberry',
+        'черник': 'fruits.blueberry',
+        'голубик': 'fruits.blueberry',
+        'вишн': 'fruits.cherry',
+        'яблок': 'fruits.apple',
+        'груш': 'fruits.pear',
+        'персик': 'fruits.peach',
+        'абрикос': 'fruits.apricot',
+        'слив': 'fruits.plum',
+        'банан': 'fruits.banana',
+        'апельсин': 'fruits.orange',
+        'лимон': 'fruits.lemon',
+        'манго': 'fruits.mango',
+        'ананас': 'fruits.pineapple',
+        'киви': 'fruits.kiwi',
+        
+        # === BAKERY - ХЛЕБОБУЛОЧНЫЕ ===
+        'хлеб': 'bakery.bread',
+        'булочк': 'bakery.bun',
+        'батон': 'bakery.baguette',
+        'круассан': 'bakery.croissant',
+        'пирожок': 'bakery.pastry',
+        'пирог': 'bakery.pie',
+        'торт': 'bakery.cake',
+        'кекс': 'bakery.cake',
+        'пицц': 'bakery.pizza',
+        
+        # === BEVERAGES - НАПИТКИ ===
+        'чай': 'beverages.tea',
+        'кофе': 'beverages.coffee',
+        'какао': 'beverages.cocoa',
+        'напиток': 'beverages',
+        'вода': 'beverages.water',
+        'минеральн': 'beverages.water',
+        
+        # === SNACKS - СНЕКИ ===
+        'чипс': 'snacks.chips',
+        'сухар': 'snacks.crackers',
+        'крекер': 'snacks.crackers',
+        'попкорн': 'snacks.popcorn',
+        
+        # === MEAT - МЯСО (дополнения) ===
+        'филе': 'meat',  # Generic meat filet
+        
+        # === СМЕСИ & ГОТОВЫЕ ПРОДУКТЫ ===
+        'смесь': 'ready_meals.mix',
+        'смесь овощн': 'frozen.vegetables.mix',
+        'смесь специй': 'condiments.spice_mix',
+        
+        # === HONEY - МЁД ===
+        'мед': 'condiments.honey',
+        'мёд': 'condiments.honey',
+        
+        # === КУКУРУЗА ===
+        'кукуруз': 'canned.vegetables.corn',
+        
+        # === PACKAGING - упаковка (не еда, но нужна классификация) ===
+        'пакет': 'packaging',
+        'контейнер': 'packaging',
+        'упаковк': 'packaging',
         
         # === Categories from "other" analysis ===
         # Syrups (110 items)
