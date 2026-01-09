@@ -1,157 +1,184 @@
 <analysis>**original_problem_statement:**
-The user initially wanted to overhaul the Best Price matching engine to fix systemic issues with incorrect matches, quantities, and scores. The project has since evolved into a deep, data-driven quality improvement effort.
+The user has provided a comprehensive technical specification (TSD) to overhaul the data import and price matching logic. The primary goal is to fix systemic issues causing data duplication and incorrect Best Price calculations.
 
-The most recent user requests were to fix critical, absurd matching errors and implement new business rules:
-1.  **Fix Absurd Matches**: The system was matching КАЛЬМАР (squid) to кура (chicken) and натуральный краб (natural crab) to крабовые палочки (crab sticks/imitation). This required a deep fix involving price analysis and stricter classification.
-2.  **Country as Brand Rule**: The user has requested a new rule: if a product has a 'country' specified, the brand matching should become critical and treat the country as the required brand.
-3.  **Correct Shrimp Sizing**: The system was not correctly filtering shrimp by size (e.g., 16/20, 21/25).
-4.  **Flour Not Found**: A specific type of flour was not being found despite being in the catalog.
-5.  ** Integration**: The user wants rules from an Excel sheet () to be strictly enforced during matching (e.g., milk fat percentage, meat grade).
-6.  **Brand Criticality Logic**: The  logic was not working as intended.
+**PRODUCT REQUIREMENTS (P0 - Critical):**
+1.  **P0.1 - Upsert on Import:** The import process must be changed from  to an  mechanism to prevent duplicate item creation on re-upload. The unique key should be  if  exists, otherwise .
+2.  **P0.2 - One Active Pricelist:** Implement logic to ensure only one pricelist is active per supplier at any time. When a new pricelist is successfully imported, all previous items from that supplier must be deactivated ().
+3.  **P0.3 - Import :** The importer must correctly parse and store the minimum order quantity from the uploaded files.
+4.  **P0.4 - Unit Priority:** The  (e.g., WEIGHT, VOLUME, PIECE) explicitly provided in the import file must take precedence over the unit parsed from the product's raw name.
+5.  **P0.5 - BestPrice  Calculation:** The BestPrice algorithm must be refactored to rank candidates based on , not just . The calculation is .
+6.  **P0.6 - Safe Pricelist Deactivation:** Implement a safe, explicit process to deactivate and, if necessary, delete old pricelists.
+
+The user has provided 9  files to be used for this migration and refactor.
 
 **User's preferred language**: Russian
 
 **what currently exists?**
-The backend matching engine has been almost completely rewritten and is now highly sophisticated. The logic is spread across several key modules:
--   : The main FastAPI app containing the search pipeline orchestrator.
--   : Classifies items into a broad  using a combination of priority maps, guard rules (to prevent misclassification), and keyword analysis.
--   : Narrows down the  to a specific  using token-based rules.
--   : Contains multiple layers of guard logic, including required/forbidden tokens (), dynamic attribute matching for shrimp sizes,  enforcement, and a price sanity check to prevent absurdly cheap matches.
--   : Handles all unit parsing, normalization, and cost calculations. Coverage is ~95%.
--   : A script to extract and backfill  from product names. Brand coverage is now ~50% with high/medium confidence.
--   The system has undergone multiple data quality sprints, including full batch audits and backfills, significantly improving classification accuracy and reducing items in the 'other' category to just 2.2%.
+The backend is a sophisticated, multi-layered product matching engine. In this session, several major features and fixes were added:
+-   **Geography as Brand:** A new rule allows treating a product's origin (Country, Region, or City) as a strict brand filter. This involved creating  and .
+-   **Systemic Bug Fixes:** Critical classification errors were resolved, such as juices being miscategorized and, most importantly, different meat types (lamb vs. pork) being incorrectly matched. This required significant refactoring of  and .
+-   **Rule Validation:** A new module, , automatically runs a suite of consistency checks on all classification rules every time the server starts. A new endpoint, , exposes the results.
+-   **Documentation:** An auto-generated  details all system rules, and a technical specification  was created, which highlighted the flaws that the new P0 tasks aim to fix.
+
+However, the core data import and price calculation logic is flawed, leading to data duplication and incorrect price comparisons, as outlined in the new P0 requirements.
 
 **Last working item**:
--   **Last item agent was working**: The agent just finished a major debugging and feature implementation session based on the user's latest critical feedback. This involved fixing the absurd squid - - sticks matches by introducing a price sanity check and forbidden cross-match rules. It also fixed the brand criticality logic and fully integrated  into the matching pipeline.
--   **Status**: The fixes for the last set of critical bugs are COMPLETED and verified. However, the user introduced a new requirement (Country as Brand) which has not been started.
--   **Agent Testing Done**: Y
--   **Which testing method agent to use?**: Backend testing agent or manual python script to verify the new Country as Brand logic across multiple scenarios.
+-   **Last item agent was working**: The agent received a comprehensive Technical Specification Document (TSD) from the user, along with 9  price lists. It acknowledged the new P0 requirements and was about to begin implementation by analyzing the structure of the provided files.
+-   **Status**: NOT STARTED
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: backend testing agent. This is a major backend refactoring. The agent must create targeted tests for each P0 requirement, especially for the  logic (P0.1) and the  calculation in BestPrice (P0.5), using the provided  files as input.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: **Implement Country as Brand Rule (P0)**
-    -   **Description**: The user requested a new rule: если у продукта есть Страна то бренд кретичен равен стране (if a product has a Country, then brand criticality equals the country). This means if the reference item in favorites specifies a country, the search must treat that country as a  brand requirement.
+The user has defined a clear list of P0 tasks. These are the highest priority.
+
+-   **Issue 1: Implement P0.1 - Upsert on Import (P0 - HIGHEST)**
     -   **Next debug checklist**:
-        1.  Locate the logic in  where  is determined from the favorite item (around line 3075).
-        2.  Add a condition: if  has a value, override  to  and set the  for the search to the country's name.
-        3.  Create test favorites with a country specified (e.g., a product with ).
-        4.  Run tests to ensure that the search correctly filters for candidates from that country only.
-    -   **Why fix this issue and what will be achieved with the fix?**: This implements a new, user-requested business rule that is critical for matching items where the country of origin is more important than the commercial brand.
+        1.  Modify the import logic (likely in  or a related file found in the  endpoint) to use  with .
+        2.  Implement the unique key generation logic as specified:  or .
+        3.  Create a test to upload the same file twice and verify that no new  are created, and existing ones are updated.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is the most critical fix to prevent the database from filling with duplicate product offers, which corrupts search results.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Backend
+
+-   **Issue 2: Implement P0.2 - One Active Pricelist (P0)**
+    -   **Next debug checklist**:
+        1.  In the import success logic, add a step to find all  for the given  that do not belong to the newly created  and set their  field to .
+    -   **Why fix this issue and what will be achieved with the fix?**: Ensures that search results only contain offers from the most recent, valid pricelist, eliminating confusion from outdated items.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Backend
+    -   **Blocked on other issue**: Issue 1 (P0.1) should ideally be done first or together.
+
+-   **Issue 3: Implement P0.5 - BestPrice  Calculation (P0)**
+    -   **Next debug checklist**:
+        1.  Locate the sorting/ranking logic within the BestPrice pipeline in  (around line 3650, where  is used).
+        2.  For each candidate, calculate  based on the user's requested quantity and the candidate's .
+        3.  Change the primary sorting key for the final candidate list from  to .
+    -   **Why fix this issue and what will be achieved with the fix?**: This corrects a fundamental flaw in the business logic, ensuring the user is shown the truly cheapest option based on their actual order needs, not a misleading unit price.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Backend
+
+-   **Issue 4: Implement All Other P0 Tasks (P0.3, P0.4, P0.6) (P0)**
+    -   **Next debug checklist**:
+        1.  (P0.3) Modify the importer to read  and  and save it to a  field.
+        2.  (P0.4) In the importer, add a condition to only call  if the  from the file is missing or invalid.
+        3.  (P0.6) Create a new admin endpoint or script to safely deactivate/delete items by .
+    -   **Why fix this issue and what will be achieved with the fix?**: Completes the full set of requirements for a robust and reliable import and matching system.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: Backend
-    -   **Blocked on other issue**: None.
 
 **In progress Task List**:
 None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   (P1) **Brand Coverage Improvement**: Increase brand extraction coverage from ~50% to over 70% by adding more known brands and patterns to .
-    -   (P2) **Full Batch Audit & Reporting**: Run a final, full batch audit on the entire ~8.2k item catalog to generate final quality reports after all recent changes.
+    -   (P1) **Brand Coverage Improvement**: The goal to increase brand extraction coverage from ~50% to over 70% was partially met (now 53% high/medium confidence), but could be improved further by analyzing the 47% of items with low confidence brands.
+    -   (P1) **Full Batch Audit & Reporting**: Run a final, full batch audit on the entire catalog to generate quality reports after all P0 changes are implemented.
 -   **Future Tasks**:
-    -   (P3) Telegram Bot Integration.
-    -   (P4) Advanced User Permissions.
-    -   (P5) Refactor : Decompose the monolithic file by extracting the search pipeline into a dedicated module (e.g., ) and creating separate FastAPI routers.
+    -   (P2) Telegram Bot Integration.
+    -   (P3) Advanced User Permissions.
+    -   (P4) Refactor : Decompose the monolithic file into dedicated modules.
 
 **Completed work in this session**
--   **P0 Critical Bug Fixes**:
-    -   Fixed absurd match Кальмар - краб - палочки by creating distinct product cores ( vs ), adding forbidden cross-match rules, and implementing a price sanity check in .
-    -   Fixed incorrect shrimp size matching by implementing dynamic anchor extraction in .
-    -   Fixed Мука (flour) not being found by adding rules to .
--   **P1-P3 Data Quality Sprints**:
-    -   **Product Core Accuracy**: Reduced items classified as other from 8.8% to **2.2%** by adding dozens of new rules to  and .
-    -   **Brand Extraction**: Created  and ran backfills, increasing items with an identified brand to over **50%**.
-    -   **Pack Parsing**: Improved , increasing pack data coverage from 89% to **~95%**.
-    -   **Low Confidence Reduction**: Reduced items with low classification confidence from 13% to **9%**.
--   **Core Logic Implementation**:
-    -   Successfully loaded and integrated  from Excel to enforce strict attribute matching (fat %, grade, etc.) via .
-    -   Corrected the  logic to ensure it was properly enforced.
-    -   Fixed initial bug where  was not being loaded for candidate items.
+-   **Geography as Brand (Feature):** Implemented a cascading rule (City > Region > Country) to use geography as a strict brand filter. Created  and backfilled data.
+-   **Systemic Classification Fixes (Critical Bug Fixes):**
+    -   Resolved multiple critical meat cross-matching errors (e.g., lamb matching pork, meat matching seafood) by adding required anchors and forbidden cross-match rules in .
+    -   Fixed classification for juices and purees, which were being incorrectly categorized due to keyword priority issues.
+-   **Automatic Rule Validation (Feature):** Created  to run consistency checks on all rules during server startup, preventing regressions.
+-   **Documentation and Auditing (Feature):**
+    -   Created , a comprehensive document of all matching and classification rules.
+    -   Created , analyzing the import process and identifying the flaws that led to the new P0 tasks.
+-   **API Endpoint Debugging:** Diagnosed and fixed a Not Found error for a new API endpoint caused by incorrect ordering of FastAPI router inclusion.
 
 **Earlier issues found/mentioned but not fixed**
-None. All major issues identified in this or previous forks have been addressed.
+None. The issues identified in the  are now captured as the primary pending P0 tasks.
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: Product Matching Logic.
+-   **Issue recurrence in previous fork**: Product Matching Logic & Data Duplication.
 -   **Recurrence count**: High.
--   **Status**: RESOLVED. The core architectural flaws have been fixed, and multiple layers of data-driven rules, guards, and sanity checks have been added, making the system far more robust. The focus is now on new features and incremental data quality.
+-   **Status**: IN PROGRESS. While the *matching* logic was significantly improved, the root cause of data corruption—the import process—is now the main focus of the new P0 tasks.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Layered Classification**:  ->  ->  -> .
--   **Hard Guards & Gates**: The pipeline is no longer soft. It uses multiple hard rejection points:
-    -   : Wrong product core.
-    -   : Incompatible units (e.g., kg vs. ml).
-    -   : Missing essential keywords (e.g., кальмар for squid).
-    -   : Prevents natural crab from matching crab sticks.
-    -   : Enforces specific attributes like fat content, meat grade, or size.
-    -   : Rejects candidates that are abnormally cheaper than the category average.
--   **Brand Logic**:  can be  (exact brand match required) or  (brand is used for scoring but not required).
+-   **Layered Classification**:  ->  -> .
+-   **Hard Guards & Gates**: A multi-stage pipeline with hard rejection points (core mismatch, unit mismatch, required anchors, price sanity, etc.).
+-   **Cascading Geography Filter**: A new rule where City > Region > Country can act as a  brand filter.
+-   **Rule Validation on Startup**: A process that runs on server start to check for logical inconsistencies in classification rules.
+-   **Pending - Upsert on Unique Key**: The planned change to use a composite key ( +  or +) to update/insert items instead of creating duplicates.
+-   **Pending - Total Cost Calculation**: The planned refactor of the BestPrice algorithm to use a formula considering .
 
 **key DB schema**
--   ****: Enriched with , , .
--   ****: New collection to store rules loaded from Excel.
+-   ****: Contains all product offers. Enriched with , , , , . **Needs to be updated** to store .
+-   ****: Metadata for each uploaded pricelist file.
+-   ****: Stores business rules loaded from an external Excel file.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : The main search pipeline logic.
--   : Critical for all guard logic.
--   : Key for initial classification.
--   : Key for specific classification.
--   : All unit/pack/cost calculations.
--   : For brand-related tasks.
--   : The source of rules for .
+-   : Location of BestPrice logic and the  endpoint.
+-    & : Likely contain the current, flawed import logic that needs refactoring.
+-   : Defines unit parsing, may need changes for P0.4.
+-   The 9  files provided by the user in messages #400 and #403.
+-   The user's technical specification in message #400 is the primary source of truth for the next steps.
 
 **Areas that need refactoring**:
--   The monolithic  file should be broken down. This is a future task.
+-   The entire data import process, as defined by the P0 tasks.
+-   The BestPrice sorting and selection logic in .
 
 **key api endpoints**
 -   : The main endpoint for the best price search.
--   : A diagnostic endpoint to check build information.
+-   : The endpoint for uploading pricelists, which is the main subject of the P0 refactor.
+-   : The new endpoint to check the status of rule validation.
 
 **Critical Info for New Agent**
--   Your immediate task is to implement the **Country as Brand** rule as described in the pending issues.
--   The matching logic is now a multi-layered pipeline with several guard functions in . Debugging a match failure requires checking the logs to see which guard rejected the candidates (e.g., , , ).
--   Do not be surprised if the  collection is empty. The previous agent had to recreate test data multiple times. Be prepared to create your own test data in the  collection to verify functionality.
+-   Your **only priority** is to implement the P0 tasks outlined in the user's Technical Specification Document (message #400). Do not start any other tasks until these are complete.
+-   The implementation must handle the 9  files provided by the user as the source data for the migration.
+-   The core of the work involves refactoring the data import pipeline to use an  strategy and re-architecting the BestPrice algorithm to calculate  based on .
+-   Follow the acceptance criteria in the TSD for testing each P0 task. This is a significant refactor and requires careful, isolated testing for each component.
 
 **documents and test reports created in this job**
 -   
--   Multiple audit reports in  (e.g., ).
+-   
+-   
+-   
+-   
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User (pending)**: Analyze these errors deeply and fix everything related to them. Country should equal Brand if present. Fix squid -> chicken and natural crab -> imitation crab using price analysis. (Status: Partially complete. Critical bugs fixed, Country-as-Brand rule is next).
-2.  **Agent**: Acknowledged the request and began analysis.
-3.  **User**: Confirmed brand logic:  must find the exact brand,  finds the cheapest option.  must be strictly enforced.
-4.  **Agent**: Presented final results of the full analysis and fixes for brand/seed_dict logic.
-5.  **User**: Reported critical bugs: shrimp size matching is broken, and flour is not found. Demanded to know how well  are understood.
-6.  **Agent**: Confirmed all quality targets were met and presented a summary.
-7.  **Agent**: Completed P3 tasks (pack parsing, low confidence reduction) and presented summary.
-8.  **Agent**: Completed P2 tasks (brand extraction, 'other' reduction) and presented summary.
-9.  **User**: Confirmed the plan to proceed with P1 (Full Batch Audit).
-10. **Agent**: Finished the initial smoke test and root cause analysis, proposing a plan to fix the top 3 data quality issues.
+1.  **User (pending)**: Provided 4 more  files to replace previous ones. Status: Received, part of the 9 total files for the P0 tasks.
+2.  **Agent**: Asked for clarification on the user's large technical specification and file uploads.
+3.  **User (pending)**: Provided a massive Technical Specification Document detailing P0 requirements for fixing the import process and BestPrice logic, and uploaded 5  files. Status: Received, this is now the main task.
+4.  **Agent**: Provided the generated  and noted critical flaws.
+5.  **User**: Asked for a detailed technical breakdown of the entire import and pricing logic. Status: Completed, agent provided the spec.
+6.  **Agent**: Finished implementing the automatic rule validation system. Status: Completed.
+7.  **User**: Requested automatic validation of rules on startup. Status: Completed.
+8.  **Agent**: Confirmed the  file was updated.
+9.  **User**: Asked to update the rules audit report. Status: Completed.
+10. **Agent**: Finished fixing all meat cross-matching issues and confirmed via API tests. Status: Completed.
 
 **Project Health Check:**
--   **Broken**: None. The system is stable and the logic is significantly more robust than before.
+-   **Broken**: The data import process is critically flawed, causing data duplication. The BestPrice calculation is incorrect as it doesn't consider . These are the P0 tasks.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
--   , : Used in the backend for reading the master  file and creating  audit reports.
+-   , : Used for reading  files in the backend. These are critical for the upcoming P0 tasks.
 
 **Testing status**
--   **Testing agent used after significant changes**: NO
+-   **Testing agent used after significant changes**: YES (for geography and bug fixes)
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**:
-    -    (serves as a testing/backfill script)
-    -   Extensive use of temporary test scripts and direct database queries for verification.
--   **Known regressions**: None. All identified regressions were fixed.
+-   **Test files created**: 
+-   **Known regressions**: The user's new TSD essentially describes known, long-standing regressions/flaws in the import logic that are now slated to be fixed.
 
 **Credentials to test flow:**
 -   **Customer (Admin)**:  / 
 
 **What agent forgot to execute**
--   The Country as Brand rule is the only part of the last user request that has not been implemented yet. It is the highest priority for the next agent.</analysis>
+The agent has not forgotten anything. It is correctly poised to begin the large set of P0 tasks requested by the user in their last substantive message.</analysis>

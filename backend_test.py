@@ -9,7 +9,7 @@ import json
 from typing import Dict, Optional
 
 # Backend URL from environment
-BACKEND_URL = "https://bestprice-match.preview.emergentagent.com/api"
+BACKEND_URL = "https://pricematch-23.preview.emergentagent.com/api"
 
 # Test credentials
 CREDENTIALS = {
