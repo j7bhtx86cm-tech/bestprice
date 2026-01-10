@@ -370,7 +370,7 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
     # Strategy 1: Check DYNAMIC anchors FIRST for specific categories
     # (for shrimp sizes, flour types, etc.)
     if reference_name and super_class in ['condiments.spice', 'staples.flour', 'staples.мука', 'staples.мука.пшеничная', 
-                                           'staples.мука.ржаная', 'meat.beef', 'seafood.shrimp', 'other']:
+                                           'staples.мука.ржаная', 'meat.beef', 'seafood.shrimp', 'seafood.squid', 'other']:
         
         # List of specific product attributes that MUST match
         specific_attributes = [
@@ -406,6 +406,41 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
             'грудк', 'breast',
             'бедр', 'thigh',
         ]
+        
+        # CRITICAL: Проверка атрибутов креветок (с хвостом/без хвоста)
+        shrimp_attributes = [
+            ('с хвост', 'без хвост'),  # С хвостом vs Без хвоста
+            ('без хвост', 'с хвост'),
+            ('очищен', 'неочищен'),    # Очищенные vs Неочищенные
+            ('неочищен', 'очищен'),
+            ('в панцир', 'без панцир'),
+            ('без панцир', 'в панцир'),
+            ('с головой', 'без головы'),
+            ('без головы', 'с головой'),
+        ]
+        
+        # CRITICAL: Проверка атрибутов кальмаров (без кожи/с кожей)
+        squid_attributes = [
+            ('без кож', 'с кож'),       # Без кожи vs С кожей
+            ('с кож', 'без кож'),
+            ('без хитин', 'с хитин'),   # Без хитиновой пластины vs С хитиновой
+            ('с хитин', 'без хитин'),
+            ('хитинов', 'без хитин'),
+            ('чищен', 'нечищен'),
+            ('нечищен', 'чищен'),
+        ]
+        
+        # Check conflicting attributes for shrimp
+        if 'shrimp' in super_class or 'креветк' in ref_lower:
+            for has_attr, not_attr in shrimp_attributes:
+                if has_attr in ref_lower and not_attr in candidate_lower:
+                    return False, f"attribute_conflict:{has_attr}_vs_{not_attr}"
+        
+        # Check conflicting attributes for squid
+        if 'squid' in super_class or 'кальмар' in ref_lower:
+            for has_attr, not_attr in squid_attributes:
+                if has_attr in ref_lower and not_attr in candidate_lower:
+                    return False, f"attribute_conflict:{has_attr}_vs_{not_attr}"
         
         # Check if reference contains any specific attribute
         for attr in specific_attributes:
