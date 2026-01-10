@@ -585,13 +585,20 @@ def check_attribute_compatibility(reference_name: str, candidate_name: str) -> T
     
     # Critical attribute pairs (positive_attr, negative_attr, conflict_name)
     ATTRIBUTE_PAIRS = [
-        # Shrimp attributes
+        # Shrimp attributes - tail
         ('с хвост', 'без хвост', 'tail'),
         ('без хвост', 'с хвост', 'tail'),
+        ('с хвост', 'очищен полност', 'tail'),  # Полностью очищенные = без хвоста
+        ('с хвост', 'хвосты удален', 'tail'),
+        
+        # Shrimp attributes - peeled/shell
         ('очищен', 'неочищен', 'peeled'),
         ('неочищен', 'очищен', 'peeled'),
         ('в панцир', 'без панцир', 'shell'),
         ('без панцир', 'в панцир', 'shell'),
+        ('в панцир', 'очищен', 'shell'),  # В панцире != очищенные
+        
+        # Shrimp attributes - head
         ('с головой', 'без голов', 'head'),
         ('без голов', 'с головой', 'head'),
         
