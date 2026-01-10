@@ -70,6 +70,21 @@ class TestCategoryMismatch:
             assert not is_valid, f"FAIL: '{reference}' should NOT match '{candidate}'"
             print(f"✅ '{reference[:20]}...' correctly rejected '{candidate[:30]}...'")
     
+    def test_langoustine_must_match_langoustine(self):
+        """CRITICAL: Лангустины должны матчиться с лангустинами (супер_класс приоритет)"""
+        # This tests the fix for "аргентинские" containing "гус" substring
+        reference = "Креветки аргентинские (Лангустины) дикие с/г с/м L1 10/20"
+        candidates = [
+            "ЛАНГ-УСТИНЫ L1 (10/20 шт/кг) с/г в панцире с/м 2 кг",
+            "Лангустины L1 10/20 с/м Аргентина 2 кг",
+            "Креветки аргентинские L1 дикие",
+        ]
+        
+        for candidate in candidates:
+            is_valid, reason = check_category_mismatch(reference, candidate, "seafood.langoustine")
+            assert is_valid, f"FAIL: Langoustine should match langoustine: '{reference[:30]}' vs '{candidate[:30]}'"
+            print(f"✅ Langoustine passes: '{reference[:25]}...' <-> '{candidate[:25]}...'")
+    
     def test_same_category_should_match(self):
         """Товары одной категории должны проходить проверку"""
         test_cases = [
