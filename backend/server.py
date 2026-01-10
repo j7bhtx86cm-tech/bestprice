@@ -3948,6 +3948,65 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         
         winner = step4_unit_compatible[0]
         
+        # ==================== P0 FIX: SIMILARITY THRESHOLD CHECK ====================
+        # Calculate preliminary match_percent to check against threshold
+        # Thresholds: 95% for brand_critical, 90% for brand_not_critical
+        
+        THRESHOLD_BRAND_CRITICAL = 95  # User requested: минимум 95% для brand_critical
+        THRESHOLD_BRAND_NOT_CRITICAL = 90  # User requested: минимум 90% для brand_not_critical
+        
+        # Calculate base match score for threshold check
+        prelim_base_score = 60  # Base
+        if winner.get('product_core_id') == ref_product_core:
+            prelim_base_score += 20  # Core match
+        prelim_base_score += 10  # Guards passed
+        if brand_critical and winner.get('brand_id') == brand_id:
+            prelim_base_score += 10  # Brand match
+        
+        pack_penalty_check = winner.get('_pack_score_penalty', 0)
+        prelim_match_percent = max(0, min(100, prelim_base_score - pack_penalty_check))
+        
+        # Determine threshold based on brand_critical
+        required_threshold = THRESHOLD_BRAND_CRITICAL if brand_critical else THRESHOLD_BRAND_NOT_CRITICAL
+        
+        logger.info(f"   💯 Prelim match_percent: {prelim_match_percent}%, threshold: {required_threshold}% (brand_critical={brand_critical})")
+        
+        # Check if match meets threshold
+        if prelim_match_percent < required_threshold:
+            logger.warning(f"   ⚠️ LOW_MATCH: {prelim_match_percent}% < {required_threshold}% - Will return original favorite")
+            
+            # Try to find original favorite item (STICK WITH FAVORITE logic)
+            original_supplier_id = favorite.get('originalSupplierId')
+            original_product_id = favorite.get('productId')
+            
+            if original_supplier_id and original_product_id:
+                # Try to find the original item
+                original_item = await db.supplier_items.find_one({
+                    'supplier_company_id': original_supplier_id,
+                    'active': True,
+                    '$or': [
+                        {'id': original_product_id},
+                        {'unique_key': {'$regex': original_product_id, '$options': 'i'}},
+                    ]
+                }, {'_id': 0})
+                
+                if original_item:
+                    logger.info(f"   ✅ STICK_WITH_FAVORITE: Returning original item: {original_item.get('name_raw', '')[:50]}")
+                    winner = original_item
+                    winner['_stick_with_favorite'] = True
+                    winner['_low_match_fallback'] = True
+                    # Recalculate costs for original item
+                    orig_min_qty = winner.get('min_order_qty', 1) or 1
+                    winner['_actual_qty'] = math.ceil(user_qty / orig_min_qty) * orig_min_qty
+                    winner['_total_cost_p05'] = winner['_actual_qty'] * winner.get('price', 0)
+                    winner['_packs_needed'] = 1
+                    # Set 100% match for original
+                    prelim_match_percent = 100
+                else:
+                    logger.warning(f"   ❌ Original item not found, returning best available match with warning")
+            else:
+                logger.warning(f"   ❌ No original supplier/product ID, returning best available match with warning")
+        
         # HARD RULE: product_core MUST match (P1 CRITICAL)
         winner_product_core = winner.get('product_core_id')
         if winner_product_core != ref_product_core:
