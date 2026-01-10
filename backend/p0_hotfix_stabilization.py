@@ -404,6 +404,7 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
                                            'staples.мука.ржаная', 'meat.beef', 'seafood.shrimp', 'seafood.squid', 'other']:
         
         # List of specific product attributes that MUST match
+        # NOTE: 'филе' excluded for seafood - squid fillet can match squid tube
         specific_attributes = [
             # Размеры креветок (CRITICAL for seafood.shrimp)
             '16/20', '21/25', '26/30', '31/35', '31/40', '41/50', '51/60', '61/70',
@@ -429,14 +430,19 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
             'рисов', 'rice',
             'гречнев', 'buckwheat',
             'овсян', 'oat',
-            # Мясо типы
-            'фарш', 'minced', 'ground',
-            'стейк', 'steak',
-            'филе', 'fillet',
-            'рёбр', 'ribs',
-            'грудк', 'breast',
-            'бедр', 'thigh',
         ]
+        
+        # Meat-specific attributes (these are STRICT for meat, not seafood)
+        # 'филе' is a cut type - for meat it matters, for seafood it's flexible
+        if super_class.startswith('meat'):
+            specific_attributes.extend([
+                'фарш', 'minced', 'ground',
+                'стейк', 'steak',
+                'филе', 'fillet',
+                'рёбр', 'ribs',
+                'грудк', 'breast',
+                'бедр', 'thigh',
+            ])
         
         # CRITICAL: Проверка атрибутов креветок (с хвостом/без хвоста)
         shrimp_attributes = [
