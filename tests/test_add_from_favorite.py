@@ -18,7 +18,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://pricematch-23.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://product-match-10.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 CUSTOMER_EMAIL = "customer@bestprice.ru"
