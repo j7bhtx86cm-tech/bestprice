@@ -3988,9 +3988,12 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             # Try to find original favorite item (STICK WITH FAVORITE logic)
             original_supplier_id = favorite.get('originalSupplierId')
             original_product_id = favorite.get('productId')
+            original_ref_name = favorite.get('reference_name') or favorite.get('productName')
             
+            original_item = None
+            
+            # Strategy 1: Find by supplier_id + product_id (most reliable)
             if original_supplier_id and original_product_id:
-                # Try to find the original item
                 original_item = await db.supplier_items.find_one({
                     'supplier_company_id': original_supplier_id,
                     'active': True,
@@ -4000,22 +4003,40 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     ]
                 }, {'_id': 0})
                 
-                if original_item:
-                    logger.info(f"   ✅ STICK_WITH_FAVORITE: Returning original item: {original_item.get('name_raw', '')[:50]}")
-                    winner = original_item
-                    winner['_stick_with_favorite'] = True
-                    winner['_low_match_fallback'] = True
-                    # Recalculate costs for original item
-                    orig_min_qty = winner.get('min_order_qty', 1) or 1
-                    winner['_actual_qty'] = math.ceil(user_qty / orig_min_qty) * orig_min_qty
-                    winner['_total_cost_p05'] = winner['_actual_qty'] * winner.get('price', 0)
-                    winner['_packs_needed'] = 1
-                    # Set 100% match for original
-                    prelim_match_percent = 100
-                else:
-                    logger.warning(f"   ❌ Original item not found, returning best available match with warning")
+            # Strategy 2: Find by exact reference_name match (fallback)
+            if not original_item and original_ref_name:
+                original_item = await db.supplier_items.find_one({
+                    'active': True,
+                    'name_raw': original_ref_name
+                }, {'_id': 0})
+                
+            # Strategy 3: Find by name_norm similarity (last resort)
+            if not original_item and original_ref_name:
+                # Try partial match on normalized name
+                name_prefix = original_ref_name[:30].lower()  # First 30 chars
+                original_item = await db.supplier_items.find_one({
+                    'active': True,
+                    'name_norm': {'$regex': f'^{name_prefix[:20]}', '$options': 'i'}
+                }, {'_id': 0})
+            
+            if original_item:
+                logger.info(f"   ✅ STICK_WITH_FAVORITE: Returning original item: {original_item.get('name_raw', '')[:50]}")
+                winner = original_item
+                winner['_stick_with_favorite'] = True
+                winner['_low_match_fallback'] = True
+                # Recalculate costs for original item
+                orig_min_qty = winner.get('min_order_qty', 1) or 1
+                winner['_actual_qty'] = math.ceil(user_qty / orig_min_qty) * orig_min_qty
+                winner['_total_cost_p05'] = winner['_actual_qty'] * winner.get('price', 0)
+                winner['_packs_needed'] = 1
+                # Set 100% match for original
+                prelim_match_percent = 100
             else:
-                logger.warning(f"   ❌ No original supplier/product ID, returning best available match with warning")
+                # No original found - keep current winner but warn
+                logger.warning(f"   ⚠️ Original item not found by any strategy. Keeping best match with {prelim_match_percent}% confidence")
+                # Mark as low-confidence match
+                winner['_low_match_warning'] = True
+                winner['_match_below_threshold'] = True
         
         # HARD RULE: product_core MUST match (P1 CRITICAL)
         winner_product_core = winner.get('product_core_id')
