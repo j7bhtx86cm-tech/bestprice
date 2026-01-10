@@ -3592,14 +3592,31 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 }
             )
         
-        # Filter 2: GUARDS (FORBIDDEN + REQUIRED ANCHORS + SEED_DICT) - Applied to CANDIDATE!
+        # Filter 2: GUARDS (FORBIDDEN + REQUIRED ANCHORS + SEED_DICT + CATEGORY + ATTRIBUTES) - Applied to CANDIDATE!
         step2_guards = []
         rejected_forbidden = 0
         rejected_anchors = 0
         rejected_seed_dict = 0
+        rejected_category = 0  # P0 FIX: seafood vs meat
+        rejected_attributes = 0  # P0 FIX: с хвостом vs без хвоста
         
         for c in step1:
             candidate_name = c.get('name_raw', '')
+            
+            # Check 0 (CRITICAL P0): Category mismatch - SEAFOOD vs MEAT
+            # This must be first to prevent absurd matches like "кальмар" → "курица"
+            cat_match, cat_reason = check_category_mismatch(reference_name, candidate_name, ref_super_class)
+            if not cat_match:
+                rejected_category += 1
+                logger.debug(f"   ❌ CATEGORY_MISMATCH: '{candidate_name[:40]}' - {cat_reason}")
+                continue
+            
+            # Check 0.5 (CRITICAL P0): Attribute compatibility - с хвостом vs без хвоста
+            attr_match, attr_reason = check_attribute_compatibility(reference_name, candidate_name)
+            if not attr_match:
+                rejected_attributes += 1
+                logger.debug(f"   ❌ ATTRIBUTE_MISMATCH: '{candidate_name[:40]}' - {attr_reason}")
+                continue
             
             # Check 1: Forbidden tokens (e.g., растительн, веган, сырник)
             has_forbidden, forbidden_word = has_negative_keywords(candidate_name, ref_super_class)
@@ -3624,11 +3641,13 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 logger.debug(f"   ❌ SEED_DICT_MISMATCH: '{candidate_name[:40]}' - {seed_reason}")
                 continue
             
-            # Passed guards
+            # Passed all guards
             step2_guards.append(c)
         
-        logger.info(f"   После guards filter: {len(step2_guards)} (rejected: forbidden={rejected_forbidden}, anchor={rejected_anchors}, seed_dict={rejected_seed_dict})")
+        logger.info(f"   После guards filter: {len(step2_guards)} (rejected: category={rejected_category}, attributes={rejected_attributes}, forbidden={rejected_forbidden}, anchor={rejected_anchors}, seed_dict={rejected_seed_dict})")
         search_logger.set_count('after_guards', len(step2_guards))
+        search_logger.set_count('rejected_by_category_mismatch', rejected_category)
+        search_logger.set_count('rejected_by_attribute_mismatch', rejected_attributes)
         search_logger.set_count('rejected_by_forbidden', rejected_forbidden)
         search_logger.set_count('rejected_by_missing_anchor', rejected_anchors)
         search_logger.set_count('rejected_by_seed_dict', rejected_seed_dict)
