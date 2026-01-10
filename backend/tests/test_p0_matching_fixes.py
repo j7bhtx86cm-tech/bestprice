@@ -210,6 +210,7 @@ if __name__ == '__main__':
     test_category.test_squid_must_not_match_chicken()
     test_category.test_shrimp_must_not_match_beef()
     test_category.test_chicken_must_not_match_seafood()
+    test_category.test_langoustine_must_match_langoustine()
     test_category.test_same_category_should_match()
     
     test_attrs = TestAttributeCompatibility()
