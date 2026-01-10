@@ -540,24 +540,29 @@ def check_category_mismatch(reference_name: str, candidate_name: str, ref_super_
     - "Кальмар филе" → "КУРИЦА филе" (SEAFOOD vs MEAT)
     - "Креветки с хвостом" → "Курица бедро" (SEAFOOD vs MEAT)
     
+    PRIORITY: super_class > keyword detection
+    If super_class is known (e.g., seafood.langoustine), trust it over keywords.
+    
     Returns:
         (is_valid, reason) - True if categories are compatible, False if cross-category mismatch
     """
     ref_lower = reference_name.lower()
     cand_lower = candidate_name.lower()
     
-    # Check if reference is SEAFOOD
-    ref_is_seafood = any(kw in ref_lower for kw in SEAFOOD_KEYWORDS)
+    # PRIORITY 1: Use super_class if available (most reliable)
+    ref_is_seafood = False
+    ref_is_meat = False
     
-    # Check if reference is MEAT  
-    ref_is_meat = any(kw in ref_lower for kw in MEAT_KEYWORDS)
-    
-    # Also use super_class if available
     if ref_super_class:
         if ref_super_class.startswith('seafood'):
             ref_is_seafood = True
         elif ref_super_class.startswith('meat'):
             ref_is_meat = True
+    
+    # PRIORITY 2: Fall back to keyword detection only if super_class not definitive
+    if not ref_is_seafood and not ref_is_meat:
+        ref_is_seafood = any(kw in ref_lower for kw in SEAFOOD_KEYWORDS)
+        ref_is_meat = any(kw in ref_lower for kw in MEAT_KEYWORDS)
     
     # If reference is SEAFOOD, candidate must NOT contain meat keywords
     if ref_is_seafood:
