@@ -2368,7 +2368,7 @@ async def add_to_favorites(data: dict, current_user: dict = Depends(get_current_
         # Schema v2 fields
         "reference_name": product['name'],  # Эталонное имя
         "brand_id": brand_id,               # ID бренда (может быть null)
-        "brand_critical": False,            # По умолчанию OFF
+        "brand_critical": True,             # P0 FIX: По умолчанию ON (95% threshold)
         "origin_country": origin_country,   # Страна происхождения (для лосося и т.д.)
         "origin_region": origin_region,     # Регион (опционально)
         "origin_city": origin_city,         # Город (опционально)
