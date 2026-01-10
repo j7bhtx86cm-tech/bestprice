@@ -3979,6 +3979,52 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 }
             )
         
+        # ==================== P0 FIX: STICK WITH FAVORITE LOGIC ====================
+        # If the found winner is MORE EXPENSIVE than the original favorite item,
+        # return the original favorite item instead.
+        # This ensures BestPrice never suggests a worse deal.
+        
+        original_supplier_id = favorite.get('originalSupplierId')
+        original_product_id = favorite.get('productId')
+        
+        stick_with_favorite = False
+        original_item = None
+        
+        if original_supplier_id and original_product_id:
+            # Try to find the original item in supplier_items
+            original_item = await db.supplier_items.find_one({
+                'supplier_company_id': original_supplier_id,
+                'active': True,
+                '$or': [
+                    {'id': original_product_id},
+                    # Also check by name similarity for legacy data
+                    {'name_norm': {'$regex': reference_name[:20].lower(), '$options': 'i'}}
+                ]
+            }, {'_id': 0})
+            
+            if original_item:
+                winner_total_cost = winner.get('_total_cost_p05', winner.get('price', 0) * user_qty)
+                original_price = original_item.get('price', 0)
+                original_min_qty = original_item.get('min_order_qty', 1) or 1
+                original_actual_qty = math.ceil(user_qty / original_min_qty) * original_min_qty
+                original_total_cost = original_actual_qty * original_price
+                
+                # If winner is more expensive → stick with original
+                if winner_total_cost > original_total_cost:
+                    logger.info(f"   🔄 STICK_WITH_FAVORITE: winner_cost={winner_total_cost:.2f} > original_cost={original_total_cost:.2f}")
+                    logger.info(f"   Returning original item: {original_item.get('name_raw', '')[:40]}")
+                    
+                    # Replace winner with original item
+                    winner = original_item
+                    winner['_actual_qty'] = original_actual_qty
+                    winner['_total_cost_p05'] = original_total_cost
+                    winner['_packs_needed'] = 1
+                    winner['_pack_explanation'] = "Оригинальный товар из избранного (дешевле альтернатив)"
+                    winner['_stick_with_favorite'] = True
+                    stick_with_favorite = True
+                else:
+                    logger.info(f"   ✅ Found cheaper alternative: winner_cost={winner_total_cost:.2f} < original_cost={original_total_cost:.2f}")
+        
         # КРИТИЧНО: Определяем supplier_id СРАЗУ после winner
         supplier_id = winner.get('supplier_company_id')
         
