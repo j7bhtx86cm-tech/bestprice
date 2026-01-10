@@ -161,6 +161,12 @@ def detect_super_class(product_name, min_confidence=0.3):
     # DIRECT MAPPINGS - Check these FIRST before guard rules
     # These have highest priority for specific product types
     direct_map_priority = {
+        # === COD (ТРЕСКА) - HIGHEST PRIORITY ===
+        # Треска должна быть seafood, не meat! 
+        # "Филе Спинки Трески" содержит "филе" которое дефолтится на meat
+        'треск': 'seafood.cod',  # Captures: треска, трески, треску
+        'cod': 'seafood.cod',
+        
         # === SEAFOOD FILLETS (HIGHEST PRIORITY - prevent 'филе' → meat) ===
         # Кальмар с филе должен быть seafood, не meat!
         'кальмар филе': 'seafood.squid',
@@ -196,6 +202,10 @@ def detect_super_class(product_name, min_confidence=0.3):
         'угорь': 'seafood.eel',
         'унаги': 'seafood.eel',
         'икра': 'seafood.caviar',
+        
+        # === POLLOCK (Минтай) ===
+        'минтай': 'seafood.pollock',
+        'pollock': 'seafood.pollock',
         
         'лосось филе': 'seafood.salmon',
         'семга филе': 'seafood.salmon',
