@@ -17,6 +17,12 @@
 
 ## Текущий статус: ✅ 100% CLASSIFICATION + ALL FIXES COMPLETE (2026-01-10)
 
+### LATEST: Unit Tests for Seafood + Auto-Reclassifier Integration (2026-01-10) ✅
+- Добавлены 9 новых тестов для морепродуктов (Тюрбо, Печень трески, Филе трески Borealis, Лангустины)
+- **22/22 тестов прошли** в `test_p0_matching_fixes.py`
+- `auto_reclassifier.py` интегрирован в процесс импорта прайс-листов
+- Добавлено правило для `langoustine` (англ.)
+
 ### Build SHA: (latest)
 
 ---
