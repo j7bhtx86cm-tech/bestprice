@@ -142,6 +142,14 @@ PRODUCT_CORE_RULES = {
         (['печень минтая'], 'seafood.cod_liver'),
     ],
     
+    # Cod - Треска
+    'seafood.cod': [
+        (['треск', 'cod'], 'seafood.cod'),
+        (['филе спинки'], 'seafood.cod.fillet'),
+        (['филе'], 'seafood.cod.fillet'),
+        (['стейк'], 'seafood.cod.steak'),
+    ],
+    
     # Other fish - Другая рыба
     'seafood.herring': [
         (['сельд', 'herring', 'селедк'], 'seafood.herring'),
