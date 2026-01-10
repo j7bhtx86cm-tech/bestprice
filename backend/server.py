@@ -3450,6 +3450,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
             SearchLogger,
             check_seed_dict_match,  # NEW: seed_dict_rules support
             check_price_sanity,     # NEW: price sanity check
+            check_category_mismatch,  # P0 FIX: seafood vs meat
+            check_attribute_compatibility,  # P0 FIX: с хвостом vs без хвоста
         )
         
         # Initialize structured logger
