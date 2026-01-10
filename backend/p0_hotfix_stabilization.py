@@ -298,8 +298,18 @@ FORBIDDEN_CROSS_MATCHES = {
     'seafood.crab.natural': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],
     'seafood.crab_sticks': ['камчат', 'натур', 'king crab'],
     
-    # Кальмар vs птица/мясо
+    # Кальмар vs птица/мясо - CRITICAL
     'seafood.squid': ['курин', 'кура', 'chicken', 'цыпл', 'индейк', 'утк', 'гус', 'говядин', 'свинин', 'баранин'],
+    
+    # Кальмар: без кожи vs с хитиновой пластиной - CRITICAL
+    'seafood.squid.cleaned': ['хитинов', 'с кожей', 'нечищен'],
+    'seafood.squid.uncleaned': ['без кож', 'чищен', 'филе без'],
+    
+    # Креветки: с хвостом vs без хвоста - CRITICAL
+    'seafood.shrimp.tail_on': ['без хвост', 'без голов и хвост', 'очищен полност', 'хвосты удален'],
+    'seafood.shrimp.tail_off': ['с хвост', 'в панцир', 'неочищен'],
+    'seafood.shrimp.peeled': ['в панцир', 'неочищен', 'с головой'],
+    'seafood.shrimp.unpeeled': ['очищен', 'без панцир', 'без головы'],
     
     # Морепродукты vs мясо (any seafood should not match with meat)
     'seafood.shrimp': ['говядин', 'свинин', 'курин', 'chicken', 'баранин', 'ягнятин'],
@@ -322,9 +332,10 @@ FORBIDDEN_CROSS_MATCHES = {
     'meat.beef': ['свинин', 'pork', 'баранин', 'ягнятин'],
     'meat.beef.round': ['свинин', 'pork', 'баранин', 'ягнятин'],
     
-    # Chicken should not match with other meats in cuts context
-    'meat.chicken.thigh': ['говядин', 'свинин', 'баранин', 'тазобедр'],  # тазобедренный is beef/pork, not chicken!
-    'meat.chicken.breast': ['говядин', 'свинин', 'баранин'],
+    # Chicken should not match with other meats or seafood
+    'meat.chicken': ['кальмар', 'squid', 'креветк', 'shrimp', 'лосос', 'семг', 'рыб'],
+    'meat.chicken.thigh': ['говядин', 'свинин', 'баранин', 'тазобедр', 'кальмар', 'squid'],
+    'meat.chicken.breast': ['говядин', 'свинин', 'баранин', 'кальмар', 'squid'],
 }
 
 
