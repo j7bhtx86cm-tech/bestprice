@@ -588,7 +588,8 @@ def check_attribute_compatibility(reference_name: str, candidate_name: str) -> T
         # Shrimp attributes - tail
         ('с хвост', 'без хвост', 'tail'),
         ('без хвост', 'с хвост', 'tail'),
-        ('с хвост', 'очищен полност', 'tail'),  # Полностью очищенные = без хвоста
+        ('с хвост', 'очищенные полностью', 'tail'),  # Полностью очищенные = без хвоста
+        ('с хвост', 'полностью очищен', 'tail'),
         ('с хвост', 'хвосты удален', 'tail'),
         
         # Shrimp attributes - peeled/shell
