@@ -4109,25 +4109,52 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         logger.info(f"   Supplier ID: {supplier_id}")
         logger.info(f"   Pack penalty: {winner.get('_pack_score_penalty', 0)}")
         
-        # Calculate match_percent with STRICT CLAMP 0..100 and penalties
-        # New scoring logic (без fallback bonus)
-        base_score = 60  # Base for any match
+        # ==================== IMPROVED MATCH_PERCENT CALCULATION ====================
+        # Updated scoring logic with name similarity for more accurate percentages
+        # Target: 95%+ for excellent matches, 90%+ for good matches
         
-        # Product core bonus (strict match only)
-        if winner.get('product_core_id') == ref_product_core:
-            base_score += 20  # Perfect core match
-        
-        # Guards bonus (passed forbidden + anchors)
-        base_score += 10
-        
-        # Pack penalty
-        pack_penalty = winner.get('_pack_score_penalty', 0)
-        
-        # Brand bonus (if brand_critical and matched)
-        if brand_critical and winner.get('brand_id') == brand_id:
-            base_score += 10
-        
-        match_percent = max(0, min(100, base_score - pack_penalty))
+        # Use prelim_match_percent if stick_with_favorite was triggered
+        if winner.get('_stick_with_favorite'):
+            match_percent = 100  # Original favorite = 100% match
+        else:
+            # Calculate actual name similarity using fuzzy matching
+            from rapidfuzz import fuzz
+            
+            winner_name = (winner.get('name_raw') or '').lower()
+            ref_name_lower = reference_name.lower()
+            
+            # Name similarity (0-100)
+            name_similarity = fuzz.token_set_ratio(ref_name_lower, winner_name)
+            
+            # Base scoring breakdown:
+            # - Name similarity: 50% weight (0-50 points)
+            # - Product core match: 25 points
+            # - Guards passed: 15 points  
+            # - Brand match: 10 points (if brand_critical)
+            
+            base_score = 0
+            
+            # Name similarity contribution (50% of score)
+            base_score += (name_similarity / 100) * 50
+            
+            # Product core bonus (25 points for exact match)
+            if winner.get('product_core_id') == ref_product_core:
+                base_score += 25
+            
+            # Guards bonus (15 points for passing all guards)
+            base_score += 15
+            
+            # Brand bonus (10 points if brand_critical and matched)
+            if brand_critical and winner.get('brand_id') == brand_id:
+                base_score += 10
+            
+            # Pack penalty
+            pack_penalty = winner.get('_pack_score_penalty', 0)
+            
+            match_percent = max(0, min(100, int(base_score - pack_penalty)))
+            
+            logger.info(f"   📊 Match score breakdown: name_sim={name_similarity}%, core_match={winner.get('product_core_id') == ref_product_core}, brand_match={winner.get('brand_id') == brand_id if brand_critical else 'N/A'}")
+            logger.info(f"   📊 Final match_percent: {match_percent}%")
         
         # P0.5: Calculate actual total_cost with min_order_qty
         min_order_qty = winner.get('min_order_qty', 1) or 1
