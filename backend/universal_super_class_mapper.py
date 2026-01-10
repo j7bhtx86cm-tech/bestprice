@@ -161,6 +161,32 @@ def detect_super_class(product_name, min_confidence=0.3):
     # DIRECT MAPPINGS - Check these FIRST before guard rules
     # These have highest priority for specific product types
     direct_map_priority = {
+        # === SEAFOOD FILLETS (HIGHEST PRIORITY - prevent 'филе' → meat) ===
+        # Кальмар с филе должен быть seafood, не meat!
+        'кальмар филе': 'seafood.squid',
+        'кальмар командорский': 'seafood.squid',
+        'кальмар командор': 'seafood.squid',
+        'кальмар': 'seafood.squid',
+        
+        'лосось филе': 'seafood.salmon',
+        'семга филе': 'seafood.salmon',
+        'семг филе': 'seafood.salmon',
+        'форель филе': 'seafood.trout',
+        'сибас филе': 'seafood.seabass',
+        'дорадо филе': 'seafood.dorado',
+        'тунец филе': 'seafood.tuna',
+        'минтай филе': 'seafood.pollock',
+        'треска филе': 'seafood.cod',
+        'палтус филе': 'seafood.halibut',
+        'судак филе': 'seafood.pike_perch',
+        'окунь филе': 'seafood.perch',
+        'тилапия филе': 'seafood.tilapia',
+        'пангасиус филе': 'seafood.pangasius',
+        
+        # Рыба филе - generic fish fillet
+        'рыба филе': 'seafood.fish',
+        'рыбное филе': 'seafood.fish',
+        
         # === MEAT CUTS (HIGHEST PRIORITY - prevent false matches) ===
         # "внутренняя часть" contains "нут" which triggers chickpeas - WRONG!
         'говядина внутрен': 'meat.beef.round',
