@@ -199,6 +199,177 @@ class TestRequiredAnchorsWithForbidden:
             f"FAIL: Chicken should not pass for squid category"
 
 
+class TestSeafoodClassification:
+    """
+    CRITICAL: Tests for seafood classification to prevent regression.
+    
+    These tests cover specific items that had classification issues:
+    - Тюрбо (Turbot) - must be seafood.turbot
+    - Печень трески (Cod Liver) - must be seafood.cod_liver
+    - Филе трески Borealis (Cod Fillet Borealis) - must be seafood.cod
+    - Лангустины (Langoustines) - must be seafood.langoustine
+    """
+    
+    def test_turbot_classification(self):
+        """CRITICAL: Тюрбо должен классифицироваться как seafood.turbot"""
+        from universal_super_class_mapper import detect_super_class
+        
+        turbot_products = [
+            "Тюрбо целый 1-2 кг с/м",
+            "ТЮРБО филе с/м 200г",
+            "Тюрбо свежий охлажденный",
+            "Turbot whole 1kg",
+        ]
+        
+        for product in turbot_products:
+            super_class, confidence = detect_super_class(product)
+            assert super_class is not None, f"FAIL: '{product}' has no super_class"
+            assert super_class.startswith('seafood'), \
+                f"FAIL: '{product}' должен быть seafood, но получили '{super_class}'"
+            assert confidence >= 0.8, f"FAIL: Confidence too low for '{product}': {confidence}"
+            print(f"✅ Turbot: '{product[:40]}' → {super_class} (conf: {confidence:.2f})")
+    
+    def test_cod_liver_classification(self):
+        """CRITICAL: Печень трески должна классифицироваться как seafood.cod_liver"""
+        from universal_super_class_mapper import detect_super_class
+        
+        cod_liver_products = [
+            "Печень трески натуральная 200г",
+            "ПЕЧЕНЬ ТРЕСКИ консервированная",
+            "печень трески в масле 250г",
+            "Cod liver in oil 200g",
+        ]
+        
+        for product in cod_liver_products:
+            super_class, confidence = detect_super_class(product)
+            assert super_class is not None, f"FAIL: '{product}' has no super_class"
+            assert super_class.startswith('seafood'), \
+                f"FAIL: '{product}' должен быть seafood, но получили '{super_class}'"
+            print(f"✅ Cod Liver: '{product[:40]}' → {super_class} (conf: {confidence:.2f})")
+    
+    def test_cod_fillet_borealis_classification(self):
+        """CRITICAL: Филе трески Borealis должно классифицироваться как seafood.cod"""
+        from universal_super_class_mapper import detect_super_class
+        
+        cod_fillet_products = [
+            "Филе Спинки Трески Borealis с/м 1кг",
+            "Филе трески Borealis порционное",
+            "BOREALIS филе трески с/м вес",
+            "Треска филе спинки Borealis",
+            "Филе трески без кожи",
+        ]
+        
+        for product in cod_fillet_products:
+            super_class, confidence = detect_super_class(product)
+            assert super_class is not None, f"FAIL: '{product}' has no super_class"
+            assert super_class.startswith('seafood'), \
+                f"FAIL: '{product}' должен быть seafood, но получили '{super_class}'"
+            # Check it's specifically cod, not generic seafood
+            assert 'cod' in super_class.lower() or 'треск' in product.lower(), \
+                f"FAIL: '{product}' should be cod category, got '{super_class}'"
+            print(f"✅ Cod Fillet Borealis: '{product[:40]}' → {super_class} (conf: {confidence:.2f})")
+    
+    def test_langoustine_classification(self):
+        """CRITICAL: Лангустины должны классифицироваться как seafood.langoustine"""
+        from universal_super_class_mapper import detect_super_class
+        
+        langoustine_products = [
+            "Лангустины L1 10/20 с/м Аргентина",
+            "Креветки аргентинские (Лангустины) дикие с/г с/м L1 10/20",
+            "ЛАНГ-УСТИНЫ L1 (10/20 шт/кг) с/г в панцире с/м 2 кг",
+            "Langoustines L1 frozen 2kg",
+        ]
+        
+        for product in langoustine_products:
+            super_class, confidence = detect_super_class(product)
+            assert super_class is not None, f"FAIL: '{product}' has no super_class"
+            assert super_class.startswith('seafood'), \
+                f"FAIL: '{product}' должен быть seafood, но получили '{super_class}'"
+            print(f"✅ Langoustine: '{product[:40]}' → {super_class} (conf: {confidence:.2f})")
+    
+    def test_seafood_must_not_match_meat(self):
+        """Seafood items must NEVER be classified as meat"""
+        from universal_super_class_mapper import detect_super_class
+        
+        seafood_items = [
+            "Тюрбо целый 1кг",
+            "Печень трески 200г",
+            "Филе трески Borealis",
+            "Лангустины L1",
+            "Кальмар филе",
+            "Креветки тигровые",
+        ]
+        
+        for item in seafood_items:
+            super_class, _ = detect_super_class(item)
+            if super_class:
+                assert not super_class.startswith('meat'), \
+                    f"CRITICAL FAIL: Seafood '{item}' classified as meat: '{super_class}'"
+            print(f"✅ '{item[:30]}' NOT classified as meat")
+    
+    def test_category_mismatch_seafood_vs_meat(self):
+        """Test that seafood and meat categories are properly rejected"""
+        from p0_hotfix_stabilization import check_category_mismatch
+        
+        # Seafood items should NOT match meat candidates
+        test_cases = [
+            ("Тюрбо филе с/м", "Курица грудка", "seafood.turbot"),
+            ("Печень трески", "Говядина фарш", "seafood.cod_liver"),
+            ("Филе трески Borealis", "Свинина корейка", "seafood.cod"),
+            ("Лангустины L1", "Утка целая", "seafood.langoustine"),
+        ]
+        
+        for reference, candidate, super_class in test_cases:
+            is_valid, reason = check_category_mismatch(reference, candidate, super_class)
+            assert not is_valid, \
+                f"FAIL: '{reference}' should NOT match '{candidate}', got valid={is_valid}"
+            print(f"✅ Rejected: '{reference[:20]}' vs '{candidate[:20]}' - {reason}")
+
+
+class TestSeafoodProductCore:
+    """Test product core classification for seafood items"""
+    
+    def test_turbot_product_core(self):
+        """Тюрбо должен иметь product_core seafood.turbot"""
+        from universal_super_class_mapper import detect_super_class
+        from product_core_classifier import detect_product_core
+        
+        product = "Тюрбо целый 1-2 кг с/м"
+        super_class, _ = detect_super_class(product)
+        product_core, confidence = detect_product_core(product, super_class)
+        
+        assert super_class is not None
+        assert super_class.startswith('seafood.turbot'), f"Got: {super_class}"
+        print(f"✅ Turbot: super_class={super_class}, product_core={product_core}")
+    
+    def test_cod_liver_product_core(self):
+        """Печень трески должна иметь product_core seafood.cod_liver"""
+        from universal_super_class_mapper import detect_super_class
+        from product_core_classifier import detect_product_core
+        
+        product = "Печень трески натуральная 200г"
+        super_class, _ = detect_super_class(product)
+        product_core, confidence = detect_product_core(product, super_class)
+        
+        assert super_class is not None
+        assert 'cod_liver' in super_class or 'cod_liver' in (product_core or ''), \
+            f"Got: super_class={super_class}, product_core={product_core}"
+        print(f"✅ Cod Liver: super_class={super_class}, product_core={product_core}")
+    
+    def test_cod_fillet_product_core(self):
+        """Филе трески должно иметь product_core seafood.cod"""
+        from universal_super_class_mapper import detect_super_class
+        from product_core_classifier import detect_product_core
+        
+        product = "Филе Спинки Трески Borealis с/м 1кг"
+        super_class, _ = detect_super_class(product)
+        product_core, confidence = detect_product_core(product, super_class)
+        
+        assert super_class is not None
+        assert 'cod' in super_class.lower(), f"Got: {super_class}"
+        print(f"✅ Cod Fillet: super_class={super_class}, product_core={product_core}")
+
+
 if __name__ == '__main__':
     print("=" * 60)
     print("P0 MATCHING FIXES - CRITICAL TESTS")
@@ -225,6 +396,23 @@ if __name__ == '__main__':
     test_forbidden.test_seafood_squid_has_meat_keywords()
     test_forbidden.test_meat_chicken_has_seafood_keywords()
     test_forbidden.test_keyword_lists_populated()
+    
+    # NEW: Run seafood classification tests
+    test_seafood = TestSeafoodClassification()
+    print("\n--- Seafood Classification Tests ---")
+    test_seafood.test_turbot_classification()
+    test_seafood.test_cod_liver_classification()
+    test_seafood.test_cod_fillet_borealis_classification()
+    test_seafood.test_langoustine_classification()
+    test_seafood.test_seafood_must_not_match_meat()
+    test_seafood.test_category_mismatch_seafood_vs_meat()
+    
+    # NEW: Run seafood product core tests
+    test_seafood_core = TestSeafoodProductCore()
+    print("\n--- Seafood Product Core Tests ---")
+    test_seafood_core.test_turbot_product_core()
+    test_seafood_core.test_cod_liver_product_core()
+    test_seafood_core.test_cod_fillet_product_core()
     
     print("\n" + "=" * 60)
     print("ALL P0 MATCHING TESTS PASSED!")

@@ -410,6 +410,19 @@ class PricelistImporter:
         }
         self.db.pricelists.insert_one(pricelist_meta)
         
+        # P0.7: Auto-reclassify imported items for quality control
+        # This ensures newly imported items have correct classifications
+        try:
+            from auto_reclassifier import reclassify_items
+            reclassified, reclass_errors = reclassify_items(self.db, limit=None)
+            stats['reclassified'] = reclassified
+            stats['reclassification_errors'] = reclass_errors
+            if reclassified > 0:
+                print(f"🔄 Переклассифицировано товаров: {reclassified}")
+        except Exception as e:
+            print(f"⚠️  Ошибка переклассификации: {e}")
+            stats['reclassification_errors'] = str(e)
+        
         # Print summary
         print(f"\n✅ Результат импорта:")
         print(f"   Создано: {stats['created']}")
