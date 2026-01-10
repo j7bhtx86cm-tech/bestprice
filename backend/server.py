@@ -2835,6 +2835,7 @@ class SelectedOffer(BaseModel):
     total_cost: Optional[float] = None  # Total cost for required volume
     units_needed: Optional[float] = None  # How many units needed for required volume
     score: float
+    match_percent: Optional[float] = None  # Alias for score (UI compatibility)
     # P0: New fields for unit normalization
     selected_pack_base_qty: Optional[float] = None  # e.g., 5 (in grams)
     selected_pack_unit: Optional[str] = None  # e.g., "g"
@@ -2845,6 +2846,7 @@ class SelectedOffer(BaseModel):
     # P0.5: min_order_qty support
     min_order_qty: Optional[int] = None
     actual_qty: Optional[float] = None
+    stick_with_favorite: Optional[bool] = None  # P0: Indicates low match fallback
 
 class SelectOfferResponse(BaseModel):
     selected_offer: Optional[SelectedOffer] = None
