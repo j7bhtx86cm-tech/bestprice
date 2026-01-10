@@ -123,6 +123,50 @@ PRODUCT_CORE_RULES = {
         (['креветк', 'shrimp', 'prawn'], 'seafood.shrimp'),
     ],
     
+    # Turbot - Тюрбо (камбалообразные)
+    'seafood.turbot': [
+        (['тюрбо', 'turbot'], 'seafood.turbot'),
+        (['целая', 'whole'], 'seafood.turbot.whole'),
+        (['филе', 'fillet'], 'seafood.turbot.fillet'),
+    ],
+    
+    # Flatfish - Камбала, палтус
+    'seafood.flatfish': [
+        (['камбала', 'flounder'], 'seafood.flatfish'),
+        (['палтус', 'halibut'], 'seafood.halibut'),
+    ],
+    
+    # Cod liver - Печень трески
+    'seafood.cod_liver': [
+        (['печень треск', 'cod liver'], 'seafood.cod_liver'),
+        (['печень минтая'], 'seafood.cod_liver'),
+    ],
+    
+    # Other fish - Другая рыба
+    'seafood.herring': [
+        (['сельд', 'herring', 'селедк'], 'seafood.herring'),
+    ],
+    
+    'seafood.mackerel': [
+        (['скумбри', 'mackerel'], 'seafood.mackerel'),
+    ],
+    
+    'seafood.sprat': [
+        (['шпрот', 'sprat', 'килька'], 'seafood.sprat'),
+    ],
+    
+    'seafood.navaga': [
+        (['навага'], 'seafood.navaga'),
+    ],
+    
+    'seafood.eel': [
+        (['угорь', 'eel', 'унаги'], 'seafood.eel'),
+    ],
+    
+    'seafood.caviar': [
+        (['икра', 'caviar'], 'seafood.caviar'),
+    ],
+    
     # Crab - CRITICAL: Separate natural from imitation
     'seafood.crab': [
         (['камчат', 'kamchatka'], 'seafood.crab.kamchatka'),
