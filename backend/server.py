@@ -4039,8 +4039,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 winner['_match_below_threshold'] = True
         
         # HARD RULE: product_core MUST match (P1 CRITICAL)
+        # EXCEPTION: If stick_with_favorite is active, skip this check (original item is trusted)
         winner_product_core = winner.get('product_core_id')
-        if winner_product_core != ref_product_core:
+        if winner_product_core != ref_product_core and not winner.get('_stick_with_favorite'):
             logger.error(f"❌ CORE_MISMATCH: ref={ref_product_core} vs winner={winner_product_core}")
             logger.error(f"   Winner name: {winner.get('name_raw', '')[:60]}")
             search_logger.set_outcome('not_found', 'CORE_MISMATCH')
@@ -4068,6 +4069,8 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                     }
                 }
             )
+        elif winner.get('_stick_with_favorite') and winner_product_core != ref_product_core:
+            logger.info(f"   ⚠️ CORE_MISMATCH bypassed for stick_with_favorite (trusted original item)")
         
         # ==================== P0 FIX: STICK WITH FAVORITE LOGIC ====================
         # If the found winner is MORE EXPENSIVE than the original favorite item,
