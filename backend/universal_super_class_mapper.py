@@ -168,6 +168,35 @@ def detect_super_class(product_name, min_confidence=0.3):
         'кальмар командор': 'seafood.squid',
         'кальмар': 'seafood.squid',
         
+        # === FLATFISH (тюрбо, камбала, палтус) ===
+        'тюрбо': 'seafood.turbot',
+        'turbot': 'seafood.turbot',
+        'камбала': 'seafood.flatfish',
+        'flounder': 'seafood.flatfish',
+        'морской язык': 'seafood.sole',
+        'sole': 'seafood.sole',
+        
+        # === COD LIVER & FISH LIVER (печень трески) ===
+        'печень треск': 'seafood.cod_liver',
+        'печень минтая': 'seafood.cod_liver',
+        'cod liver': 'seafood.cod_liver',
+        
+        # === OTHER SPECIFIC SEAFOOD ===
+        'навага': 'seafood.navaga',
+        'корюшка': 'seafood.smelt',
+        'мойва': 'seafood.capelin',
+        'сельдь': 'seafood.herring',
+        'селедка': 'seafood.herring',
+        'скумбрия': 'seafood.mackerel',
+        'ставрида': 'seafood.horse_mackerel',
+        'сардина': 'seafood.sardine',
+        'шпроты': 'seafood.sprat',
+        'килька': 'seafood.sprat',
+        'анчоус': 'seafood.anchovy',
+        'угорь': 'seafood.eel',
+        'унаги': 'seafood.eel',
+        'икра': 'seafood.caviar',
+        
         'лосось филе': 'seafood.salmon',
         'семга филе': 'seafood.salmon',
         'семг филе': 'seafood.salmon',
