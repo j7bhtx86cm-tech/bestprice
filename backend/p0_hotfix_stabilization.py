@@ -521,9 +521,10 @@ SEAFOOD_KEYWORDS = [
 ]
 
 # Meat/Poultry keywords - if ANY of these are in the reference, candidate must NOT contain seafood keywords
+# IMPORTANT: Use longer forms to avoid false positives (e.g., "аргентинские" contains "гус")
 MEAT_KEYWORDS = [
     'курин', 'кура', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер',
-    'индейк', 'turkey', 'утк', 'duck', 'утин', 'гус', 'goose', 'гусин',
+    'индейк', 'turkey', 'утка', 'утки', 'duck', 'утин', 'гусь', 'гуся', 'гусин', 'goose',  # Fixed: "гус" -> "гусь", "гуся", "гусин"
     'говядин', 'beef', 'говяж', 'телятин', 'veal',
     'свинин', 'pork', 'свиной', 'свиная',
     'баранин', 'lamb', 'mutton', 'ягнятин', 'ягнёнок',
