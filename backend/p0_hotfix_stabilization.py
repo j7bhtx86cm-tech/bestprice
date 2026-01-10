@@ -292,18 +292,29 @@ REQUIRED_ANCHORS = {
 }
 
 # FORBIDDEN CROSS-MATCHES - эти пары НИКОГДА не должны матчиться
+# CRITICAL P0 FIX: Полная блокировка SEAFOOD vs MEAT в обе стороны
 FORBIDDEN_CROSS_MATCHES = {
     # Натуральный краб vs имитация
     'seafood.crab.kamchatka': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],
     'seafood.crab.natural': ['палочк', 'сурими', 'surimi', 'имит', 'снежн'],
     'seafood.crab_sticks': ['камчат', 'натур', 'king crab'],
     
-    # Кальмар vs птица/мясо - CRITICAL
-    'seafood.squid': ['курин', 'кура', 'chicken', 'цыпл', 'индейк', 'утк', 'гус', 'говядин', 'свинин', 'баранин'],
+    # ==================== SEAFOOD vs MEAT - ABSOLUTE BLOCK ====================
+    # Кальмар НИКОГДА не должен матчиться с мясом птицы или другим мясом
+    'seafood.squid': ['курин', 'кура', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер', 
+                      'индейк', 'turkey', 'утк', 'duck', 'гус', 'goose',
+                      'говядин', 'beef', 'свинин', 'pork', 'баранин', 'lamb', 'ягнятин'],
+    'seafood.squid.fillet': ['курин', 'кура', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер', 
+                             'индейк', 'утк', 'гус', 'говядин', 'свинин', 'баранин'],
     
     # Кальмар: без кожи vs с хитиновой пластиной - CRITICAL
     'seafood.squid.cleaned': ['хитинов', 'с кожей', 'нечищен'],
     'seafood.squid.uncleaned': ['без кож', 'чищен', 'филе без'],
+    
+    # Креветки - ПОЛНАЯ блокировка с мясом
+    'seafood.shrimp': ['курин', 'кура', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер',
+                       'индейк', 'turkey', 'утк', 'duck', 'гус', 'goose',
+                       'говядин', 'beef', 'свинин', 'pork', 'баранин', 'lamb', 'ягнятин'],
     
     # Креветки: с хвостом vs без хвоста - CRITICAL
     'seafood.shrimp.tail_on': ['без хвост', 'без голов и хвост', 'очищен полност', 'хвосты удален'],
@@ -311,31 +322,51 @@ FORBIDDEN_CROSS_MATCHES = {
     'seafood.shrimp.peeled': ['в панцир', 'неочищен', 'с головой'],
     'seafood.shrimp.unpeeled': ['очищен', 'без панцир', 'без головы'],
     
-    # Морепродукты vs мясо (any seafood should not match with meat)
-    'seafood.shrimp': ['говядин', 'свинин', 'курин', 'chicken', 'баранин', 'ягнятин'],
-    'seafood.salmon': ['говядин', 'свинин', 'курин', 'chicken', 'баранин', 'ягнятин'],
-    'seafood.fillet': ['курин', 'chicken', 'цыпл'],  # Fish fillet vs chicken
+    # Лосось и другая рыба - полная блокировка с мясом
+    'seafood.salmon': ['курин', 'кура', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер',
+                       'индейк', 'turkey', 'утк', 'duck', 'гус', 'goose',
+                       'говядин', 'beef', 'свинин', 'pork', 'баранин', 'lamb', 'ягнятин'],
+    'seafood.fillet': ['курин', 'кура', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер',
+                       'индейк', 'turkey', 'утк', 'duck', 'гус', 'goose',
+                       'говядин', 'beef', 'свинин', 'pork', 'баранин', 'lamb', 'ягнятин'],
+    'seafood.pollock': ['курин', 'кура', 'курица', 'chicken', 'говядин', 'свинин', 'баранин'],
+    'seafood.seabass': ['курин', 'кура', 'курица', 'chicken', 'говядин', 'свинин', 'баранин'],
+    'seafood.crab': ['курин', 'кура', 'курица', 'chicken', 'говядин', 'свинин', 'баранин'],
     
-    # CRITICAL: Different meat types should NOT cross-match
+    # ==================== MEAT vs SEAFOOD - ОБРАТНАЯ БЛОКИРОВКА ====================
+    # Курица НИКОГДА не должна матчиться с морепродуктами
+    'meat.chicken': ['кальмар', 'squid', 'calamari', 'креветк', 'shrimp', 'prawn',
+                     'лосос', 'salmon', 'семг', 'форел', 'trout', 'сибас', 'seabass',
+                     'минтай', 'pollock', 'краб', 'crab', 'мидии', 'mussel', 'устриц', 'oyster',
+                     'осьминог', 'octopus', 'рыб', 'fish', 'тунец', 'tuna', 'дорад'],
+    'meat.chicken.thigh': ['кальмар', 'squid', 'креветк', 'shrimp', 'лосос', 'семг', 'рыб',
+                           'говядин', 'свинин', 'баранин'],
+    'meat.chicken.breast': ['кальмар', 'squid', 'креветк', 'shrimp', 'лосос', 'семг', 'рыб',
+                            'говядин', 'свинин', 'баранин'],
+    'meat.chicken.fillet': ['кальмар', 'squid', 'креветк', 'shrimp', 'лосос', 'семг', 'рыб'],
+    
+    # Индейка vs морепродукты
+    'meat.turkey': ['кальмар', 'squid', 'креветк', 'shrimp', 'лосос', 'семг', 'рыб', 'краб'],
+    
+    # Утка vs морепродукты  
+    'meat.duck': ['кальмар', 'squid', 'креветк', 'shrimp', 'лосос', 'семг', 'рыб', 'краб'],
+    
+    # ==================== MEAT TYPE CROSS-MATCHES ====================
     # Lamb/Mutton should not match with Pork
-    'meat.lamb': ['свинин', 'pork', 'свиной', 'свиная'],
-    'meat.lamb.rack': ['свинин', 'pork', 'свиной', 'свиная'],
-    'meat.lamb.leg': ['свинин', 'pork', 'свиной', 'свиная'],
-    'meat.mutton': ['свинин', 'pork', 'свиной', 'свиная'],
+    'meat.lamb': ['свинин', 'pork', 'свиной', 'свиная', 'кальмар', 'squid', 'креветк', 'рыб'],
+    'meat.lamb.rack': ['свинин', 'pork', 'свиной', 'свиная', 'кальмар', 'squid', 'креветк'],
+    'meat.lamb.leg': ['свинин', 'pork', 'свиной', 'свиная', 'кальмар', 'squid', 'креветк'],
+    'meat.mutton': ['свинин', 'pork', 'свиной', 'свиная', 'кальмар', 'squid', 'креветк', 'рыб'],
     
-    # Pork should not match with Lamb
-    'meat.pork': ['баранин', 'ягнятин', 'lamb', 'mutton'],
-    'meat.pork.loin': ['баранин', 'ягнятин', 'lamb', 'mutton'],
-    'meat.pork.leg': ['баранин', 'ягнятин', 'lamb', 'mutton'],
+    # Pork should not match with Lamb or Seafood
+    'meat.pork': ['баранин', 'ягнятин', 'lamb', 'mutton', 'кальмар', 'squid', 'креветк', 'рыб'],
+    'meat.pork.loin': ['баранин', 'ягнятин', 'lamb', 'mutton', 'кальмар', 'squid', 'креветк'],
+    'meat.pork.leg': ['баранин', 'ягнятин', 'lamb', 'mutton', 'кальмар', 'squid', 'креветк'],
     
-    # Beef should not match with Pork or Lamb
-    'meat.beef': ['свинин', 'pork', 'баранин', 'ягнятин'],
-    'meat.beef.round': ['свинин', 'pork', 'баранин', 'ягнятин'],
-    
-    # Chicken should not match with other meats or seafood
-    'meat.chicken': ['кальмар', 'squid', 'креветк', 'shrimp', 'лосос', 'семг', 'рыб'],
-    'meat.chicken.thigh': ['говядин', 'свинин', 'баранин', 'тазобедр', 'кальмар', 'squid'],
-    'meat.chicken.breast': ['говядин', 'свинин', 'баранин', 'кальмар', 'squid'],
+    # Beef should not match with Pork, Lamb or Seafood
+    'meat.beef': ['свинин', 'pork', 'баранин', 'ягнятин', 'кальмар', 'squid', 'креветк', 'рыб'],
+    'meat.beef.round': ['свинин', 'pork', 'баранин', 'ягнятин', 'кальмар', 'squid', 'креветк'],
+    'meat.beef.ribeye': ['свинин', 'pork', 'баранин', 'ягнятин', 'кальмар', 'squid', 'креветк'],
 }
 
 
