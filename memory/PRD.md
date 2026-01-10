@@ -7,12 +7,13 @@
 - Неверные матчи: "васаби" → "соль", "пшеничная мука" → "ржаная мука"
 - **FIXED (2026-01-10)**: "Кальмар" → "Курица" (КРИТИЧЕСКАЯ ошибка seafood vs meat)
 - **FIXED (2026-01-10)**: "Креветки с хвостом" → "Креветки без хвоста" (игнорирование атрибутов)
+- **FIXED (2026-01-10)**: Низкий match_percent (62%) принимался без предупреждения
 - Ошибки расчета: запрос "1 кг" удовлетворялся товаром "5 г"
 - Бессмысленные `match_percent` scores
 - **FIXED**: Дубли при повторной загрузке прайс-листов
 - **FIXED**: BestPrice не учитывал min_order_qty
 
-## Текущий статус: ✅ P0 CRITICAL MATCHING FIXES COMPLETE (2026-01-10)
+## Текущий статус: ✅ P0 CRITICAL MATCHING FIXES + THRESHOLDS COMPLETE (2026-01-10)
 
 ### Build SHA: (latest)
 
@@ -27,7 +28,7 @@
 - **Решение**: Новая функция `check_category_mismatch()` в `p0_hotfix_stabilization.py`
 - **SEAFOOD_KEYWORDS**: 51+ ключевых слов (кальмар, креветка, лосось, ...)
 - **MEAT_KEYWORDS**: 34+ ключевых слов (курица, говядина, свинина, ...)
-- **Тестирование**: 30/30 тестов прошли
+- **Тестирование**: 28/28 тестов прошли
 
 #### 2. Attribute Compatibility Guard ✅
 - **Проблема**: Креветки с хвостом матчились с креветками без хвоста
@@ -48,10 +49,37 @@
 - **Решение**: Изменено на `brand_critical=True` в `server.py` строка 2371
 - При добавлении в избранное товар по умолчанию строго привязан к бренду
 
+#### 5. Пороги сходства (95%/90%) ✅ NEW
+- **Проблема**: Система принимала любой match_percent без проверки порога
+- **Решение**: 
+  - `THRESHOLD_BRAND_CRITICAL = 95%` - для товаров с критичным брендом
+  - `THRESHOLD_BRAND_NOT_CRITICAL = 90%` - для остальных товаров
+- Если match_percent ниже порога → срабатывает "Stick with Favorite"
+
+#### 6. Stick with Favorite Logic ✅ NEW
+- **Проблема**: При низком совпадении система возвращала неподходящий товар
+- **Решение**: Если match_percent < threshold, система ищет и возвращает оригинальный товар из избранного
+- **3 стратегии поиска оригинала**:
+  1. По supplier_id + product_id (самый надёжный)
+  2. По exact name_raw match (fallback)
+  3. По name_norm prefix match (последняя надежда)
+- Оригинальный товар возвращается с `match_percent=100%` и `stick_with_favorite=True`
+
+#### 7. Улучшенная формула match_percent ✅ NEW
+- **Старая формула**: base_score=60 + core(20) + guards(10) + brand(10) = max 100, обычно 90
+- **Новая формула** (rapidfuzz):
+  - Name similarity (token_set_ratio): 50% веса (0-50 баллов)
+  - Product core match: 25 баллов
+  - Guards passed: 15 баллов
+  - Brand match: 10 баллов (если brand_critical)
+- Теперь match_percent отражает реальное качество совпадения
+
 ### Результаты тестирования (2026-01-10)
-- **Total tests**: 30
-- **Passed**: 30 (100%)
-- **API verification**: BestPrice для кальмара возвращает кальмар (не курицу!)
+- **Unit tests**: 28/28 passed
+- **API verification**: 
+  - Кальмар филе → Кальмар филе (оригинал, 100%) ✅
+  - Низкий match (62%) → Stick with favorite → 100% ✅
+  - Seafood не матчится с meat ✅
 
 ---
 
