@@ -3759,6 +3759,48 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                         available_brands_id=top_brands_id,
                         available_brands_text=top_brands_text
                     )
+                    
+                    # ==================== P0 FIX: BRAND NOT FOUND FALLBACK ====================
+                    # If brand is not found in database, fallback to product name matching
+                    # This handles cases where the brand is unique or not in the brand master
+                    
+                    if len(step2_guards) > 0:
+                        logger.warning(f"   🔄 BRAND_FALLBACK: Бренд '{brand_id}' не найден, ищем по названию товара...")
+                        
+                        # Extract product type from reference name (remove brand)
+                        ref_name_without_brand = reference_name.lower()
+                        # Remove brand from reference name for better matching
+                        if brand_id:
+                            ref_name_without_brand = ref_name_without_brand.replace(brand_id.lower(), '').strip()
+                        
+                        # Use rapidfuzz to find best matching candidates by name
+                        from rapidfuzz import fuzz
+                        
+                        brand_fallback_candidates = []
+                        for c in step2_guards:
+                            cand_name = c.get('name_raw', '').lower()
+                            # Calculate name similarity without brand
+                            cand_without_brand = cand_name
+                            if brand_id:
+                                cand_without_brand = cand_without_brand.replace(brand_id.lower(), '').strip()
+                            
+                            similarity = fuzz.token_set_ratio(ref_name_without_brand, cand_without_brand)
+                            
+                            # Accept if similarity >= 70%
+                            if similarity >= 70:
+                                c['_brand_fallback_score'] = similarity
+                                c['_brand_fallback'] = True
+                                brand_fallback_candidates.append(c)
+                        
+                        # Sort by similarity score
+                        brand_fallback_candidates.sort(key=lambda x: x.get('_brand_fallback_score', 0), reverse=True)
+                        
+                        logger.info(f"   После brand_fallback (name similarity >= 70%): {len(brand_fallback_candidates)}")
+                        search_logger.set_count('after_brand_fallback', len(brand_fallback_candidates))
+                        
+                        if brand_fallback_candidates:
+                            step3_brand = brand_fallback_candidates
+                            logger.info(f"   ✅ BRAND_FALLBACK успешно: найдено {len(step3_brand)} похожих товаров")
             
             search_logger.set_count('after_brand_filter', len(step3_brand))
         else:
