@@ -3955,21 +3955,29 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
         THRESHOLD_BRAND_CRITICAL = 95  # User requested: минимум 95% для brand_critical
         THRESHOLD_BRAND_NOT_CRITICAL = 90  # User requested: минимум 90% для brand_not_critical
         
-        # Calculate base match score for threshold check
-        prelim_base_score = 60  # Base
+        # Calculate actual name similarity for accurate threshold check
+        from rapidfuzz import fuzz
+        
+        winner_name = (winner.get('name_raw') or '').lower()
+        ref_name_lower = reference_name.lower()
+        name_similarity = fuzz.token_set_ratio(ref_name_lower, winner_name)
+        
+        # Calculate preliminary match score using new formula
+        # Name similarity: 50% weight, Core: 25 points, Guards: 15 points, Brand: 10 points
+        prelim_base_score = (name_similarity / 100) * 50  # Name similarity contribution
         if winner.get('product_core_id') == ref_product_core:
-            prelim_base_score += 20  # Core match
-        prelim_base_score += 10  # Guards passed
+            prelim_base_score += 25  # Core match
+        prelim_base_score += 15  # Guards passed
         if brand_critical and winner.get('brand_id') == brand_id:
             prelim_base_score += 10  # Brand match
         
         pack_penalty_check = winner.get('_pack_score_penalty', 0)
-        prelim_match_percent = max(0, min(100, prelim_base_score - pack_penalty_check))
+        prelim_match_percent = max(0, min(100, int(prelim_base_score - pack_penalty_check)))
         
         # Determine threshold based on brand_critical
         required_threshold = THRESHOLD_BRAND_CRITICAL if brand_critical else THRESHOLD_BRAND_NOT_CRITICAL
         
-        logger.info(f"   💯 Prelim match_percent: {prelim_match_percent}%, threshold: {required_threshold}% (brand_critical={brand_critical})")
+        logger.info(f"   💯 Match check: name_sim={name_similarity}%, prelim_match={prelim_match_percent}%, threshold={required_threshold}% (brand_critical={brand_critical})")
         
         # Check if match meets threshold
         if prelim_match_percent < required_threshold:
