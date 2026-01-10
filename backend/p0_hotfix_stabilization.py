@@ -501,6 +501,122 @@ def has_required_anchors(candidate_name: str, super_class: str, reference_name: 
     return True, ""
 
 
+# ==================== CATEGORY MISMATCH DETECTION ====================
+
+# Seafood keywords - if ANY of these are in the reference, candidate must NOT contain meat keywords
+SEAFOOD_KEYWORDS = [
+    'кальмар', 'squid', 'calamari', 'креветк', 'shrimp', 'prawn',
+    'лосос', 'salmon', 'семг', 'форел', 'trout', 'сибас', 'seabass',
+    'минтай', 'pollock', 'краб', 'crab', 'мидии', 'mussel', 'устриц', 'oyster',
+    'осьминог', 'octopus', 'тунец', 'tuna', 'дорад', 'dorado', 'треск', 'cod',
+    'морепродукт', 'seafood', 'рыб', 'fish', 'окунь', 'perch', 'судак', 'pike',
+    'карп', 'carp', 'щук', 'сёмг', 'горбуш', 'кижуч', 'нерк', 'чавыч',
+    'морской язык', 'sole', 'камбал', 'flounder', 'палтус', 'halibut'
+]
+
+# Meat/Poultry keywords - if ANY of these are in the reference, candidate must NOT contain seafood keywords
+MEAT_KEYWORDS = [
+    'курин', 'кура', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер',
+    'индейк', 'turkey', 'утк', 'duck', 'утин', 'гус', 'goose', 'гусин',
+    'говядин', 'beef', 'говяж', 'телятин', 'veal',
+    'свинин', 'pork', 'свиной', 'свиная',
+    'баранин', 'lamb', 'mutton', 'ягнятин', 'ягнёнок',
+    'оленин', 'venison', 'кролик', 'rabbit', 'крольчат'
+]
+
+
+def check_category_mismatch(reference_name: str, candidate_name: str, ref_super_class: str = None) -> Tuple[bool, str]:
+    """
+    CRITICAL P0 FIX: Check if candidate crosses major category boundaries.
+    
+    This function prevents absurd matches like:
+    - "Кальмар филе" → "КУРИЦА филе" (SEAFOOD vs MEAT)
+    - "Креветки с хвостом" → "Курица бедро" (SEAFOOD vs MEAT)
+    
+    Returns:
+        (is_valid, reason) - True if categories are compatible, False if cross-category mismatch
+    """
+    ref_lower = reference_name.lower()
+    cand_lower = candidate_name.lower()
+    
+    # Check if reference is SEAFOOD
+    ref_is_seafood = any(kw in ref_lower for kw in SEAFOOD_KEYWORDS)
+    
+    # Check if reference is MEAT  
+    ref_is_meat = any(kw in ref_lower for kw in MEAT_KEYWORDS)
+    
+    # Also use super_class if available
+    if ref_super_class:
+        if ref_super_class.startswith('seafood'):
+            ref_is_seafood = True
+        elif ref_super_class.startswith('meat'):
+            ref_is_meat = True
+    
+    # If reference is SEAFOOD, candidate must NOT contain meat keywords
+    if ref_is_seafood:
+        for meat_kw in MEAT_KEYWORDS:
+            if meat_kw in cand_lower:
+                return False, f"CATEGORY_MISMATCH:seafood_vs_meat:{meat_kw}"
+    
+    # If reference is MEAT, candidate must NOT contain seafood keywords
+    if ref_is_meat:
+        for seafood_kw in SEAFOOD_KEYWORDS:
+            if seafood_kw in cand_lower:
+                return False, f"CATEGORY_MISMATCH:meat_vs_seafood:{seafood_kw}"
+    
+    return True, ""
+
+
+def check_attribute_compatibility(reference_name: str, candidate_name: str) -> Tuple[bool, str]:
+    """
+    Check if candidate has compatible attributes with reference.
+    
+    Critical attribute pairs that must match:
+    - "с хвостом" ↔ "без хвоста" (shrimp)
+    - "очищенные" ↔ "неочищенные" (shrimp)
+    - "без кожи" ↔ "с кожей" (squid)
+    - "филе" ↔ "целый/тушка" (fish)
+    
+    Returns:
+        (is_compatible, reason) - True if attributes are compatible
+    """
+    ref_lower = reference_name.lower()
+    cand_lower = candidate_name.lower()
+    
+    # Critical attribute pairs (positive_attr, negative_attr, conflict_name)
+    ATTRIBUTE_PAIRS = [
+        # Shrimp attributes
+        ('с хвост', 'без хвост', 'tail'),
+        ('без хвост', 'с хвост', 'tail'),
+        ('очищен', 'неочищен', 'peeled'),
+        ('неочищен', 'очищен', 'peeled'),
+        ('в панцир', 'без панцир', 'shell'),
+        ('без панцир', 'в панцир', 'shell'),
+        ('с головой', 'без голов', 'head'),
+        ('без голов', 'с головой', 'head'),
+        
+        # Squid attributes
+        ('без кож', 'с кож', 'skin'),
+        ('с кож', 'без кож', 'skin'),
+        ('чищен', 'нечищен', 'cleaned'),
+        ('нечищен', 'чищен', 'cleaned'),
+        ('без хитин', 'с хитин', 'chitin'),
+        ('с хитин', 'без хитин', 'chitin'),
+        
+        # Fish attributes
+        ('филе', 'тушка', 'cut'),
+        ('филе', 'целый', 'cut'),
+        ('филе', 'непотрош', 'cut'),
+        ('стейк', 'филе', 'cut_type'),
+    ]
+    
+    for ref_attr, forbidden_attr, conflict_name in ATTRIBUTE_PAIRS:
+        if ref_attr in ref_lower and forbidden_attr in cand_lower:
+            return False, f"ATTRIBUTE_CONFLICT:{conflict_name}:{ref_attr}_vs_{forbidden_attr}"
+    
+    return True, ""
+
+
 # ==================== 3) IMPROVED PACK PARSING ====================
 
 def parse_pack_value(product_name: str) -> Optional[float]:
