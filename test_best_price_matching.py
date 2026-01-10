@@ -14,7 +14,7 @@ import json
 from typing import Dict, Optional, List
 
 # Backend URL from environment
-BACKEND_URL = "https://product-match-10.preview.emergentagent.com/api"
+BACKEND_URL = "https://matchmaster-22.preview.emergentagent.com/api"
 
 # Test credentials
 EMAIL = "customer@bestprice.ru"
