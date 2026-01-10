@@ -277,7 +277,7 @@ class TestSeafoodClassification:
             "Лангустины L1 10/20 с/м Аргентина",
             "Креветки аргентинские (Лангустины) дикие с/г с/м L1 10/20",
             "ЛАНГ-УСТИНЫ L1 (10/20 шт/кг) с/г в панцире с/м 2 кг",
-            "Langoustines L1 frozen 2kg",
+            "Langoustine L1 frozen 2kg",  # English variant
         ]
         
         for product in langoustine_products:
