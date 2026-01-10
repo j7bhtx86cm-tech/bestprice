@@ -187,6 +187,11 @@ def detect_super_class(product_name, min_confidence=0.3):
         'печень минтая': 'seafood.cod_liver',
         'cod liver': 'seafood.cod_liver',
         
+        # === LANGOUSTINES (лангустины) ===
+        'лангустин': 'seafood.langoustine',
+        'langoustine': 'seafood.langoustine',
+        'ланг-устин': 'seafood.langoustine',
+        
         # === OTHER SPECIFIC SEAFOOD ===
         'навага': 'seafood.navaga',
         'корюшка': 'seafood.smelt',
