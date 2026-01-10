@@ -1,0 +1,1087 @@
+{
+  "total_items": 7907,
+  "already_classified": 7578,
+  "unclassified": 329,
+  "newly_classified": 129,
+  "verified_correct": 2959,
+  "mismatches": 2263,
+  "coverage_improvement": "39.2%",
+  "new_classifications": [
+    {
+      "name": "НОЖ 180 мм прозрачный 1 упак/50 шт. ВЗЛП",
+      "category": "packaging.cutlery",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ШАМПУРЫ для шашлыка 3мм*20 см бамбук 100 штук/уп",
+      "category": "packaging.skewer",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ЛАНЧ-БОКС 1 секция черный LBS \"А\" 1 кор/100 шт.",
+      "category": "packaging.container",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Ежевика вес",
+      "category": "fruits.berry",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Укроп сушеный 1кг",
+      "category": "vegetables.greens",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Паста Том Ям 1кг",
+      "category": "condiments.curry_paste",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Мандарины Китай с веточкой",
+      "category": "fruits.orange",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Мандарины Турция",
+      "category": "fruits.orange",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ПАСТА ДЕСЕРТНАЯ концентрированная Joypaste ваниль мадагаскар",
+      "category": "condiments.paste",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ПАЛОЧКИ рыбные в панировке 5 кг, РОССИЯ",
+      "category": "seafood.fish_sticks",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ПОКРЫТИЕ молочное 5 кг,РОССИЯ (-С-)",
+      "category": "dairy",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "МИНИ-ПАН о шоколя замороженный Венуазин 25 г, DELIFRANCE, ФР",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ПАСТА соевая светлая Shiro Miso 1 кг, NANTONG, КИТАЙ",
+      "category": "condiments.miso",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "АППЕТАЙЗЕРЫ Моцарелла палочки в панировке 1 кг, COOK_ME, РОС",
+      "category": "dairy.cheese",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "АППЕТАЙЗЕРЫ Моцарелла палочки в панировке 1 кг, ALTI, РОССИЯ",
+      "category": "dairy.cheese",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ЧЕБУРЕКИ с курицей замороженные 5 кг, РОССИЯ",
+      "category": "ready_meals.cheburek",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ТОППИНГ ваниль 1 кг,ЗОЛОТАЯ КОЛИБРИ,РОССИЯ (-C-)",
+      "category": "dairy.cheese",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ТОППИНГ карамель 1 кг,ЗОЛОТАЯ КОЛИБРИ,РОССИЯ (-C-)",
+      "category": "dairy.cheese",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ТОППИНГ кокос 1 кг, ЗОЛОТАЯ КОЛИБРИ, РОССИЯ",
+      "category": "dairy.cheese",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ПАСТА кисло-сладкая Tom Yam 1 кг, THAI CHEFF, РОССИЯ",
+      "category": "condiments.curry_paste",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Грибное ассорти в маринаде LUTIK ст/б (314мл/0,280кг) упак К",
+      "category": "vegetables.mushroom",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Выдержаный хамон из утиной грудки La Medea (0,060 кг) упак.Р",
+      "category": "meat.prosciutto",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Хамон подкопченый из утиной грудки La Medea (0,060 кг) упак.",
+      "category": "meat.prosciutto",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Продукт из свинины цельно куск.с/в кат.А «Lombo» («Ломбо») S",
+      "category": "meat.prosciutto",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Продукт из мяса свинины цельнокусковый с/в кат.А Prosciutto ",
+      "category": "meat.prosciutto",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Фуа-гра утиное блок Edouard Artzner ж/б (0,200 кг)",
+      "category": "meat.duck",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Фуа-гра утиное цельное Edouard Artzner ст./б (0,180 кг)",
+      "category": "meat.duck",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Фуа-гра утиное \"Sud O Paris\" ж/б с ключом (0,200 кг)",
+      "category": "meat.duck",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Мясо утки грудка ( ~4,500 кг) упак.~ 16 кг МясКо",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Бедро классическое мясо ЦБ зам ~13кг/упак КЦ+Васильевская ПФ",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Голень зам мясо ЦБ ~13кг/упак КЦ 1010252065",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Полуфабрикат растительный замороженные Наггетсы зам (1,000 к",
+      "category": "dairy.cheese",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Наггетсы Классические п/ф сод.мясо ЦБ зам * 1,115 кг/упак (1",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Мясо ЦБ бедро бескостное б/к 2,000кг 16кг/упак Ленинград (51",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Полуфабрикат мучных изделий для корн-догов п/э 1,000кг 88071",
+      "category": "dairy.cheese",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Топинг \"Dolce-Rosa\" Лесная ягода (1,0 л/1 кг/1,075 кг) упак.",
+      "category": "fruits",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Ризотто с белыми грибами \"Ризо Галло\" (0,175 кг) кор. .",
+      "category": "vegetables.mushroom",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Паста сакеттини с курицей ЗАМ (0,500 кг) Соло фреско",
+      "category": "meat.chicken",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Лазанья яичная 0,500 кг Эника",
+      "category": "pasta",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Лавровый лист Экстра SpicExpert п/п (0,100кг/0,110кг)",
+      "category": "condiments.spice",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Горчичный порошок SpicExpert п/п (1,000кг)",
+      "category": "condiments.spice",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Спаржа зеленая с/м Ardo (1,000 кг/1,015 кг) кор. .",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Гуакамоле Cоус \"Guacamole mild\" заморож. пл./конт. (500 г) A",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Каштаны целые замороженные (1,000 кг) упак. . Китай Отгрузка",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Паста Tom Yam кисло-сладкая Aroy-D пл. бут. (1 кг/1,080 кг) ",
+      "category": "condiments.curry_paste",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Паста Tom Yam Aroy-D пл. бут. (0,400 кг/0,450 кг) кор. .",
+      "category": "condiments.curry_paste",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Паста соевая темная МИСО (1,000 кг) уп. .",
+      "category": "condiments.miso",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Пряник имбирный Мини \"Человечек\" (0,003гр х 250 /0,750 кг) у",
+      "category": "beverages.coffee",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Имбирный пряник расписной Ингосстрах (0,009гр х 100 /0,900 к",
+      "category": "beverages.coffee",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Сэндвич Фокачча с тунцом (8х185г/1,480 кг) Stars Coffee",
+      "category": "beverages.coffee",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Сэндвич «Фокачча с индейкой» (8х190г/1,520 кг) Stars Coffee",
+      "category": "meat.turkey",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "c/г в/п с/м 8/12 шт/кг c/м \"RISMA\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "c/г в/п с/м 13/15 шт/кг c/м \"RISMA\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "тигр. c/г в/п с/м 16/20 шт/кг c/м \"ANCHOR\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "тигр. c/г в/п с/м 16/20 шт/кг c/м \"RISMA\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "тигр. б/г в/п с/м 8/12 шт/ф c/м \"RISMA\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "тигр. б/г в/п с/м 13/15 шт/ф c/м \"RISMA\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "тигр. б/г в/п с/м 16/20 шт/ф c/м \"RISMA\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "тигр. б/г в/п с/м 21/25 шт/ф c/м \"ANCHOR\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Рулька задняя, с/м  ~0,5кг Степной край\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Мякоть бедра \"DORPER\" б/к, с/м  ~1,5кг., \"Мираторг\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Рулька с/м вес.~1,3 кг \"Мираторг\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Оковалок б/к, с/м, ~5кг \"Мираторг\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Оковалок б/к, с/м, ~5кг? \"FRIBOI\", Бразилия",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Кострец б/к, с/м, ~4кг  \"Мираторг\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Щека с/м вес. ~2,5кг \"Алдифуд\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Глазной мускул б/к\"Мираторг\"с/м ~2кг",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Кулачковые кости с/м",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Хвост бычий \"Мираторг\" с/м ~1кг",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Ножки задние б/к, с/м \"Мазайцево\" ~0,7кг",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ДИАФРАГМА ТОЛСТАЯ, с/м ~1кг",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ДИАФРАГМА ТОНКАЯ (inside), с/м ~1кг",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Перепел 180-200г с/м ~0,7кг \"Угличская пф\"",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Кур.голень н/к н/к с/м вес.\"Приосколье\" ~1кг",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Гриб белый целый ЭКСТРА (до 5 см), с/м, вес",
+      "category": "vegetables.mushroom",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Гриб белый целый ЭКСТРА, с/м, вес",
+      "category": "vegetables.mushroom",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Гриб белый целый, 1 сорт, с/м, вес",
+      "category": "vegetables.mushroom",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Гриб белый целый (до 8 см), с/м, вес",
+      "category": "vegetables.mushroom",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Гриб белый целый (до 8 см), с/м, вес",
+      "category": "vegetables.mushroom",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Гриб белый Кубик, с/м, вес",
+      "category": "vegetables.mushroom",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Моховик кубик с/м вес",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Опята целые с/м вес",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Спаржа зеленая, с/м, Китай",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Весенние овощи с/м вес. \"ПАН\"",
+      "category": "vegetables",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Крыжовник с/м",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Ежевика с/м вес., Китай",
+      "category": "fruits.berry",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Утин.грудка н/к с/к,с/м, 400+г \"MAGRET\"",
+      "category": "meat.duck",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Стейк \"Вегас Стрип\" ТМ Праймфудс",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Стейк из толстой диафрагмы ТМ Праймфудс",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Стейк «Флэнк» из пашины ТМ Праймфудс",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Стейк \"Паук\" ТМ Праймфудс",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Гёдза со свининой YOSHIMI 500г ВетИС",
+      "category": "meat.pork",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Наггетсы Оригинальные Мдм Халяль Замороженные 1,5кг, НДС 10%",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Паста Соевая Aka Miso Темная Китай 1кг",
+      "category": "condiments.miso",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Паста Соевая Shiro Miso Светлая Китай 1кг",
+      "category": "condiments.miso",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Говяжьи кости с/м ~20 кг/кор. Эталон",
+      "category": "meat.beef",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Говяжьи хвосты с/м инд. уп. ~2,5 кг ИП Юрков",
+      "category": "meat.beef",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Говяжьи хвосты с/м монолит ~20 кг/кор. МитВин",
+      "category": "meat.beef",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Говяжьи щеки зачищенные с/м в/у ~2 кг ~17 кг/кор. ВВВ",
+      "category": "meat.beef",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Говяжьи щеки зачищенные с/м в/у 1,5-2 кг ~20 кг/кор. Алди Фу",
+      "category": "meat.beef",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Сало свиное (шпик) б/ш с/м монолит ~25 кг/кор. ИП Иванов А.А",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Бедро ЦБ на кости с кожей п/ф с/м без хребта на подложке ~70",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Голень ЦБ п/ф с/м на подложке ~900 гр*10 шт ~9 кг/кор. Приос",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Печень ЦБ п/ф с/м на подложке ~0,7 кг ~8 кг/кор. Гринко (Окт",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Печень ЦБ п/ф с/м на подложке ~0,8 кг ~10 кг/кор. Приосколье",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Печень ЦБ п/ф с/м на подложке 0,800 гр ~11 кг/кор. ГОСТ 3165",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Сердце ЦБ п/ф с/м монолит ~15 кг/кор. Черкизово",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Сердце ЦБ п/ф с/м на подложке ~900 гр ~10 кг/кор. Приосколье",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ЦБ тушка 1 сорт с/м инд. уп. ~1,8 кг*7 шт/кор. ~13 кг/кор. Г",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ЦБ тушка 1 сорт с/м инд. уп. 0,8-1,3 кг 12 кг/кор. ГОСТ 3196",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "ЦБ тушка 2 сорт с/м инд. уп. 0,9 кг 12,6 кг/кор. ГОСТ 31962-",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Перепелка тушка 1 сорт с/м Премиум 180-200+гр на подложке ~0",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Кролик печень с/м в/у ~700 гр ~7 кг/кор. Мазайцево",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Кролик тушка с/м в/у ~1 кг ~7 кг/кор. Русский кролик",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Бастурма из говядины с/в в/у 200-300 гр Останкино ОМПК",
+      "category": "meat.beef",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Сало (шпик) соленое с мясной прослойкой в/у 4 см+ ~1 кг Мега",
+      "category": "bakery.pastry",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Суджук из говядины с/к Элиста ~350 гр Ломоносовский МК",
+      "category": "meat.beef",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Морской коктейль (ассорти из морепродуктов) 8% с/м 400 гр (9",
+      "category": "seafood",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Салат из морской капусты Дальневосточный ж/б 220 гр (24) Вос",
+      "category": "vegetables.cabbage",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Шпроты в масле из балтийской кильки ж/б ключ 160 гр (24) ГОС",
+      "category": "canned.fish",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Шпроты в масле из балтийской салаки 240 гр ж/б ключ (24) Кры",
+      "category": "canned.fish",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Листья лайма с/м 500 гр (10)",
+      "category": "fruits.lemon",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Жимолость с/м",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Крыжовник с/м",
+      "category": "frozen",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Лайм целый с/м инд.уп. 0,5 кг (18) Olmish",
+      "category": "fruits.lemon",
+      "confidence": 0.85,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Блинчики с мясом конвертики 5 кг/кор. Морозко",
+      "category": "meat",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Мюсли фруктово-ореховые 250 гр (8) Домашнее Бистро",
+      "category": "fruits",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Мюсли фруктовые 250 гр (8) Домашнее Бистро",
+      "category": "fruits",
+      "confidence": 0.7,
+      "algorithm": "rule_based"
+    },
+    {
+      "name": "Ланч-бокс 1-х секционный белый 250*210*40 100 шт/уп.",
+      "category": "packaging.container",
+      "confidence": 0.95,
+      "algorithm": "rule_based"
+    }
+  ],
+  "mismatches_list": [
+    {
+      "name": "ГРЕЧКА ядрица 900 гр. Колобок",
+      "current": "staples.cereals",
+      "suggested": "staples.buckwheat",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС длиннозерный пропаренный 900 гр. Колобок",
+      "current": "staples.рис",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС для суши 25 кг. HANSEY",
+      "current": "staples.cereals",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС жасмин экстра 3 кг. Агро-Альянс",
+      "current": "staples.рис.жасмин",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС круглозерный (для суши) 1 сорт ГОСТ 25 кг. Агро-Альянс",
+      "current": "staples.рис",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС круглозерный (для суши) в/с 25 кг. Агро-Альянс",
+      "current": "staples.рис",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС пропаренный золотистый 1,5 кг. Агро-Альянс",
+      "current": "staples.cereals",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС супер басмати 3 кг. Агро-Альянс",
+      "current": "staples.cereals",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС тайский Жасмин 4,5 кг. Aroy-D",
+      "current": "staples.cereals",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС шлифованный 25 кг. SHINAKI",
+      "current": "staples.cereals",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "РИС шлифованный №8 ГОСТ 25 кг. Tamaki",
+      "current": "staples.cereals",
+      "suggested": "staples.rice",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАСЛО подсолнечное рафинированное 1 л. Sunny Gold",
+      "current": "oils.sunflower",
+      "suggested": "condiments.oil",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАСЛО подсолнечное рафинированное 5 л. Sunny Gold",
+      "current": "oils.sunflower",
+      "suggested": "condiments.oil",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАСЛО подсолнечное рафинированное дезодорированное выморожен",
+      "current": "oils.frying",
+      "suggested": "condiments.oil",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАСЛО подсолнечное рафинированное дезодорированное фритюрное",
+      "current": "oils.frying",
+      "suggested": "condiments.oil",
+      "confidence": 0.85
+    },
+    {
+      "name": "ГОРЧИЦА дижонская ст/б 270 гр. Бастион",
+      "current": "condiments.mustard",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "ГОРЧИЦА зернистая ведро 1 кг. UNI DAN",
+      "current": "condiments.mustard",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "ГОРЧИЦА зернистая ст/б 270 гр. UNI DAN",
+      "current": "condiments.mustard",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "ГОРЧИЦА русская ведро 1 кг. Бастион",
+      "current": "condiments.mustard",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "ГОРЧИЦА сладкая MILD 1,1 кг. PROVIL S.A.",
+      "current": "condiments.mustard",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "КЕТЧУП 800 гр. Heinz",
+      "current": "condiments.ketchup",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ домашний 25% 5 кг. Hellmann`s",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ настоящий 78% 5 л. Hellmann`s",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ Провансаль для запекания 67% ведро 10 л. Solpro",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ Провансаль классический 55% ведро 10 л. Solpro",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ Провансаль классический 60% ведро 9,7 кг. Solpro",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ Провансаль классический 67% ведро 3 л. Solpro",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ Провансаль классический 67% ведро 9,6 кг. Solpro",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ Провансаль классический 67% ведро 9.4 кг. (10л) Solp",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "МАЙОНЕЗ Провансаль классический 78% ведро 5,3 л. Solpro",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "РЕЛИШ из корнишонов 1,05 кг. PROVIL S.A.",
+      "current": "condiments.relish",
+      "suggested": "vegetables.cucumber",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС ананасовый с перцем чили 470 мл. Tamaki",
+      "current": "fruits.pineapple",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС барбекю пакет 1 кг. Heinz",
+      "current": "packaging",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС Бешамель сухая смесь 1,8 кг. Knorr",
+      "current": "ready_meals.mix",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС горчичный пакет 2 кг. Heinz",
+      "current": "packaging",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС грибной соевый 1,8 л. ТяньХэ QIANHE",
+      "current": "condiments.sauce",
+      "suggested": "vegetables.mushroom",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС Карри 2,3 кг. PROVIL S.A.",
+      "current": "condiments.curry",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС карри с ананасом 470 мл. Tamaki",
+      "current": "fruits.pineapple",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС майонезный легкий 28% пакет 2 кг. Heinz",
+      "current": "packaging",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС майонезный Легкий 30% 10 кг. SolPro",
+      "current": "condiments.mayo",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС Манго с перцем чили 470 гр. Tamaki",
+      "current": "fruits.mango",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС Манго Чили 850 гр. Genso",
+      "current": "fruits.mango",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС медово-горчичный 1 кг. Hellmann`s",
+      "current": "condiments.honey",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС медово-горчичный 470 мл. Tamaki",
+      "current": "condiments.honey",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС на основе растительных масел горчично-медовый дип-пот 2",
+      "current": "condiments.honey",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС на основе растительных масел сырный с Халапеньо дип-пот",
+      "current": "dairy.cheese",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС Наполи сухая смесь 1,8 кг. Knorr",
+      "current": "ready_meals.mix",
+      "suggested": "condiments.sauce",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС Релиш с огурцами и горчицей ст/б 350 гр. Kuhne",
+      "current": "condiments.sauce",
+      "suggested": "vegetables.cucumber",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС сладкий чили для курицы 1,8 л. Tamaki",
+      "current": "condiments.sauce",
+      "suggested": "meat.chicken",
+      "confidence": 0.85
+    },
+    {
+      "name": "СОУС сладкий чили для курицы Тайланд 920 мл. Aroy-D",
+      "current": "condiments.sauce",
+      "suggested": "meat.chicken",
+      "confidence": 0.85
+    }
+  ]
+}
