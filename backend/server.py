@@ -4332,6 +4332,7 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 total_cost=actual_total_cost,  # P0: Correct total_cost
                 units_needed=float(packs_needed) if packs_needed else 1.0,
                 score=match_percent,
+                match_percent=match_percent,  # P0: UI compatibility alias
                 # P0: New unit fields
                 selected_pack_base_qty=cand_pack.base_qty if cand_pack else None,
                 selected_pack_unit=cand_unit,
@@ -4341,7 +4342,9 @@ async def add_from_favorite_to_cart(request: AddFromFavoriteRequest, current_use
                 pack_explanation=pack_explanation,
                 # P0.5: min_order_qty support
                 min_order_qty=result.min_order_qty,
-                actual_qty=result.actual_qty
+                actual_qty=result.actual_qty,
+                # P0: Stick with favorite flag
+                stick_with_favorite=winner.get('_stick_with_favorite', False)
             )
             
             return AddFromFavoriteResponse(
