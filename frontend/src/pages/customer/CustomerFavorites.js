@@ -105,14 +105,19 @@ const FavoriteItemCard = ({ item, onRemove, onAddToCart, adding, isInCart }) => 
 
       {/* Add to cart */}
       <Button
-        className="w-full"
-        onClick={() => onAddToCart(item, qty)}
-        disabled={adding === item.id}
+        className={`w-full ${(isInCart || addedToCart) ? 'bg-green-600 hover:bg-green-700' : ''}`}
+        onClick={handleAddClick}
+        disabled={adding === item.id || isInCart || addedToCart}
       >
         {adding === item.id ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             Добавление...
+          </>
+        ) : (isInCart || addedToCart) ? (
+          <>
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            ✓ В корзине
           </>
         ) : (
           <>
