@@ -337,7 +337,7 @@ CLASSIFICATION_RULES = [
     {'pattern': r'кунжут|sesame', 'super_class': 'seeds.sesame', 'priority': 90},
     {'pattern': r'семена.*чиа|chia', 'super_class': 'seeds.chia', 'priority': 90},
     {'pattern': r'семена.*льна|flax|лён', 'super_class': 'seeds.flax', 'priority': 90},
-    {'pattern': r'\bмак\b(?!.*арон|.*фа)|poppy', 'super_class': 'seeds.poppy', 'priority': 90},
+    {'pattern': r'\bмак\b(?!.*изд)|poppy(?!.*seed)', 'super_class': 'seeds.poppy', 'priority': 90},
     {'pattern': r'миндал|almond', 'super_class': 'nuts.almonds', 'priority': 85},
     {'pattern': r'фисташ|pistachio', 'super_class': 'nuts.pistachios', 'priority': 85},
     {'pattern': r'грецк.*орех|walnut', 'super_class': 'nuts.walnuts', 'priority': 85},
