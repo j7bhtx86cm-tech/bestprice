@@ -326,6 +326,46 @@ async def clear_cart_endpoint(user_id: str = Query(..., description="ID поль
     return clear_cart(db, user_id)
 
 
+@router.put("/cart/{cart_item_id}", summary="Обновить количество")
+async def update_cart_item(
+    cart_item_id: str,
+    qty: float = Query(..., gt=0, description="Новое количество"),
+    user_id: str = Query(..., description="ID пользователя")
+):
+    """Обновляет количество товара в корзине"""
+    db = get_db()
+    
+    # Находим позицию
+    item = db.cart_items_v12.find_one({'cart_item_id': cart_item_id, 'user_id': user_id})
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="Позиция не найдена")
+    
+    # Обновляем
+    price = item.get('price', 0)
+    min_order_qty = item.get('min_order_qty', 1)
+    effective_qty = max(qty, min_order_qty)
+    line_total = effective_qty * price
+    
+    db.cart_items_v12.update_one(
+        {'cart_item_id': cart_item_id, 'user_id': user_id},
+        {'$set': {
+            'user_qty': qty,
+            'effective_qty': effective_qty,
+            'line_total': line_total,
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        'status': 'ok',
+        'message': 'Количество обновлено',
+        'qty': qty,
+        'effective_qty': effective_qty,
+        'line_total': line_total
+    }
+
+
 @router.delete("/cart/{cart_item_id}", summary="Удалить из корзины")
 async def remove_cart_item(
     cart_item_id: str,
