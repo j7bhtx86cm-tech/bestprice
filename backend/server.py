@@ -320,7 +320,7 @@ class RestaurantPosition(BaseModel):
 # Order Models
 class OrderItem(BaseModel):
     productName: str
-    article: str
+    article: Optional[str] = ""
     quantity: float
     price: float
     unit: str
