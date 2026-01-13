@@ -77,6 +77,8 @@ CLASSIFICATION_RULES = [
     # ===============================
     {'pattern': r'курица|куриц|chicken|цыплён|цыпл|бройлер', 'super_class': 'meat.chicken', 'priority': 95},
     {'pattern': r'говядин|beef|телятин|veal|мраморн.*(говяд|beef)', 'super_class': 'meat.beef', 'priority': 95},
+    {'pattern': r'колбас.*свин|свинин.*колбас', 'super_class': 'meat.sausage', 'priority': 98},
+    {'pattern': r'из.*свинин|свинин', 'super_class': 'meat.pork', 'priority': 96},
     {'pattern': r'свинин|pork|поросён', 'super_class': 'meat.pork', 'priority': 95},
     {'pattern': r'баранин|lamb|ягнёнок|ягнятин', 'super_class': 'meat.lamb', 'priority': 95},
     {'pattern': r'\bутка|\bутин|\bduck\b|\bутки\b|утятин', 'super_class': 'meat.duck', 'priority': 95},
