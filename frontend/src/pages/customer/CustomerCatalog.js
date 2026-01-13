@@ -253,18 +253,26 @@ export const CustomerCatalog = () => {
   useEffect(() => {
     if (user?.id) {
       fetchFavorites();
+      fetchCartCount();
     }
-  }, [fetchFavorites, user]);
+  }, [fetchFavorites, fetchCartCount, user]);
 
   // Add to favorites
   const handleAddToFavorites = async (item) => {
     const userId = getUserId();
     // Используем supplier_item id как reference
     const refId = item.reference_id || item.id;
-    await axios.post(`${API}/v12/favorites?user_id=${userId}&reference_id=${refId}`, {}, {
-      headers: getHeaders()
-    });
-    setFavorites(prev => new Set([...prev, refId]));
+    try {
+      const response = await axios.post(`${API}/v12/favorites?user_id=${userId}&reference_id=${refId}`, {}, {
+        headers: getHeaders()
+      });
+      if (response.data.status === 'ok' || response.data.status === 'duplicate') {
+        setFavorites(prev => new Set([...prev, refId]));
+      }
+    } catch (error) {
+      console.error('Failed to add to favorites:', error);
+      throw error;
+    }
   };
 
   // Add to cart
