@@ -79,7 +79,7 @@ CLASSIFICATION_RULES = [
     {'pattern': r'говядин|beef|телятин|veal|мраморн.*(говяд|beef)', 'super_class': 'meat.beef', 'priority': 95},
     {'pattern': r'свинин|pork|поросён', 'super_class': 'meat.pork', 'priority': 95},
     {'pattern': r'баранин|lamb|ягнёнок|ягнятин', 'super_class': 'meat.lamb', 'priority': 95},
-    {'pattern': r'утка|утин|duck', 'super_class': 'meat.duck', 'priority': 95},
+    {'pattern': r'утка|утин|\bduck\b|\bутки\b', 'super_class': 'meat.duck', 'priority': 95},
     {'pattern': r'индейк|turkey', 'super_class': 'meat.turkey', 'priority': 95},
     {'pattern': r'кролик|rabbit', 'super_class': 'meat.rabbit', 'priority': 95},
     {'pattern': r'оленин|venison|deer', 'super_class': 'meat.venison', 'priority': 95},
