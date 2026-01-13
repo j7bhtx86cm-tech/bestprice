@@ -240,17 +240,24 @@ export const CustomerCatalog = () => {
   // Add to favorites
   const handleAddToFavorites = async (item) => {
     const userId = getUserId();
-    await axios.post(`${API}/v12/favorites?user_id=${userId}&reference_id=${item.reference_id}`, {}, {
+    // Используем supplier_item id как reference
+    const refId = item.reference_id || item.id;
+    await axios.post(`${API}/v12/favorites?user_id=${userId}&reference_id=${refId}`, {}, {
       headers: getHeaders()
     });
-    setFavorites(prev => new Set([...prev, item.reference_id]));
+    setFavorites(prev => new Set([...prev, refId]));
   };
 
   // Add to cart
   const handleAddToCart = async (item) => {
     const userId = getUserId();
+    // Используем supplier_item id
+    const itemId = item.reference_id || item.id;
     const response = await axios.post(`${API}/v12/cart/add`, {
-      reference_id: item.reference_id,
+      supplier_item_id: itemId,
+      product_name: item.name_raw || item.name,
+      supplier_id: item.supplier_company_id,
+      price: item.price || item.best_price,
       qty: 1,
       user_id: userId
     }, {
