@@ -269,17 +269,48 @@ export const CustomerCatalog = () => {
   // Add to favorites
   const handleAddToFavorites = async (item) => {
     const userId = getUserId();
-    // Используем supplier_item id как reference
-    const refId = item.reference_id || item.id;
+    // Используем item.id - это supplier_item.id
+    const refId = item.id;
     try {
       const response = await axios.post(`${API}/v12/favorites?user_id=${userId}&reference_id=${refId}`, {}, {
         headers: getHeaders()
       });
       if (response.data.status === 'ok' || response.data.status === 'duplicate') {
         setFavorites(prev => new Set([...prev, refId]));
+        return response.data;
       }
     } catch (error) {
       console.error('Failed to add to favorites:', error);
+      throw error;
+    }
+  };
+
+  // Remove from favorites
+  const handleRemoveFromFavorites = async (item) => {
+    const userId = getUserId();
+    const refId = item.id;
+    try {
+      // Найдём favorite_id по reference_id
+      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=1000`, {
+        headers: getHeaders()
+      });
+      const fav = response.data.items?.find(f => 
+        f.reference_id === refId || f.anchor_supplier_item_id === refId
+      );
+      
+      if (fav) {
+        await axios.delete(`${API}/v12/favorites/${fav.id}?user_id=${userId}`, {
+          headers: getHeaders()
+        });
+        setFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(refId);
+          if (fav.anchor_supplier_item_id) newSet.delete(fav.anchor_supplier_item_id);
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error('Failed to remove from favorites:', error);
       throw error;
     }
   };
