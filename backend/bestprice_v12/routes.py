@@ -195,28 +195,79 @@ async def delete_favorite(
 # === CART ENDPOINTS ===
 
 class AddToCartRequestV12(BaseModel):
-    reference_id: str = Field(..., description="ID reference карточки или favorite")
-    qty: float = Field(gt=0, description="Количество")
+    supplier_item_id: Optional[str] = Field(None, description="ID supplier_item")
+    reference_id: Optional[str] = Field(None, description="ID reference карточки или favorite")
+    product_name: Optional[str] = Field(None, description="Название товара")
+    supplier_id: Optional[str] = Field(None, description="ID поставщика")
+    price: Optional[float] = Field(None, description="Цена")
+    qty: float = Field(gt=0, description="Количество", default=1)
     user_id: str = Field(..., description="ID пользователя")
 
 
-@router.post("/cart/add", summary="Добавить в корзину из избранного")
+@router.post("/cart/add", summary="Добавить в корзину")
 async def add_to_cart_endpoint(request: AddToCartRequestV12):
     """
-    Добавляет товар из избранного в корзину (п.8 ТЗ)
+    Добавляет товар в корзину.
     
-    Логика:
-    - Выбирает самый выгодный вариант по line_total
-    - STRICT фасовка (без пересчётов)
-    - Если дешевле нет - кладёт anchor
-    - Показывает замену если была
+    Поддерживает два режима:
+    1. По supplier_item_id - напрямую из каталога
+    2. По reference_id - из избранного (старая логика)
     """
     db = get_db()
     
-    result = add_to_cart(db, request.user_id, request.reference_id, request.qty)
+    # Режим 1: Напрямую из каталога
+    if request.supplier_item_id:
+        # Получаем товар из supplier_items
+        item = db.supplier_items.find_one({'id': request.supplier_item_id}, {'_id': 0})
+        
+        if not item:
+            raise HTTPException(status_code=404, detail="Товар не найден")
+        
+        # Получаем имя поставщика
+        company = db.companies.find_one({'id': item.get('supplier_company_id')}, {'_id': 0})
+        supplier_name = company.get('companyName') or company.get('name', 'Unknown') if company else 'Unknown'
+        
+        # Создаём запись в корзине
+        cart_item = {
+            'id': f"cart_{request.user_id}_{item['id']}",
+            'user_id': request.user_id,
+            'supplier_item_id': item['id'],
+            'product_name': item.get('name_raw', ''),
+            'supplier_id': item.get('supplier_company_id'),
+            'supplier_name': supplier_name,
+            'price': item.get('price', 0),
+            'user_qty': request.qty,
+            'effective_qty': max(request.qty, item.get('min_order_qty', 1)),
+            'min_order_qty': item.get('min_order_qty', 1),
+            'unit_type': item.get('unit_type', 'PIECE'),
+            'super_class': item.get('super_class'),
+            'created_at': datetime.now(timezone.utc).isoformat(),
+        }
+        
+        # Upsert в корзину
+        db.cart_items_v12.update_one(
+            {'user_id': request.user_id, 'supplier_item_id': item['id']},
+            {'$set': cart_item},
+            upsert=True
+        )
+        
+        return {
+            'status': 'ok',
+            'message': 'Товар добавлен в корзину',
+            'item': cart_item
+        }
     
-    if result['status'] == 'not_found':
-        raise HTTPException(status_code=404, detail=result['message'])
+    # Режим 2: Из избранного (старая логика)
+    elif request.reference_id:
+        result = add_to_cart(db, request.user_id, request.reference_id, request.qty)
+        
+        if result['status'] == 'not_found':
+            raise HTTPException(status_code=404, detail=result['message'])
+        
+        return result
+    
+    else:
+        raise HTTPException(status_code=400, detail="Нужен supplier_item_id или reference_id")
     
     return result
 
