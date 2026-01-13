@@ -339,6 +339,18 @@ export const CustomerCatalog = () => {
             {total} товаров • Best Price • STRICT фасовка
           </p>
         </div>
+        
+        {/* Cart button with counter */}
+        {cartCount > 0 && (
+          <Button 
+            onClick={() => window.location.href = '/customer/cart'}
+            className="bg-blue-600 hover:bg-blue-700"
+            data-testid="cart-btn"
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Корзина ({cartCount})
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
