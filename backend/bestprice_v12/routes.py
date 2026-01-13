@@ -143,7 +143,7 @@ async def get_catalog_item(reference_id: str):
 @router.get("/favorites", summary="Получить избранное")
 async def get_favorites(
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=1000),
     user_id: str = Query(..., description="ID пользователя")  # TODO: Get from auth
 ):
     """Получает список избранного пользователя"""
