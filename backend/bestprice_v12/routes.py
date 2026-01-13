@@ -227,18 +227,25 @@ async def add_to_cart_endpoint(request: AddToCartRequestV12):
         company = db.companies.find_one({'id': item.get('supplier_company_id')}, {'_id': 0})
         supplier_name = company.get('companyName') or company.get('name', 'Unknown') if company else 'Unknown'
         
+        # Рассчитываем effective_qty и line_total
+        min_order_qty = item.get('min_order_qty', 1)
+        effective_qty = max(request.qty, min_order_qty)
+        price = item.get('price', 0)
+        line_total = effective_qty * price
+        
         # Создаём запись в корзине
         cart_item = {
-            'id': f"cart_{request.user_id}_{item['id']}",
+            'cart_item_id': f"cart_{request.user_id}_{item['id']}",
             'user_id': request.user_id,
             'supplier_item_id': item['id'],
             'product_name': item.get('name_raw', ''),
             'supplier_id': item.get('supplier_company_id'),
             'supplier_name': supplier_name,
-            'price': item.get('price', 0),
+            'price': price,
             'user_qty': request.qty,
-            'effective_qty': max(request.qty, item.get('min_order_qty', 1)),
-            'min_order_qty': item.get('min_order_qty', 1),
+            'effective_qty': effective_qty,
+            'line_total': line_total,
+            'min_order_qty': min_order_qty,
             'unit_type': item.get('unit_type', 'PIECE'),
             'super_class': item.get('super_class'),
             'created_at': datetime.now(timezone.utc).isoformat(),
