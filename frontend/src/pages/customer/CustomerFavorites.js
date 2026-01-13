@@ -169,7 +169,7 @@ export const CustomerFavorites = () => {
         return;
       }
       
-      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=200`, {
+      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=1000`, {
         headers: getHeaders()
       });
       setFavorites(response.data.items || []);
