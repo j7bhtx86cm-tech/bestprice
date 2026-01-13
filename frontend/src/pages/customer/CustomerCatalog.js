@@ -456,6 +456,7 @@ export const CustomerCatalog = () => {
               key={item.id || item.reference_id}
               item={item}
               onAddToFavorites={handleAddToFavorites}
+              onRemoveFromFavorites={handleRemoveFromFavorites}
               onAddToCart={handleAddToCart}
               isInFavorites={favorites.has(item.id) || favorites.has(item.reference_id)}
               isInCart={cartItems.has(item.id) || cartItems.has(item.reference_id)}
