@@ -154,12 +154,32 @@ def add_to_favorites(
     user_id: str,
     reference_id: str
 ) -> Dict[str, Any]:
-    """Добавляет карточку в избранное"""
-    # Проверяем существование reference
+    """Добавляет товар в избранное"""
+    # Сначала пробуем найти в catalog_references
     reference = db.catalog_references.find_one({'reference_id': reference_id}, {'_id': 0})
     
+    # Если не нашли - ищем в supplier_items по id
     if not reference:
-        return {'status': 'not_found', 'message': 'Карточка не найдена'}
+        item = db.supplier_items.find_one({'id': reference_id, 'active': True}, {'_id': 0})
+        if item:
+            # Создаём reference-like структуру из supplier_item
+            reference = {
+                'reference_id': item['id'],
+                'name': item.get('name_raw', ''),
+                'product_core_id': item.get('product_core_id'),
+                'unit_type': item.get('unit_type'),
+                'pack_value': item.get('pack_qty'),
+                'pack_unit': 'шт',
+                'brand_id': item.get('brand_id'),
+                'origin_country_id': item.get('origin_country'),
+                'anchor_supplier_item_id': item['id'],
+                'super_class': item.get('super_class'),
+                'best_price': item.get('price'),
+                'best_supplier_id': item.get('supplier_company_id'),
+            }
+    
+    if not reference:
+        return {'status': 'not_found', 'message': 'Товар не найден'}
     
     # Проверяем дубликат
     existing = db.favorites_v12.find_one(
