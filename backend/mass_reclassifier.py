@@ -243,7 +243,7 @@ CLASSIFICATION_RULES = [
     {'pattern': r'удон|udon', 'super_class': 'pasta.udon', 'priority': 85},
     {'pattern': r'рамен|ramen', 'super_class': 'pasta.ramen', 'priority': 85},
     {'pattern': r'соба|soba', 'super_class': 'pasta.soba', 'priority': 85},
-    {'pattern': r'вермишель|vermicelli', 'super_class': 'pasta.vermicelli', 'priority': 85},
+    {'pattern': r'вермишель|vermicelli|паутинк', 'super_class': 'pasta.vermicelli', 'priority': 92},
     {'pattern': r'макарон(?!.*мак)|pasta|macaroni|макфа', 'super_class': 'pasta.macaroni', 'priority': 88},
     
     # ===============================
