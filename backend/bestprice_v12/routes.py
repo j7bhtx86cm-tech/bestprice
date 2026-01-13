@@ -41,26 +41,51 @@ router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
 async def get_catalog(
     super_class: Optional[str] = Query(None, description="Фильтр по категории"),
     search: Optional[str] = Query(None, description="Поиск по названию"),
+    supplier_id: Optional[str] = Query(None, description="Фильтр по поставщику"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     current_user: dict = None  # TODO: Add auth dependency
 ):
     """
-    Получает список карточек каталога с Best Price (п.6 ТЗ)
-    
-    - Best price показывается по той же фасовке (STRICT)
-    - Возвращает информацию о поставщике и мин. заказе
+    Получает список всех товаров из supplier_items.
+    Показывает ВСЕ товары, не только агрегированные референсы.
     """
     db = get_db()
     
-    filters = {}
-    if super_class:
-        filters['super_class'] = super_class
-    if search:
-        filters['search'] = search
+    # Базовый фильтр
+    query = {'active': True, 'price': {'$gt': 0}}
     
-    items = get_catalog_items(db, filters, skip, limit)
-    total = db.catalog_references.count_documents(filters if filters else {})
+    # Фильтр по категории
+    if super_class:
+        query['super_class'] = {'$regex': f'^{super_class}', '$options': 'i'}
+    
+    # Фильтр по поставщику
+    if supplier_id:
+        query['supplier_company_id'] = supplier_id
+    
+    # Поиск по названию
+    if search:
+        query['name_raw'] = {'$regex': search, '$options': 'i'}
+    
+    # Получаем товары
+    items = list(db.supplier_items.find(
+        query,
+        {'_id': 0}
+    ).sort([('super_class', 1), ('name_raw', 1)]).skip(skip).limit(limit))
+    
+    # Получаем названия поставщиков
+    supplier_ids = list(set(i.get('supplier_company_id') for i in items if i.get('supplier_company_id')))
+    companies = {}
+    if supplier_ids:
+        for comp in db.companies.find({'id': {'$in': supplier_ids}}, {'_id': 0, 'id': 1, 'companyName': 1, 'name': 1}):
+            companies[comp['id']] = comp.get('companyName') or comp.get('name', 'Unknown')
+    
+    # Добавляем имена поставщиков к товарам
+    for item in items:
+        sid = item.get('supplier_company_id')
+        item['supplier_name'] = companies.get(sid, sid[:8] + '...' if sid else 'Unknown')
+    
+    total = db.supplier_items.count_documents(query)
     
     return {
         'items': items,
