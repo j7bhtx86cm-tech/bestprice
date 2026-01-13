@@ -234,8 +234,10 @@ export const CustomerFavorites = () => {
       
       if (!supplierItemId) {
         toast.error('Нет supplier_item_id для этого товара');
-        return;
+        throw new Error('No supplier_item_id');
       }
+      
+      console.log('Adding to cart:', { supplierItemId, product_name: item.product_name });
       
       const response = await axios.post(`${API}/v12/cart/add`, {
         supplier_item_id: supplierItemId,
@@ -256,12 +258,17 @@ export const CustomerFavorites = () => {
           ? `Добавлено в корзину (заменено, экономия ${response.data.savings?.toLocaleString('ru-RU')} ₽)`
           : '✓ Добавлено в корзину';
         toast.success(msg);
+        return true; // Success
       } else {
         toast.error(response.data.message || 'Ошибка добавления');
+        throw new Error(response.data.message || 'Error');
       }
     } catch (error) {
       console.error('Add to cart error:', error);
-      toast.error('Ошибка добавления в корзину');
+      if (!error.message?.includes('No supplier_item_id')) {
+        toast.error('Ошибка добавления в корзину');
+      }
+      throw error;
     } finally {
       setAdding(null);
     }
