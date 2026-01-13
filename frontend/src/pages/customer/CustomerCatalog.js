@@ -1,976 +1,392 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ShoppingCart, Search, Plus, Minus, Trash2, Award, CheckCircle, Package, X, Heart } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Search, Heart, ShoppingCart, Package, TrendingDown,
+  ChevronLeft, ChevronRight, RefreshCw, AlertTriangle
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-export const CustomerCatalog = () => {
-  const [suppliers, setSuppliers] = useState([]);
-  const [allProducts, setAllProducts] = useState({});
-  const [groupedProducts, setGroupedProducts] = useState([]);
-  const [filteredGroups, setFilteredGroups] = useState([]);
-  const [displayLimit, setDisplayLimit] = useState(100);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [cart, setCart] = useState([]);
-  const [favorites, setFavorites] = useState(new Set());
-  const [showCart, setShowCart] = useState(false);
-  const [showMiniCart, setShowMiniCart] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [processingOrder, setProcessingOrder] = useState(false);
-  const [company, setCompany] = useState(null);
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [quantities, setQuantities] = useState({});
-  const [miniCartTimeout, setMiniCartTimeout] = useState(null);
-  const [lastCartLength, setLastCartLength] = useState(0);
+// Catalog Item Card - стиль v12
+const CatalogItemCard = ({ item, onAddToFavorites, onAddToCart, isInFavorites }) => {
+  const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    fetchAllData();
-    fetchCompanyInfo();
-    fetchFavorites();
-  }, []);
-
-  useEffect(() => {
-    filterProducts();
-  }, [searchTerm, groupedProducts]);
-
-  // Show mini cart notification when cart is updated
-  useEffect(() => {
-    if (cart.length > lastCartLength) {
-      // Cart has new items - show notification
-      setShowMiniCart(true);
-      
-      // Clear any existing timeout
-      if (miniCartTimeout) {
-        clearTimeout(miniCartTimeout);
-      }
-      
-      // Auto-hide after 3 seconds
-      const timeout = setTimeout(() => {
-        setShowMiniCart(false);
-      }, 3000);
-      setMiniCartTimeout(timeout);
-    }
-    
-    setLastCartLength(cart.length);
-  }, [cart.length]);
-
-  const fetchCompanyInfo = async () => {
+  const handleAddToFavorites = async () => {
+    setAdding(true);
     try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/companies/my`, { headers });
-      setCompany(response.data);
-      // Auto-select first delivery address if only one exists
-      if (response.data.deliveryAddresses && response.data.deliveryAddresses.length === 1) {
-        setSelectedAddress(response.data.deliveryAddresses[0]);
-      }
+      await onAddToFavorites(item);
+      toast.success('Добавлено в избранное');
     } catch (error) {
-      console.error('Failed to fetch company info:', error);
-    }
-  };
-
-  const fetchFavorites = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/favorites`, { headers });
-      // Create a Set of productIds that are in favorites
-      const favoriteProductIds = new Set(response.data.map(f => f.productId));
-      setFavorites(favoriteProductIds);
-    } catch (error) {
-      console.error('Failed to fetch favorites:', error);
-    }
-  };
-
-  const handleAddToFavorites = async (productId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await axios.post(`${API}/favorites`, { productId }, { headers });
-      fetchFavorites(); // Refresh favorites
-      alert('✓ Добавлено в избранное!');
-    } catch (error) {
-      if (error.response?.status === 400) {
-        alert('Товар уже в избранном');
-      } else {
-        console.error('Failed to add to favorites:', error);
-        alert('Ошибка добавления в избранное');
-      }
-    }
-  };
-
-  const handleRemoveFromFavorites = async (productId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      // Find the favorite ID
-      const favResponse = await axios.get(`${API}/favorites`, { headers });
-      const favorite = favResponse.data.find(f => f.productId === productId);
-      if (favorite) {
-        await axios.delete(`${API}/favorites/${favorite.id}`, { headers });
-        fetchFavorites();
-      }
-    } catch (error) {
-      console.error('Failed to remove from favorites:', error);
-    }
-  };
-
-  const fetchAllData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      console.log('📦 Loading catalog...');
-      const startTime = Date.now();
-
-      // Fetch all suppliers
-      const suppliersResponse = await axios.get(`${API}/suppliers`, { headers });
-      setSuppliers(suppliersResponse.data);
-      
-      console.log(`✅ Loaded ${suppliersResponse.data.length} suppliers in ${Date.now() - startTime}ms`);
-
-      // Fetch products from each supplier (in parallel for speed)
-      const productPromises = suppliersResponse.data.map(supplier =>
-        axios.get(`${API}/suppliers/${supplier.id}/price-lists`, { headers })
-          .then(response => ({
-            supplier: supplier,
-            products: response.data
-          }))
-      );
-      
-      const productsResults = await Promise.all(productPromises);
-      
-      const productsMap = {};
-      let totalProducts = 0;
-      
-      productsResults.forEach(({ supplier, products }) => {
-        productsMap[supplier.id] = {
-          supplier: supplier,
-          products: products
-        };
-        totalProducts += products.length;
-      });
-      
-      setAllProducts(productsMap);
-      
-      console.log(`✅ Loaded ${totalProducts} products in ${Date.now() - startTime}ms`);
-
-      // Group products by identical name and unit
-      const groupStart = Date.now();
-      const grouped = groupProductsForBestPrice(productsMap);
-      console.log(`✅ Grouped into ${grouped.length} product groups in ${Date.now() - groupStart}ms`);
-      
-      setGroupedProducts(grouped);
-      setFilteredGroups(grouped.slice(0, 100)); // Show first 100 initially
-      
-      console.log(`✅ Total catalog load time: ${Date.now() - startTime}ms`);
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
+      toast.error('Ошибка добавления');
     } finally {
-      setLoading(false);
+      setAdding(false);
     }
   };
 
-  // Group products that are identical (same name and unit) to find best prices
-  const groupProductsForBestPrice = (productsMap) => {
-    const productGroups = {};
-
-    // Create groups based on article + productName + unit to avoid duplicates
-    Object.entries(productsMap).forEach(([supplierId, { supplier, products }]) => {
-      products.forEach(product => {
-        // Use article as primary key if available, otherwise use product name
-        const normalizedName = product.productName.toLowerCase().trim();
-        const normalizedUnit = product.unit.toLowerCase().trim();
-        const key = `${product.article.toLowerCase().trim()}|${normalizedName}|${normalizedUnit}`;
-        
-        if (!productGroups[key]) {
-          productGroups[key] = {
-            displayName: product.productName,
-            unit: product.unit,
-            article: product.article,
-            searchText: `${product.productName} ${product.article} ${product.unit}`.toLowerCase(),
-            offers: []
-          };
-        }
-
-        // Check if this supplier already has this product (avoid duplicates from same supplier)
-        const existingOffer = productGroups[key].offers.find(o => o.supplierId === supplier.id);
-        if (!existingOffer) {
-          productGroups[key].offers.push({
-            priceListId: product.id,
-            productId: product.productId,  // ADD THIS - the actual product ID
-            supplierId: supplier.id,
-            supplierName: supplier.companyName,
-            article: product.article,
-            price: product.price,
-            unit: product.unit,
-            minQuantity: product.minQuantity || 1,
-            availability: product.availability,
-            product: product
-          });
-        }
-      });
-    });
-
-    // Convert to array and sort offers by price
-    const groupedArray = Object.values(productGroups).map(group => {
-      // Remove duplicate offers and sort by price (ascending)
-      const uniqueOffers = group.offers.filter((offer, index, self) => 
-        index === self.findIndex(o => o.supplierId === offer.supplierId && o.article === offer.article)
-      );
-      
-      uniqueOffers.sort((a, b) => a.price - b.price);
-      
-      // Mark the best price
-      if (uniqueOffers.length > 0) {
-        uniqueOffers[0].isBestPrice = true;
-      }
-
-      return {
-        ...group,
-        offers: uniqueOffers,
-        lowestPrice: uniqueOffers[0]?.price || 0
-      };
-    }).filter(group => group.offers.length > 0);
-
-    // Sort groups by lowest price (best deals first)
-    return groupedArray.sort((a, b) => a.lowestPrice - b.lowestPrice);
-  };
-
-  const filterProducts = () => {
-    if (!searchTerm.trim()) {
-      setFilteredGroups(groupedProducts.slice(0, displayLimit));
-      setDisplayLimit(100);
-      return;
-    }
-
-    // Expanded typo corrections
-    const typoMap = {
-      'ласось': 'лосось', 'лососс': 'лосось', 'лососк': 'лосось', 'лосос': 'лосось',
-      'сибасс': 'сибас', 'сибаса': 'сибас', 'сибац': 'сибас',
-      'дорада': 'дорадо',
-      'креветка': 'креветки'
-    };
-    
-    let searchNorm = searchTerm.toLowerCase().trim();
-    
-    // Apply typo corrections
-    for (const [typo, correct] of Object.entries(typoMap)) {
-      searchNorm = searchNorm.replace(typo, correct);
-    }
-    
-    const searchWords = searchNorm.split(/\s+/);
-
-    const filtered = groupedProducts.filter(group => {
-      const searchText = group.searchText;
-      
-      // Special case: When searching for "филе", exclude ONLY pastry dough
-      const isFiletSearch = searchWords.includes('филе');
-      if (isFiletSearch && (searchText.includes('фило') || (searchText.includes('тесто') && !searchText.includes('рыб') && !searchText.includes('мяс') && !searchText.includes('филе')))) {
-        return false;  // Skip philo dough and plain dough
-      }
-      
-      // IMPORTANT: When multiple search words, ALL must be present (not just one)
-      // This ensures "минтай филе" only shows POLLOCK fillets, not all fillets
-      if (searchWords.length > 1) {
-        // For multi-word search, require ALL words to be present
-        const allWordsPresent = searchWords.every(word => searchText.includes(word));
-        if (allWordsPresent) {
-          return true;  // All words found - exact match
-        }
-        
-        // If not all words present, try fuzzy matching for EACH word
-        // But still require ALL words to match (with typo tolerance)
-        let matchedWords = 0;
-        for (const sw of searchWords) {
-          if (sw.length < 3) {
-            if (searchText.includes(sw)) matchedWords++;
-            continue;
-          }
-          
-          // Check if this word matches (exact or fuzzy)
-          let wordMatched = false;
-          
-          if (searchText.includes(sw)) {
-            wordMatched = true;
-          } else {
-            // Try fuzzy for this word
-            const groupWords = searchText.split(/\s+/);
-            for (const gw of groupWords) {
-              if (gw.length < 3) continue;
-              
-              // Similar length
-              if (Math.abs(sw.length - gw.length) > 1) continue;
-              
-              // Similar prefix
-              if (sw.length >= 3 && gw.length >= 3) {
-                const prefixLen = sw.length >= 5 ? 3 : 2;
-                if (sw.slice(0, prefixLen) === gw.slice(0, prefixLen)) {
-                  // Substring or 1-char diff
-                  if (gw.includes(sw) || sw.includes(gw)) {
-                    wordMatched = true;
-                    break;
-                  }
-                  
-                  let diff = 0;
-                  for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
-                    if (sw[i] !== gw[i]) diff++;
-                    if (diff > 1) break;
-                  }
-                  if (diff === 1) {
-                    wordMatched = true;
-                    break;
-                  }
-                }
-              }
-            }
-          }
-          
-          if (wordMatched) matchedWords++;
-        }
-        
-        // ALL words must match (with tolerance)
-        return matchedWords === searchWords.length;
-      }
-      
-      // Single word search - use existing fuzzy logic
-      const sw = searchWords[0];
-      if (searchText.includes(sw)) return true;
-      
-      if (sw.length < 4) return false;
-      
-      const groupWords = searchText.split(/\s+/);
-      for (const gw of groupWords) {
-        if (gw.length < 4) continue;
-        
-        if (Math.abs(sw.length - gw.length) > 1) continue;
-        
-        if (sw.length >= 5 && gw.length >= 5) {
-          if (sw.slice(0, 3) !== gw.slice(0, 3)) continue;
-        } else if (sw.length >= 3 && gw.length >= 3) {
-          if (sw.slice(0, 2) !== gw.slice(0, 2)) continue;
-        } else if (sw[0] !== gw[0]) {
-          continue;
-        }
-        
-        if (gw.includes(sw) || sw.includes(gw)) return true;
-        
-        if (Math.abs(sw.length - gw.length) <= 1) {
-          let diff = 0;
-          for (let i = 0; i < Math.min(sw.length, gw.length); i++) {
-            if (sw[i] !== gw[i]) diff++;
-            if (diff > 1) break;
-          }
-          if (diff === 1) return true;
-        }
-      }
-      return false;
-    });
-
-    const sortedFiltered = filtered.sort((a, b) => a.lowestPrice - b.lowestPrice);
-    setFilteredGroups(sortedFiltered.slice(0, Math.min(200, sortedFiltered.length)));
-    setDisplayLimit(200);
-  };
-
-  const loadMore = () => {
-    const newLimit = displayLimit + 50;
-    if (searchTerm.trim()) {
-      setFilteredGroups(groupedProducts.slice(0, newLimit));
-    } else {
-      setFilteredGroups(groupedProducts.slice(0, newLimit));
-    }
-    setDisplayLimit(newLimit);
-  };
-
-  const addToCart = (offer, group, productKey) => {
-    const minQty = offer.minQuantity || 1;
-    const qty = quantities[productKey] || minQty;
-    
-    const cartItem = {
-      cartId: `${offer.priceListId}_${Date.now()}`,
-      source: 'catalog',  // Mark as from catalog (fixed product)
-      priceListId: offer.priceListId,
-      supplierId: offer.supplierId,
-      supplierName: offer.supplierName,
-      productName: group.displayName,
-      article: offer.article,
-      price: offer.price,
-      unit: group.unit,
-      quantity: qty,
-      minQuantity: minQty,
-      isBestPrice: offer.isBestPrice || false
-    };
-
-    // Save to localStorage (catalogCart)
-    const existingCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
-    existingCart.push(cartItem);
-    localStorage.setItem('catalogCart', JSON.stringify(existingCart));
-    
-    setCart([...cart, cartItem]);  // Also update local state for mini cart
-    
-    // Reset quantity
-    setQuantities({ ...quantities, [productKey]: minQty });
-    
-    alert('Товар добавлен в корзину!');
-  };
-
-  const setProductQuantity = (productKey, value) => {
-    const qty = Math.max(1, parseInt(value) || 1);
-    setQuantities({ ...quantities, [productKey]: qty });
-  };
-
-  const updateCartQuantity = (cartId, delta) => {
-    setCart(cart.map(item => {
-      if (item.cartId === cartId) {
-        const minQty = item.minQuantity || 1;
-        const newQuantity = Math.max(minQty, item.quantity + delta);
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
-    }));
-  };
-
-  const removeFromCart = (cartId) => {
-    setCart(cart.filter(item => item.cartId !== cartId));
-  };
-
-  const getCartTotal = () => {
-    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  };
-
-  const handleCheckout = () => {
-    // Check if multiple delivery addresses exist
-    if (company && company.deliveryAddresses && company.deliveryAddresses.length > 1) {
-      setShowAddressModal(true);
-    } else {
-      placeOrder();
-    }
-  };
-
-  const placeOrder = async () => {
-    if (cart.length === 0) return;
-
-    // If multiple addresses exist and none selected, show address modal
-    if (company && company.deliveryAddresses && company.deliveryAddresses.length > 1 && !selectedAddress) {
-      setShowAddressModal(true);
-      return;
-    }
-
-    setProcessingOrder(true);
+  const handleAddToCart = async () => {
+    setAdding(true);
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
-      // Group cart items by supplier
-      const ordersBySupplier = {};
-      cart.forEach(item => {
-        if (!ordersBySupplier[item.supplierId]) {
-          ordersBySupplier[item.supplierId] = {
-            supplierCompanyId: item.supplierId,
-            items: []
-          };
-        }
-        ordersBySupplier[item.supplierId].items.push({
-          productName: item.productName,
-          article: item.article,
-          quantity: item.quantity,
-          price: item.price,
-          unit: item.unit
-        });
-      });
-
-      // Create an order for each supplier
-      const orderPromises = Object.values(ordersBySupplier).map(orderData => {
-        const amount = orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        return axios.post(`${API}/orders`, {
-          supplierCompanyId: orderData.supplierCompanyId,
-          amount: amount,
-          orderDetails: orderData.items,
-          deliveryAddress: selectedAddress
-        }, { headers });
-      });
-
-      await Promise.all(orderPromises);
-
-      // Clear cart and show success
-      setCart([]);
-      setShowCart(false);
-      setShowAddressModal(false);
-      setShowSuccessModal(true);
+      await onAddToCart(item);
+      toast.success('Добавлено в корзину');
     } catch (error) {
-      console.error('Failed to place order:', error);
-      alert('Не удалось разместить заказ. Пожалуйста, попробуйте снова.');
+      toast.error(error.message || 'Ошибка добавления');
     } finally {
-      setProcessingOrder(false);
+      setAdding(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Загрузка каталога...</div>
-      </div>
-    );
-  }
+  // Format price
+  const formatPrice = (price) => {
+    if (!price) return 'Нет цены';
+    return `${price.toLocaleString('ru-RU')} ₽`;
+  };
+
+  // Get category badge color
+  const getCategoryColor = (superClass) => {
+    if (!superClass) return 'bg-gray-100 text-gray-800';
+    if (superClass.startsWith('seafood')) return 'bg-blue-100 text-blue-800';
+    if (superClass.startsWith('meat')) return 'bg-red-100 text-red-800';
+    if (superClass.startsWith('dairy')) return 'bg-yellow-100 text-yellow-800';
+    if (superClass.startsWith('vegetables')) return 'bg-green-100 text-green-800';
+    if (superClass.startsWith('fruits')) return 'bg-orange-100 text-orange-800';
+    if (superClass.startsWith('bakery')) return 'bg-amber-100 text-amber-800';
+    if (superClass.startsWith('beverages')) return 'bg-cyan-100 text-cyan-800';
+    if (superClass.startsWith('condiments')) return 'bg-purple-100 text-purple-800';
+    if (superClass.startsWith('pasta')) return 'bg-yellow-100 text-yellow-800';
+    if (superClass.startsWith('staples')) return 'bg-amber-100 text-amber-800';
+    if (superClass.startsWith('canned')) return 'bg-slate-100 text-slate-800';
+    if (superClass.startsWith('oils')) return 'bg-lime-100 text-lime-800';
+    if (superClass.startsWith('frozen')) return 'bg-sky-100 text-sky-800';
+    if (superClass.startsWith('desserts')) return 'bg-pink-100 text-pink-800';
+    if (superClass.startsWith('ready_meals')) return 'bg-indigo-100 text-indigo-800';
+    if (superClass.startsWith('packaging')) return 'bg-stone-100 text-stone-800';
+    if (superClass.startsWith('disposables')) return 'bg-neutral-100 text-neutral-800';
+    return 'bg-gray-100 text-gray-800';
+  };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Mini Cart Notification - Appears for 3 seconds when adding items */}
-      {showMiniCart && cart.length > 0 && (
-        <div className="fixed top-20 right-6 z-50 w-80 animate-in slide-in-from-right">
-          <Card className="shadow-xl border-2 border-green-500">
-            <div className="p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold text-green-600">✓ Добавлено в корзину</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setShowMiniCart(false);
-                    if (miniCartTimeout) clearTimeout(miniCartTimeout);
-                  }}
-                  className="h-6 w-6 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {cart.slice(-3).reverse().map(item => (
-                  <div key={item.cartId} className="text-sm p-2 bg-gray-50 rounded">
-                    <p className="font-medium truncate">{item.productName}</p>
-                    <div className="flex justify-between text-xs text-gray-600 mt-1">
-                      <span>{item.quantity} {item.unit}</span>
-                      <span className="font-medium">{(item.price * item.quantity).toFixed(2)} ₽</span>
-                    </div>
-                    <p className="text-xs text-blue-600 mt-1">{item.supplierName}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t mt-3 pt-3">
-                <div className="flex justify-between font-semibold mb-2">
-                  <span>Всего в корзине:</span>
-                  <span>{cart.reduce((sum, item) => sum + item.quantity, 0)} шт</span>
-                </div>
-                <div className="flex justify-between font-semibold mb-2">
-                  <span>Итого:</span>
-                  <span>{getCartTotal().toFixed(2)} ₽</span>
-                </div>
-                <Button 
-                  onClick={() => {
-                    setShowMiniCart(false);
-                    setShowCart(true);
-                  }}
-                  className="w-full"
-                  size="sm"
-                >
-                  Оформить заказ
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Каталог товаров</h1>
-          <p className="text-base text-muted-foreground">
-            Лучшие цены от поставщиков
-          </p>
-        </div>
-        
-        {/* Cart Button */}
-        <Button 
-          onClick={() => setShowCart(true)} 
-          className="relative"
-          variant="default"
+    <Card className="p-4 hover:shadow-lg transition-all border-2 hover:border-blue-300">
+      {/* Header with category */}
+      <div className="flex justify-between items-start mb-3">
+        <Badge className={getCategoryColor(item.super_class)} variant="secondary">
+          {item.super_class?.split('.')[0] || 'other'}
+        </Badge>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleAddToFavorites}
+          disabled={adding || isInFavorites}
+          className={isInFavorites ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}
         >
-          <ShoppingCart className="mr-2 h-4 w-4" />
-          Корзина ({cart.length})
-          {cart.length > 0 && (
-            <Badge className="ml-2 bg-red-500">{cart.reduce((sum, item) => sum + item.quantity, 0)}</Badge>
-          )}
+          <Heart className={`h-5 w-5 ${isInFavorites ? 'fill-current' : ''}`} />
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Поиск: название, артикул, размер (например: креветки 31/40)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      {/* Product name */}
+      <h3 className="font-semibold text-base mb-2 line-clamp-2 min-h-[48px]">
+        {item.name}
+      </h3>
+
+      {/* Pack info */}
+      {item.pack_value && item.pack_unit && (
+        <p className="text-sm text-gray-600 mb-2">
+          Фасовка: {item.pack_value} {item.pack_unit}
+        </p>
+      )}
+
+      {/* Best price */}
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingDown className="h-4 w-4 text-green-600" />
+        <span className="text-lg font-bold text-green-600">
+          {formatPrice(item.best_price)}
+        </span>
+      </div>
+
+      {/* Supplier */}
+      {item.best_supplier_name && (
+        <p className="text-sm text-gray-500 mb-3">
+          <Package className="h-3 w-3 inline mr-1" />
+          {item.best_supplier_name}
+        </p>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          onClick={handleAddToFavorites}
+          disabled={adding || isInFavorites}
+        >
+          <Heart className="h-4 w-4 mr-1" />
+          {isInFavorites ? 'В избранном' : 'В избранное'}
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1"
+          onClick={handleAddToCart}
+          disabled={adding}
+        >
+          <ShoppingCart className="h-4 w-4 mr-1" />
+          В корзину
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
+// Loading skeleton
+const CatalogSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {[...Array(8)].map((_, i) => (
+      <Card key={i} className="p-4">
+        <Skeleton className="h-6 w-20 mb-3" />
+        <Skeleton className="h-12 w-full mb-2" />
+        <Skeleton className="h-4 w-32 mb-2" />
+        <Skeleton className="h-8 w-24 mb-3" />
+        <div className="flex gap-2">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 flex-1" />
         </div>
-        {searchTerm && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Найдено товаров: {filteredGroups.length} • Сортировка: от дешёвых к дорогим
+      </Card>
+    ))}
+  </div>
+);
+
+// Main Catalog Component
+export const CustomerCatalog = () => {
+  const { user } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [favorites, setFavorites] = useState(new Set());
+  
+  const LIMIT = 20;
+
+  // Get auth headers
+  const getHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  // Get user ID from auth context
+  const getUserId = () => {
+    return user?.id || 'anonymous';
+  };
+
+  // Fetch catalog from v12 API
+  const fetchCatalog = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        skip: page * LIMIT,
+        limit: LIMIT,
+      });
+      if (search) params.append('search', search);
+      if (category) params.append('super_class', category);
+
+      const response = await axios.get(`${API}/v12/catalog?${params}`, {
+        headers: getHeaders()
+      });
+      
+      setItems(response.data.items || []);
+      setTotal(response.data.total || 0);
+    } catch (error) {
+      console.error('Failed to fetch catalog:', error);
+      toast.error('Ошибка загрузки каталога');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search, category]);
+
+  // Fetch favorites to mark items
+  const fetchFavorites = useCallback(async () => {
+    try {
+      const userId = getUserId();
+      if (!userId || userId === 'anonymous') return;
+      
+      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=200`, {
+        headers: getHeaders()
+      });
+      const favIds = new Set(response.data.items?.map(f => f.reference_id) || []);
+      setFavorites(favIds);
+    } catch (error) {
+      console.error('Failed to fetch favorites:', error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchCatalog();
+  }, [fetchCatalog]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchFavorites();
+    }
+  }, [fetchFavorites, user]);
+
+  // Add to favorites
+  const handleAddToFavorites = async (item) => {
+    const userId = getUserId();
+    await axios.post(`${API}/v12/favorites?user_id=${userId}&reference_id=${item.reference_id}`, {}, {
+      headers: getHeaders()
+    });
+    setFavorites(prev => new Set([...prev, item.reference_id]));
+  };
+
+  // Add to cart
+  const handleAddToCart = async (item) => {
+    const userId = getUserId();
+    const response = await axios.post(`${API}/v12/cart/add`, {
+      reference_id: item.reference_id,
+      qty: 1,
+      user_id: userId
+    }, {
+      headers: getHeaders()
+    });
+
+    if (response.data.status !== 'ok') {
+      throw new Error(response.data.message || 'Ошибка добавления');
+    }
+  };
+
+  // Search handler with debounce
+  const handleSearch = (value) => {
+    setSearch(value);
+    setPage(0);
+  };
+
+  // Categories for filter
+  const categories = [
+    { value: '', label: 'Все категории' },
+    { value: 'seafood', label: '🐟 Морепродукты' },
+    { value: 'meat', label: '🥩 Мясо' },
+    { value: 'dairy', label: '🧀 Молочные' },
+    { value: 'vegetables', label: '🥬 Овощи' },
+    { value: 'fruits', label: '🍎 Фрукты' },
+    { value: 'bakery', label: '🍞 Выпечка' },
+    { value: 'beverages', label: '🥤 Напитки' },
+    { value: 'condiments', label: '🧂 Приправы' },
+    { value: 'pasta', label: '🍝 Макароны' },
+    { value: 'staples', label: '🌾 Крупы' },
+    { value: 'canned', label: '🥫 Консервы' },
+    { value: 'oils', label: '🫒 Масла' },
+    { value: 'frozen', label: '❄️ Заморозка' },
+    { value: 'desserts', label: '🍰 Десерты' },
+    { value: 'ready_meals', label: '🍱 Готовые блюда' },
+    { value: 'packaging', label: '📦 Упаковка' },
+  ];
+
+  const totalPages = Math.ceil(total / LIMIT);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Каталог товаров</h1>
+          <p className="text-gray-600">
+            {total} товаров • Best Price • STRICT фасовка
           </p>
-        )}
+        </div>
       </div>
 
-      {/* Product Grid */}
-      <div className="space-y-3">
-        {filteredGroups.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-lg text-muted-foreground">
-              {searchTerm ? 'Товары не найдены' : 'Товаров пока нет'}
-            </p>
-          </Card>
-        ) : (
-          filteredGroups.map((group, idx) => (
-            <Card key={idx} className="p-4 hover:shadow-md transition-shadow">
-              {/* Price-First Display */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  {/* Price - Most Prominent */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-2xl font-bold text-green-600">
-                      {group.lowestPrice.toFixed(2)} ₽
-                    </span>
-                    <span className="text-sm text-gray-600">/ {group.unit}</span>
-                    {group.offers.length > 1 && (
-                      <Badge variant="default" className="bg-green-600">
-                        <Award className="h-3 w-3 mr-1" />
-                        Best Price
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  {/* Product Name with Favorite Button */}
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="text-base font-medium flex-1">{group.displayName}</h3>
-                    <button
-                      onClick={() => {
-                        const productId = group.offers[0]?.productId;  // Use productId from offer
-                        if (productId) {
-                          if (favorites.has(productId)) {
-                            handleRemoveFromFavorites(productId);
-                          } else {
-                            handleAddToFavorites(productId);
-                          }
-                        }
-                      }}
-                      className={`p-1.5 rounded-full transition-colors ml-2 ${
-                        favorites.has(group.offers[0]?.productId)
-                          ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-red-500'
-                      }`}
-                      title={favorites.has(group.offers[0]?.productId) ? 'Убрать из избранного' : 'Добавить в избранное'}
-                    >
-                      <Heart 
-                        className="h-4 w-4" 
-                        fill={favorites.has(group.offers[0]?.productId) ? 'currentColor' : 'none'}
-                      />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <span>Артикул: {group.article}</span>
-                    <span>•</span>
-                    <span className="font-medium text-blue-600">
-                      {group.offers[0]?.supplierName || 'Поставщик'}
-                    </span>
-                  </div>
-                  
-                  {/* Minimum Order Info */}
-                  {group.offers[0]?.minQuantity > 1 && (
-                    <p className="text-xs text-amber-600 mt-1">
-                      Мин. заказ: {group.offers[0].minQuantity} {group.unit} 
-                      ({(group.offers[0].minQuantity * group.lowestPrice).toFixed(2)} ₽)
-                    </p>
-                  )}
-                  
-                  {/* Alternative Prices */}
-                  {group.offers.length > 1 && (
-                    <details className="mt-2">
-                      <summary className="text-sm text-blue-600 cursor-pointer hover:text-blue-700">
-                        + {group.offers.length - 1} других предложений
-                      </summary>
-                      <div className="mt-2 space-y-2 pl-4">
-                        {group.offers.slice(1, 5).map((offer, offerIdx) => (
-                          <div key={offerIdx} className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-700">{offer.price.toFixed(2)} ₽</span>
-                                <span className="text-gray-500">/ {offer.unit}</span>
-                              </div>
-                              {offer.minQuantity > 1 && (
-                                <span className="text-xs text-amber-600">
-                                  Мин: {offer.minQuantity} {offer.unit}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-blue-600 font-medium">{offer.supplierName}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  )}
-                </div>
-                
-                {/* Quantity Selector and Add to Cart */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="flex items-center border rounded-md">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const minQty = group.offers[0]?.minQuantity || 1;
-                        const current = quantities[`${idx}`] || minQty;
-                        setProductQuantity(`${idx}`, Math.max(minQty, current - 1));
-                      }}
-                      disabled={(quantities[`${idx}`] || group.offers[0]?.minQuantity || 1) <= (group.offers[0]?.minQuantity || 1)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <Input
-                      type="number"
-                      min={group.offers[0]?.minQuantity || 1}
-                      value={quantities[`${idx}`] || group.offers[0]?.minQuantity || 1}
-                      onChange={(e) => {
-                        const minQty = group.offers[0]?.minQuantity || 1;
-                        setProductQuantity(`${idx}`, Math.max(minQty, e.target.value));
-                      }}
-                      className="w-14 h-8 text-center border-0 focus-visible:ring-0 p-0"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const minQty = group.offers[0]?.minQuantity || 1;
-                        const current = quantities[`${idx}`] || minQty;
-                        setProductQuantity(`${idx}`, current + 1);
-                      }}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <Button 
-                    onClick={() => addToCart(group.offers[0], group, `${idx}`)}
-                    size="sm"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-1" />
-                    В корзину
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
+      {/* Filters */}
+      <Card className="p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Поиск товаров..."
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
 
-      {/* Load More Button */}
-      {!searchTerm && filteredGroups.length < groupedProducts.length && (
-        <div className="flex justify-center mt-6">
-          <Button onClick={loadMore} variant="outline" size="lg">
-            Показать ещё ({Math.min(50, groupedProducts.length - filteredGroups.length)} из {groupedProducts.length - filteredGroups.length})
+          {/* Category filter */}
+          <select
+            value={category}
+            onChange={(e) => { setCategory(e.target.value); setPage(0); }}
+            className="px-4 py-2 border rounded-md bg-white"
+          >
+            {categories.map(cat => (
+              <option key={cat.value} value={cat.value}>{cat.label}</option>
+            ))}
+          </select>
+
+          {/* Refresh */}
+          <Button variant="outline" onClick={() => { fetchCatalog(); }}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Обновить
           </Button>
+        </div>
+      </Card>
+
+      {/* Catalog Grid */}
+      {loading ? (
+        <CatalogSkeleton />
+      ) : items.length === 0 ? (
+        <Card className="p-12 text-center">
+          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-yellow-500" />
+          <p className="text-gray-600 mb-2">Товары не найдены</p>
+          <p className="text-sm text-gray-500">Попробуйте изменить параметры поиска</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {items.map(item => (
+            <CatalogItemCard
+              key={item.reference_id}
+              item={item}
+              onAddToFavorites={handleAddToFavorites}
+              onAddToCart={handleAddToCart}
+              isInFavorites={favorites.has(item.reference_id)}
+            />
+          ))}
         </div>
       )}
 
-      {/* Cart Dialog */}
-      <Dialog open={showCart} onOpenChange={setShowCart}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Корзина</DialogTitle>
-            <DialogDescription>
-              {cart.length === 0 ? 'Ваша корзина пуста' : `Товаров в корзине: ${cart.length}`}
-            </DialogDescription>
-          </DialogHeader>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Назад
+          </Button>
           
-          {cart.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
-              <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Добавьте товары в корзину</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {cart.map(item => (
-                <Card key={item.cartId} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium">{item.productName}</h4>
-                        {item.isBestPrice && (
-                          <Badge variant="default" className="bg-green-600 text-xs">
-                            <Award className="h-3 w-3 mr-1" />
-                            Best Price
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Цена: {item.price.toFixed(2)} ₽ / {item.unit}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Артикул: {item.article}
-                      </p>
-                      {item.minQuantity > 1 && (
-                        <p className="text-xs text-amber-600 mt-1">
-                          Мин. заказ: {item.minQuantity} {item.unit}
-                        </p>
-                      )}
-                      <p className="font-medium mt-2">
-                        Итого: {(item.price * item.quantity).toFixed(2)} ₽
-                      </p>
-                    </div>
-                    
-                    <div className="flex flex-col items-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFromCart(item.cartId)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      
-                      <div className="flex items-center gap-2 border rounded-md">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updateCartQuantity(item.cartId, -1)}
-                          disabled={item.quantity <= (item.minQuantity || 1)}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="px-3 font-medium">{item.quantity}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updateCartQuantity(item.cartId, 1)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-              
-              <div className="border-t pt-4 mt-4">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-semibold">Общая сумма:</span>
-                  <span className="text-2xl font-bold">{getCartTotal().toFixed(2)} ₽</span>
-                </div>
-                
-                <Button 
-                  onClick={handleCheckout} 
-                  disabled={processingOrder || cart.length === 0}
-                  className="w-full"
-                  size="lg"
-                >
-                  {processingOrder ? 'Оформление...' : 'Оформить заказ'}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delivery Address Selection Modal */}
-      <Dialog open={showAddressModal} onOpenChange={setShowAddressModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Выберите адрес доставки</DialogTitle>
-            <DialogDescription>
-              Пожалуйста, подтвердите адрес доставки для этого заказа
-            </DialogDescription>
-          </DialogHeader>
+          <span className="text-sm text-gray-600">
+            Страница {page + 1} из {totalPages}
+          </span>
           
-          <div className="space-y-3 mt-4">
-            {company?.deliveryAddresses && company.deliveryAddresses.map((address, index) => (
-              <Card 
-                key={index}
-                className={`p-4 cursor-pointer transition-all ${
-                  selectedAddress === address 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'hover:border-gray-400'
-                }`}
-                onClick={() => setSelectedAddress(address)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
-                    selectedAddress === address 
-                      ? 'border-blue-500 bg-blue-500' 
-                      : 'border-gray-300'
-                  }`}>
-                    {selectedAddress === address && (
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{address.address || address}</p>
-                    {address.phone && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Тел: {address.phone}
-                      </p>
-                    )}
-                    {address.additionalPhone && (
-                      <p className="text-sm text-muted-foreground">
-                        Доп. тел: {address.additionalPhone}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          <div className="flex gap-3 mt-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowAddressModal(false)}
-              className="flex-1"
-            >
-              Отмена
-            </Button>
-            <Button 
-              onClick={placeOrder}
-              disabled={!selectedAddress || processingOrder}
-              className="flex-1"
-            >
-              {processingOrder ? 'Оформление...' : 'Подтвердить заказ'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Success Modal */}
-      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center justify-center mb-4">
-              <div className="rounded-full bg-green-100 p-3">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </div>
-            <DialogTitle className="text-center text-2xl">Заказ принят!</DialogTitle>
-            <DialogDescription className="text-center">
-              Ваш заказ успешно размещен. Вы можете просмотреть детали заказа в истории заказов.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center mt-4">
-            <Button onClick={() => setShowSuccessModal(false)}>
-              Продолжить покупки
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          <Button
+            variant="outline"
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+          >
+            Вперёд
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
+
+export default CustomerCatalog;
