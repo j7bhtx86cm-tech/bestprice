@@ -102,16 +102,16 @@ export const CustomerCart = () => {
       // Group by supplier
       const ordersBySupplier = {};
       cartItems.forEach(item => {
-        const supplierId = item.supplierId || item.favoriteId;  // Needs proper supplier ID
+        const supplierId = item.supplierId || item.selected_offer?.supplier_id || item.favoriteId;
         if (!ordersBySupplier[supplierId]) {
           ordersBySupplier[supplierId] = { items: [] };
         }
         ordersBySupplier[supplierId].items.push({
-          productName: item.productName,
+          productName: item.productName || item.selected_offer?.name_raw || '',
           article: item.article || item.productCode || '',
-          quantity: item.quantity,
-          price: item.price,
-          unit: item.unit
+          quantity: item.quantity || item.qty || 1,
+          price: item.price || item.selected_offer?.price || 0,
+          unit: item.unit || item.selected_offer?.unit_norm || 'kg'
         });
       });
 
