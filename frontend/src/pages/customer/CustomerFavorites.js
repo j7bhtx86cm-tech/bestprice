@@ -40,8 +40,14 @@ const getCategoryColor = (superClass) => {
 };
 
 // Favorite Item Card
-const FavoriteItemCard = ({ item, onRemove, onAddToCart, adding }) => {
+const FavoriteItemCard = ({ item, onRemove, onAddToCart, adding, isInCart }) => {
   const [qty, setQty] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
+
+  const handleAddClick = async () => {
+    await onAddToCart(item, qty);
+    setAddedToCart(true);
+  };
 
   return (
     <Card className="p-4 hover:shadow-lg transition-all">
