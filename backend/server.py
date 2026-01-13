@@ -5499,6 +5499,14 @@ async def run_validation():
 # Include router
 app.include_router(api_router)
 
+# BestPrice v12 Router
+try:
+    from bestprice_v12.routes import router as v12_router
+    api_router.include_router(v12_router)
+    logging.info("✅ BestPrice v12 router loaded")
+except ImportError as e:
+    logging.warning(f"⚠️ BestPrice v12 router not available: {e}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
