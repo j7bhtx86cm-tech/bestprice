@@ -96,8 +96,13 @@ CLASSIFICATION_RULES = [
     # ===============================
     # ВЫСОКИЙ ПРИОРИТЕТ (90) - СПЕЦИИ И ПРИПРАВЫ (FIX: packaging problem)
     # ===============================
+    {'pattern': r'перец.*дроблен|crushed.*pepper', 'super_class': 'condiments.spice.pepper', 'priority': 96},
+    {'pattern': r'перец.*душист|allspice', 'super_class': 'condiments.spice.allspice', 'priority': 96},
+    {'pattern': r'перец.*сладк|sweet.*pepper', 'super_class': 'condiments.spice.paprika', 'priority': 96},
+    {'pattern': r'перец.*красн.*остр|red.*hot.*pepper|птичий.*глаз|bird.*eye', 'super_class': 'condiments.spice.chili', 'priority': 96},
     {'pattern': r'перец.*горошек|перец.*черн.*горош|pepper.*corn', 'super_class': 'condiments.spice.pepper', 'priority': 95},
     {'pattern': r'перец.*молот|перец.*черн.*молот|pepper.*ground', 'super_class': 'condiments.spice.pepper', 'priority': 95},
+    {'pattern': r'халапеньо|jalapeno', 'super_class': 'condiments.spice.jalapeno', 'priority': 96},
     {'pattern': r'перец.*чили|chili.*pepper|чили.*перец', 'super_class': 'condiments.spice.chili', 'priority': 95},
     {'pattern': r'перец.*розов|pink.*pepper', 'super_class': 'condiments.spice.pepper', 'priority': 95},
     {'pattern': r'корица|cinnamon', 'super_class': 'condiments.spice.cinnamon', 'priority': 95},
@@ -133,6 +138,8 @@ CLASSIFICATION_RULES = [
     {'pattern': r'уцхо.*сунели', 'super_class': 'condiments.spice_mix.utskho_suneli', 'priority': 95},
     {'pattern': r'прован.*трав|provenc.*herbs', 'super_class': 'condiments.spice_mix.provence', 'priority': 95},
     {'pattern': r'итальян.*трав|italian.*herbs', 'super_class': 'condiments.spice_mix.italian', 'priority': 95},
+    {'pattern': r'фахита|fajita', 'super_class': 'condiments.seasoning.fajita', 'priority': 96},
+    {'pattern': r'приправ.*универс|universal.*seasoning', 'super_class': 'condiments.seasoning', 'priority': 96},
     {'pattern': r'приправ.*для|seasoning.*for', 'super_class': 'condiments.seasoning', 'priority': 85},
     {'pattern': r'смесь.*специй|spice.*mix', 'super_class': 'condiments.spice_mix', 'priority': 85},
     {'pattern': r'пастернак', 'super_class': 'vegetables.parsnip', 'priority': 90},
