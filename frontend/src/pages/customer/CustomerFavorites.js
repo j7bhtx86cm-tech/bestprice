@@ -189,8 +189,14 @@ export const CustomerFavorites = () => {
     setAdding(item.id);
     try {
       const userId = getUserId();
+      // reference_id = supplier_item.id, используем его как supplier_item_id
+      const supplierItemId = item.reference_id || item.anchor_supplier_item_id;
+      
       const response = await axios.post(`${API}/v12/cart/add`, {
-        reference_id: item.reference_id,
+        supplier_item_id: supplierItemId,
+        product_name: item.product_name,
+        supplier_id: item.best_supplier_id,
+        price: item.best_price,
         qty: qty,
         user_id: userId
       }, {
@@ -198,14 +204,18 @@ export const CustomerFavorites = () => {
       });
 
       if (response.data.status === 'ok') {
+        // Помечаем что добавлено в корзину
+        setCartItems(prev => new Set([...prev, item.id]));
+        setCartCount(prev => prev + 1);
         const msg = response.data.substituted 
           ? `Добавлено в корзину (заменено, экономия ${response.data.savings?.toLocaleString('ru-RU')} ₽)`
-          : 'Добавлено в корзину';
+          : '✓ Добавлено в корзину';
         toast.success(msg);
       } else {
         toast.error(response.data.message || 'Ошибка добавления');
       }
     } catch (error) {
+      console.error('Add to cart error:', error);
       toast.error('Ошибка добавления в корзину');
     } finally {
       setAdding(null);
