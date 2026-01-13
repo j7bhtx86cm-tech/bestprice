@@ -15,30 +15,30 @@
 - **FIXED**: Дубли при повторной загрузке прайс-листов
 - **FIXED**: BestPrice не учитывал min_order_qty
 
-## Текущий статус: ✅ BestPrice v12 IMPLEMENTED (2026-01-13)
+## Текущий статус: ✅ BestPrice v12 FULL STACK COMPLETE (2026-01-13)
 
-### LATEST: BestPrice v12 — Каталог → Избранное → Корзина (2026-01-13) ✅
-Реализована новая архитектура по ТЗ:
+### LATEST: BestPrice v12 — Full Stack Implementation (2026-01-13) ✅
 
-**Новые возможности:**
-- **Каталог** с Best Price (STRICT фасовка) - 658 reference карточек
-- **Избранное** хранит 100% reference + anchor_supplier_item_id
-- **Корзина** с логикой anchor vs substitution (дешевле = замена)
-- **Минималка 10k₽** по каждому поставщику
-- **Автодобивка 10%** при deficit ≤1000₽
-
-**API v12 endpoints:**
-- `GET /api/v12/catalog` - каталог с best_price
+**Backend API v12:**
+- `GET /api/v12/catalog` - каталог с best_price (658 карточек)
 - `GET /api/v12/favorites` - избранное пользователя
 - `POST /api/v12/cart/add` - add-to-cart с substitution
 - `GET /api/v12/cart` - корзина с группировкой по поставщикам
 - `POST /api/v12/cart/topup/{supplier_id}` - автодобивка
-- `POST /api/v12/admin/test/favorites/random` - seed 100 favorites
+- `POST /api/v12/admin/test/favorites/random` - seed 100 favorites ✅
 
-**Reason Codes:**
-- `ANCHOR_USED_NO_CHEAPER` - anchor дешевле или равен
-- `SUBSTITUTED_CHEAPER` - найден более дешёвый вариант
-- `TOPUP_APPLIED_QTY` - qty увеличено для минималки
+**Frontend UI v12:**
+- `CustomerCatalogV12.js` - каталог с Best Price, категориями, фильтрами
+- `CustomerFavoritesV12.js` - избранное с кнопкой "+100 случайных"
+- `CustomerCartV12.js` - корзина с минималками, progress bar, автодобивкой
+
+**Реализовано по ТЗ:**
+- ✅ STRICT фасовка (без пересчётов)
+- ✅ Минималка 10 000₽ по поставщику с progress bar
+- ✅ Автодобивка 10% при deficit ≤1000₽
+- ✅ Группировка корзины по поставщикам
+- ✅ Seed 100 случайных карточек в избранное
+- ✅ Reason Codes (ANCHOR_USED_NO_CHEAPER, SUBSTITUTED_CHEAPER, TOPUP_APPLIED_QTY)
 
 ### Build SHA: (latest)
 
