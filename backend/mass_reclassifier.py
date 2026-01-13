@@ -66,9 +66,9 @@ CLASSIFICATION_RULES = [
     {'pattern': r'сардин|sardine', 'super_class': 'seafood.sardine', 'priority': 100},
     {'pattern': r'навага|navaga', 'super_class': 'seafood.navaga', 'priority': 100},
     {'pattern': r'зубатка|wolffish', 'super_class': 'seafood.wolffish', 'priority': 100},
-    {'pattern': r'пангасиус|pangasius|баса', 'super_class': 'seafood.pangasius', 'priority': 100},
+    {'pattern': r'пангасиус|pangasius|\bбаса\b', 'super_class': 'seafood.pangasius', 'priority': 100},
     {'pattern': r'шпрот|sprat', 'super_class': 'seafood.sprat', 'priority': 100},
-    {'pattern': r'морской язык|sole', 'super_class': 'seafood.sole', 'priority': 100},
+    {'pattern': r'морской язык|\bsole\b', 'super_class': 'seafood.sole', 'priority': 100},
     {'pattern': r'\bрыб[аыу]|\bfish\b|филе.*(с/м|свежемор|охлажд)', 'super_class': 'seafood.fish', 'priority': 80},
     {'pattern': r'морепродукт|seafood|морской коктейль', 'super_class': 'seafood.mix', 'priority': 90},
     
