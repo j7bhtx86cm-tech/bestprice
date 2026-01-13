@@ -92,29 +92,29 @@ const CatalogItemCard = ({ item, onAddToFavorites, onAddToCart, isInFavorites })
 
       {/* Product name */}
       <h3 className="font-semibold text-base mb-2 line-clamp-2 min-h-[48px]">
-        {item.name}
+        {item.name_raw || item.name}
       </h3>
 
       {/* Pack info */}
-      {item.pack_value && item.pack_unit && (
+      {item.pack_qty > 1 && (
         <p className="text-sm text-gray-600 mb-2">
-          Фасовка: {item.pack_value} {item.pack_unit}
+          Фасовка: {item.pack_qty} {item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'}
         </p>
       )}
 
-      {/* Best price */}
+      {/* Price */}
       <div className="flex items-center gap-2 mb-3">
         <TrendingDown className="h-4 w-4 text-green-600" />
         <span className="text-lg font-bold text-green-600">
-          {formatPrice(item.best_price)}
+          {formatPrice(item.price || item.best_price)}
         </span>
       </div>
 
       {/* Supplier */}
-      {item.best_supplier_name && (
+      {(item.supplier_name || item.best_supplier_name) && (
         <p className="text-sm text-gray-500 mb-3">
           <Package className="h-3 w-3 inline mr-1" />
-          {item.best_supplier_name}
+          {item.supplier_name || item.best_supplier_name}
         </p>
       )}
 
