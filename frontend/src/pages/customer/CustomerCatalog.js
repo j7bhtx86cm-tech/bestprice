@@ -294,6 +294,10 @@ export const CustomerCatalog = () => {
     if (response.data.status !== 'ok') {
       throw new Error(response.data.message || 'Ошибка добавления');
     }
+    
+    // Обновляем счётчик корзины
+    setCartCount(prev => prev + 1);
+    setCartItems(prev => new Set([...prev, itemId]));
   };
 
   // Search handler with debounce
