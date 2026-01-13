@@ -251,6 +251,7 @@ const SupplierGroupCard = ({ supplier, items, onTopup, applyingTopup }) => {
 // Main Cart Component
 export const CustomerCartV12 = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [cartData, setCartData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState(null);
@@ -258,10 +259,9 @@ export const CustomerCartV12 = () => {
   const [processingOrder, setProcessingOrder] = useState(false);
   const [applyingTopup, setApplyingTopup] = useState(null);
 
-  // Get user ID
+  // Get user ID from auth context
   const getUserId = () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return user.id || 'test_user_v12';
+    return user?.id || 'anonymous';
   };
 
   // Get auth headers
