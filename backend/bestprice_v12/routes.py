@@ -1,0 +1,335 @@
+"""
+BestPrice v12 - API Routes
+
+FastAPI роутер для v12 функционала
+"""
+
+import logging
+from typing import Optional, List
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
+
+from .models import (
+    AddToCartRequest, AddToCartResponse,
+    CatalogItemResponse, CartSummary,
+    SeedFavoritesRequest, SeedFavoritesResponse,
+    MIN_SUPPLIER_ORDER_RUB, TOPUP_THRESHOLD_RUB
+)
+from .catalog import (
+    get_db, generate_catalog_references, 
+    get_catalog_items, update_best_prices
+)
+from .cart import (
+    add_to_cart, get_cart_summary, 
+    apply_topup, clear_cart, remove_from_cart
+)
+from .favorites import (
+    seed_random_favorites, get_user_favorites,
+    add_to_favorites, remove_from_favorites
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
+
+
+# === CATALOG ENDPOINTS ===
+
+@router.get("/catalog", summary="Получить каталог с Best Price")
+async def get_catalog(
+    super_class: Optional[str] = Query(None, description="Фильтр по категории"),
+    search: Optional[str] = Query(None, description="Поиск по названию"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: dict = None  # TODO: Add auth dependency
+):
+    """
+    Получает список карточек каталога с Best Price (п.6 ТЗ)
+    
+    - Best price показывается по той же фасовке (STRICT)
+    - Возвращает информацию о поставщике и мин. заказе
+    """
+    db = get_db()
+    
+    filters = {}
+    if super_class:
+        filters['super_class'] = super_class
+    if search:
+        filters['search'] = search
+    
+    items = get_catalog_items(db, filters, skip, limit)
+    total = db.catalog_references.count_documents(filters if filters else {})
+    
+    return {
+        'items': items,
+        'total': total,
+        'skip': skip,
+        'limit': limit,
+        'has_more': skip + len(items) < total
+    }
+
+
+@router.get("/catalog/{reference_id}", summary="Получить карточку каталога")
+async def get_catalog_item(reference_id: str):
+    """Получает детали карточки каталога"""
+    db = get_db()
+    
+    ref = db.catalog_references.find_one({'reference_id': reference_id}, {'_id': 0})
+    
+    if not ref:
+        raise HTTPException(status_code=404, detail="Карточка не найдена")
+    
+    # Получаем все предложения для этой карточки
+    from .cart import get_candidates_for_reference
+    
+    candidates = get_candidates_for_reference(
+        db,
+        ref['product_core_id'],
+        ref['unit_type'],
+        ref.get('pack_value'),
+        ref.get('pack_unit')
+    )
+    
+    # Получаем названия поставщиков
+    supplier_ids = list(set(c.get('supplier_company_id') for c in candidates))
+    companies = {c['id']: c.get('companyName', c.get('name', 'Unknown')) 
+                 for c in db.companies.find({'id': {'$in': supplier_ids}}, {'_id': 0})}
+    
+    offers = []
+    for c in sorted(candidates, key=lambda x: x.get('price', float('inf'))):
+        offers.append({
+            'supplier_item_id': c['id'],
+            'supplier_name': companies.get(c.get('supplier_company_id'), 'Unknown'),
+            'price': c['price'],
+            'min_order_qty': c.get('min_order_qty', 1),
+            'name': c.get('name_raw', '')
+        })
+    
+    ref['offers'] = offers
+    ref['offers_count'] = len(offers)
+    
+    return ref
+
+
+# === FAVORITES ENDPOINTS ===
+
+@router.get("/favorites", summary="Получить избранное")
+async def get_favorites(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    user_id: str = Query(..., description="ID пользователя")  # TODO: Get from auth
+):
+    """Получает список избранного пользователя"""
+    db = get_db()
+    
+    favorites = get_user_favorites(db, user_id, skip, limit)
+    total = db.favorites_v12.count_documents({'user_id': user_id})
+    
+    return {
+        'items': favorites,
+        'total': total,
+        'skip': skip,
+        'limit': limit
+    }
+
+
+@router.post("/favorites", summary="Добавить в избранное")
+async def add_favorite(
+    reference_id: str,
+    user_id: str = Query(..., description="ID пользователя")
+):
+    """Добавляет карточку каталога в избранное (п.7 ТЗ)"""
+    db = get_db()
+    
+    result = add_to_favorites(db, user_id, reference_id)
+    
+    if result['status'] == 'not_found':
+        raise HTTPException(status_code=404, detail=result['message'])
+    
+    return result
+
+
+@router.delete("/favorites/{favorite_id}", summary="Удалить из избранного")
+async def delete_favorite(
+    favorite_id: str,
+    user_id: str = Query(..., description="ID пользователя")
+):
+    """Удаляет из избранного"""
+    db = get_db()
+    
+    result = remove_from_favorites(db, user_id, favorite_id)
+    
+    if result['status'] == 'not_found':
+        raise HTTPException(status_code=404, detail=result['message'])
+    
+    return result
+
+
+# === CART ENDPOINTS ===
+
+class AddToCartRequestV12(BaseModel):
+    reference_id: str = Field(..., description="ID reference карточки или favorite")
+    qty: float = Field(gt=0, description="Количество")
+    user_id: str = Field(..., description="ID пользователя")
+
+
+@router.post("/cart/add", summary="Добавить в корзину из избранного")
+async def add_to_cart_endpoint(request: AddToCartRequestV12):
+    """
+    Добавляет товар из избранного в корзину (п.8 ТЗ)
+    
+    Логика:
+    - Выбирает самый выгодный вариант по line_total
+    - STRICT фасовка (без пересчётов)
+    - Если дешевле нет - кладёт anchor
+    - Показывает замену если была
+    """
+    db = get_db()
+    
+    result = add_to_cart(db, request.user_id, request.reference_id, request.qty)
+    
+    if result['status'] == 'not_found':
+        raise HTTPException(status_code=404, detail=result['message'])
+    
+    return result
+
+
+@router.get("/cart", summary="Получить корзину")
+async def get_cart(user_id: str = Query(..., description="ID пользователя")):
+    """
+    Получает корзину с группировкой по поставщикам (п.9 ТЗ)
+    
+    Возвращает:
+    - Список позиций
+    - Сумму по каждому поставщику
+    - Информацию о минималках
+    """
+    db = get_db()
+    
+    summary = get_cart_summary(db, user_id)
+    
+    return {
+        **summary,
+        'minimum_order_rub': MIN_SUPPLIER_ORDER_RUB,
+        'topup_threshold_rub': TOPUP_THRESHOLD_RUB
+    }
+
+
+@router.post("/cart/topup/{supplier_id}", summary="Применить автодобивку")
+async def apply_topup_endpoint(
+    supplier_id: str,
+    user_id: str = Query(..., description="ID пользователя")
+):
+    """
+    Применяет автодобивку для достижения минималки (п.10 ТЗ)
+    
+    - Работает только если deficit <= 1000₽ (10%)
+    - Увеличивает количество существующих товаров
+    """
+    db = get_db()
+    
+    result = apply_topup(db, user_id, supplier_id)
+    
+    if result['status'] == 'error':
+        raise HTTPException(status_code=400, detail=result['message'])
+    
+    return result
+
+
+@router.delete("/cart", summary="Очистить корзину")
+async def clear_cart_endpoint(user_id: str = Query(..., description="ID пользователя")):
+    """Очищает корзину"""
+    db = get_db()
+    return clear_cart(db, user_id)
+
+
+@router.delete("/cart/{cart_item_id}", summary="Удалить из корзины")
+async def remove_cart_item(
+    cart_item_id: str,
+    user_id: str = Query(..., description="ID пользователя")
+):
+    """Удаляет позицию из корзины"""
+    db = get_db()
+    
+    result = remove_from_cart(db, user_id, cart_item_id)
+    
+    if result['status'] == 'not_found':
+        raise HTTPException(status_code=404, detail=result['message'])
+    
+    return result
+
+
+# === ADMIN ENDPOINTS ===
+
+@router.post("/admin/catalog/generate", summary="Сгенерировать каталог")
+async def generate_catalog(limit: Optional[int] = None):
+    """
+    Генерирует catalog_references из supplier_items
+    
+    Вызывать после импорта новых прайсов
+    """
+    db = get_db()
+    
+    stats = generate_catalog_references(db, limit)
+    
+    return {
+        'status': 'ok',
+        'stats': stats
+    }
+
+
+@router.post("/admin/catalog/update-prices", summary="Обновить Best Prices")
+async def update_prices():
+    """
+    Обновляет best_price для всех карточек
+    
+    Вызывать периодически или после изменения прайсов
+    """
+    db = get_db()
+    
+    stats = update_best_prices(db)
+    
+    return {
+        'status': 'ok',
+        'stats': stats
+    }
+
+
+@router.post("/admin/test/favorites/random", summary="Добавить случайные карточки в избранное")
+async def seed_favorites_endpoint(request: SeedFavoritesRequest):
+    """
+    Добавляет случайные карточки каталога в избранное (п.14 ТЗ)
+    
+    Для тестирования:
+    - Add-to-cart логики
+    - Замены
+    - Минималок
+    - Автодобивки
+    """
+    db = get_db()
+    
+    result = seed_random_favorites(db, request.user_id, request.count, request.filters)
+    
+    return SeedFavoritesResponse(**result)
+
+
+# === DIAGNOSTICS ===
+
+@router.get("/diagnostics", summary="Диагностика v12")
+async def get_diagnostics():
+    """Возвращает статистику по v12"""
+    db = get_db()
+    
+    return {
+        'catalog_references': db.catalog_references.count_documents({}),
+        'favorites_v12': db.favorites_v12.count_documents({}),
+        'cart_items_v12': db.cart_items_v12.count_documents({}),
+        'supplier_items_active': db.supplier_items.count_documents({'active': True}),
+        'config': {
+            'MIN_SUPPLIER_ORDER_RUB': MIN_SUPPLIER_ORDER_RUB,
+            'TOPUP_THRESHOLD_RUB': TOPUP_THRESHOLD_RUB,
+            'PACK_MATCH_MODE': 'STRICT'
+        }
+    }
