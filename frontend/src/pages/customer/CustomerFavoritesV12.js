@@ -98,16 +98,16 @@ const FavoriteItemCard = ({ item, onRemove, onAddToCart, adding }) => {
 // Main Favorites Component
 export const CustomerFavoritesV12 = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState(null);
   const [seeding, setSeeding] = useState(false);
 
-  // Get user ID
+  // Get user ID from auth context
   const getUserId = () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return user.id || 'test_user_v12';
+    return user?.id || 'anonymous';
   };
 
   // Get auth headers
