@@ -164,11 +164,34 @@ export const CustomerFavorites = () => {
     }
   }, [user]);
 
+  // Fetch cart to show which items are already in cart
+  const fetchCart = useCallback(async () => {
+    try {
+      const userId = getUserId();
+      if (!userId || userId === 'anonymous') return;
+      
+      const response = await axios.get(`${API}/v12/cart?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      const items = response.data.items || [];
+      setCartCount(items.length);
+      // Store both supplier_item_id and reference_id for matching
+      const cartSet = new Set();
+      items.forEach(i => {
+        if (i.supplier_item_id) cartSet.add(i.supplier_item_id);
+      });
+      setCartItems(cartSet);
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user?.id) {
       fetchFavorites();
+      fetchCart();
     }
-  }, [fetchFavorites, user]);
+  }, [fetchFavorites, fetchCart, user]);
 
   // Remove from favorites
   const handleRemove = async (favoriteId) => {
