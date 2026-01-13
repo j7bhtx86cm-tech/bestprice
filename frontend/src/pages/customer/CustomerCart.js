@@ -1,42 +1,268 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ShoppingCart, Trash2, Plus, Minus, Package, MapPin, CheckCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import {
+  ShoppingCart, Trash2, Plus, Minus, Package, MapPin, 
+  CheckCircle, AlertTriangle, TrendingUp, ArrowRight,
+  RefreshCw, Zap
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Cart Item Component with substitution badge
+const CartItemRow = ({ item, onRemove, updating }) => {
+  return (
+    <div className={`p-4 border rounded-lg ${item.substitution_applied ? 'border-green-300 bg-green-50' : ''} ${item.topup_applied ? 'border-blue-300 bg-blue-50' : ''}`}>
+      <div className="flex items-start gap-4">
+        {/* Main info */}
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className="font-medium">{item.product_name}</h4>
+            
+            {/* Substitution badge */}
+            {item.substitution_applied && (
+              <Badge className="bg-green-600 text-white">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                Заменено
+              </Badge>
+            )}
+            
+            {/* Topup badge */}
+            {item.topup_applied && (
+              <Badge className="bg-blue-600 text-white">
+                <Zap className="h-3 w-3 mr-1" />
+                Добито
+              </Badge>
+            )}
+          </div>
+
+          {/* Supplier */}
+          <p className="text-sm text-gray-600 mb-1">
+            <Package className="h-3 w-3 inline mr-1" />
+            {item.supplier_name}
+          </p>
+
+          {/* Price info */}
+          <p className="text-sm text-gray-600">
+            {item.price?.toLocaleString('ru-RU')} ₽ / ед.
+            {item.min_order_qty > 1 && (
+              <span className="text-orange-600 ml-2">
+                мин. заказ: {item.min_order_qty}
+              </span>
+            )}
+          </p>
+
+          {/* Substitution details */}
+          {item.substitution_applied && item.savings > 0 && (
+            <div className="mt-2 p-2 bg-green-100 rounded text-sm">
+              <p className="text-green-800">
+                💰 Экономия: <strong>{item.savings?.toLocaleString('ru-RU')} ₽</strong>
+              </p>
+              {item.original_supplier_name && (
+                <p className="text-green-700 text-xs">
+                  Было: {item.original_supplier_name} ({item.original_price?.toLocaleString('ru-RU')} ₽)
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Topup reason */}
+          {item.topup_applied && item.qty_increased_reason && (
+            <div className="mt-2 p-2 bg-blue-100 rounded text-sm">
+              <p className="text-blue-800">
+                ⬆️ {item.qty_increased_reason}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Quantity */}
+        <div className="text-center">
+          <p className="text-sm text-gray-500">Кол-во</p>
+          <p className="font-semibold">{item.effective_qty || item.user_qty}</p>
+        </div>
+
+        {/* Line total */}
+        <div className="text-right min-w-[100px]">
+          <p className="font-bold text-lg">
+            {item.line_total?.toLocaleString('ru-RU')} ₽
+          </p>
+          {item.effective_qty !== item.user_qty && (
+            <p className="text-xs text-orange-600">
+              факт: {item.effective_qty} ед.
+            </p>
+          )}
+        </div>
+
+        {/* Remove */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(item.cart_item_id)}
+          className="text-red-500 hover:text-red-700"
+          disabled={updating}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// Supplier Group Card
+const SupplierGroupCard = ({ supplier, items, onTopup, onRemove, applyingTopup }) => {
+  const deficit = supplier.deficit || 0;
+  const canTopup = supplier.can_topup && deficit > 0;
+  const progress = Math.min(100, (supplier.subtotal / 10000) * 100);
+
+  return (
+    <Card className={`p-6 ${!supplier.meets_minimum ? 'border-2 border-orange-300' : 'border-green-300'}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 pb-3 border-b">
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold">{supplier.supplier_name}</h3>
+          <Badge variant="outline">{supplier.items_count} товаров</Badge>
+        </div>
+        
+        <div className="text-right">
+          <p className="text-xl font-bold">
+            {supplier.subtotal?.toLocaleString('ru-RU')} ₽
+          </p>
+          {!supplier.meets_minimum && (
+            <p className="text-sm text-orange-600">
+              До минималки: {deficit?.toLocaleString('ru-RU')} ₽
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Progress to minimum */}
+      {!supplier.meets_minimum && (
+        <div className="mb-4">
+          <div className="flex justify-between text-sm mb-1">
+            <span>Прогресс до минималки (10 000 ₽)</span>
+            <span>{progress.toFixed(0)}%</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+          
+          {/* Topup button */}
+          {canTopup && (
+            <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 mb-2">
+                💡 До минималки осталось менее 10%. Система может автоматически увеличить количество товаров.
+              </p>
+              <Button
+                size="sm"
+                onClick={() => onTopup(supplier.supplier_id)}
+                disabled={applyingTopup}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {applyingTopup ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Применяется...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Автодобивка (+{deficit?.toLocaleString('ru-RU')} ₽)
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+          
+          {!canTopup && deficit > 1000 && (
+            <p className="mt-2 text-sm text-orange-600">
+              ⚠️ Дефицит ({deficit?.toLocaleString('ru-RU')} ₽) превышает 10% — добавьте товаров вручную
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Items */}
+      <div className="space-y-3">
+        {items.map(item => (
+          <CartItemRow
+            key={item.cart_item_id}
+            item={item}
+            onRemove={onRemove}
+            updating={false}
+          />
+        ))}
+      </div>
+
+      {/* Minimum status */}
+      {supplier.meets_minimum && (
+        <div className="mt-4 p-3 bg-green-50 rounded-lg flex items-center gap-2 text-green-800">
+          <CheckCircle className="h-5 w-5" />
+          <span className="font-medium">Минималка достигнута</span>
+        </div>
+      )}
+    </Card>
+  );
+};
+
+// Main Cart Component
 export const CustomerCart = () => {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState([]);
+  const { user } = useAuth();
+  const [cartData, setCartData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [showAddressModal, setShowAddressModal] = useState(false);
   const [processingOrder, setProcessingOrder] = useState(false);
-  const [loadingPrices, setLoadingPrices] = useState(false);
+  const [applyingTopup, setApplyingTopup] = useState(null);
 
-  useEffect(() => {
-    loadCart();
-    fetchCompanyInfo();
-  }, []);
-
-  const loadCart = () => {
-    // Load from catalog cart - items from favorites are ALREADY resolved with price
-    const catalogCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
-    setCartItems(catalogCart);
-    setLoadingPrices(false);
+  // Get user ID from auth context
+  const getUserId = () => {
+    return user?.id || 'anonymous';
   };
 
-  const fetchCompanyInfo = async () => {
+  // Get auth headers
+  const getHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  // Fetch cart
+  const fetchCart = useCallback(async () => {
+    setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/companies/my`, { headers });
+      const userId = getUserId();
+      if (!userId || userId === 'anonymous') {
+        setLoading(false);
+        return;
+      }
+      
+      const response = await axios.get(`${API}/v12/cart?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      setCartData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+      toast.error('Ошибка загрузки корзины');
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Fetch company
+  const fetchCompany = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/companies/my`, {
+        headers: getHeaders()
+      });
       setCompany(response.data);
       if (response.data.deliveryAddresses?.length === 1) {
         setSelectedAddress(response.data.deliveryAddresses[0]);
@@ -44,53 +270,88 @@ export const CustomerCart = () => {
     } catch (error) {
       console.error('Failed to fetch company:', error);
     }
-  };
+  }, []);
 
-  const updateQuantity = (cartId, delta) => {
-    const updated = cartItems.map(item => {
-      if (item.cartId === cartId) {
-        const currentQty = item.quantity || item.qty || 1;
-        const newQty = Math.max(1, currentQty + delta);
-        return { ...item, quantity: newQty, qty: newQty };  // Update both fields
+  useEffect(() => {
+    if (user?.id) {
+      fetchCart();
+    }
+    fetchCompany();
+  }, [fetchCart, fetchCompany, user]);
+
+  // Apply topup
+  const handleTopup = async (supplierId) => {
+    setApplyingTopup(supplierId);
+    try {
+      const userId = getUserId();
+      const response = await axios.post(
+        `${API}/v12/cart/topup/${supplierId}?user_id=${userId}`,
+        {},
+        { headers: getHeaders() }
+      );
+      
+      if (response.data.status === 'ok') {
+        toast.success(response.data.message);
+        fetchCart(); // Reload cart
+      } else {
+        toast.error(response.data.message);
       }
-      return item;
-    });
-    setCartItems(updated);
-    saveCart(updated);
+    } catch (error) {
+      toast.error('Ошибка автодобивки');
+    } finally {
+      setApplyingTopup(null);
+    }
   };
 
-  const removeItem = (cartId) => {
-    const updated = cartItems.filter(item => item.cartId !== cartId);
-    setCartItems(updated);
-    saveCart(updated);
+  // Remove from cart
+  const handleRemove = async (cartItemId) => {
+    try {
+      const userId = getUserId();
+      await axios.delete(`${API}/v12/cart/${cartItemId}?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      fetchCart();
+      toast.success('Удалено из корзины');
+    } catch (error) {
+      toast.error('Ошибка удаления');
+    }
   };
 
-  const saveCart = (items) => {
-    // Save all items to catalogCart (unified cart)
-    localStorage.setItem('catalogCart', JSON.stringify(items));
+  // Clear cart
+  const handleClearCart = async () => {
+    if (!confirm('Очистить корзину?')) return;
+    
+    try {
+      const userId = getUserId();
+      await axios.delete(`${API}/v12/cart?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      fetchCart();
+      toast.success('Корзина очищена');
+    } catch (error) {
+      toast.error('Ошибка очистки');
+    }
   };
 
-  const getCartTotal = () => {
-    return cartItems.reduce((sum, item) => sum + (item.price * (item.quantity || item.qty || 1)), 0);
+  // Check if can checkout
+  const canCheckout = () => {
+    if (!cartData?.items?.length) return false;
+    if (!selectedAddress) return false;
+    if (cartData.has_minimum_issues) return false;
+    return true;
   };
 
-  const groupBySupplier = () => {
-    const groups = {};
-    cartItems.forEach(item => {
-      const supplier = item.supplier || item.supplierName || 'Unknown';
-      if (!groups[supplier]) {
-        groups[supplier] = [];
-      }
-      groups[supplier].push(item);
-    });
-    return groups;
-  };
-
+  // Handle checkout
   const handleCheckout = async () => {
-    if (cartItems.length === 0) return;
-
-    if (company?.deliveryAddresses?.length > 1 && !selectedAddress) {
-      setShowAddressModal(true);
+    if (!canCheckout()) {
+      if (cartData?.has_minimum_issues) {
+        toast.error('Не достигнуты минималки по поставщикам');
+        return;
+      }
+      if (!selectedAddress) {
+        toast.error('Выберите адрес доставки');
+        return;
+      }
       return;
     }
 
@@ -98,209 +359,175 @@ export const CustomerCart = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-
-      // Group by supplier
+      
+      // Group items by supplier
       const ordersBySupplier = {};
-      cartItems.forEach(item => {
-        const supplierId = item.supplierId || item.selected_offer?.supplier_id || item.favoriteId;
+      cartData.items.forEach(item => {
+        const supplierId = item.supplier_id;
         if (!ordersBySupplier[supplierId]) {
           ordersBySupplier[supplierId] = { items: [] };
         }
         ordersBySupplier[supplierId].items.push({
-          productName: item.productName || item.selected_offer?.name_raw || '',
-          article: item.article || item.productCode || '',
-          quantity: item.quantity || item.qty || 1,
-          price: item.price || item.selected_offer?.price || 0,
-          unit: item.unit || item.selected_offer?.unit_norm || 'kg'
+          productName: item.product_name,
+          article: '',
+          quantity: item.effective_qty || item.user_qty,
+          price: item.price,
+          unit: item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'
         });
       });
 
-      // Create orders
-      for (const [supplierId, orderData] of Object.entries(ordersBySupplier)) {
-        const amount = orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        await axios.post(`${API}/orders`, {
+      // Create orders for each supplier
+      const orderPromises = Object.entries(ordersBySupplier).map(([supplierId, data]) => {
+        const amount = data.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        return axios.post(`${API}/orders`, {
           supplierCompanyId: supplierId,
           amount: amount,
-          orderDetails: orderData.items,
+          orderDetails: data.items,
           deliveryAddress: selectedAddress
         }, { headers });
-      }
+      });
 
-      // Clear cart
-      localStorage.removeItem('catalogCart');
-      localStorage.removeItem('favoriteCart');
-      setCartItems([]);
+      await Promise.all(orderPromises);
       
-      alert('✓ Заказ успешно создан!');
+      // Clear cart
+      const userId = getUserId();
+      await axios.delete(`${API}/v12/cart?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      
+      toast.success('Заказ создан!');
+      fetchCart();
       navigate('/customer/orders');
     } catch (error) {
-      console.error('Failed to create order:', error);
-      alert('Ошибка создания заказа');
+      console.error('Order error:', error);
+      toast.error('Ошибка создания заказа');
     } finally {
       setProcessingOrder(false);
     }
   };
 
-  const supplierGroups = groupBySupplier();
+  // Group items by supplier
+  const groupedBySupplier = () => {
+    if (!cartData?.items) return {};
+    const groups = {};
+    cartData.items.forEach(item => {
+      const supplierId = item.supplier_id;
+      if (!groups[supplierId]) {
+        groups[supplierId] = [];
+      }
+      groups[supplierId].push(item);
+    });
+    return groups;
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-12 w-64" />
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  const itemGroups = groupedBySupplier();
+  const suppliersMap = {};
+  cartData?.suppliers?.forEach(s => { suppliersMap[s.supplier_id] = s; });
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-4xl font-bold mb-2">Корзина</h2>
-          <p className="text-base text-muted-foreground">
-            Проверьте товары перед оформлением заказа
+          <h1 className="text-3xl font-bold">Корзина</h1>
+          <p className="text-gray-600">
+            {cartData?.items?.length || 0} товаров • 
+            Итого: {cartData?.total?.toLocaleString('ru-RU') || 0} ₽
           </p>
         </div>
-        {cartItems.length > 0 && (
-          <Button onClick={handleCheckout} disabled={processingOrder} size="lg">
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Оформить заказ ({cartItems.length})
+        
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleClearCart} disabled={!cartData?.items?.length}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Очистить
           </Button>
-        )}
+          <Button variant="outline" onClick={fetchCart}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Обновить
+          </Button>
+        </div>
       </div>
 
-      {cartItems.length === 0 ? (
+      {/* Empty cart */}
+      {!cartData?.items?.length ? (
         <Card className="p-12 text-center">
           <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-600 mb-2">Корзина пуста</p>
-          <p className="text-sm text-gray-500 mb-4">Добавьте товары из каталога или избранного</p>
-          <div className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={() => navigate('/customer/catalog')}>
-              Перейти в каталог
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/customer/favorites')}>
-              Перейти в избранное
-            </Button>
-          </div>
+          <p className="text-sm text-gray-500 mb-4">Добавьте товары из каталога</p>
+          <Button onClick={() => navigate('/customer/catalog')}>
+            Перейти в каталог
+          </Button>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {/* Group by Supplier */}
-          {Object.entries(supplierGroups).map(([supplier, items]) => (
-            <Card key={supplier} className="p-6">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                <Package className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-semibold">{supplier}</h3>
-                <Badge className="ml-auto">
-                  {items.length} товаров
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                {items.map((item) => {
-                  // Support both qty and quantity fields
-                  const quantity = item.quantity || item.qty || 1;
-                  return (
-                  <div key={item.cartId} className="flex items-center gap-4 p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium">{item.productName}</p>
-                      {item.source === 'favorites' && (
-                        <p className="text-xs text-green-600">
-                          ✓ Оптимизировано автоматически
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-600">
-                        {item.price?.toLocaleString('ru-RU')} ₽ / {item.unit}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.cartId, -1)}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={quantity}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value) || 1;
-                          updateQuantity(item.cartId, val - quantity);
-                        }}
-                        className="w-20 text-center"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.cartId, 1)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="text-right w-24">
-                      <p className="font-semibold">
-                        {(item.price * quantity).toLocaleString('ru-RU')} ₽
-                      </p>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeItem(item.cartId)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                <span className="font-medium">Итого у {supplier}:</span>
-                <span className="text-xl font-bold">
-                  {items.reduce((sum, i) => sum + (i.price * (i.quantity || i.qty || 1)), 0).toLocaleString('ru-RU')} ₽
-                </span>
+        <>
+          {/* Minimum warning */}
+          {cartData.has_minimum_issues && (
+            <Card className="p-4 bg-orange-50 border-orange-300">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-6 w-6 text-orange-600" />
+                <div>
+                  <p className="font-medium text-orange-800">
+                    Не достигнуты минималки по {cartData.minimum_issues?.length} поставщикам
+                  </p>
+                  <p className="text-sm text-orange-700">
+                    Минимальный заказ: {cartData.minimum_order_rub?.toLocaleString('ru-RU')} ₽ на поставщика
+                  </p>
+                </div>
               </div>
             </Card>
+          )}
+
+          {/* Supplier groups */}
+          {Object.entries(itemGroups).map(([supplierId, items]) => (
+            <SupplierGroupCard
+              key={supplierId}
+              supplier={suppliersMap[supplierId] || { supplier_id: supplierId, supplier_name: 'Unknown' }}
+              items={items}
+              onTopup={handleTopup}
+              onRemove={handleRemove}
+              applyingTopup={applyingTopup === supplierId}
+            />
           ))}
 
           {/* Total */}
           <Card className="p-6 bg-blue-50">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-lg font-semibold">Общая сумма заказа:</p>
+                <p className="text-lg font-semibold">Общая сумма:</p>
                 <p className="text-sm text-gray-600">
-                  {cartItems.length} товаров от {Object.keys(supplierGroups).length} поставщиков
+                  {cartData.items?.length} товаров от {Object.keys(itemGroups).length} поставщиков
                 </p>
               </div>
               <p className="text-3xl font-bold text-blue-600">
-                {getCartTotal().toLocaleString('ru-RU')} ₽
+                {cartData.total?.toLocaleString('ru-RU')} ₽
               </p>
             </div>
           </Card>
 
-          {/* Delivery Address Selection - ALWAYS SHOW */}
-          <Card className="p-6 border-2 border-blue-200">
-            <div className="flex items-start gap-3 mb-4">
-              <MapPin className="h-6 w-6 text-blue-600 mt-1" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-1">Адрес доставки</h3>
-                <p className="text-sm text-gray-600">Выберите ресторан для доставки заказа</p>
-              </div>
+          {/* Delivery address */}
+          <Card className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <MapPin className="h-6 w-6 text-blue-600" />
+              <h3 className="text-lg font-semibold">Адрес доставки</h3>
             </div>
             
-            {!company?.deliveryAddresses || company.deliveryAddresses.length === 0 ? (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  ⚠️ Адреса доставки не настроены. Добавьте адреса в профиле компании.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+            {company?.deliveryAddresses?.length > 0 ? (
+              <div className="space-y-2">
                 {company.deliveryAddresses.map((addr, idx) => (
                   <label
                     key={idx}
-                    className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      selectedAddress?.address === addr.address 
-                        ? 'border-blue-500 bg-blue-50 shadow-md' 
-                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer ${
+                      selectedAddress?.address === addr.address ? 'border-blue-500 bg-blue-50' : ''
                     }`}
                   >
                     <input
@@ -308,61 +535,34 @@ export const CustomerCart = () => {
                       name="address"
                       checked={selectedAddress?.address === addr.address}
                       onChange={() => setSelectedAddress(addr)}
-                      className="mt-1 h-4 w-4 text-blue-600"
                     />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{addr.address || addr}</p>
-                      {addr.phone && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          📞 {addr.phone}
-                        </p>
-                      )}
-                      {addr.additionalPhone && (
-                        <p className="text-sm text-gray-600">
-                          📞 Доп: {addr.additionalPhone}
-                        </p>
-                      )}
-                      {selectedAddress?.address === addr.address && (
-                        <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
-                          <CheckCircle className="h-4 w-4" />
-                          <span className="font-medium">Выбрано для доставки</span>
-                        </div>
-                      )}
-                    </div>
+                    <span>{addr.address || addr}</span>
                   </label>
                 ))}
               </div>
-            )}
-            
-            {!selectedAddress && company?.deliveryAddresses?.length > 0 && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800 font-medium">
-                  ⚠️ Пожалуйста, выберите адрес доставки перед оформлением заказа
-                </p>
-              </div>
+            ) : (
+              <p className="text-gray-500">Адреса не настроены</p>
             )}
           </Card>
 
-          {/* Checkout Button */}
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => navigate('/customer/catalog')}
-            >
-              Продолжить покупки
-            </Button>
-            <Button
-              className="flex-1"
-              size="lg"
-              onClick={handleCheckout}
-              disabled={processingOrder || !selectedAddress}
-            >
-              {processingOrder ? 'Оформление...' : !selectedAddress ? 'Выберите адрес доставки' : 'Оформить заказ'}
-            </Button>
-          </div>
-        </div>
+          {/* Checkout */}
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={handleCheckout}
+            disabled={!canCheckout() || processingOrder}
+          >
+            {processingOrder ? 'Оформление...' : (
+              <>
+                Оформить заказ
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </>
+            )}
+          </Button>
+        </>
       )}
     </div>
   );
 };
+
+export default CustomerCart;
