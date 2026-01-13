@@ -139,12 +139,12 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
         <Button
           variant="outline"
           size="sm"
-          className={`flex-1 ${inFavorites ? 'bg-red-50 border-red-300 text-red-600' : ''}`}
+          className={`${inFavorites ? 'bg-red-50 border-red-300 text-red-600' : 'text-gray-400 hover:text-red-500 hover:border-red-300'}`}
           onClick={handleToggleFavorites}
           disabled={adding}
+          title={inFavorites ? 'Убрать из избранного' : 'Добавить в избранное'}
         >
-          <Heart className={`h-4 w-4 mr-1 ${inFavorites ? 'fill-red-500' : ''}`} />
-          {inFavorites ? 'Убрать из избранного' : 'В избранное'}
+          <Heart className={`h-5 w-5 ${inFavorites ? 'fill-red-500' : ''}`} />
         </Button>
         <Button
           size="sm"
