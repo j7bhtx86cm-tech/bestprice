@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { User, Users, FileText, ShoppingBag, BarChart3, Star, LogOut, Package, Building, Grid3x3, ShoppingCart, Heart, Sparkles } from 'lucide-react';
+import { User, Users, FileText, ShoppingBag, BarChart3, Star, LogOut, Package, Building, Grid3x3, ShoppingCart, Heart } from 'lucide-react';
 
 export const CustomerLayout = ({ children }) => {
   const navigate = useNavigate();
