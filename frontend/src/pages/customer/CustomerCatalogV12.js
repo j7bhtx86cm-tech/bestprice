@@ -154,6 +154,7 @@ const CatalogSkeleton = () => (
 
 // Main Catalog Component
 export const CustomerCatalogV12 = () => {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -171,10 +172,9 @@ export const CustomerCatalogV12 = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  // Get user ID
+  // Get user ID from auth context
   const getUserId = () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return user.id || 'anonymous';
+    return user?.id || 'anonymous';
   };
 
   // Fetch catalog
