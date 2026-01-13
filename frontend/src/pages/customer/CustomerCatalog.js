@@ -172,6 +172,8 @@ export const CustomerCatalog = () => {
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [favorites, setFavorites] = useState(new Set());
+  const [cartCount, setCartCount] = useState(0);
+  const [cartItems, setCartItems] = useState(new Set());
   
   const LIMIT = 20;
 
@@ -185,6 +187,23 @@ export const CustomerCatalog = () => {
   const getUserId = () => {
     return user?.id || 'anonymous';
   };
+
+  // Fetch cart count
+  const fetchCartCount = useCallback(async () => {
+    try {
+      const userId = getUserId();
+      if (!userId || userId === 'anonymous') return;
+      
+      const response = await axios.get(`${API}/v12/cart?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      const items = response.data.items || [];
+      setCartCount(items.length);
+      setCartItems(new Set(items.map(i => i.supplier_item_id)));
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+    }
+  }, [user]);
 
   // Fetch catalog from v12 API
   const fetchCatalog = useCallback(async () => {
