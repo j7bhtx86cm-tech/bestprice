@@ -1,0 +1,398 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Search, Heart, ShoppingCart, Package, TrendingDown,
+  ChevronLeft, ChevronRight, RefreshCw, Star, AlertTriangle
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+// Catalog Item Card
+const CatalogItemCard = ({ item, onAddToFavorites, onAddToCart, isInFavorites }) => {
+  const [adding, setAdding] = useState(false);
+
+  const handleAddToFavorites = async () => {
+    setAdding(true);
+    try {
+      await onAddToFavorites(item);
+      toast.success('Добавлено в избранное');
+    } catch (error) {
+      toast.error('Ошибка добавления');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    setAdding(true);
+    try {
+      await onAddToCart(item);
+      toast.success('Добавлено в корзину');
+    } catch (error) {
+      toast.error(error.message || 'Ошибка добавления');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  // Format price
+  const formatPrice = (price) => {
+    if (!price) return 'Нет цены';
+    return `${price.toLocaleString('ru-RU')} ₽`;
+  };
+
+  // Get category badge color
+  const getCategoryColor = (superClass) => {
+    if (!superClass) return 'bg-gray-100 text-gray-800';
+    if (superClass.startsWith('seafood')) return 'bg-blue-100 text-blue-800';
+    if (superClass.startsWith('meat')) return 'bg-red-100 text-red-800';
+    if (superClass.startsWith('dairy')) return 'bg-yellow-100 text-yellow-800';
+    if (superClass.startsWith('vegetables')) return 'bg-green-100 text-green-800';
+    if (superClass.startsWith('fruits')) return 'bg-orange-100 text-orange-800';
+    if (superClass.startsWith('bakery')) return 'bg-amber-100 text-amber-800';
+    if (superClass.startsWith('beverages')) return 'bg-cyan-100 text-cyan-800';
+    return 'bg-gray-100 text-gray-800';
+  };
+
+  return (
+    <Card className="p-4 hover:shadow-lg transition-all border-2 hover:border-blue-300">
+      {/* Header with category */}
+      <div className="flex justify-between items-start mb-3">
+        <Badge className={getCategoryColor(item.super_class)} variant="secondary">
+          {item.super_class?.split('.')[0] || 'other'}
+        </Badge>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleAddToFavorites}
+          disabled={adding || isInFavorites}
+          className={isInFavorites ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}
+        >
+          <Heart className={`h-5 w-5 ${isInFavorites ? 'fill-current' : ''}`} />
+        </Button>
+      </div>
+
+      {/* Product name */}
+      <h3 className="font-semibold text-base mb-2 line-clamp-2 min-h-[48px]">
+        {item.name}
+      </h3>
+
+      {/* Pack info */}
+      {item.pack_value && item.pack_unit && (
+        <p className="text-sm text-gray-600 mb-2">
+          Фасовка: {item.pack_value} {item.pack_unit}
+        </p>
+      )}
+
+      {/* Best price */}
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingDown className="h-4 w-4 text-green-600" />
+        <span className="text-lg font-bold text-green-600">
+          {formatPrice(item.best_price)}
+        </span>
+      </div>
+
+      {/* Supplier */}
+      {item.best_supplier_name && (
+        <p className="text-sm text-gray-500 mb-3">
+          <Package className="h-3 w-3 inline mr-1" />
+          {item.best_supplier_name}
+        </p>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          onClick={handleAddToFavorites}
+          disabled={adding || isInFavorites}
+        >
+          <Heart className="h-4 w-4 mr-1" />
+          {isInFavorites ? 'В избранном' : 'В избранное'}
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1"
+          onClick={handleAddToCart}
+          disabled={adding}
+        >
+          <ShoppingCart className="h-4 w-4 mr-1" />
+          В корзину
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
+// Loading skeleton
+const CatalogSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {[...Array(8)].map((_, i) => (
+      <Card key={i} className="p-4">
+        <Skeleton className="h-6 w-20 mb-3" />
+        <Skeleton className="h-12 w-full mb-2" />
+        <Skeleton className="h-4 w-32 mb-2" />
+        <Skeleton className="h-8 w-24 mb-3" />
+        <div className="flex gap-2">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 flex-1" />
+        </div>
+      </Card>
+    ))}
+  </div>
+);
+
+// Main Catalog Component
+export const CustomerCatalogV12 = () => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [favorites, setFavorites] = useState(new Set());
+  const [diagnostics, setDiagnostics] = useState(null);
+  
+  const LIMIT = 20;
+
+  // Get auth headers
+  const getHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  // Get user ID
+  const getUserId = () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user.id || 'anonymous';
+  };
+
+  // Fetch catalog
+  const fetchCatalog = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        skip: page * LIMIT,
+        limit: LIMIT,
+      });
+      if (search) params.append('search', search);
+      if (category) params.append('super_class', category);
+
+      const response = await axios.get(`${API}/v12/catalog?${params}`, {
+        headers: getHeaders()
+      });
+      
+      setItems(response.data.items || []);
+      setTotal(response.data.total || 0);
+    } catch (error) {
+      console.error('Failed to fetch catalog:', error);
+      toast.error('Ошибка загрузки каталога');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search, category]);
+
+  // Fetch favorites to mark items
+  const fetchFavorites = useCallback(async () => {
+    try {
+      const userId = getUserId();
+      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=500`, {
+        headers: getHeaders()
+      });
+      const favIds = new Set(response.data.items?.map(f => f.reference_id) || []);
+      setFavorites(favIds);
+    } catch (error) {
+      console.error('Failed to fetch favorites:', error);
+    }
+  }, []);
+
+  // Fetch diagnostics
+  const fetchDiagnostics = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/v12/diagnostics`, {
+        headers: getHeaders()
+      });
+      setDiagnostics(response.data);
+    } catch (error) {
+      console.error('Failed to fetch diagnostics:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCatalog();
+  }, [fetchCatalog]);
+
+  useEffect(() => {
+    fetchFavorites();
+    fetchDiagnostics();
+  }, [fetchFavorites, fetchDiagnostics]);
+
+  // Add to favorites
+  const handleAddToFavorites = async (item) => {
+    const userId = getUserId();
+    await axios.post(`${API}/v12/favorites?user_id=${userId}&reference_id=${item.reference_id}`, {}, {
+      headers: getHeaders()
+    });
+    setFavorites(prev => new Set([...prev, item.reference_id]));
+  };
+
+  // Add to cart
+  const handleAddToCart = async (item) => {
+    const userId = getUserId();
+    const response = await axios.post(`${API}/v12/cart/add`, {
+      reference_id: item.reference_id,
+      qty: 1,
+      user_id: userId
+    }, {
+      headers: getHeaders()
+    });
+
+    if (response.data.status !== 'ok') {
+      throw new Error(response.data.message || 'Ошибка добавления');
+    }
+  };
+
+  // Search handler with debounce
+  const handleSearch = (value) => {
+    setSearch(value);
+    setPage(0);
+  };
+
+  // Categories for filter
+  const categories = [
+    { value: '', label: 'Все категории' },
+    { value: 'seafood', label: '🐟 Морепродукты' },
+    { value: 'meat', label: '🥩 Мясо' },
+    { value: 'dairy', label: '🧀 Молочные' },
+    { value: 'vegetables', label: '🥬 Овощи' },
+    { value: 'fruits', label: '🍎 Фрукты' },
+    { value: 'bakery', label: '🍞 Выпечка' },
+    { value: 'beverages', label: '🥤 Напитки' },
+    { value: 'condiments', label: '🧂 Приправы' },
+    { value: 'pasta', label: '🍝 Макароны' },
+    { value: 'staples', label: '🌾 Крупы' },
+  ];
+
+  const totalPages = Math.ceil(total / LIMIT);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Каталог v12</h1>
+          <p className="text-gray-600">
+            {total} товаров • Best Price • STRICT фасовка
+          </p>
+        </div>
+        
+        {/* Diagnostics */}
+        {diagnostics && (
+          <div className="flex gap-4 text-sm">
+            <Badge variant="outline">
+              <Star className="h-3 w-3 mr-1" />
+              {diagnostics.catalog_references} карточек
+            </Badge>
+            <Badge variant="outline">
+              Минималка: {diagnostics.config?.MIN_SUPPLIER_ORDER_RUB?.toLocaleString()}₽
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      {/* Filters */}
+      <Card className="p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Поиск товаров..."
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Category filter */}
+          <select
+            value={category}
+            onChange={(e) => { setCategory(e.target.value); setPage(0); }}
+            className="px-4 py-2 border rounded-md bg-white"
+          >
+            {categories.map(cat => (
+              <option key={cat.value} value={cat.value}>{cat.label}</option>
+            ))}
+          </select>
+
+          {/* Refresh */}
+          <Button variant="outline" onClick={() => { fetchCatalog(); fetchDiagnostics(); }}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Обновить
+          </Button>
+        </div>
+      </Card>
+
+      {/* Catalog Grid */}
+      {loading ? (
+        <CatalogSkeleton />
+      ) : items.length === 0 ? (
+        <Card className="p-12 text-center">
+          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-yellow-500" />
+          <p className="text-gray-600 mb-2">Товары не найдены</p>
+          <p className="text-sm text-gray-500">Попробуйте изменить параметры поиска</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {items.map(item => (
+            <CatalogItemCard
+              key={item.reference_id}
+              item={item}
+              onAddToFavorites={handleAddToFavorites}
+              onAddToCart={handleAddToCart}
+              isInFavorites={favorites.has(item.reference_id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Назад
+          </Button>
+          
+          <span className="text-sm text-gray-600">
+            Страница {page + 1} из {totalPages}
+          </span>
+          
+          <Button
+            variant="outline"
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1}
+          >
+            Вперёд
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CustomerCatalogV12;
