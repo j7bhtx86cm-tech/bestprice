@@ -309,7 +309,7 @@ CLASSIFICATION_RULES = [
     {'pattern': r'хлеб|bread|батон', 'super_class': 'bakery.bread', 'priority': 85},
     {'pattern': r'багет|baguette', 'super_class': 'bakery.baguette', 'priority': 85},
     {'pattern': r'булочка|bun', 'super_class': 'bakery.bun', 'priority': 85},
-    {'pattern': r'круассан|croissant', 'super_class': 'bakery.croissant', 'priority': 85},
+    {'pattern': r'круассан|croissant', 'super_class': 'bakery.croissant', 'priority': 90},
     {'pattern': r'пицц|pizza', 'super_class': 'bakery.pizza', 'priority': 85},
     {'pattern': r'торт|cake', 'super_class': 'bakery.cake', 'priority': 85},
     {'pattern': r'тесто|dough', 'super_class': 'bakery.dough', 'priority': 85},
@@ -320,6 +320,11 @@ CLASSIFICATION_RULES = [
     # ===============================
     {'pattern': r'шоколад|chocolate', 'super_class': 'confectionery.chocolate', 'priority': 85},
     {'pattern': r'какао.*масло|cocoa.*butter', 'super_class': 'confectionery.cocoa_butter', 'priority': 90},
+    
+    # ===============================
+    # КРАХМАЛ (88)
+    # ===============================
+    {'pattern': r'крахмал|starch', 'super_class': 'staples.starch', 'priority': 88},
     
     # ===============================
     # ЗАМОРОЖЕННЫЕ (80)
