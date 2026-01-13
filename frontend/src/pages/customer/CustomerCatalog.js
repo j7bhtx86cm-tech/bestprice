@@ -401,11 +401,12 @@ export const CustomerCatalog = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {items.map(item => (
             <CatalogItemCard
-              key={item.reference_id}
+              key={item.id || item.reference_id}
               item={item}
               onAddToFavorites={handleAddToFavorites}
               onAddToCart={handleAddToCart}
-              isInFavorites={favorites.has(item.reference_id)}
+              isInFavorites={favorites.has(item.id) || favorites.has(item.reference_id)}
+              isInCart={cartItems.has(item.id) || cartItems.has(item.reference_id)}
             />
           ))}
         </div>
