@@ -238,10 +238,17 @@ export const CustomerCatalog = () => {
       const userId = getUserId();
       if (!userId || userId === 'anonymous') return;
       
-      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=200`, {
+      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=500`, {
         headers: getHeaders()
       });
-      const favIds = new Set(response.data.items?.map(f => f.reference_id) || []);
+      // Собираем все возможные ID для сопоставления:
+      // - reference_id (новый формат = supplier_item.id)
+      // - anchor_supplier_item_id (старый формат)
+      const favIds = new Set();
+      response.data.items?.forEach(f => {
+        if (f.reference_id) favIds.add(f.reference_id);
+        if (f.anchor_supplier_item_id) favIds.add(f.anchor_supplier_item_id);
+      });
       setFavorites(favIds);
     } catch (error) {
       console.error('Failed to fetch favorites:', error);
