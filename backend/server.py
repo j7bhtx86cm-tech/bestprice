@@ -202,7 +202,7 @@ class TokenResponse(BaseModel):
 # Delivery Address Model
 class DeliveryAddress(BaseModel):
     address: str
-    phone: str
+    phone: Optional[str] = ""
     additionalPhone: Optional[str] = None
 
 # Company Models
