@@ -267,6 +267,30 @@ CLASSIFICATION_RULES = [
     {'pattern': r'крупа|cereal|каша', 'super_class': 'staples.cereals', 'priority': 75},
     
     # ===============================
+    # ФРУКТЫ И ЯГОДЫ (92) - выше чем sugar для "манго"
+    # ===============================
+    {'pattern': r'манго|mango', 'super_class': 'fruits.mango', 'priority': 92},
+    {'pattern': r'яблок|apple', 'super_class': 'fruits.apple', 'priority': 85},
+    {'pattern': r'груша|pear', 'super_class': 'fruits.pear', 'priority': 85},
+    {'pattern': r'апельсин|orange(?!.*juice)', 'super_class': 'fruits.orange', 'priority': 85},
+    {'pattern': r'лимон|lemon', 'super_class': 'fruits.lemon', 'priority': 85},
+    {'pattern': r'лайм|lime', 'super_class': 'fruits.lime', 'priority': 85},
+    {'pattern': r'банан|banana', 'super_class': 'fruits.banana', 'priority': 85},
+    {'pattern': r'ананас|pineapple', 'super_class': 'fruits.pineapple', 'priority': 85},
+    {'pattern': r'клубник|strawberry|земляник', 'super_class': 'fruits.strawberry', 'priority': 85},
+    {'pattern': r'малин|raspberry', 'super_class': 'fruits.raspberry', 'priority': 85},
+    {'pattern': r'черник|blueberry|голубик', 'super_class': 'fruits.blueberry', 'priority': 85},
+    {'pattern': r'вишн|cherry', 'super_class': 'fruits.cherry', 'priority': 85},
+    {'pattern': r'слив|plum', 'super_class': 'fruits.plum', 'priority': 85},
+    {'pattern': r'персик|peach', 'super_class': 'fruits.peach', 'priority': 85},
+    {'pattern': r'абрикос|apricot', 'super_class': 'fruits.apricot', 'priority': 85},
+    {'pattern': r'виноград|grape(?!fruit)', 'super_class': 'fruits.grape', 'priority': 85},
+    {'pattern': r'киви|kiwi', 'super_class': 'fruits.kiwi', 'priority': 85},
+    {'pattern': r'смородин|currant', 'super_class': 'fruits.currant', 'priority': 85},
+    {'pattern': r'грейпфрут|grapefruit', 'super_class': 'fruits.grapefruit', 'priority': 85},
+    {'pattern': r'черносл|prune', 'super_class': 'dried_fruits.prunes', 'priority': 88},
+    
+    # ===============================
     # НАПИТКИ (85)
     # ===============================
     {'pattern': r'\bсок\b(?!.*кокос)|juice', 'super_class': 'beverages.juice', 'priority': 85},
