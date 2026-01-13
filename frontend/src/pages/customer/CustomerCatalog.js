@@ -125,21 +125,21 @@ const CatalogItemCard = ({ item, onAddToFavorites, onAddToCart, isInFavorites, i
         <Button
           variant="outline"
           size="sm"
-          className="flex-1"
+          className={`flex-1 ${isInFavorites ? 'bg-red-50 border-red-300 text-red-600' : ''}`}
           onClick={handleAddToFavorites}
           disabled={adding || isInFavorites}
         >
-          <Heart className="h-4 w-4 mr-1" />
-          {isInFavorites ? 'В избранном' : 'В избранное'}
+          <Heart className={`h-4 w-4 mr-1 ${isInFavorites ? 'fill-red-500' : ''}`} />
+          {isInFavorites ? '✓ В избранном' : 'В избранное'}
         </Button>
         <Button
           size="sm"
-          className="flex-1"
+          className={`flex-1 ${(isInCart || addedToCart) ? 'bg-green-600 hover:bg-green-700' : ''}`}
           onClick={handleAddToCart}
-          disabled={adding}
+          disabled={adding || isInCart || addedToCart}
         >
           <ShoppingCart className="h-4 w-4 mr-1" />
-          В корзину
+          {(isInCart || addedToCart) ? '✓ В корзине' : 'В корзину'}
         </Button>
       </div>
     </Card>
