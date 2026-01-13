@@ -343,7 +343,7 @@ export const CustomerFavorites = () => {
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={handleSeedFavorites} disabled={seeding}>
             {seeding ? (
               <>
@@ -365,6 +365,15 @@ export const CustomerFavorites = () => {
             <ShoppingCart className="h-4 w-4 mr-2" />
             Все в корзину
           </Button>
+          {cartCount > 0 && (
+            <Button 
+              onClick={() => navigate('/customer/cart')}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Корзина ({cartCount})
+            </Button>
+          )}
         </div>
       </div>
 
