@@ -258,8 +258,12 @@ export const CustomerFavorites = () => {
     for (const item of favorites) {
       try {
         const userId = getUserId();
+        const supplierItemId = item.reference_id || item.anchor_supplier_item_id;
         const response = await axios.post(`${API}/v12/cart/add`, {
-          reference_id: item.reference_id,
+          supplier_item_id: supplierItemId,
+          product_name: item.product_name,
+          supplier_id: item.best_supplier_id,
+          price: item.best_price,
           qty: 1,
           user_id: userId
         }, {
