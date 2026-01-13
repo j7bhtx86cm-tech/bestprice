@@ -406,6 +406,7 @@ export const CustomerFavorites = () => {
               onRemove={handleRemove}
               onAddToCart={handleAddToCart}
               adding={adding}
+              isInCart={cartItems.has(item.reference_id) || cartItems.has(item.anchor_supplier_item_id)}
             />
           ))}
         </div>
