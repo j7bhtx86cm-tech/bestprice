@@ -225,8 +225,13 @@ export const CustomerFavorites = () => {
     setAdding(item.id);
     try {
       const userId = getUserId();
-      // reference_id = supplier_item.id, используем его как supplier_item_id
-      const supplierItemId = item.reference_id || item.anchor_supplier_item_id;
+      // Используем anchor_supplier_item_id - это настоящий ID supplier_item
+      const supplierItemId = item.anchor_supplier_item_id || item.reference_id;
+      
+      if (!supplierItemId) {
+        toast.error('Нет supplier_item_id для этого товара');
+        return;
+      }
       
       const response = await axios.post(`${API}/v12/cart/add`, {
         supplier_item_id: supplierItemId,
@@ -241,7 +246,7 @@ export const CustomerFavorites = () => {
 
       if (response.data.status === 'ok') {
         // Помечаем что добавлено в корзину
-        setCartItems(prev => new Set([...prev, item.id]));
+        setCartItems(prev => new Set([...prev, supplierItemId]));
         setCartCount(prev => prev + 1);
         const msg = response.data.substituted 
           ? `Добавлено в корзину (заменено, экономия ${response.data.savings?.toLocaleString('ru-RU')} ₽)`
