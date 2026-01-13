@@ -305,7 +305,7 @@ export const CustomerFavoritesV12 = () => {
         <Card className="p-12 text-center">
           <Heart className="h-16 w-16 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-600 mb-2">Избранное пусто</p>
-          <p className="text-sm text-gray-500 mb-4">Добавьте товары из каталога или нажмите "+100 случайных"</p>
+          <p className="text-sm text-gray-500 mb-4">Добавьте товары из каталога или нажмите &quot;+100 случайных&quot;</p>
           <div className="flex gap-2 justify-center">
             <Button variant="outline" onClick={() => navigate('/customer/catalog-v12')}>
               Перейти в каталог
