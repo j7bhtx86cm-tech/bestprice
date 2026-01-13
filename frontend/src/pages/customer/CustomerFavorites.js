@@ -1,437 +1,367 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Heart, Trash2, ShoppingCart, TrendingDown, Search, CheckCircle, AlertCircle, GripVertical } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Heart, Trash2, ShoppingCart, Search, Package,
+  RefreshCw, TrendingDown, Shuffle, Loader2
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Sortable Item Component
-function SortableItem({ favorite, onRemove, onBrandCriticalChange, addToCart, isAdding }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: favorite.id });
+// Get category badge color
+const getCategoryColor = (superClass) => {
+  if (!superClass) return 'bg-gray-100 text-gray-800';
+  if (superClass.startsWith('seafood')) return 'bg-blue-100 text-blue-800';
+  if (superClass.startsWith('meat')) return 'bg-red-100 text-red-800';
+  if (superClass.startsWith('dairy')) return 'bg-yellow-100 text-yellow-800';
+  if (superClass.startsWith('vegetables')) return 'bg-green-100 text-green-800';
+  if (superClass.startsWith('fruits')) return 'bg-orange-100 text-orange-800';
+  if (superClass.startsWith('bakery')) return 'bg-amber-100 text-amber-800';
+  if (superClass.startsWith('beverages')) return 'bg-cyan-100 text-cyan-800';
+  if (superClass.startsWith('condiments')) return 'bg-purple-100 text-purple-800';
+  if (superClass.startsWith('pasta')) return 'bg-yellow-100 text-yellow-800';
+  if (superClass.startsWith('staples')) return 'bg-amber-100 text-amber-800';
+  if (superClass.startsWith('canned')) return 'bg-slate-100 text-slate-800';
+  if (superClass.startsWith('oils')) return 'bg-lime-100 text-lime-800';
+  if (superClass.startsWith('frozen')) return 'bg-sky-100 text-sky-800';
+  if (superClass.startsWith('desserts')) return 'bg-pink-100 text-pink-800';
+  if (superClass.startsWith('ready_meals')) return 'bg-indigo-100 text-indigo-800';
+  if (superClass.startsWith('packaging')) return 'bg-stone-100 text-stone-800';
+  if (superClass.startsWith('disposables')) return 'bg-neutral-100 text-neutral-800';
+  return 'bg-gray-100 text-gray-800';
+};
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  // brandCritical: true means STRICT brand matching, false means ANY brand
-  const brandCritical = favorite.brandMode === 'STRICT';
+// Favorite Item Card
+const FavoriteItemCard = ({ item, onRemove, onAddToCart, adding }) => {
+  const [qty, setQty] = useState(1);
 
   return (
-    <div ref={setNodeRef} style={style} className={isDragging ? 'z-50' : ''}>
-      <Card className={`p-5 hover:shadow-lg transition-all relative ${
-        isDragging ? 'shadow-2xl scale-105 cursor-grabbing' : 'hover:border-2 hover:border-blue-300'
-      }`}>
-        {/* Drag Handle */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="absolute top-2 left-2 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 touch-none"
-        >
-          <GripVertical className="h-5 w-5" />
-        </div>
-        
+    <Card className="p-4 hover:shadow-lg transition-all">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-3">
+        <Badge className={getCategoryColor(item.super_class)} variant="secondary">
+          {item.super_class?.split('.')[0] || 'other'}
+        </Badge>
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onRemove(favorite.id)}
-          className="absolute top-2 right-2 text-red-500 hover:text-red-600 z-10"
+          onClick={() => onRemove(item.id)}
+          className="text-red-500 hover:text-red-700 -mt-1 -mr-2"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
-        
-        {/* Main Product Name */}
-        <div className="mb-4 ml-6">
-          <h3 className="font-semibold text-lg mb-1 pr-8">
-            {favorite.productName}
-          </h3>
-          <p className="text-sm text-gray-600">Артикул: {favorite.productCode || 'Н/Д'}</p>
-        </div>
+      </div>
 
-        {/* Brand Critical Toggle - for ALL products */}
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <label htmlFor={`brand-${favorite.id}`} className="text-sm font-medium text-gray-700">
-              ☑ Бренд критичен
-            </label>
-            <Switch
-              id={`brand-${favorite.id}`}
-              checked={brandCritical}
-              onCheckedChange={(checked) => onBrandCriticalChange(favorite.id, checked)}
-            />
-          </div>
-          <p className="text-xs text-gray-500">
-            {brandCritical 
-              ? `Только ${favorite.brand || 'этот'} бренд, поставщик может меняться` 
-              : 'Допускаются аналоги — выбор по максимальному совпадению + минимальной цене'}
-          </p>
-        </div>
+      {/* Product name */}
+      <h3 className="font-semibold text-base mb-2 line-clamp-2 min-h-[48px]">
+        {item.product_name}
+      </h3>
 
-        {/* Add to cart button */}
-        <div className="pt-2">
-          <Button
-            onClick={() => addToCart(favorite)}
-            className="w-full"
-            variant="default"
-            disabled={isAdding === favorite.id}
-          >
-            {isAdding === favorite.id ? (
-              <>
-                <span className="animate-spin mr-2">⏳</span>
-                Поиск лучшей цены...
-              </>
-            ) : (
-              <>
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Добавить в корзину
-              </>
-            )}
-          </Button>
+      {/* Pack info */}
+      {item.pack_value && item.pack_unit && (
+        <p className="text-sm text-gray-600 mb-2">
+          Фасовка: {item.pack_value} {item.pack_unit}
+        </p>
+      )}
+
+      {/* Best price */}
+      {item.best_price && (
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingDown className="h-4 w-4 text-green-600" />
+          <span className="text-lg font-bold text-green-600">
+            {item.best_price.toLocaleString('ru-RU')} ₽
+          </span>
         </div>
-      </Card>
-    </div>
+      )}
+
+      {/* Quantity input */}
+      <div className="flex items-center gap-2 mb-3">
+        <label className="text-sm text-gray-600">Кол-во:</label>
+        <Input
+          type="number"
+          min="1"
+          value={qty}
+          onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+          className="w-20"
+        />
+        <span className="text-sm text-gray-500">
+          {item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'}
+        </span>
+      </div>
+
+      {/* Add to cart */}
+      <Button
+        className="w-full"
+        onClick={() => onAddToCart(item, qty)}
+        disabled={adding === item.id}
+      >
+        {adding === item.id ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Добавление...
+          </>
+        ) : (
+          <>
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            В корзину
+          </>
+        )}
+      </Button>
+    </Card>
   );
-}
+};
 
+// Main Favorites Component
 export const CustomerFavorites = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [favorites, setFavorites] = useState([]);
-  const [filteredFavorites, setFilteredFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [company, setCompany] = useState(null);
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [addingToCart, setAddingToCart] = useState(null); // Track which item is being added
-  const [draggedItem, setDraggedItem] = useState(null);
+  const [search, setSearch] = useState('');
+  const [adding, setAdding] = useState(null);
+  const [seeding, setSeeding] = useState(false);
 
-  useEffect(() => {
-    fetchFavorites();
-    fetchCompanyInfo();
-  }, []);
-
-  useEffect(() => {
-    // Filter favorites when search term changes
-    if (searchTerm.trim()) {
-      const filtered = favorites.filter(f =>
-        f.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (f.productCode && f.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      setFilteredFavorites(filtered);
-    } else {
-      setFilteredFavorites(favorites);
-    }
-  }, [searchTerm, favorites]);
-
-  const fetchCompanyInfo = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/companies/my`, { headers });
-      setCompany(response.data);
-      if (response.data.deliveryAddresses?.length === 1) {
-        setSelectedAddress(response.data.deliveryAddresses[0]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch company:', error);
-    }
+  // Get user ID from auth context
+  const getUserId = () => {
+    return user?.id || 'anonymous';
   };
 
-  const fetchFavorites = async () => {
+  // Get auth headers
+  const getHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  // Fetch favorites
+  const fetchFavorites = useCallback(async () => {
+    setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/favorites`, { headers });  // Simple endpoint, no matching
-      setFavorites(response.data);
-      setFilteredFavorites(response.data);
+      const userId = getUserId();
+      if (!userId || userId === 'anonymous') {
+        setLoading(false);
+        return;
+      }
+      
+      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=200`, {
+        headers: getHeaders()
+      });
+      setFavorites(response.data.items || []);
     } catch (error) {
       console.error('Failed to fetch favorites:', error);
+      toast.error('Ошибка загрузки избранного');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const handleRemoveFavorite = async (favoriteId) => {
+  useEffect(() => {
+    if (user?.id) {
+      fetchFavorites();
+    }
+  }, [fetchFavorites, user]);
+
+  // Remove from favorites
+  const handleRemove = async (favoriteId) => {
     if (!confirm('Удалить из избранного?')) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await axios.delete(`${API}/favorites/${favoriteId}`, { headers });
-      fetchFavorites();
-    } catch (error) {
-      console.error('Failed to remove favorite:', error);
-    }
-  };
-
-  // NEW: Handler for brand critical toggle (inverted logic from old brandMode)
-  const onBrandCriticalChange = async (favoriteId, brandCritical) => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      // brandCritical=true means STRICT, brandCritical=false means ANY
-      const brandMode = brandCritical ? 'STRICT' : 'ANY';
-      await axios.put(`${API}/favorites/${favoriteId}/brand-mode`, { brandMode }, { headers });
-      fetchFavorites();
-    } catch (error) {
-      console.error('Failed to update brand mode:', error);
-    }
-  };
-
-  // NEW: Automatic best price search when adding to cart using select-offer endpoint
-  const addToCart = async (favorite) => {
-    // Check if already in cart
-    const existingCart = JSON.parse(localStorage.getItem('catalogCart') || '[]');
-    const alreadyInCart = existingCart.some(item => item.favoriteId === favorite.id);
     
-    if (alreadyInCart) {
-      alert('Этот товар уже в корзине');
-      return;
-    }
-
-    setAddingToCart(favorite.id);
-
     try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      // Call NEW endpoint: add-from-favorite (ALWAYS runs full search)
-      // CRITICAL: This endpoint gets brand_id from DB, not from frontend
-      // Pack value is extracted on backend from product name
-      // Score threshold auto-determined by backend: 85% (brand_critical=ON), 70% (brand_critical=OFF)
-      const response = await axios.post(`${API}/cart/add-from-favorite`, {
-        favorite_id: favorite.id,
-        qty: 1
-        // NO match_threshold - let backend decide based on brand_critical
-      }, { headers });
-
-      // Check response status
-      if (response.data.status !== 'ok' || !response.data.selected_offer) {
-        const reason = response.data.message || response.data.status || 'Unknown error';
-        alert(`❌ Не найдено совпадений\n\nТовар: ${favorite.productName}\nПричина: ${reason}`);
-        
-        // Log debug info if available
-        if (response.data.debug_log) {
-          console.log('🔍 Debug log:', response.data.debug_log);
-        }
-        return;
-      }
-
-      const offer = response.data.selected_offer;
-
-      // Create cart item with NEW structure (reference_item + selected_offer)
-      const cartItem = {
-        cartId: `fav_${favorite.id}_${Date.now()}`,
-        source: 'favorites',
-        favoriteId: favorite.id,
-        qty: 1,
-        
-        // Reference item (what user wanted)
-        reference_item: {
-          name_raw: favorite.productName,
-          productId: favorite.productId,
-          brand_id: favorite.brandId || null,  // Use brandId (correct field!)
-          brand_critical: favorite.brandMode === 'STRICT',
-          unit: favorite.unit
-        },
-        
-        // Selected offer (what system found - best price)
-        selected_offer: {
-          supplier_id: offer.supplier_id,
-          supplier_name: offer.supplier_name,
-          supplier_item_id: offer.supplier_item_id,
-          name_raw: offer.name_raw,
-          price: offer.price,
-          price_per_base_unit: offer.price_per_base_unit,
-          unit_norm: offer.unit_norm,
-          pack_value: offer.pack_value,
-          pack_unit: offer.pack_unit,
-          total_cost: offer.total_cost,
-          units_needed: offer.units_needed,
-          score: offer.score
-        },
-        
-        // Flattened fields for backwards compatibility
-        productName: offer.name_raw,
-        price: offer.price,
-        supplier: offer.supplier_name,
-        supplierId: offer.supplier_id,
-        unit: offer.unit_norm,
-        resolved: true
-      };
-
-      // Add to cart
-      existingCart.push(cartItem);
-      localStorage.setItem('catalogCart', JSON.stringify(existingCart));
-      
-      // ИСПРАВЛЕНО: Backend уже отдаёт score в процентах (0..100)
-      // НЕ умножаем на 100 повторно!
-      const scorePercent = Math.round(offer.score || 0);
-      let message = `✓ Добавлено в корзину!\n\n📦 ${offer.name_raw}\n💰 ${offer.price.toLocaleString('ru-RU')} ₽`;
-      
-      // Show total cost if calculated
-      if (offer.total_cost && offer.units_needed) {
-        message += `\n📊 Итого за объём: ${offer.total_cost.toLocaleString('ru-RU')} ₽`;
-        if (offer.units_needed > 1) {
-          message += ` (${offer.units_needed.toFixed(1)} ед.)`;
-        }
-      }
-      
-      message += `\n🏢 ${offer.supplier_name}\n✅ Совпадение: ${scorePercent}%`;
-      
-      // Log debug info
-      if (response.data.debug_log) {
-        console.log('🔍 Selection debug:', response.data.debug_log);
-      }
-      
-      alert(message);
+      const userId = getUserId();
+      await axios.delete(`${API}/v12/favorites/${favoriteId}?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      setFavorites(prev => prev.filter(f => f.id !== favoriteId));
+      toast.success('Удалено из избранного');
     } catch (error) {
-      console.error('Failed to add from favorite:', error);
-      alert('Ошибка при поиске лучшей цены. Попробуйте еще раз.');
-    } finally {
-      setAddingToCart(null);
+      toast.error('Ошибка удаления');
     }
   };
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+  // Add to cart
+  const handleAddToCart = async (item, qty) => {
+    setAdding(item.id);
+    try {
+      const userId = getUserId();
+      const response = await axios.post(`${API}/v12/cart/add`, {
+        reference_id: item.reference_id,
+        qty: qty,
+        user_id: userId
+      }, {
+        headers: getHeaders()
+      });
+
+      if (response.data.status === 'ok') {
+        const msg = response.data.substituted 
+          ? `Добавлено в корзину (заменено, экономия ${response.data.savings?.toLocaleString('ru-RU')} ₽)`
+          : 'Добавлено в корзину';
+        toast.success(msg);
+      } else {
+        toast.error(response.data.message || 'Ошибка добавления');
+      }
+    } catch (error) {
+      toast.error('Ошибка добавления в корзину');
+    } finally {
+      setAdding(null);
+    }
+  };
+
+  // Add all to cart
+  const handleAddAllToCart = async () => {
+    if (!favorites.length) return;
+    if (!confirm(`Добавить ${favorites.length} товаров в корзину?`)) return;
+
+    let added = 0;
+    let errors = 0;
+
+    for (const item of favorites) {
+      try {
+        const userId = getUserId();
+        const response = await axios.post(`${API}/v12/cart/add`, {
+          reference_id: item.reference_id,
+          qty: 1,
+          user_id: userId
+        }, {
+          headers: getHeaders()
+        });
+        if (response.data.status === 'ok') added++;
+        else errors++;
+      } catch (error) {
+        errors++;
+      }
+    }
+
+    toast.success(`Добавлено: ${added}, ошибок: ${errors}`);
+    navigate('/customer/cart');
+  };
+
+  // Seed random favorites
+  const handleSeedFavorites = async () => {
+    if (!confirm('Добавить 100 случайных карточек в избранное?')) return;
+    
+    setSeeding(true);
+    try {
+      const userId = getUserId();
+      const response = await axios.post(`${API}/v12/admin/test/favorites/random`, {
+        user_id: userId,
+        count: 100
+      }, {
+        headers: getHeaders()
+      });
+      
+      toast.success(`Добавлено ${response.data.added_count} карточек`);
+      fetchFavorites();
+    } catch (error) {
+      toast.error('Ошибка добавления');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  // Filter favorites
+  const filteredFavorites = favorites.filter(f =>
+    !search || f.product_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleDragEnd = async (event) => {
-    const { active, over } = event;
-    
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = filteredFavorites.findIndex(f => f.id === active.id);
-    const newIndex = filteredFavorites.findIndex(f => f.id === over.id);
-    
-    // Reorder locally for immediate feedback
-    const reordered = arrayMove(filteredFavorites, oldIndex, newIndex);
-    setFilteredFavorites(reordered);
-
-    try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
-      // Send new order to backend
-      const orderMap = reordered.map((fav, index) => ({
-        id: fav.id,
-        displayOrder: index
-      }));
-      
-      await axios.post(`${API}/favorites/reorder`, { favorites: orderMap }, { headers });
-      
-      // Refresh from server
-      fetchFavorites();
-    } catch (error) {
-      console.error('Failed to reorder:', error);
-      // Revert on error
-      fetchFavorites();
-    }
-  };
-
   if (loading) {
-    return <div className="text-center py-8">Загрузка...</div>;
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-12 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-64" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-4xl font-bold mb-2">Избранное</h2>
-          <p className="text-base text-muted-foreground">
-            Быстрый заказ часто используемых товаров • При добавлении автоматически ищется лучшая цена
+          <h1 className="text-3xl font-bold">Избранное</h1>
+          <p className="text-gray-600">
+            {favorites.length} товаров
           </p>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleSeedFavorites} disabled={seeding}>
+            {seeding ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Добавление...
+              </>
+            ) : (
+              <>
+                <Shuffle className="h-4 w-4 mr-2" />
+                +100 случайных
+              </>
+            )}
+          </Button>
+          <Button variant="outline" onClick={fetchFavorites}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Обновить
+          </Button>
+          <Button onClick={handleAddAllToCart} disabled={!favorites.length}>
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Все в корзину
+          </Button>
         </div>
       </div>
 
       {/* Search */}
-      {favorites.length > 0 && (
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Поиск по названию или артикулу..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          {searchTerm && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Найдено: {filteredFavorites.length} из {favorites.length}
-            </p>
-          )}
+      <Card className="p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Поиск в избранном..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
         </div>
-      )}
+      </Card>
 
-      {filteredFavorites.length === 0 && searchTerm ? (
-        <Card className="p-8 text-center">
-          <p className="text-gray-600">Товары не найдены</p>
-        </Card>
-      ) : favorites.length === 0 ? (
+      {/* Empty state */}
+      {filteredFavorites.length === 0 ? (
         <Card className="p-12 text-center">
           <Heart className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-600 mb-2">У вас пока нет избранных товаров</p>
-          <p className="text-sm text-gray-500">Добавляйте товары в избранное из каталога для быстрого заказа</p>
+          <p className="text-gray-600 mb-2">Избранное пусто</p>
+          <p className="text-sm text-gray-500 mb-4">Добавьте товары из каталога или нажмите &quot;+100 случайных&quot;</p>
+          <div className="flex gap-2 justify-center">
+            <Button variant="outline" onClick={() => navigate('/customer/catalog')}>
+              Перейти в каталог
+            </Button>
+            <Button onClick={handleSeedFavorites} disabled={seeding}>
+              <Shuffle className="h-4 w-4 mr-2" />
+              +100 случайных
+            </Button>
+          </div>
         </Card>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={filteredFavorites.map(f => f.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredFavorites.map((favorite) => (
-                <SortableItem
-                  key={favorite.id}
-                  favorite={favorite}
-                  onRemove={handleRemoveFavorite}
-                  onBrandCriticalChange={onBrandCriticalChange}
-                  addToCart={addToCart}
-                  isAdding={addingToCart}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredFavorites.map(item => (
+            <FavoriteItemCard
+              key={item.id}
+              item={item}
+              onRemove={handleRemove}
+              onAddToCart={handleAddToCart}
+              adding={adding}
+            />
+          ))}
+        </div>
       )}
-
-      {/* Create Order Modal */}
     </div>
   );
 };
+
+export default CustomerFavorites;
