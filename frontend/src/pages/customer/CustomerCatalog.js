@@ -88,7 +88,7 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
   };
 
   return (
-    <Card className="p-4 hover:shadow-lg transition-all border-2 hover:border-blue-300">
+    <Card className={`p-4 hover:shadow-lg transition-all border-2 ${inFavorites ? 'border-red-300 bg-red-50' : 'hover:border-blue-300'}`}>
       {/* Header with category */}
       <div className="flex justify-between items-start mb-3">
         <Badge className={getCategoryColor(item.super_class)} variant="secondary">
@@ -97,11 +97,12 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleAddToFavorites}
-          disabled={adding || isInFavorites}
-          className={isInFavorites ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}
+          onClick={handleToggleFavorites}
+          disabled={adding}
+          className={inFavorites ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}
+          title={inFavorites ? 'Убрать из избранного' : 'Добавить в избранное'}
         >
-          <Heart className={`h-5 w-5 ${isInFavorites ? 'fill-current' : ''}`} />
+          <Heart className={`h-5 w-5 ${inFavorites ? 'fill-current' : ''}`} />
         </Button>
       </div>
 
