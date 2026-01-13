@@ -16,8 +16,9 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // Catalog Item Card - стиль v12
-const CatalogItemCard = ({ item, onAddToFavorites, onAddToCart, isInFavorites }) => {
+const CatalogItemCard = ({ item, onAddToFavorites, onAddToCart, isInFavorites, isInCart }) => {
   const [adding, setAdding] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   const handleAddToFavorites = async () => {
     setAdding(true);
@@ -35,6 +36,7 @@ const CatalogItemCard = ({ item, onAddToFavorites, onAddToCart, isInFavorites })
     setAdding(true);
     try {
       await onAddToCart(item);
+      setAddedToCart(true);
       toast.success('Добавлено в корзину');
     } catch (error) {
       toast.error(error.message || 'Ошибка добавления');
