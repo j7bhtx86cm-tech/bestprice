@@ -1,6 +1,6 @@
 # Best Price Matching Engine - Product Requirements Document
 
-## Дата последнего обновления: 2026-01-10
+## Дата последнего обновления: 2026-01-13
 
 ## Оригинальная проблема
 Система "Best Price" для поиска лучших цен на товары из избранного работала некорректно:
@@ -15,13 +15,30 @@
 - **FIXED**: Дубли при повторной загрузке прайс-листов
 - **FIXED**: BestPrice не учитывал min_order_qty
 
-## Текущий статус: ✅ 100% CLASSIFICATION + ALL FIXES COMPLETE (2026-01-10)
+## Текущий статус: ✅ BestPrice v12 IMPLEMENTED (2026-01-13)
 
-### LATEST: Unit Tests for Seafood + Auto-Reclassifier Integration (2026-01-10) ✅
-- Добавлены 9 новых тестов для морепродуктов (Тюрбо, Печень трески, Филе трески Borealis, Лангустины)
-- **22/22 тестов прошли** в `test_p0_matching_fixes.py`
-- `auto_reclassifier.py` интегрирован в процесс импорта прайс-листов
-- Добавлено правило для `langoustine` (англ.)
+### LATEST: BestPrice v12 — Каталог → Избранное → Корзина (2026-01-13) ✅
+Реализована новая архитектура по ТЗ:
+
+**Новые возможности:**
+- **Каталог** с Best Price (STRICT фасовка) - 658 reference карточек
+- **Избранное** хранит 100% reference + anchor_supplier_item_id
+- **Корзина** с логикой anchor vs substitution (дешевле = замена)
+- **Минималка 10k₽** по каждому поставщику
+- **Автодобивка 10%** при deficit ≤1000₽
+
+**API v12 endpoints:**
+- `GET /api/v12/catalog` - каталог с best_price
+- `GET /api/v12/favorites` - избранное пользователя
+- `POST /api/v12/cart/add` - add-to-cart с substitution
+- `GET /api/v12/cart` - корзина с группировкой по поставщикам
+- `POST /api/v12/cart/topup/{supplier_id}` - автодобивка
+- `POST /api/v12/admin/test/favorites/random` - seed 100 favorites
+
+**Reason Codes:**
+- `ANCHOR_USED_NO_CHEAPER` - anchor дешевле или равен
+- `SUBSTITUTED_CHEAPER` - найден более дешёвый вариант
+- `TOPUP_APPLIED_QTY` - qty увеличено для минималки
 
 ### Build SHA: (latest)
 
