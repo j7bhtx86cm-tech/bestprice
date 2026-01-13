@@ -10,7 +10,7 @@ import re
 from typing import Dict, List, Optional, Tuple
 
 # Backend URL
-BACKEND_URL = "https://product-classifier-3.preview.emergentagent.com/api"
+BACKEND_URL = "https://catalog-fix-4.preview.emergentagent.com/api"
 
 # Test credentials
 EMAIL = "customer@bestprice.ru"
