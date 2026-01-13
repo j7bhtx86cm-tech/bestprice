@@ -54,6 +54,10 @@ export const CustomerLayout = ({ children }) => {
       { path: '/customer/catalog', label: 'Каталог товаров', icon: Package },
       { path: '/customer/favorites', label: 'Избранное', icon: Heart },
       { path: '/customer/cart', label: 'Корзина', icon: ShoppingCart },
+      // V12 Section
+      { path: '/customer/catalog-v12', label: '✨ Каталог v12', icon: Sparkles },
+      { path: '/customer/favorites-v12', label: '✨ Избранное v12', icon: Sparkles },
+      { path: '/customer/cart-v12', label: '✨ Корзина v12', icon: Sparkles },
       { path: '/customer/orders', label: 'История заказов', icon: ShoppingBag },
       { path: '/customer/analytics', label: 'Аналитика', icon: BarChart3 },
       { path: '/customer/profile', label: 'Профиль компании', icon: Building },
