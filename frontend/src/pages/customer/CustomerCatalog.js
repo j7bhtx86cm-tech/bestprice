@@ -16,17 +16,30 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // Catalog Item Card - стиль v12
-const CatalogItemCard = ({ item, onAddToFavorites, onAddToCart, isInFavorites, isInCart }) => {
+const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddToCart, isInFavorites, isInCart }) => {
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [inFavorites, setInFavorites] = useState(isInFavorites);
 
-  const handleAddToFavorites = async () => {
+  // Sync with parent state
+  React.useEffect(() => {
+    setInFavorites(isInFavorites);
+  }, [isInFavorites]);
+
+  const handleToggleFavorites = async () => {
     setAdding(true);
     try {
-      await onAddToFavorites(item);
-      toast.success('Добавлено в избранное');
+      if (inFavorites) {
+        await onRemoveFromFavorites(item);
+        setInFavorites(false);
+        toast.success('Удалено из избранного');
+      } else {
+        await onAddToFavorites(item);
+        setInFavorites(true);
+        toast.success('Добавлено в избранное');
+      }
     } catch (error) {
-      toast.error('Ошибка добавления');
+      toast.error('Ошибка');
     } finally {
       setAdding(false);
     }
