@@ -128,6 +128,8 @@ export const CustomerFavorites = () => {
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState(null);
   const [seeding, setSeeding] = useState(false);
+  const [cartItems, setCartItems] = useState(new Set());
+  const [cartCount, setCartCount] = useState(0);
 
   // Get user ID from auth context
   const getUserId = () => {
