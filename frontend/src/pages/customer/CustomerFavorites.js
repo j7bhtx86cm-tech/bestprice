@@ -45,8 +45,12 @@ const FavoriteItemCard = ({ item, onRemove, onAddToCart, adding, isInCart }) => 
   const [addedToCart, setAddedToCart] = useState(false);
 
   const handleAddClick = async () => {
-    await onAddToCart(item, qty);
-    setAddedToCart(true);
+    try {
+      await onAddToCart(item, qty);
+      setAddedToCart(true);
+    } catch (error) {
+      // Error already handled in parent
+    }
   };
 
   return (
