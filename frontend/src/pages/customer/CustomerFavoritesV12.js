@@ -131,11 +131,13 @@ export const CustomerFavoritesV12 = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    fetchFavorites();
-  }, [fetchFavorites]);
+    if (user?.id) {
+      fetchFavorites();
+    }
+  }, [fetchFavorites, user]);
 
   // Remove from favorites
   const handleRemove = async (favoriteId) => {
