@@ -244,7 +244,7 @@ CLASSIFICATION_RULES = [
     {'pattern': r'рамен|ramen', 'super_class': 'pasta.ramen', 'priority': 85},
     {'pattern': r'соба|soba', 'super_class': 'pasta.soba', 'priority': 85},
     {'pattern': r'вермишель|vermicelli', 'super_class': 'pasta.vermicelli', 'priority': 85},
-    {'pattern': r'макарон|pasta|macaroni', 'super_class': 'pasta.macaroni', 'priority': 75},
+    {'pattern': r'макарон(?!.*мак)|pasta|macaroni|макфа', 'super_class': 'pasta.macaroni', 'priority': 88},
     
     # ===============================
     # КРУПЫ И БАКАЛЕЯ (85)
