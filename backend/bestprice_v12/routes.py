@@ -268,8 +268,6 @@ async def add_to_cart_endpoint(request: AddToCartRequestV12):
     
     else:
         raise HTTPException(status_code=400, detail="Нужен supplier_item_id или reference_id")
-    
-    return result
 
 
 @router.get("/cart", summary="Получить корзину")
