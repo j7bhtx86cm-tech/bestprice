@@ -206,7 +206,7 @@ export const CustomerCatalogV12 = () => {
   const fetchFavorites = useCallback(async () => {
     try {
       const userId = getUserId();
-      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=500`, {
+      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=200`, {
         headers: getHeaders()
       });
       const favIds = new Set(response.data.items?.map(f => f.reference_id) || []);
