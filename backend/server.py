@@ -5496,16 +5496,16 @@ async def run_validation():
         "stats": _validation_report.stats
     }
 
-# Include router
-app.include_router(api_router)
-
-# BestPrice v12 Router
+# BestPrice v12 Router - include BEFORE app.include_router
 try:
     from bestprice_v12.routes import router as v12_router
     api_router.include_router(v12_router)
     logging.info("✅ BestPrice v12 router loaded")
 except ImportError as e:
     logging.warning(f"⚠️ BestPrice v12 router not available: {e}")
+
+# Include router
+app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
