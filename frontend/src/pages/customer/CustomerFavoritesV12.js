@@ -121,7 +121,7 @@ export const CustomerFavoritesV12 = () => {
     setLoading(true);
     try {
       const userId = getUserId();
-      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=500`, {
+      const response = await axios.get(`${API}/v12/favorites?user_id=${userId}&limit=200`, {
         headers: getHeaders()
       });
       setFavorites(response.data.items || []);
