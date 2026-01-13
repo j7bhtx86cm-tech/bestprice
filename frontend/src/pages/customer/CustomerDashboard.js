@@ -12,10 +12,6 @@ import { CustomerMatrix } from './CustomerMatrix';
 import { CustomerMyProfile } from './CustomerMyProfile';
 import { CustomerFavorites } from './CustomerFavorites';
 import { CustomerCart } from './CustomerCart';
-// V12 Components
-import { CustomerCatalogV12 } from './CustomerCatalogV12';
-import { CustomerFavoritesV12 } from './CustomerFavoritesV12';
-import { CustomerCartV12 } from './CustomerCartV12';
 
 export const CustomerDashboard = () => {
   return (
@@ -25,10 +21,6 @@ export const CustomerDashboard = () => {
         <Route path="/catalog" element={<CustomerCatalog />} />
         <Route path="/favorites" element={<CustomerFavorites />} />
         <Route path="/cart" element={<CustomerCart />} />
-        {/* V12 Routes */}
-        <Route path="/catalog-v12" element={<CustomerCatalogV12 />} />
-        <Route path="/favorites-v12" element={<CustomerFavoritesV12 />} />
-        <Route path="/cart-v12" element={<CustomerCartV12 />} />
         <Route path="/profile" element={<CustomerProfile />} />
         <Route path="/my-profile" element={<CustomerMyProfile />} />
         <Route path="/team" element={<CustomerTeam />} />
