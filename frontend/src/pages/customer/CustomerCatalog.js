@@ -372,9 +372,9 @@ export const CustomerCatalog = () => {
     setCartItems(prev => new Set([...prev, itemId]));
   };
 
-  // Search handler with debounce
+  // Search handler - updates immediate input, debounce handles API call
   const handleSearch = (value) => {
-    setSearch(value);
+    setSearchInput(value);
     setPage(0);
   };
 
