@@ -149,15 +149,24 @@ async def get_catalog(
                 brand_query['brand_id'] = {'$in': brand_detection.brand_ids}
                 
                 # Filter out brand-related tokens from lemmas
-                # Keep only non-brand lemmas for text relevance
                 matched_token = brand_detection.matched_token.lower()
                 matched_lemma = stem_token_safe(matched_token)
                 
                 # Find which original token was the brand match
+                # The brand token should be the one that matches the alias exactly or starts with it
                 brand_token_idx = None
                 for i, t in enumerate(q_tokens):
                     t_lower = t.lower()
-                    if t_lower == matched_token or t_lower.startswith(matched_token) or matched_token.startswith(t_lower):
+                    # Check if this token matches the brand alias
+                    if t_lower == matched_token:
+                        brand_token_idx = i
+                        break
+                    # Or if the alias is a prefix of this token
+                    if t_lower.startswith(matched_token) and len(matched_token) >= 3:
+                        brand_token_idx = i
+                        break
+                    # Or if this token is a prefix of the alias (partial input)
+                    if matched_token.startswith(t_lower) and len(t_lower) >= 2:
                         brand_token_idx = i
                         break
                 
