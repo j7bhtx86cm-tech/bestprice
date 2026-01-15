@@ -34,9 +34,11 @@ from .favorites import (
 import sys
 sys.path.insert(0, '/app/backend')
 from search_utils import (
-    tokenize, detect_brand_from_query,
-    calculate_ppu_value, calculate_min_line_total
+    tokenize, tokenize_with_lemmas, detect_brand_from_query,
+    calculate_ppu_value, calculate_min_line_total, normalize_text,
+    STOP_WORDS
 )
+from russian_stemmer import stem_token_safe, generate_lemma_tokens
 
 logger = logging.getLogger(__name__)
 
