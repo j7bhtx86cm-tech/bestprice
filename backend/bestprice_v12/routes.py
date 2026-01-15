@@ -98,29 +98,36 @@ async def get_catalog(
             last_token_raw = q_tokens[-1]
             last_token_lemma = stem_token_safe(last_token_raw)
             
-            # Strategy:
-            # 1. If lemmas exist and last token lemma is >= 3 chars, use lemma_tokens $all
-            #    This handles morphology (анчоус=анчоусы) and order-insensitivity
-            # 2. If last token is short (1-2 chars), use prefix search on name_norm
-            #    This enables typeahead (ог → огурцы)
+            # Check if last token looks like a complete word
+            # If the raw token != its lemma, it's likely complete (e.g., креветки → креветк)
+            # If raw == lemma and short, it's likely partial (e.g., крев → крев)
+            is_last_token_complete = (
+                last_token_raw != last_token_lemma or  # Has ending stripped
+                len(last_token_raw) >= 6  # Long enough to be a word
+            )
             
-            use_lemma_search = len(last_token_lemma) >= 3 and q_lemmas
-            
-            if use_lemma_search:
-                # Full lemma search - order-insensitive, morphology-aware
-                query['lemma_tokens'] = {'$all': q_lemmas}
+            if len(q_tokens) == 1:
+                # Single token
+                if is_last_token_complete and q_lemmas:
+                    # Complete word: use lemma search
+                    query['lemma_tokens'] = {'$all': q_lemmas}
+                else:
+                    # Partial: use prefix search
+                    escaped_last = re.escape(last_token_raw)
+                    query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             else:
-                # Prefix search for short last token
-                # Use full lemmas for all but last, prefix for last
-                if len(q_lemmas) > 1:
-                    # Multiple tokens: full lemmas for first N-1
-                    full_lemmas = q_lemmas[:-1] if len(q_lemmas) > 1 else []
+                # Multiple tokens
+                # Use lemmas for all tokens except potentially partial last one
+                if is_last_token_complete:
+                    # All tokens complete: use lemma_tokens for all
+                    query['lemma_tokens'] = {'$all': q_lemmas}
+                else:
+                    # Last token partial: lemmas for first N-1, prefix for last
+                    full_lemmas = generate_lemma_tokens(q_tokens[:-1])
                     if full_lemmas:
                         query['lemma_tokens'] = {'$all': full_lemmas}
-                
-                # Prefix search for last token
-                escaped_last = re.escape(last_token_raw)
-                query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
+                    escaped_last = re.escape(last_token_raw)
+                    query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             
             # Detect brand from query tokens
             detected_brand_id = detect_brand_from_query(db, q_tokens)
