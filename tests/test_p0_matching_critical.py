@@ -20,7 +20,7 @@ import sys
 # Add backend to path for direct function testing
 sys.path.insert(0, '/app/backend')
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://catalog-fix-4.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://bestprice-search-ui.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 CUSTOMER_EMAIL = "customer@bestprice.ru"
