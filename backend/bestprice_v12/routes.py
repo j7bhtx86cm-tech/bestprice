@@ -140,8 +140,7 @@ async def get_catalog(
             
             # === APPLY BRAND FILTER if confident ===
             if use_brand_filter and brand_detection.brand_ids:
-                # Remove text search constraints that might conflict with brand filter
-                # Keep base query + brand filter
+                # Build brand-filtered query
                 brand_query = {'active': True, 'price': {'$gt': 0}}
                 if super_class:
                     brand_query['super_class'] = query.get('super_class')
@@ -149,10 +148,27 @@ async def get_catalog(
                     brand_query['supplier_company_id'] = supplier_id
                 brand_query['brand_id'] = {'$in': brand_detection.brand_ids}
                 
-                # Also keep any non-brand lemma tokens for text relevance
-                # Filter out the brand token from lemmas
-                non_brand_lemmas = [l for l in q_lemmas if l != brand_detection.matched_token and 
-                                    not brand_detection.matched_token.startswith(l[:3] if len(l) >= 3 else l)]
+                # Filter out brand-related tokens from lemmas
+                # Keep only non-brand lemmas for text relevance
+                matched_token = brand_detection.matched_token.lower()
+                matched_lemma = stem_token_safe(matched_token)
+                
+                # Find which original token was the brand match
+                brand_token_idx = None
+                for i, t in enumerate(q_tokens):
+                    t_lower = t.lower()
+                    if t_lower == matched_token or t_lower.startswith(matched_token) or matched_token.startswith(t_lower):
+                        brand_token_idx = i
+                        break
+                
+                # Non-brand lemmas = all lemmas except the one from brand token
+                if brand_token_idx is not None and brand_token_idx < len(q_tokens):
+                    brand_token = q_tokens[brand_token_idx]
+                    brand_lemma = stem_token_safe(brand_token)
+                    non_brand_lemmas = [l for l in q_lemmas if l != brand_lemma and l != matched_lemma]
+                else:
+                    non_brand_lemmas = [l for l in q_lemmas if l != matched_lemma]
+                
                 if non_brand_lemmas:
                     brand_query['lemma_tokens'] = {'$all': non_brand_lemmas}
                 
