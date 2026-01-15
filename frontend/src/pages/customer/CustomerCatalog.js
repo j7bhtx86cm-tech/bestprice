@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,21 @@ import { useAuth } from '@/context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Debounce hook for search
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  
+  return debouncedValue;
+};
 
 // Catalog Item Card - стиль v12
 const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddToCart, isInFavorites, isInCart }) => {
