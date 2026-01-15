@@ -200,7 +200,8 @@ async def get_catalog(
                 ) else 0
             
             # Brand boost (1 if brand matches detected brand, 0 otherwise)
-            if detected_brand_id and item.get('brand_id') == detected_brand_id:
+            # Now uses brand_detection result with multiple brand_ids support
+            if brand_detection.brand_ids and item.get('brand_id') in brand_detection.brand_ids:
                 item['_brand_boost'] = 1
             else:
                 item['_brand_boost'] = 0
