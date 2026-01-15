@@ -150,6 +150,22 @@ def generate_search_tokens(
     return sorted(list(tokens_set))
 
 
+def generate_lemma_tokens_for_item(
+    name_raw: str,
+    brand_id: Optional[str] = None,
+    super_class: Optional[str] = None,
+    product_core_id: Optional[str] = None
+) -> List[str]:
+    """
+    Generate lemma tokens for a supplier_item (with Russian stemming).
+    """
+    # First get regular search tokens
+    search_tokens = generate_search_tokens(name_raw, brand_id, super_class, product_core_id)
+    
+    # Apply stemming
+    return generate_lemma_tokens(search_tokens)
+
+
 # =====================
 # BRAND DETECTION
 # =====================
