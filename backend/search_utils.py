@@ -275,9 +275,9 @@ def calculate_min_line_total(price: float, min_order_qty: int = 1) -> float:
 # BACKFILL UTILITY
 # =====================
 
-def backfill_search_tokens(db: Database, batch_size: int = 500) -> dict:
+def backfill_search_tokens(db: Database, batch_size: int = 500, include_lemmas: bool = True) -> dict:
     """
-    Backfill search_tokens field for all supplier_items.
+    Backfill search_tokens and lemma_tokens fields for all supplier_items.
     Returns statistics.
     """
     from datetime import datetime, timezone
@@ -304,14 +304,23 @@ def backfill_search_tokens(db: Database, batch_size: int = 500) -> dict:
             product_core_id=doc.get('product_core_id')
         )
         
+        update_fields = {
+            'search_tokens': tokens,
+            'search_tokens_updated_at': datetime.now(timezone.utc).isoformat()
+        }
+        
+        if include_lemmas:
+            lemma_tokens = generate_lemma_tokens_for_item(
+                name_raw=doc.get('name_raw', ''),
+                brand_id=doc.get('brand_id'),
+                super_class=doc.get('super_class'),
+                product_core_id=doc.get('product_core_id')
+            )
+            update_fields['lemma_tokens'] = lemma_tokens
+        
         batch.append({
             'filter': {'_id': doc['_id']},
-            'update': {
-                '$set': {
-                    'search_tokens': tokens,
-                    'search_tokens_updated_at': datetime.now(timezone.utc).isoformat()
-                }
-            }
+            'update': {'$set': update_fields}
         })
         
         if len(batch) >= batch_size:
