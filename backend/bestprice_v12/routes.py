@@ -83,8 +83,8 @@ async def get_catalog(
     query = {'active': True, 'price': {'$gt': 0}}
     
     # Фильтр по категории
-    if super_class:
-        query['super_class'] = {'$regex': f'^{super_class}', '$options': 'i'}
+    if super_class_filter:
+        query['super_class'] = {'$regex': f'^{super_class_filter}', '$options': 'i'}
     
     # Фильтр по поставщику
     if supplier_id:
@@ -98,9 +98,9 @@ async def get_catalog(
     last_token_raw = ''
     use_brand_filter = False  # Whether to apply brand_id filter in query
     
-    if search and search.strip():
+    if search_term and search_term.strip():
         # Tokenize query with lemmas
-        q_tokens, q_lemmas = tokenize_with_lemmas(search)
+        q_tokens, q_lemmas = tokenize_with_lemmas(search_term)
         
         if q_tokens:
             is_search_mode = True
