@@ -35,6 +35,7 @@ import sys
 sys.path.insert(0, '/app/backend')
 from search_utils import (
     tokenize, tokenize_with_lemmas, detect_brand_from_query,
+    detect_brands_enhanced, BrandDetectionResult,
     calculate_ppu_value, calculate_min_line_total, normalize_text,
     STOP_WORDS
 )
