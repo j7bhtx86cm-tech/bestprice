@@ -250,31 +250,27 @@ async def get_catalog(
             )
         
         # BestPrice sorting:
-        # 1) match_score DESC
-        # 2) brand_boost DESC
-        # 3) ppu_value ASC (not null first)
-        # 4) price ASC (fallback when ppu is null)
-        # 5) min_line_total ASC (tie-breaker)
-        # 6) name_norm ASC
+        # 1) Price ASC (main criterion - lowest price first)
+        # 2) ppu_value ASC (for same price, prefer better per-unit value)
+        # 3) min_line_total ASC (tie-breaker)
+        # 4) match_score DESC (relevance as final tie-breaker)
+        # 5) name_norm ASC
         def sort_key(item):
             ppu = item.get('_ppu_value')
-            price = item.get('_price', 0)
+            price = item.get('_price', 0) or 0
             
-            # PPU sorting: not-null first (lower better), nulls use price as fallback
+            # PPU for tie-breaking (nulls last)
             if ppu is not None:
-                ppu_priority = 0  # Has PPU
                 ppu_sort = ppu
             else:
-                ppu_priority = 1  # No PPU, use price
-                ppu_sort = price
+                ppu_sort = float('inf')
             
             return (
-                -item.get('_match_score', 0),      # 1) match_score DESC
-                -item.get('_brand_boost', 0),      # 2) brand_boost DESC
-                ppu_priority,                      # 3) PPU items first
-                ppu_sort,                          # 4) ppu/price ASC
-                item.get('_min_line_total', 0),    # 5) min_line_total ASC
-                item.get('name_norm', '')          # 6) name_norm ASC
+                price,                              # 1) price ASC (MAIN)
+                ppu_sort,                           # 2) ppu ASC (tie-breaker)
+                item.get('_min_line_total', 0),     # 3) min_line_total ASC
+                -item.get('_match_score', 0),       # 4) match_score DESC
+                item.get('name_norm', '')           # 5) name_norm ASC
             )
         
         items.sort(key=sort_key)
