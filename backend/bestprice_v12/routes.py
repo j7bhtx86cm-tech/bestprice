@@ -53,8 +53,10 @@ import re
 
 @router.get("/catalog", summary="Получить каталог с Best Price")
 async def get_catalog(
-    super_class: Optional[str] = Query(None, alias="category", description="Фильтр по категории"),
-    search: Optional[str] = Query(None, alias="q", description="Поиск по названию"),
+    super_class: Optional[str] = Query(None, description="Фильтр по категории"),
+    search: Optional[str] = Query(None, description="Поиск по названию"),
+    category: Optional[str] = Query(None, description="Альтернативный фильтр по категории"),
+    q: Optional[str] = Query(None, description="Альтернативный поиск"),
     supplier_id: Optional[str] = Query(None, description="Фильтр по поставщику"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -69,9 +71,13 @@ async def get_catalog(
     - RU morphology: lemma_tokens for singular/plural matching
     - Caliber preservation: tokens like 31/40 kept intact
     - Safe fallback: empty tokens → default catalog
-    - BestPrice ranking: match → brand → ppu/price → min_line_total
+    - BestPrice ranking: price first, then relevance
     """
     db = get_db()
+    
+    # Merge alternative params
+    search_term = search or q
+    super_class_filter = super_class or category
     
     # Базовый фильтр
     query = {'active': True, 'price': {'$gt': 0}}
