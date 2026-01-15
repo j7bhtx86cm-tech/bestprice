@@ -149,7 +149,7 @@ async def get_catalog(
             if use_brand_filter and brand_detection.brand_ids:
                 # Build brand-filtered query
                 brand_query = {'active': True, 'price': {'$gt': 0}}
-                if super_class:
+                if super_class_filter:
                     brand_query['super_class'] = query.get('super_class')
                 if supplier_id:
                     brand_query['supplier_company_id'] = supplier_id
