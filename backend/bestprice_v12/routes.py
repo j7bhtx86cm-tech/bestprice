@@ -83,12 +83,13 @@ async def get_catalog(
     if supplier_id:
         query['supplier_company_id'] = supplier_id
     
-    # === SEARCH LOGIC (v12 FINAL) ===
+    # === SEARCH LOGIC (v12 FINAL with Brand RU/EN support) ===
     q_tokens = []
     q_lemmas = []
-    detected_brand_id = None
+    brand_detection: BrandDetectionResult = BrandDetectionResult()
     is_search_mode = False
     last_token_raw = ''
+    use_brand_filter = False  # Whether to apply brand_id filter in query
     
     if search and search.strip():
         # Tokenize query with lemmas
@@ -99,43 +100,64 @@ async def get_catalog(
             last_token_raw = q_tokens[-1]
             last_token_lemma = stem_token_safe(last_token_raw)
             
+            # === BRAND DETECTION (RU/EN with prefix support) ===
+            brand_detection = detect_brands_enhanced(db, q_tokens)
+            if not brand_detection.brand_ids:
+                brand_detection = detect_brands_enhanced(db, q_lemmas)
+            
+            # Decide: brand_filter_mode vs brand_boost_mode
+            # Filter mode: exact match OR prefix >= 3 chars with high confidence
+            # Boost mode: prefix 2 chars or lower confidence
+            if brand_detection.brand_ids:
+                if brand_detection.match_type == 'exact':
+                    use_brand_filter = True
+                elif brand_detection.match_type == 'prefix' and brand_detection.confidence >= 0.7:
+                    use_brand_filter = True
+                # else: brand_boost_mode (applied in ranking)
+            
             # Check if last token looks like a complete word
-            # If the raw token != its lemma, it's likely complete (e.g., креветки → креветк)
-            # If raw == lemma and short, it's likely partial (e.g., крев → крев)
             is_last_token_complete = (
-                last_token_raw != last_token_lemma or  # Has ending stripped
-                len(last_token_raw) >= 6  # Long enough to be a word
+                last_token_raw != last_token_lemma or
+                len(last_token_raw) >= 6
             )
             
+            # Build text search query
             if len(q_tokens) == 1:
-                # Single token
                 if is_last_token_complete and q_lemmas:
-                    # Complete word: use lemma search
                     query['lemma_tokens'] = {'$all': q_lemmas}
                 else:
-                    # Partial: use prefix search
                     escaped_last = re.escape(last_token_raw)
                     query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             else:
-                # Multiple tokens
-                # Use lemmas for all tokens except potentially partial last one
                 if is_last_token_complete:
-                    # All tokens complete: use lemma_tokens for all
                     query['lemma_tokens'] = {'$all': q_lemmas}
                 else:
-                    # Last token partial: lemmas for first N-1, prefix for last
                     full_lemmas = generate_lemma_tokens(q_tokens[:-1])
                     if full_lemmas:
                         query['lemma_tokens'] = {'$all': full_lemmas}
                     escaped_last = re.escape(last_token_raw)
                     query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             
-            # Detect brand from query tokens
-            detected_brand_id = detect_brand_from_query(db, q_tokens)
-            if not detected_brand_id:
-                detected_brand_id = detect_brand_from_query(db, q_lemmas)
+            # === APPLY BRAND FILTER if confident ===
+            if use_brand_filter and brand_detection.brand_ids:
+                # Remove text search constraints that might conflict with brand filter
+                # Keep base query + brand filter
+                brand_query = {'active': True, 'price': {'$gt': 0}}
+                if super_class:
+                    brand_query['super_class'] = query.get('super_class')
+                if supplier_id:
+                    brand_query['supplier_company_id'] = supplier_id
+                brand_query['brand_id'] = {'$in': brand_detection.brand_ids}
+                
+                # Also keep any non-brand lemma tokens for text relevance
+                # Filter out the brand token from lemmas
+                non_brand_lemmas = [l for l in q_lemmas if l != brand_detection.matched_token and 
+                                    not brand_detection.matched_token.startswith(l[:3] if len(l) >= 3 else l)]
+                if non_brand_lemmas:
+                    brand_query['lemma_tokens'] = {'$all': non_brand_lemmas}
+                
+                query = brand_query
         else:
-            # Empty tokens after filtering
             is_search_mode = False
     
     # Count total before pagination
