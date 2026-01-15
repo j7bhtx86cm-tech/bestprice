@@ -165,27 +165,53 @@ def generate_lemma_tokens_for_item(
 
 
 # =====================
-# BRAND DETECTION
+# BRAND DETECTION (Enhanced with prefix support)
 # =====================
 
-def detect_brand_from_query(db: Database, query_tokens: List[str]) -> Optional[str]:
-    """
-    Detect brand_id from query tokens using brand_aliases collection.
-    Returns the first matched brand_id or None.
-    """
-    if not query_tokens:
-        return None
+class BrandDetectionResult:
+    """Result of brand detection from query."""
+    def __init__(self):
+        self.brand_ids: List[str] = []
+        self.confidence: float = 0.0
+        self.match_type: str = 'none'  # 'exact', 'prefix', 'none'
+        self.matched_token: str = ''
     
-    # Check each token against brand_aliases
+    def __repr__(self):
+        return f"BrandDetectionResult(brand_ids={self.brand_ids}, confidence={self.confidence}, match_type='{self.match_type}')"
+
+
+def detect_brands_enhanced(db: Database, query_tokens: List[str]) -> BrandDetectionResult:
+    """
+    Enhanced brand detection with prefix support.
+    
+    Returns BrandDetectionResult with:
+    - brand_ids: list of detected brand IDs
+    - confidence: 0.0-1.0
+    - match_type: 'exact', 'prefix', or 'none'
+    
+    Logic:
+    - First try exact match on alias_norm
+    - Then try prefix match (min 2 chars for boost, min 3 for filter)
+    """
+    result = BrandDetectionResult()
+    
+    if not query_tokens:
+        return result
+    
+    # 1. Try exact match first
     for token in query_tokens:
         alias_doc = db.brand_aliases.find_one(
             {'alias_norm': token},
             {'_id': 0, 'brand_id': 1}
         )
         if alias_doc:
-            return alias_doc['brand_id']
+            result.brand_ids.append(alias_doc['brand_id'])
+            result.confidence = 1.0
+            result.match_type = 'exact'
+            result.matched_token = token
+            return result
     
-    # Also try combined tokens (2-word brands like "агро альянс")
+    # 2. Try 2-word combinations
     if len(query_tokens) >= 2:
         for i in range(len(query_tokens) - 1):
             combined = f"{query_tokens[i]} {query_tokens[i+1]}"
@@ -195,9 +221,51 @@ def detect_brand_from_query(db: Database, query_tokens: List[str]) -> Optional[s
                 {'_id': 0, 'brand_id': 1}
             )
             if alias_doc:
-                return alias_doc['brand_id']
+                result.brand_ids.append(alias_doc['brand_id'])
+                result.confidence = 1.0
+                result.match_type = 'exact'
+                result.matched_token = combined_norm
+                return result
     
-    return None
+    # 3. Try prefix match on last token (typeahead)
+    # Check all tokens, but prioritize longer ones
+    for token in sorted(query_tokens, key=len, reverse=True):
+        if len(token) < 2:
+            continue
+        
+        # Search for aliases that start with this token
+        prefix_matches = list(db.brand_aliases.find(
+            {'alias_norm': {'$regex': f'^{token}'}},
+            {'_id': 0, 'brand_id': 1, 'alias_norm': 1}
+        ).limit(10))
+        
+        if prefix_matches:
+            # Get unique brand_ids
+            brand_ids = list(set(m['brand_id'] for m in prefix_matches))
+            result.brand_ids = brand_ids
+            result.matched_token = token
+            result.match_type = 'prefix'
+            
+            # Confidence based on token length
+            if len(token) >= 4:
+                result.confidence = 0.9
+            elif len(token) >= 3:
+                result.confidence = 0.7
+            else:  # 2 chars
+                result.confidence = 0.5
+            
+            return result
+    
+    return result
+
+
+def detect_brand_from_query(db: Database, query_tokens: List[str]) -> Optional[str]:
+    """
+    Legacy function for backward compatibility.
+    Returns single brand_id or None.
+    """
+    result = detect_brands_enhanced(db, query_tokens)
+    return result.brand_ids[0] if result.brand_ids else None
 
 
 def get_brand_aliases_set(db: Database, brand_id: str) -> Set[str]:
