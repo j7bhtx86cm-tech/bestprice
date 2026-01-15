@@ -33,27 +33,25 @@ def normalize_text(text: str, preserve_calibers: bool = True) -> str:
     if not text:
         return ""
     
+    # First extract and save calibers before lowercasing
+    calibers = []
+    if preserve_calibers:
+        calibers = CALIBER_PATTERN.findall(text)
+        for i, cal in enumerate(calibers):
+            text = text.replace(cal, f'__CALIBER{i}__', 1)
+    
     # Lowercase
     text = text.lower()
     
     # ё → е
     text = text.replace('ё', 'е')
     
-    if preserve_calibers:
-        # Temporarily protect caliber patterns
-        calibers = CALIBER_PATTERN.findall(text)
-        for i, cal in enumerate(calibers):
-            text = text.replace(cal, f'__CAL{i}__', 1)
-        
-        # Remove punctuation (keep letters, digits, spaces)
-        text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
-        
-        # Restore calibers
-        for i, cal in enumerate(calibers):
-            text = text.replace(f'__cal{i}__', cal)
-    else:
-        # Remove all punctuation
-        text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
+    # Remove punctuation (keep letters, digits, spaces, and our markers)
+    text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
+    
+    # Restore calibers (markers are now lowercase)
+    for i, cal in enumerate(calibers):
+        text = text.replace(f'__caliber{i}__', cal)
     
     # Collapse multiple spaces
     text = re.sub(r'\s+', ' ', text).strip()
