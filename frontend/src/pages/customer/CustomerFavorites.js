@@ -360,10 +360,12 @@ export const CustomerFavorites = () => {
     }
   };
 
-  // Filter favorites
-  const filteredFavorites = favorites.filter(f =>
-    !search || f.product_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter favorites by search and category
+  const filteredFavorites = favorites.filter(f => {
+    const matchesSearch = !search || f.product_name?.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = !category || f.super_class?.startsWith(category);
+    return matchesSearch && matchesCategory;
+  });
 
   if (loading) {
     return (
