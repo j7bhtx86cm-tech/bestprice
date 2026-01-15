@@ -87,7 +87,7 @@ async def get_catalog(
     q_lemmas = []
     detected_brand_id = None
     is_search_mode = False
-    last_token_raw = ''  # For prefix matching in ranking
+    last_token_raw = ''
     
     if search and search.strip():
         # Tokenize query with lemmas
@@ -96,37 +96,38 @@ async def get_catalog(
         if q_tokens:
             is_search_mode = True
             last_token_raw = q_tokens[-1]
+            last_token_lemma = stem_token_safe(last_token_raw)
             
-            # For morphology matching: use lemma_tokens with $all
-            # This ensures анчоус = анчоусы (both have lemma 'анчоус')
-            if q_lemmas:
+            # Strategy:
+            # 1. If lemmas exist and last token lemma is >= 3 chars, use lemma_tokens $all
+            #    This handles morphology (анчоус=анчоусы) and order-insensitivity
+            # 2. If last token is short (1-2 chars), use prefix search on name_norm
+            #    This enables typeahead (ог → огурцы)
+            
+            use_lemma_search = len(last_token_lemma) >= 3 and q_lemmas
+            
+            if use_lemma_search:
+                # Full lemma search - order-insensitive, morphology-aware
                 query['lemma_tokens'] = {'$all': q_lemmas}
-            
-            # Also add prefix search on name_norm for partial token matching
-            # This enables typeahead (ог → огурцы)
-            # Use the shortest prefix (raw token might be partial)
-            escaped_last = re.escape(last_token_raw)
-            # Use $or to match either by lemma_tokens OR by prefix
-            if 'lemma_tokens' in query:
-                # Already have lemma query, add prefix as additional filter for partial matches
-                # But we want OR logic: match by lemma OR by prefix
-                lemma_query = query.pop('lemma_tokens')
-                query['$or'] = [
-                    {'lemma_tokens': lemma_query},
-                    {'name_norm': {'$regex': f'(^|\\s){escaped_last}'}}
-                ]
             else:
-                # No lemmas (shouldn't happen), just use prefix
+                # Prefix search for short last token
+                # Use full lemmas for all but last, prefix for last
+                if len(q_lemmas) > 1:
+                    # Multiple tokens: full lemmas for first N-1
+                    full_lemmas = q_lemmas[:-1] if len(q_lemmas) > 1 else []
+                    if full_lemmas:
+                        query['lemma_tokens'] = {'$all': full_lemmas}
+                
+                # Prefix search for last token
+                escaped_last = re.escape(last_token_raw)
                 query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             
             # Detect brand from query tokens
             detected_brand_id = detect_brand_from_query(db, q_tokens)
-            # Also try lemmas for brand detection
             if not detected_brand_id:
                 detected_brand_id = detect_brand_from_query(db, q_lemmas)
         else:
-            # Empty tokens after filtering (e.g., query was "в м")
-            # Safe fallback: return default catalog (no filter)
+            # Empty tokens after filtering
             is_search_mode = False
     
     # Count total before pagination
