@@ -49,8 +49,6 @@ router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
 
 # === CATALOG ENDPOINTS ===
 
-import re
-
 @router.get("/catalog", summary="Получить каталог с Best Price")
 async def get_catalog(
     super_class: Optional[str] = Query(None, description="Фильтр по категории"),
