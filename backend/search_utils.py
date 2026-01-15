@@ -366,6 +366,26 @@ def ensure_search_indexes(db: Database) -> dict:
     except Exception as e:
         print(f"Index active_search_tokens: {e}")
     
+    # Lemma tokens index (for RU morphology search)
+    try:
+        db.supplier_items.create_index(
+            [('active', 1), ('lemma_tokens', 1)],
+            name='active_lemma_tokens'
+        )
+        indexes_created.append('active_lemma_tokens')
+    except Exception as e:
+        print(f"Index active_lemma_tokens: {e}")
+    
+    # Name norm index (for prefix search)
+    try:
+        db.supplier_items.create_index(
+            [('active', 1), ('name_norm', 1)],
+            name='active_name_norm'
+        )
+        indexes_created.append('active_name_norm')
+    except Exception as e:
+        print(f"Index active_name_norm: {e}")
+    
     # Compound index with super_class for filtered searches
     try:
         db.supplier_items.create_index(
