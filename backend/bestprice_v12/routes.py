@@ -30,6 +30,14 @@ from .favorites import (
     add_to_favorites, remove_from_favorites
 )
 
+# Import search utilities
+import sys
+sys.path.insert(0, '/app/backend')
+from search_utils import (
+    tokenize, detect_brand_from_query,
+    calculate_ppu_value, calculate_min_line_total
+)
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
