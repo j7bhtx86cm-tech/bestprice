@@ -143,10 +143,32 @@ export const CustomerFavorites = () => {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
   const [adding, setAdding] = useState(null);
   const [seeding, setSeeding] = useState(false);
   const [cartItems, setCartItems] = useState(new Set());
   const [cartCount, setCartCount] = useState(0);
+
+  // Categories for filter (same as catalog)
+  const categories = [
+    { value: '', label: 'Все категории' },
+    { value: 'seafood', label: '🐟 Морепродукты' },
+    { value: 'meat', label: '🥩 Мясо' },
+    { value: 'dairy', label: '🧀 Молочные' },
+    { value: 'vegetables', label: '🥬 Овощи' },
+    { value: 'fruits', label: '🍎 Фрукты' },
+    { value: 'bakery', label: '🍞 Выпечка' },
+    { value: 'beverages', label: '🥤 Напитки' },
+    { value: 'condiments', label: '🧂 Приправы' },
+    { value: 'pasta', label: '🍝 Макароны' },
+    { value: 'staples', label: '🌾 Крупы' },
+    { value: 'canned', label: '🥫 Консервы' },
+    { value: 'oils', label: '🫒 Масла' },
+    { value: 'frozen', label: '❄️ Заморозка' },
+    { value: 'desserts', label: '🍰 Десерты' },
+    { value: 'ready_meals', label: '🍱 Готовые блюда' },
+    { value: 'packaging', label: '📦 Упаковка' },
+  ];
 
   // Get user ID from auth context
   const getUserId = () => {
