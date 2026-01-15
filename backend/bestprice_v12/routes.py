@@ -47,6 +47,8 @@ router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
 
 # === CATALOG ENDPOINTS ===
 
+import re
+
 @router.get("/catalog", summary="Получить каталог с Best Price")
 async def get_catalog(
     super_class: Optional[str] = Query(None, description="Фильтр по категории"),
@@ -59,11 +61,13 @@ async def get_catalog(
     """
     Получает список всех товаров из supplier_items.
     
-    Search features (v12 upgrade):
-    - Order-insensitive token search (uses search_tokens index)
-    - Prefix search for last token (enables typeahead: "ог" → "огурцы")
-    - RU/EN brand detection via brand_aliases
-    - Ranking by: match_score → brand_boost → ppu_value → min_line_total
+    Search features (v12 FINAL):
+    - Order-insensitive token search
+    - Prefix-friendly: last token as prefix (enables typeahead)
+    - RU morphology: lemma_tokens for singular/plural matching
+    - Caliber preservation: tokens like 31/40 kept intact
+    - Safe fallback: empty tokens → default catalog
+    - BestPrice ranking: match → brand → ppu/price → min_line_total
     """
     db = get_db()
     
@@ -78,75 +82,88 @@ async def get_catalog(
     if supplier_id:
         query['supplier_company_id'] = supplier_id
     
-    # === SEARCH LOGIC (v12 upgrade with prefix search) ===
+    # === SEARCH LOGIC (v12 FINAL) ===
     q_tokens = []
+    q_lemmas = []
     detected_brand_id = None
-    use_prefix_search = False
+    is_search_mode = False
     
     if search and search.strip():
-        # Tokenize query (order-insensitive)
-        q_tokens = tokenize(search)
+        # Tokenize query with lemmas
+        q_tokens, q_lemmas = tokenize_with_lemmas(search)
         
         if q_tokens:
+            is_search_mode = True
+            
+            # Split into full_tokens (complete) and last_token (possibly partial)
             if len(q_tokens) == 1:
-                # Single token: use prefix search on name_norm
-                # Pattern: ^token or \\stoken (word boundary, no 'i' flag since name_norm is lowercase)
-                prefix = q_tokens[0]
-                query['name_norm'] = {'$regex': f'(^|\\s){prefix}'}
-                use_prefix_search = True
+                # Single token: always treat as prefix
+                last_token = q_tokens[0]
+                last_token_lemma = stem_token_safe(last_token)
+                full_lemmas = []
             else:
-                # Multiple tokens: full tokens via $all, last token as prefix
                 full_tokens = q_tokens[:-1]
                 last_token = q_tokens[-1]
-                
-                # Check if last token is complete (exists in any search_tokens)
-                # If not, use prefix search for it
-                last_token_check = db.supplier_items.find_one(
-                    {'active': True, 'search_tokens': last_token},
-                    {'_id': 1}
-                )
-                
-                if last_token_check:
-                    # Last token is complete, use $all for all tokens
-                    query['search_tokens'] = {'$all': q_tokens}
-                else:
-                    # Last token is partial, use hybrid approach
-                    if full_tokens:
-                        query['search_tokens'] = {'$all': full_tokens}
-                    # Add prefix search for last token
-                    query['name_norm'] = {'$regex': f'(^|\\s){last_token}'}
-                    use_prefix_search = True
+                last_token_lemma = stem_token_safe(last_token)
+                full_lemmas = generate_lemma_tokens(full_tokens)
+            
+            # Build query with lemma_tokens for full tokens
+            if full_lemmas:
+                query['lemma_tokens'] = {'$all': full_lemmas}
+            
+            # Add prefix search for last token on name_norm
+            # Escape special regex characters
+            escaped_last = re.escape(last_token)
+            query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             
             # Detect brand from query tokens
             detected_brand_id = detect_brand_from_query(db, q_tokens)
+            # Also try lemmas for brand detection
+            if not detected_brand_id:
+                detected_brand_id = detect_brand_from_query(db, q_lemmas)
+        else:
+            # Empty tokens after filtering (e.g., query was "в м")
+            # Safe fallback: return default catalog (no filter)
+            is_search_mode = False
     
     # Count total before pagination
     total = db.supplier_items.count_documents(query)
     
     # Get items (fetch more for in-memory ranking when searching)
-    fetch_limit = limit * 3 if search else limit  # Fetch 3x for ranking
+    fetch_limit = limit * 4 if is_search_mode else limit
     
     items = list(db.supplier_items.find(
         query,
         {'_id': 0}
     ).limit(fetch_limit + skip))
     
-    # === RANKING (v12 upgrade) ===
-    if search and q_tokens:
+    # === RANKING (v12 FINAL: BestPrice ordering) ===
+    if is_search_mode and q_lemmas:
         for item in items:
-            # Calculate match_score
+            # Calculate match_score using lemmas for RU morphology
+            item_lemmas = item.get('lemma_tokens', [])
             item_tokens = item.get('search_tokens', [])
-            if item_tokens:
-                matched = len(set(q_tokens) & set(item_tokens))
-                # For prefix search, check if last token is prefix of any item token
-                if use_prefix_search:
-                    last_token = q_tokens[-1]
-                    prefix_match = any(t.startswith(last_token) for t in item_tokens)
-                    if prefix_match:
-                        matched = max(matched, len(q_tokens) - 0.5)  # Partial credit for prefix
-                item['_match_score'] = matched / len(q_tokens) if q_tokens else 0
+            
+            if item_lemmas:
+                # Count full lemma matches
+                matched_lemmas = len(set(q_lemmas) & set(item_lemmas))
+                
+                # Check prefix match for last token
+                last_token_lemma = stem_token_safe(q_tokens[-1]) if q_tokens else ''
+                prefix_match = any(
+                    t.startswith(q_tokens[-1]) or t.startswith(last_token_lemma) 
+                    for t in item_tokens + item_lemmas
+                )
+                
+                if prefix_match:
+                    matched_lemmas = max(matched_lemmas, len(q_lemmas) - 0.3)
+                
+                item['_match_score'] = matched_lemmas / len(q_lemmas) if q_lemmas else 0
             else:
-                item['_match_score'] = 0
+                # Fallback to simple token match
+                item['_match_score'] = 0.5 if any(
+                    t.startswith(q_tokens[-1]) for t in item_tokens
+                ) else 0
             
             # Brand boost (1 if brand matches detected brand, 0 otherwise)
             if detected_brand_id and item.get('brand_id') == detected_brand_id:
@@ -161,23 +178,41 @@ async def get_catalog(
                 item.get('pack_qty', 1)
             )
             
-            # Min line total (lower is better)
+            # Price (for PIECE items where ppu is None)
+            item['_price'] = item.get('price', 0)
+            
+            # Min line total (lower is better) - now just tie-breaker
             item['_min_line_total'] = calculate_min_line_total(
                 item.get('price', 0),
                 item.get('min_order_qty', 1)
             )
         
-        # Sort by: match_score DESC, brand_boost DESC, ppu_value ASC (nulls last), min_line_total ASC, name_norm ASC
+        # BestPrice sorting:
+        # 1) match_score DESC
+        # 2) brand_boost DESC
+        # 3) ppu_value ASC (not null first)
+        # 4) price ASC (fallback when ppu is null)
+        # 5) min_line_total ASC (tie-breaker)
+        # 6) name_norm ASC
         def sort_key(item):
             ppu = item.get('_ppu_value')
-            # For ppu: nulls last (use large number), else use actual value
-            ppu_sort = ppu if ppu is not None else float('inf')
+            price = item.get('_price', 0)
+            
+            # PPU sorting: not-null first (lower better), nulls use price as fallback
+            if ppu is not None:
+                ppu_priority = 0  # Has PPU
+                ppu_sort = ppu
+            else:
+                ppu_priority = 1  # No PPU, use price
+                ppu_sort = price
+            
             return (
-                -item.get('_match_score', 0),      # DESC
-                -item.get('_brand_boost', 0),      # DESC
-                ppu_sort,                          # ASC (nulls last)
-                item.get('_min_line_total', 0),    # ASC
-                item.get('name_norm', '')          # ASC
+                -item.get('_match_score', 0),      # 1) match_score DESC
+                -item.get('_brand_boost', 0),      # 2) brand_boost DESC
+                ppu_priority,                      # 3) PPU items first
+                ppu_sort,                          # 4) ppu/price ASC
+                item.get('_min_line_total', 0),    # 5) min_line_total ASC
+                item.get('name_norm', '')          # 6) name_norm ASC
             )
         
         items.sort(key=sort_key)
@@ -190,6 +225,7 @@ async def get_catalog(
             item.pop('_match_score', None)
             item.pop('_brand_boost', None)
             item.pop('_ppu_value', None)
+            item.pop('_price', None)
             item.pop('_min_line_total', None)
     else:
         # No search: simple sort by super_class, name_norm
