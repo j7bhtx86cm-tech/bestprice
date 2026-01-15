@@ -153,20 +153,21 @@ async def get_catalog(
                 matched_lemma = stem_token_safe(matched_token)
                 
                 # Find which original token was the brand match
-                # The brand token should be the one that matches the alias exactly or starts with it
+                # The brand token is the one that equals or is a prefix of the matched alias
                 brand_token_idx = None
                 for i, t in enumerate(q_tokens):
                     t_lower = t.lower()
-                    # Check if this token matches the brand alias
+                    # Exact match
                     if t_lower == matched_token:
                         brand_token_idx = i
                         break
-                    # Or if the alias is a prefix of this token
-                    if t_lower.startswith(matched_token) and len(matched_token) >= 3:
+                    # Token is prefix of alias (user typing "мак" → alias "макфа")
+                    if matched_token.startswith(t_lower) and len(t_lower) >= 2 and t_lower not in ['мак', 'ма']:
+                        # Avoid common words like "мак" (poppy) being treated as brand
                         brand_token_idx = i
                         break
-                    # Or if this token is a prefix of the alias (partial input)
-                    if matched_token.startswith(t_lower) and len(t_lower) >= 2:
+                    # Alias is prefix of token (shouldn't happen normally)
+                    if t_lower.startswith(matched_token) and len(matched_token) >= 4:
                         brand_token_idx = i
                         break
                 
@@ -176,6 +177,7 @@ async def get_catalog(
                     brand_lemma = stem_token_safe(brand_token)
                     non_brand_lemmas = [l for l in q_lemmas if l != brand_lemma and l != matched_lemma]
                 else:
+                    # Couldn't identify brand token - just exclude matched_lemma
                     non_brand_lemmas = [l for l in q_lemmas if l != matched_lemma]
                 
                 if non_brand_lemmas:
