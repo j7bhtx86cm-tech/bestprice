@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Heart, Trash2, ShoppingCart, Search, Package,
-  RefreshCw, TrendingDown, Shuffle, Loader2
+  Heart, Trash2, ShoppingCart, Search,
+  TrendingDown, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -145,7 +145,6 @@ export const CustomerFavorites = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [adding, setAdding] = useState(null);
-  const [seeding, setSeeding] = useState(false);
   const [cartItems, setCartItems] = useState(new Set());
   const [cartCount, setCartCount] = useState(0);
 
@@ -337,29 +336,6 @@ export const CustomerFavorites = () => {
     navigate('/customer/cart');
   };
 
-  // Seed random favorites
-  const handleSeedFavorites = async () => {
-    if (!confirm('Добавить 100 случайных карточек в избранное?')) return;
-    
-    setSeeding(true);
-    try {
-      const userId = getUserId();
-      const response = await axios.post(`${API}/v12/admin/test/favorites/random`, {
-        user_id: userId,
-        count: 100
-      }, {
-        headers: getHeaders()
-      });
-      
-      toast.success(`Добавлено ${response.data.added_count} карточек`);
-      fetchFavorites();
-    } catch (error) {
-      toast.error('Ошибка добавления');
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   // Filter favorites by search and category
   const filteredFavorites = favorites.filter(f => {
     const matchesSearch = !search || f.product_name?.toLowerCase().includes(search.toLowerCase());
@@ -392,23 +368,6 @@ export const CustomerFavorites = () => {
         </div>
         
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={handleSeedFavorites} disabled={seeding}>
-            {seeding ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Добавление...
-              </>
-            ) : (
-              <>
-                <Shuffle className="h-4 w-4 mr-2" />
-                +100 случайных
-              </>
-            )}
-          </Button>
-          <Button variant="outline" onClick={fetchFavorites}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Обновить
-          </Button>
           <Button onClick={handleAddAllToCart} disabled={!favorites.length}>
             <ShoppingCart className="h-4 w-4 mr-2" />
             Все в корзину
@@ -457,16 +416,10 @@ export const CustomerFavorites = () => {
         <Card className="p-12 text-center">
           <Heart className="h-16 w-16 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-600 mb-2">Избранное пусто</p>
-          <p className="text-sm text-gray-500 mb-4">Добавьте товары из каталога или нажмите &quot;+100 случайных&quot;</p>
-          <div className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={() => navigate('/customer/catalog')}>
-              Перейти в каталог
-            </Button>
-            <Button onClick={handleSeedFavorites} disabled={seeding}>
-              <Shuffle className="h-4 w-4 mr-2" />
-              +100 случайных
-            </Button>
-          </div>
+          <p className="text-sm text-gray-500 mb-4">Добавьте товары из каталога</p>
+          <Button variant="outline" onClick={() => navigate('/customer/catalog')}>
+            Перейти в каталог
+          </Button>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
