@@ -56,7 +56,11 @@ async def get_catalog(
 ):
     """
     Получает список всех товаров из supplier_items.
-    Показывает ВСЕ товары, не только агрегированные референсы.
+    
+    Search features (v12 upgrade):
+    - Order-insensitive token search (uses search_tokens index)
+    - RU/EN brand detection via brand_aliases
+    - Ranking by: match_score → brand_boost → ppu_value → min_line_total
     """
     db = get_db()
     
@@ -71,15 +75,90 @@ async def get_catalog(
     if supplier_id:
         query['supplier_company_id'] = supplier_id
     
-    # Поиск по названию
-    if search:
-        query['name_raw'] = {'$regex': search, '$options': 'i'}
+    # === SEARCH LOGIC (v12 upgrade) ===
+    q_tokens = []
+    detected_brand_id = None
     
-    # Получаем товары
+    if search and search.strip():
+        # Tokenize query (order-insensitive)
+        q_tokens = tokenize(search)
+        
+        if q_tokens:
+            # Use $all for AND logic on search_tokens (indexed)
+            query['search_tokens'] = {'$all': q_tokens}
+            
+            # Detect brand from query tokens
+            detected_brand_id = detect_brand_from_query(db, q_tokens)
+    
+    # Count total before pagination
+    total = db.supplier_items.count_documents(query)
+    
+    # Get items (fetch more for in-memory ranking when searching)
+    fetch_limit = limit * 3 if search else limit  # Fetch 3x for ranking
+    
     items = list(db.supplier_items.find(
         query,
         {'_id': 0}
-    ).sort([('super_class', 1), ('name_raw', 1)]).skip(skip).limit(limit))
+    ).limit(fetch_limit + skip))
+    
+    # === RANKING (v12 upgrade) ===
+    if search and q_tokens:
+        for item in items:
+            # Calculate match_score
+            item_tokens = item.get('search_tokens', [])
+            if item_tokens:
+                matched = len(set(q_tokens) & set(item_tokens))
+                item['_match_score'] = matched / len(q_tokens) if q_tokens else 0
+            else:
+                item['_match_score'] = 0
+            
+            # Brand boost (1 if brand matches detected brand, 0 otherwise)
+            if detected_brand_id and item.get('brand_id') == detected_brand_id:
+                item['_brand_boost'] = 1
+            else:
+                item['_brand_boost'] = 0
+            
+            # PPU value (lower is better)
+            item['_ppu_value'] = calculate_ppu_value(
+                item.get('price', 0),
+                item.get('unit_type', 'PIECE'),
+                item.get('pack_qty', 1)
+            )
+            
+            # Min line total (lower is better)
+            item['_min_line_total'] = calculate_min_line_total(
+                item.get('price', 0),
+                item.get('min_order_qty', 1)
+            )
+        
+        # Sort by: match_score DESC, brand_boost DESC, ppu_value ASC (nulls last), min_line_total ASC, name_norm ASC
+        def sort_key(item):
+            ppu = item.get('_ppu_value')
+            # For ppu: nulls last (use large number), else use actual value
+            ppu_sort = ppu if ppu is not None else float('inf')
+            return (
+                -item.get('_match_score', 0),      # DESC
+                -item.get('_brand_boost', 0),      # DESC
+                ppu_sort,                          # ASC (nulls last)
+                item.get('_min_line_total', 0),    # ASC
+                item.get('name_norm', '')          # ASC
+            )
+        
+        items.sort(key=sort_key)
+        
+        # Apply pagination after sorting
+        items = items[skip:skip + limit]
+        
+        # Remove internal scoring fields from response
+        for item in items:
+            item.pop('_match_score', None)
+            item.pop('_brand_boost', None)
+            item.pop('_ppu_value', None)
+            item.pop('_min_line_total', None)
+    else:
+        # No search: simple sort by super_class, name_norm
+        items.sort(key=lambda x: (x.get('super_class', ''), x.get('name_norm', '')))
+        items = items[skip:skip + limit]
     
     # Получаем названия поставщиков
     supplier_ids = list(set(i.get('supplier_company_id') for i in items if i.get('supplier_company_id')))
@@ -92,8 +171,6 @@ async def get_catalog(
     for item in items:
         sid = item.get('supplier_company_id')
         item['supplier_name'] = companies.get(sid, sid[:8] + '...' if sid else 'Unknown')
-    
-    total = db.supplier_items.count_documents(query)
     
     return {
         'items': items,
