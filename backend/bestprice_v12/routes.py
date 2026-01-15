@@ -188,14 +188,14 @@ async def get_catalog(
         else:
             is_search_mode = False
     
-    # DEBUG: Log query for troubleshooting
+    # DEBUG: Log query for troubleshooting (using WARNING level to ensure visibility)
     logger = logging.getLogger('routes')
-    logger.info(f"CATALOG QUERY: search='{search}', q_tokens={q_tokens}, q_lemmas={q_lemmas}")
-    logger.info(f"CATALOG QUERY: final query={query}")
+    logger.warning(f"CATALOG QUERY: search='{search}', q_tokens={q_tokens}, q_lemmas={q_lemmas}")
+    logger.warning(f"CATALOG QUERY: final query={query}")
     
     # Count total before pagination
     total = db.supplier_items.count_documents(query)
-    logger.info(f"CATALOG QUERY: total results={total}")
+    logger.warning(f"CATALOG QUERY: total results={total}")
     
     # Get items (fetch more for in-memory ranking when searching)
     fetch_limit = limit * 4 if is_search_mode else limit
