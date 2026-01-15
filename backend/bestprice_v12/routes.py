@@ -5,6 +5,7 @@ FastAPI роутер для v12 функционала
 """
 
 import logging
+import re
 from typing import Optional, List
 from datetime import datetime, timezone
 
