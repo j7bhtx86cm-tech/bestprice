@@ -15,11 +15,43 @@
 - **FIXED**: Ошибка создания заказа (422 - missing article/phone)
 - **FIXED**: Каталог показывал только 658 товаров (2026-01-13)
 
-## Текущий статус: ✅ CATALOG SEARCH UPGRADED (2026-01-15)
+## Текущий статус: ✅ CATALOG SEARCH STABILITY & BESTPRICE RANKING (2026-01-15)
 
 ---
 
-### LATEST: v12 Catalog Search Upgrade (2026-01-15) ✅
+### LATEST: v12 Catalog Search FINAL Patch (2026-01-15) ✅
+
+**Исправленные баги:**
+- ✅ **Bug#1**: 2 буквы ("ог", "кр", "ан") теперь возвращают результаты (было 0)
+- ✅ **Bug#2**: Калибры + буквы ("31/40 кр", "31/40 крев") работают корректно
+- ✅ **RU морфология**: "анчоус" = "анчоусы" (9 результатов), "огурец" = "огурцы" (56)
+- ✅ **Order-insensitive**: "огурцы маринованные" = "маринованные огурцы" (37)
+- ✅ **Стоп-слова fallback**: "в м", "на", "и" → дефолтный каталог
+- ✅ **BestPrice ranking**: ppu/price первично, min_line_total как tie-breaker
+- ✅ **COLLSCAN устранён**: все запросы используют индексы
+
+**Технические изменения:**
+| Компонент | Изменение |
+|-----------|-----------|
+| `russian_stemmer.py` | Новый модуль для RU морфологии |
+| `search_utils.py` | Обновлён с lemma_tokens, калибрами |
+| `supplier_items.lemma_tokens[]` | Новое поле |
+| `active_lemma_tokens` index | Новый индекс |
+| `/api/v12/catalog` | Полностью переписана логика поиска |
+
+**Индексы MongoDB:**
+- `active_lemma_tokens` - для морфологического поиска
+- `active_name_norm` - для prefix search
+- `active_search_tokens` - для базового поиска
+
+**Формула определения partial/complete токена:**
+```python
+is_complete = (raw_token != lemma) or (len(raw_token) >= 6)
+```
+
+---
+
+### v12 Catalog Search Upgrade (2026-01-15) ✅
 
 **Выполнено:**
 - ✅ **Order-insensitive search**: "огурцы маринованные" = "маринованные огурцы"
