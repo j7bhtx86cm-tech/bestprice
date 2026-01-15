@@ -1,8 +1,9 @@
 """
 Search Utilities for BestPrice v12 Catalog
 - Query normalization
-- Token generation
+- Token generation  
 - Brand detection from query
+- Russian stemming/lemmatization
 """
 
 import re
@@ -10,17 +11,23 @@ import unicodedata
 from typing import List, Optional, Set, Tuple
 from pymongo.database import Database
 
+# Import Russian stemmer
+from russian_stemmer import russian_stem, stem_token_safe, generate_lemma_tokens, is_special_token
+
 
 # =====================
 # NORMALIZATION
 # =====================
 
-def normalize_text(text: str) -> str:
+# Pattern for special tokens like 31/40 (caliber/size)
+CALIBER_PATTERN = re.compile(r'\d+/\d+')
+
+def normalize_text(text: str, preserve_calibers: bool = True) -> str:
     """
     Normalize text for search:
     - lowercase
     - ё → е
-    - remove punctuation
+    - remove punctuation (preserve / in caliber patterns like 31/40)
     - collapse whitespace
     """
     if not text:
@@ -32,8 +39,21 @@ def normalize_text(text: str) -> str:
     # ё → е
     text = text.replace('ё', 'е')
     
-    # Remove punctuation (keep letters, digits, spaces)
-    text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
+    if preserve_calibers:
+        # Temporarily protect caliber patterns
+        calibers = CALIBER_PATTERN.findall(text)
+        for i, cal in enumerate(calibers):
+            text = text.replace(cal, f'__CAL{i}__', 1)
+        
+        # Remove punctuation (keep letters, digits, spaces)
+        text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
+        
+        # Restore calibers
+        for i, cal in enumerate(calibers):
+            text = text.replace(f'__cal{i}__', cal)
+    else:
+        # Remove all punctuation
+        text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
     
     # Collapse multiple spaces
     text = re.sub(r'\s+', ' ', text).strip()
@@ -41,21 +61,49 @@ def normalize_text(text: str) -> str:
     return text
 
 
+# Stop words
+STOP_WORDS = {
+    'и', 'в', 'на', 'с', 'по', 'из', 'для', 'от', 'до', 'за', 'при', 
+    'без', 'под', 'над', 'об', 'о', 'а', 'но', 'или', 'же', 'ли', 'бы', 
+    'не', 'ни', 'что', 'как', 'так', 'то', 'это', 'все', 'вся', 'весь', 
+    'его', 'ее', 'их', 'мы', 'вы', 'он', 'она', 'оно', 'они', 
+    'мой', 'твой', 'наш', 'ваш', 'свой', 'кто', 'тот', 'этот', 
+    'сам', 'самый', 'каждый', 'другой', 'такой', 'который', 'чей', 'сей'
+}
+
+
 def tokenize(text: str) -> List[str]:
     """
     Split normalized text into tokens.
     Filters out very short tokens (1 char) and common stop words.
+    Preserves special tokens like calibers (31/40).
     """
     if not text:
         return []
     
-    normalized = normalize_text(text)
+    normalized = normalize_text(text, preserve_calibers=True)
     tokens = normalized.split()
     
-    # Filter: length > 1, not a stop word
-    STOP_WORDS = {'и', 'в', 'на', 'с', 'по', 'из', 'для', 'от', 'до', 'за', 'при', 'без', 'под', 'над', 'об', 'о', 'а', 'но', 'или', 'же', 'ли', 'бы', 'не', 'ни', 'что', 'как', 'так', 'то', 'это', 'все', 'вся', 'весь', 'его', 'ее', 'их', 'мы', 'вы', 'он', 'она', 'оно', 'они', 'мой', 'твой', 'наш', 'ваш', 'свой', 'кто', 'тот', 'этот', 'сам', 'самый', 'каждый', 'другой', 'такой', 'который', 'чей', 'сей'}
+    result = []
+    for t in tokens:
+        # Always keep special tokens (calibers, numbers)
+        if is_special_token(t):
+            result.append(t)
+        # Filter: length > 1, not a stop word
+        elif len(t) > 1 and t not in STOP_WORDS:
+            result.append(t)
     
-    return [t for t in tokens if len(t) > 1 and t not in STOP_WORDS]
+    return result
+
+
+def tokenize_with_lemmas(text: str) -> Tuple[List[str], List[str]]:
+    """
+    Tokenize and also generate lemma tokens.
+    Returns (raw_tokens, lemma_tokens)
+    """
+    tokens = tokenize(text)
+    lemmas = generate_lemma_tokens(tokens)
+    return tokens, lemmas
 
 
 def generate_search_tokens(
