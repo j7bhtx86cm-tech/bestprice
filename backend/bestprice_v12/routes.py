@@ -59,6 +59,7 @@ async def get_catalog(
     
     Search features (v12 upgrade):
     - Order-insensitive token search (uses search_tokens index)
+    - Prefix search for last token (enables typeahead: "ог" → "огурцы")
     - RU/EN brand detection via brand_aliases
     - Ranking by: match_score → brand_boost → ppu_value → min_line_total
     """
@@ -75,17 +76,44 @@ async def get_catalog(
     if supplier_id:
         query['supplier_company_id'] = supplier_id
     
-    # === SEARCH LOGIC (v12 upgrade) ===
+    # === SEARCH LOGIC (v12 upgrade with prefix search) ===
     q_tokens = []
     detected_brand_id = None
+    use_prefix_search = False
     
     if search and search.strip():
         # Tokenize query (order-insensitive)
         q_tokens = tokenize(search)
         
         if q_tokens:
-            # Use $all for AND logic on search_tokens (indexed)
-            query['search_tokens'] = {'$all': q_tokens}
+            if len(q_tokens) == 1:
+                # Single token: use prefix search on name_norm
+                # Pattern: ^token or \\stoken (word boundary, no 'i' flag since name_norm is lowercase)
+                prefix = q_tokens[0]
+                query['name_norm'] = {'$regex': f'(^|\\s){prefix}'}
+                use_prefix_search = True
+            else:
+                # Multiple tokens: full tokens via $all, last token as prefix
+                full_tokens = q_tokens[:-1]
+                last_token = q_tokens[-1]
+                
+                # Check if last token is complete (exists in any search_tokens)
+                # If not, use prefix search for it
+                last_token_check = db.supplier_items.find_one(
+                    {'active': True, 'search_tokens': last_token},
+                    {'_id': 1}
+                )
+                
+                if last_token_check:
+                    # Last token is complete, use $all for all tokens
+                    query['search_tokens'] = {'$all': q_tokens}
+                else:
+                    # Last token is partial, use hybrid approach
+                    if full_tokens:
+                        query['search_tokens'] = {'$all': full_tokens}
+                    # Add prefix search for last token
+                    query['name_norm'] = {'$regex': f'(^|\\s){last_token}'}
+                    use_prefix_search = True
             
             # Detect brand from query tokens
             detected_brand_id = detect_brand_from_query(db, q_tokens)
@@ -108,6 +136,12 @@ async def get_catalog(
             item_tokens = item.get('search_tokens', [])
             if item_tokens:
                 matched = len(set(q_tokens) & set(item_tokens))
+                # For prefix search, check if last token is prefix of any item token
+                if use_prefix_search:
+                    last_token = q_tokens[-1]
+                    prefix_match = any(t.startswith(last_token) for t in item_tokens)
+                    if prefix_match:
+                        matched = max(matched, len(q_tokens) - 0.5)  # Partial credit for prefix
                 item['_match_score'] = matched / len(q_tokens) if q_tokens else 0
             else:
                 item['_match_score'] = 0
