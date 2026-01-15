@@ -198,7 +198,7 @@ export const CustomerCatalog = () => {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');  // Immediate input state
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
@@ -207,6 +207,9 @@ export const CustomerCatalog = () => {
   const [cartItems, setCartItems] = useState(new Set());
   
   const LIMIT = 20;
+  
+  // Debounced search value (300ms delay)
+  const search = useDebounce(searchInput, 300);
 
   // Get auth headers
   const getHeaders = () => {
