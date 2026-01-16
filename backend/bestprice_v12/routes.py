@@ -1029,3 +1029,150 @@ async def get_order_details(order_id: str):
         'items': order.get('items', []),
         'created_at': order.get('created_at'),
     }
+
+
+# === DATA QUALITY / VALIDATION ===
+
+from .offer_validator import (
+    validate_offer, validate_offers_batch, 
+    mark_invalid_offers, cleanup_favorites_invalid,
+    validate_cart_before_checkout, get_publishable_query
+)
+
+
+@router.get("/admin/data-quality", summary="Анализ качества данных")
+async def get_data_quality_report():
+    """
+    Возвращает отчёт о качестве данных офферов.
+    Показывает сколько офферов невалидны и почему.
+    """
+    db = get_db()
+    
+    total_active = db.supplier_items.count_documents({'active': True})
+    
+    # Count by validation issues
+    no_price = db.supplier_items.count_documents({
+        'active': True,
+        '$or': [{'price': {'$lte': 0}}, {'price': None}, {'price': {'$exists': False}}]
+    })
+    
+    no_unit = db.supplier_items.count_documents({
+        'active': True,
+        '$or': [{'unit_type': None}, {'unit_type': ''}, {'unit_type': {'$exists': False}}]
+    })
+    
+    weight_volume_no_pack = db.supplier_items.count_documents({
+        'active': True,
+        'unit_type': {'$in': ['WEIGHT', 'VOLUME']},
+        '$or': [{'pack_qty': {'$lte': 0}}, {'pack_qty': None}, {'pack_qty': {'$exists': False}}]
+    })
+    
+    # Count publishable
+    publishable_query = get_publishable_query()
+    publishable = db.supplier_items.count_documents(publishable_query)
+    
+    # Get sample invalid items
+    invalid_samples = list(db.supplier_items.find(
+        {
+            'active': True,
+            '$or': [
+                {'price': {'$lte': 0}},
+                {'price': None},
+                {'unit_type': None},
+                {'unit_type': ''},
+                {'unit_type': {'$in': ['WEIGHT', 'VOLUME']}, 'pack_qty': {'$lte': 0}}
+            ]
+        },
+        {'_id': 0, 'name_raw': 1, 'price': 1, 'unit_type': 1, 'pack_qty': 1, 'supplier_company_id': 1}
+    ).limit(20))
+    
+    # Enrich with supplier names
+    for sample in invalid_samples:
+        company = db.companies.find_one({'id': sample.get('supplier_company_id')}, {'companyName': 1})
+        sample['supplier_name'] = company.get('companyName') if company else 'Unknown'
+    
+    return {
+        'total_active': total_active,
+        'publishable': publishable,
+        'hidden': total_active - publishable,
+        'issues': {
+            'missing_or_invalid_price': no_price,
+            'missing_unit_type': no_unit,
+            'weight_volume_without_pack': weight_volume_no_pack
+        },
+        'invalid_samples': invalid_samples,
+        'quality_score': round(publishable / total_active * 100, 1) if total_active > 0 else 0
+    }
+
+
+@router.post("/admin/cleanup-invalid", summary="Пометить невалидные офферы как inactive")
+async def cleanup_invalid_offers(dry_run: bool = Query(True, description="Только показать что будет помечено")):
+    """
+    Помечает невалидные офферы как inactive.
+    
+    ВНИМАНИЕ: dry_run=False применит изменения!
+    """
+    db = get_db()
+    result = mark_invalid_offers(db, dry_run=dry_run)
+    return result
+
+
+@router.post("/admin/cleanup-favorites", summary="Очистить невалидные позиции из избранного")
+async def cleanup_invalid_favorites(user_id: Optional[str] = Query(None)):
+    """
+    Удаляет из избранного позиции, для которых нет валидных офферов.
+    """
+    db = get_db()
+    result = cleanup_favorites_invalid(db, user_id)
+    return result
+
+
+@router.get("/admin/validate-cart", summary="Проверить корзину перед checkout")
+async def validate_cart(user_id: str = Query(...)):
+    """
+    Валидирует корзину и удаляет невалидные позиции.
+    Вызывается автоматически перед checkout.
+    """
+    db = get_db()
+    is_valid, removed_items, messages = validate_cart_before_checkout(db, user_id)
+    
+    return {
+        'is_valid': is_valid,
+        'removed_items': removed_items,
+        'messages': messages
+    }
+
+
+@router.post("/admin/validate-pricelist", summary="Валидировать прайс-лист поставщика")
+async def validate_supplier_pricelist(supplier_id: str = Query(...)):
+    """
+    Валидирует все офферы поставщика и возвращает отчёт.
+    Используется при загрузке прайса для feedback поставщику.
+    """
+    db = get_db()
+    
+    # Get all supplier items
+    items = list(db.supplier_items.find(
+        {'supplier_company_id': supplier_id},
+        {'_id': 0}
+    ))
+    
+    if not items:
+        return {'error': 'Поставщик не найден или нет товаров'}
+    
+    # Validate batch
+    result = validate_offers_batch(items)
+    
+    # Add supplier info
+    company = db.companies.find_one({'id': supplier_id}, {'companyName': 1})
+    result['supplier_name'] = company.get('companyName') if company else 'Unknown'
+    result['supplier_id'] = supplier_id
+    
+    # Calculate rejection rate
+    result['rejection_rate'] = round(result['invalid'] / result['total'] * 100, 1) if result['total'] > 0 else 0
+    
+    # Check if exceeds threshold (10%)
+    result['exceeds_threshold'] = result['rejection_rate'] > 10
+    result['threshold'] = 10
+    
+    return result
