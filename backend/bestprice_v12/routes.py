@@ -77,8 +77,19 @@ async def get_catalog(
     search_term = search or q
     super_class_filter = super_class or category
     
-    # Базовый фильтр
-    query = {'active': True, 'price': {'$gt': 0}}
+    # Базовый фильтр - только валидные офферы (publishable)
+    # Правила: active=true, price>0, unit_type exists, id exists
+    # Для WEIGHT/VOLUME требуется pack_qty > 0
+    query = {
+        'active': True,
+        'price': {'$gt': 0},
+        'unit_type': {'$exists': True, '$ne': None, '$ne': ''},
+        'id': {'$exists': True, '$ne': None},
+        '$or': [
+            {'unit_type': {'$in': ['WEIGHT', 'VOLUME']}, 'pack_qty': {'$gt': 0}},
+            {'unit_type': 'PIECE'}
+        ]
+    }
     
     # Фильтр по категории
     if super_class_filter:
