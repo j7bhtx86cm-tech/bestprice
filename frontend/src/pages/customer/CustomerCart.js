@@ -178,7 +178,17 @@ export const CustomerCart = () => {
       
       if (response.data.status === 'ok') {
         toast.success(`✓ Создано ${response.data.orders?.length || 0} заказов на сумму ${response.data.total?.toLocaleString('ru-RU')}₽`);
-        navigate('/customer/orders');
+        // Navigate with checkout info for success banner
+        navigate('/customer/orders', {
+          state: {
+            fromCheckout: true,
+            checkoutInfo: {
+              ordersCount: response.data.orders?.length || 0,
+              total: response.data.total,
+              orders: response.data.orders
+            }
+          }
+        });
       } else {
         toast.error(response.data.message || 'Ошибка создания заказа');
       }
