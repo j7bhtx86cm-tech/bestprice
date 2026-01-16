@@ -697,7 +697,8 @@ from .optimizer import (
 
 class CartIntentRequest(BaseModel):
     """Запрос добавления intent в корзину"""
-    reference_id: str
+    reference_id: Optional[str] = None  # Для избранного/catalog_references
+    supplier_item_id: Optional[str] = None  # Для добавления напрямую из каталога
     qty: float = Field(gt=0, description="Количество в единицах (шт/кг/л)")
     user_id: str
 
