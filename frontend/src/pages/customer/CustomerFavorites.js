@@ -301,18 +301,15 @@ export const CustomerFavorites = () => {
     for (const item of favorites) {
       try {
         const userId = getUserId();
-        const supplierItemId = item.anchor_supplier_item_id || item.reference_id;
+        const referenceId = item.reference_id || item.id;
         
-        if (!supplierItemId) {
+        if (!referenceId) {
           errors++;
           continue;
         }
         
-        const response = await axios.post(`${API}/v12/cart/add`, {
-          supplier_item_id: supplierItemId,
-          product_name: item.product_name,
-          supplier_id: item.best_supplier_id,
-          price: item.best_price,
+        const response = await axios.post(`${API}/v12/cart/intent`, {
+          reference_id: referenceId,
           qty: 1,
           user_id: userId
         }, {
