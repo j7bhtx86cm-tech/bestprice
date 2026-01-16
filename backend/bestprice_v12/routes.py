@@ -715,15 +715,91 @@ async def add_cart_intent(request: CartIntentRequest):
     
     Корзина хранит только reference_id + qty.
     Поставщик определяется оптимизатором при checkout.
+    
+    Принимает либо reference_id, либо supplier_item_id.
+    Если supplier_item_id - создаёт/находит reference автоматически.
     """
     db = get_db()
     
-    # Проверяем что reference существует
-    ref = db.favorites_v12.find_one({'reference_id': request.reference_id}, {'_id': 0})
-    if not ref:
-        ref = db.favorites_v12.find_one({'id': request.reference_id}, {'_id': 0})
-    if not ref:
-        ref = db.catalog_references.find_one({'reference_id': request.reference_id}, {'_id': 0})
+    ref = None
+    reference_id = request.reference_id
+    
+    # Если передан supplier_item_id - ищем/создаём reference
+    if request.supplier_item_id:
+        # Ищем supplier_item
+        supplier_item = db.supplier_items.find_one(
+            {'id': request.supplier_item_id, 'active': True},
+            {'_id': 0}
+        )
+        if not supplier_item:
+            # Пробуем по unique_key
+            supplier_item = db.supplier_items.find_one(
+                {'unique_key': request.supplier_item_id, 'active': True},
+                {'_id': 0}
+            )
+        
+        if not supplier_item:
+            raise HTTPException(status_code=404, detail="Товар не найден")
+        
+        # Проверяем валидность оффера
+        price = supplier_item.get('price', 0)
+        if not price or price <= 0:
+            raise HTTPException(status_code=400, detail="Товар недоступен (некорректная цена)")
+        
+        # Ищем существующий reference для этого product_core_id + unit_type
+        product_core_id = supplier_item.get('product_core_id')
+        unit_type = supplier_item.get('unit_type')
+        
+        if product_core_id and unit_type:
+            # Ищем в catalog_references
+            ref = db.catalog_references.find_one({
+                'product_core_id': product_core_id,
+                'unit_type': unit_type
+            }, {'_id': 0})
+            
+            if ref:
+                reference_id = ref.get('reference_id')
+        
+        # Если reference не найден - создаём временный на основе supplier_item
+        if not reference_id:
+            # Используем supplier_item_id как reference_id для прямого добавления
+            reference_id = f"direct_{request.supplier_item_id}"
+            
+            # Создаём временный reference в памяти (не сохраняем в базу)
+            ref = {
+                'reference_id': reference_id,
+                'product_core_id': product_core_id,
+                'unit_type': unit_type,
+                'name': supplier_item.get('name_raw', ''),
+                'pack_value': supplier_item.get('pack_qty'),
+                'pack_unit': supplier_item.get('pack_unit'),
+                'best_price': price,
+                'best_supplier_id': supplier_item.get('supplier_company_id'),
+                'anchor_supplier_item_id': supplier_item.get('id'),
+                'super_class': supplier_item.get('super_class', ''),
+            }
+            
+            # Сохраняем как catalog_reference для будущего использования
+            db.catalog_references.update_one(
+                {'reference_id': reference_id},
+                {'$set': {
+                    **ref,
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'updated_at': datetime.now(timezone.utc).isoformat(),
+                }},
+                upsert=True
+            )
+    
+    # Если передан reference_id - ищем reference
+    if not ref and reference_id:
+        ref = db.favorites_v12.find_one({'reference_id': reference_id}, {'_id': 0})
+        if not ref:
+            ref = db.favorites_v12.find_one({'id': reference_id}, {'_id': 0})
+        if not ref:
+            ref = db.catalog_references.find_one({'reference_id': reference_id}, {'_id': 0})
+    
+    if not ref and not reference_id:
+        raise HTTPException(status_code=400, detail="Укажите reference_id или supplier_item_id")
     
     if not ref:
         raise HTTPException(status_code=404, detail="Reference не найден")
@@ -731,14 +807,15 @@ async def add_cart_intent(request: CartIntentRequest):
     # Сохраняем intent
     intent_data = {
         'user_id': request.user_id,
-        'reference_id': request.reference_id,
+        'reference_id': reference_id,
         'qty': request.qty,
+        'product_name': ref.get('name', ref.get('product_name', '')),
         'created_at': datetime.now(timezone.utc).isoformat(),
         'updated_at': datetime.now(timezone.utc).isoformat(),
     }
     
     db.cart_intents.update_one(
-        {'user_id': request.user_id, 'reference_id': request.reference_id},
+        {'user_id': request.user_id, 'reference_id': reference_id},
         {'$set': intent_data},
         upsert=True
     )
