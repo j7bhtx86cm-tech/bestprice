@@ -852,23 +852,33 @@ async def checkout_cart(user_id: str = Query(..., description="ID пользов
     """
     Финализирует корзину и создаёт заказы.
     
-    1. Пересчитывает план
-    2. Проверяет что все поставщики >= минималки
-    3. Создаёт заказы
-    4. Очищает корзину
+    1. Валидирует корзину (удаляет невалидные позиции)
+    2. Пересчитывает план
+    3. Проверяет что все поставщики >= минималки
+    4. Создаёт заказы
+    5. Очищает корзину
     """
     db = get_db()
+    
+    # 0. Валидация корзины - удаляем невалидные позиции
+    from .offer_validator import validate_cart_before_checkout
+    cart_valid, removed_items, validation_messages = validate_cart_before_checkout(db, user_id)
     
     # 1. Пересчитываем план
     result = build_final_plan(db, user_id)
     
     # 2. Проверяем success
     if not result.success:
-        return {
+        response = {
             'status': 'blocked',
             'message': result.blocked_reason or 'Невозможно оформить заказ',
             'plan': get_plan_summary_for_ui(result)
         }
+        # Добавляем информацию об удалённых позициях
+        if removed_items:
+            response['removed_items'] = removed_items
+            response['validation_messages'] = validation_messages
+        return response
     
     # 3. Создаём заказы для каждого поставщика
     created_orders = []
