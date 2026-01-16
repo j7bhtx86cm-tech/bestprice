@@ -247,26 +247,22 @@ export const CustomerFavorites = () => {
     }
   };
 
-  // Add to cart
+  // Add to cart (NEW: intent-based)
   const handleAddToCart = async (item, qty) => {
     setAdding(item.id);
     try {
       const userId = getUserId();
-      // Используем anchor_supplier_item_id - это настоящий ID supplier_item
-      const supplierItemId = item.anchor_supplier_item_id || item.reference_id;
+      const referenceId = item.reference_id || item.id;
       
-      if (!supplierItemId) {
-        toast.error('Нет supplier_item_id для этого товара');
-        throw new Error('No supplier_item_id');
+      if (!referenceId) {
+        toast.error('Нет reference_id для этого товара');
+        throw new Error('No reference_id');
       }
       
-      console.log('Adding to cart:', { supplierItemId, product_name: item.product_name });
+      console.log('Adding to cart (intent):', { referenceId, product_name: item.product_name, qty });
       
-      const response = await axios.post(`${API}/v12/cart/add`, {
-        supplier_item_id: supplierItemId,
-        product_name: item.product_name,
-        supplier_id: item.best_supplier_id,
-        price: item.best_price,
+      const response = await axios.post(`${API}/v12/cart/intent`, {
+        reference_id: referenceId,
         qty: qty,
         user_id: userId
       }, {
@@ -275,12 +271,9 @@ export const CustomerFavorites = () => {
 
       if (response.data.status === 'ok') {
         // Помечаем что добавлено в корзину
-        setCartItems(prev => new Set([...prev, supplierItemId]));
+        setCartItems(prev => new Set([...prev, referenceId]));
         setCartCount(prev => prev + 1);
-        const msg = response.data.substituted 
-          ? `Добавлено в корзину (заменено, экономия ${response.data.savings?.toLocaleString('ru-RU')} ₽)`
-          : '✓ Добавлено в корзину';
-        toast.success(msg);
+        toast.success('✓ Добавлено в корзину');
         return true; // Success
       } else {
         toast.error(response.data.message || 'Ошибка добавления');
@@ -288,7 +281,7 @@ export const CustomerFavorites = () => {
       }
     } catch (error) {
       console.error('Add to cart error:', error);
-      if (!error.message?.includes('No supplier_item_id')) {
+      if (!error.message?.includes('No reference_id')) {
         toast.error('Ошибка добавления в корзину');
       }
       throw error;
