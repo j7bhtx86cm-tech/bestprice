@@ -347,7 +347,7 @@ def pick_best_offer(
     # Tier 0: Ищем с pack ±20%
     tier0 = []
     for offer in valid_candidates:
-        if check_pack_tolerance(ref.pack_value, offer.pack_value):
+        if check_pack_tolerance(ref.pack_value, offer.pack_value, ref.unit_type):
             tier0.append(offer)
     
     # Если есть brand preference - сначала ищем с нужным брендом
@@ -374,8 +374,8 @@ def pick_best_offer(
         # Иначе просто минимум по цене
         best = min(tier0_with_brand, key=lambda o: o.price)
         
-        # Проверяем pack tolerance
-        if ref.pack_value and best.pack_value:
+        # Проверяем pack tolerance (не для PIECE с разными единицами)
+        if ref.pack_value and best.pack_value and ref.unit_type != 'PIECE':
             if abs(ref.pack_value - best.pack_value) / ref.pack_value > 0.01:
                 flags.append(OptFlag.PACK_TOLERANCE_USED.value)
         
