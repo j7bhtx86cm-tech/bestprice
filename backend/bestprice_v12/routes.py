@@ -951,3 +951,70 @@ async def set_supplier_minimum(
         'min_order_amount': min_order_amount
     }
 
+
+# === ORDERS HISTORY ===
+
+@router.get("/orders", summary="Получить историю заказов")
+async def get_orders_history(user_id: str = Query(..., description="ID пользователя")):
+    """
+    Возвращает историю заказов пользователя.
+    Заказы отсортированы по дате (новые первые).
+    """
+    db = get_db()
+    
+    orders_raw = list(db.orders.find(
+        {'customer_user_id': user_id},
+        {'_id': 0}
+    ).sort('created_at', -1))
+    
+    # Enrich with supplier names
+    orders = []
+    for order in orders_raw:
+        supplier_id = order.get('supplier_company_id')
+        company = db.companies.find_one({'id': supplier_id}, {'companyName': 1, 'name': 1})
+        supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
+        
+        orders.append({
+            'id': order.get('created_at', ''),  # Use created_at as ID for now
+            'supplier_id': supplier_id,
+            'supplier_name': supplier_name,
+            'amount': order.get('amount', 0),
+            'status': order.get('status', 'pending'),
+            'items': order.get('items', []),
+            'items_count': len(order.get('items', [])),
+            'created_at': order.get('created_at'),
+        })
+    
+    return {
+        'orders': orders,
+        'total_count': len(orders)
+    }
+
+
+@router.get("/orders/{order_id}", summary="Получить детали заказа")
+async def get_order_details(order_id: str):
+    """Возвращает детали конкретного заказа"""
+    db = get_db()
+    
+    order = db.orders.find_one(
+        {'created_at': order_id},
+        {'_id': 0}
+    )
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+    
+    # Enrich with supplier name
+    supplier_id = order.get('supplier_company_id')
+    company = db.companies.find_one({'id': supplier_id}, {'companyName': 1, 'name': 1})
+    supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
+    
+    return {
+        'id': order.get('created_at', ''),
+        'supplier_id': supplier_id,
+        'supplier_name': supplier_name,
+        'amount': order.get('amount', 0),
+        'status': order.get('status', 'pending'),
+        'items': order.get('items', []),
+        'created_at': order.get('created_at'),
+    }
