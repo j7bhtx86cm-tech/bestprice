@@ -150,14 +150,28 @@ def load_all_supplier_minimums(db: Database, supplier_ids: Set[str]) -> Dict[str
     return result
 
 
-def check_pack_tolerance(ref_pack: Optional[float], offer_pack: Optional[float]) -> bool:
-    """Проверяет ±20% по фасовке"""
-    if ref_pack is None or offer_pack is None:
-        return True  # Если нет данных - пропускаем проверку
+def check_pack_tolerance(ref_pack: Optional[float], offer_pack: Optional[float], unit_type: str = None) -> bool:
+    """
+    Проверяет ±20% по фасовке.
     
-    if ref_pack <= 0:
+    Для PIECE товаров: pack_value в reference может быть объём единицы (0.6л),
+    а в offer - количество в упаковке (12шт). В этом случае пропускаем проверку.
+    """
+    # Если нет данных - пропускаем проверку
+    if ref_pack is None or offer_pack is None:
         return True
-        
+    
+    if ref_pack <= 0 or offer_pack <= 0:
+        return True
+    
+    # Для PIECE: если значения сильно отличаются (>10x), скорее всего это разные единицы
+    # (объём vs количество в упаковке) - пропускаем проверку
+    if unit_type == 'PIECE':
+        ratio = max(ref_pack, offer_pack) / min(ref_pack, offer_pack)
+        if ratio > 10:
+            # Скорее всего это разные единицы, пропускаем проверку
+            return True
+    
     lower = ref_pack * (1 - PACK_TOLERANCE)
     upper = ref_pack * (1 + PACK_TOLERANCE)
     return lower <= offer_pack <= upper
