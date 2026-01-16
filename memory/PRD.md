@@ -15,11 +15,44 @@
 - **FIXED**: Ошибка создания заказа (422 - missing article/phone)
 - **FIXED**: Каталог показывал только 658 товаров (2026-01-13)
 
-## Текущий статус: ✅ INTENT-BASED CART & OPTIMIZER (2026-01-16)
+## Текущий статус: ✅ OFFER VALIDATION GATE (2026-01-16)
 
 ---
 
-### LATEST: Intent-Based Cart + Supplier Optimizer (2026-01-16) ✅
+### LATEST: Offer Validation Gate - Hard Gate для качества данных (2026-01-16) ✅
+
+**Правило публикации (hard gate):**
+Оффер НЕ публикуется, если не заполнено:
+1. `price` > 0
+2. `unit_type` (WEIGHT/VOLUME/PIECE)
+3. `pack_qty` > 0 для WEIGHT/VOLUME
+4. `supplier_company_id`
+5. `id` (уникальный идентификатор)
+
+**Реализовано:**
+- ✅ **Валидатор офферов**: `/app/backend/bestprice_v12/offer_validator.py`
+- ✅ **Фильтрация в каталоге**: невалидные офферы не показываются (7895 из 7907)
+- ✅ **Cleanup API**: пометка невалидных как inactive
+- ✅ **Валидация корзины**: автоматическое удаление невалидных перед checkout
+- ✅ **Quality score**: 100% после cleanup
+
+**Новые API endpoints:**
+| Endpoint | Описание |
+|----------|----------|
+| `GET /api/v12/admin/data-quality` | Отчёт о качестве данных |
+| `POST /api/v12/admin/cleanup-invalid` | Пометить невалидные как inactive |
+| `POST /api/v12/admin/cleanup-favorites` | Очистить избранное от невалидных |
+| `GET /api/v12/admin/validate-cart` | Валидация корзины |
+| `POST /api/v12/admin/validate-pricelist` | Валидация прайс-листа поставщика |
+
+**Acceptance Criteria:**
+- ✅ Карточки без цены/веса/объёма не отображаются в каталоге
+- ✅ 12 невалидных офферов (price=0) помечены как inactive
+- ✅ Каталог показывает только 7895 валидных товаров
+
+---
+
+### Intent-Based Cart + Supplier Optimizer (2026-01-16) ✅
 
 **Реализовано:**
 - ✅ **Корзина = Intent**: Хранит только `reference_id` + `qty`, поставщик определяется оптимизатором
