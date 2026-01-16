@@ -4,7 +4,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Trash2, Plus, Minus, Package, MapPin, RefreshCw } from 'lucide-react';
+import { 
+  ShoppingCart, Trash2, Plus, Minus, Package, MapPin, 
+  RefreshCw, AlertTriangle, CheckCircle, ArrowRight,
+  Tag, Scale, Truck
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -12,10 +16,36 @@ import { useAuth } from '@/context/AuthContext';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Flag badges mapping
+const FLAG_BADGES = {
+  'BRAND_REPLACED': { label: 'Бренд заменён', color: 'bg-yellow-100 text-yellow-800', icon: Tag },
+  'PACK_TOLERANCE_USED': { label: 'Фасовка ±20%', color: 'bg-blue-100 text-blue-800', icon: Scale },
+  'PPU_FALLBACK_USED': { label: 'Расчёт по цене за кг/л', color: 'bg-purple-100 text-purple-800', icon: Scale },
+  'MIN_QTY_ROUNDED': { label: 'Округлено до мин. заказа', color: 'bg-gray-100 text-gray-800', icon: Package },
+  'STEP_QTY_APPLIED': { label: 'Кратность поставщика', color: 'bg-gray-100 text-gray-800', icon: Package },
+  'AUTO_TOPUP_10PCT': { label: 'Кол-во +10% для минималки', color: 'bg-orange-100 text-orange-800', icon: Plus },
+  'SUPPLIER_CHANGED': { label: 'Поставщик изменён', color: 'bg-indigo-100 text-indigo-800', icon: Truck },
+};
+
+// Flag Badge Component
+const FlagBadge = ({ flag }) => {
+  const config = FLAG_BADGES[flag];
+  if (!config) return null;
+  
+  const Icon = config.icon;
+  return (
+    <Badge className={`${config.color} text-xs mr-1 mb-1`}>
+      <Icon className="h-3 w-3 mr-1" />
+      {config.label}
+    </Badge>
+  );
+};
+
 export const CustomerCart = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [cartItems, setCartItems] = useState([]);
+  const [plan, setPlan] = useState(null);
+  const [intents, setIntents] = useState([]);
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [processingOrder, setProcessingOrder] = useState(false);
@@ -28,8 +58,8 @@ export const CustomerCart = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  // Load cart from API
-  const loadCart = useCallback(async () => {
+  // Load cart plan from optimizer
+  const loadPlan = useCallback(async () => {
     setLoading(true);
     try {
       const userId = getUserId();
@@ -38,12 +68,20 @@ export const CustomerCart = () => {
         return;
       }
       
-      const response = await axios.get(`${API}/v12/cart?user_id=${userId}`, {
+      // Get optimized plan
+      const planResponse = await axios.get(`${API}/v12/cart/plan?user_id=${userId}`, {
         headers: getHeaders()
       });
-      setCartItems(response.data.items || []);
+      setPlan(planResponse.data);
+      
+      // Also get raw intents
+      const intentsResponse = await axios.get(`${API}/v12/cart/intents?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      setIntents(intentsResponse.data.intents || []);
+      
     } catch (error) {
-      console.error('Failed to fetch cart:', error);
+      console.error('Failed to fetch cart plan:', error);
       toast.error('Ошибка загрузки корзины');
     } finally {
       setLoading(false);
@@ -64,73 +102,63 @@ export const CustomerCart = () => {
 
   useEffect(() => {
     if (user?.id) {
-      loadCart();
+      loadPlan();
     }
     fetchCompanyInfo();
-  }, [loadCart, fetchCompanyInfo, user]);
+  }, [loadPlan, fetchCompanyInfo, user]);
 
   // Update quantity
-  const updateQuantity = async (item, delta) => {
-    const currentQty = item.effective_qty || item.user_qty || 1;
-    const newQty = Math.max(1, currentQty + delta);
+  const updateQuantity = async (referenceId, newQty) => {
+    if (newQty < 1) return;
     
-    // Update locally first
-    const updated = cartItems.map(i => 
-      i.cart_item_id === item.cart_item_id 
-        ? { ...i, user_qty: newQty, effective_qty: newQty, line_total: newQty * i.price }
-        : i
-    );
-    setCartItems(updated);
-    
-    // Update on server
     try {
       const userId = getUserId();
-      await axios.put(`${API}/v12/cart/${item.cart_item_id}?user_id=${userId}&qty=${newQty}`, {}, {
-        headers: getHeaders()
-      });
+      await axios.put(`${API}/v12/cart/intent/${referenceId}?user_id=${userId}`, 
+        { qty: newQty },
+        { headers: getHeaders() }
+      );
+      // Reload plan to see optimizer results
+      loadPlan();
     } catch (error) {
-      // Reload cart on error
-      loadCart();
+      console.error('Update error:', error);
       toast.error('Ошибка обновления количества');
     }
   };
 
   // Remove item
-  const removeItem = async (cartItemId) => {
+  const removeItem = async (referenceId) => {
     try {
       const userId = getUserId();
-      await axios.delete(`${API}/v12/cart/${cartItemId}?user_id=${userId}`, {
+      await axios.delete(`${API}/v12/cart/intent/${referenceId}?user_id=${userId}`, {
         headers: getHeaders()
       });
-      setCartItems(cartItems.filter(i => i.cart_item_id !== cartItemId));
+      loadPlan();
       toast.success('Удалено из корзины');
     } catch (error) {
       toast.error('Ошибка удаления');
     }
   };
 
-  // Group by supplier
-  const groupBySupplier = () => {
-    const groups = {};
-    cartItems.forEach(item => {
-      const supplier = item.supplier_name || 'Unknown';
-      if (!groups[supplier]) {
-        groups[supplier] = { items: [], supplierId: item.supplier_id };
-      }
-      groups[supplier].items.push(item);
-    });
-    return groups;
-  };
-
-  // Get total
-  const getCartTotal = () => {
-    return cartItems.reduce((sum, item) => sum + (item.line_total || item.price * (item.effective_qty || 1)), 0);
+  // Clear cart
+  const clearCart = async () => {
+    if (!confirm('Очистить корзину?')) return;
+    
+    try {
+      const userId = getUserId();
+      await axios.delete(`${API}/v12/cart/intents?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      loadPlan();
+      toast.success('Корзина очищена');
+    } catch (error) {
+      toast.error('Ошибка очистки');
+    }
   };
 
   // Handle checkout
   const handleCheckout = async () => {
-    if (cartItems.length === 0) {
-      toast.error('Корзина пуста');
+    if (!plan || !plan.success) {
+      toast.error(plan?.blocked_reason || 'Невозможно оформить заказ');
       return;
     }
 
@@ -141,51 +169,31 @@ export const CustomerCart = () => {
 
     setProcessingOrder(true);
     try {
-      const headers = getHeaders();
-
-      // Group items by supplier
-      const ordersBySupplier = {};
-      cartItems.forEach(item => {
-        const supplierId = item.supplier_id;
-        if (!ordersBySupplier[supplierId]) {
-          ordersBySupplier[supplierId] = { items: [] };
-        }
-        ordersBySupplier[supplierId].items.push({
-          productName: item.product_name,
-          article: '',
-          quantity: item.effective_qty || item.user_qty || 1,
-          price: item.price,
-          unit: item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'
-        });
-      });
-
-      // Create orders for each supplier
-      for (const [supplierId, data] of Object.entries(ordersBySupplier)) {
-        const amount = data.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        await axios.post(`${API}/orders`, {
-          supplierCompanyId: supplierId,
-          amount: amount,
-          orderDetails: data.items,
-          deliveryAddress: selectedAddress
-        }, { headers });
-      }
-
-      // Clear cart
       const userId = getUserId();
-      await axios.delete(`${API}/v12/cart?user_id=${userId}`, { headers: getHeaders() });
+      const response = await axios.post(
+        `${API}/v12/cart/checkout?user_id=${userId}`,
+        {},
+        { headers: getHeaders() }
+      );
       
-      toast.success('✓ Заказ успешно создан!');
-      setCartItems([]);
-      navigate('/customer/orders');
+      if (response.data.status === 'ok') {
+        toast.success(`✓ Создано ${response.data.orders?.length || 0} заказов на сумму ${response.data.total?.toLocaleString('ru-RU')}₽`);
+        navigate('/customer/orders');
+      } else {
+        toast.error(response.data.message || 'Ошибка создания заказа');
+      }
     } catch (error) {
-      console.error('Order error:', error);
+      console.error('Checkout error:', error);
       toast.error('Ошибка создания заказа');
     } finally {
       setProcessingOrder(false);
     }
   };
 
-  const supplierGroups = groupBySupplier();
+  // Find intent for reference
+  const findIntent = (referenceId) => {
+    return intents.find(i => i.reference_id === referenceId);
+  };
 
   if (loading) {
     return (
@@ -195,30 +203,69 @@ export const CustomerCart = () => {
     );
   }
 
+  const hasItems = plan?.suppliers?.length > 0 || intents.length > 0;
+  const canCheckout = plan?.success && hasItems;
+
   return (
     <div>
-      {/* Header with checkout button */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-4xl font-bold mb-2">Корзина</h2>
           <p className="text-base text-muted-foreground">
-            Проверьте товары перед оформлением заказа
+            Оптимизированный план закупки
           </p>
         </div>
-        {cartItems.length > 0 && (
-          <Button 
-            onClick={handleCheckout} 
-            disabled={processingOrder || !selectedAddress} 
-            size="lg"
-            data-testid="checkout-btn"
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            {processingOrder ? 'Оформление...' : `Оформить заказ (${cartItems.length})`}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {hasItems && (
+            <Button variant="outline" onClick={clearCart}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Очистить
+            </Button>
+          )}
+          {hasItems && (
+            <Button 
+              onClick={handleCheckout} 
+              disabled={processingOrder || !canCheckout || !selectedAddress} 
+              size="lg"
+              data-testid="checkout-btn"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              {processingOrder ? 'Оформление...' : `Оформить заказ`}
+            </Button>
+          )}
+        </div>
       </div>
 
-      {cartItems.length === 0 ? (
+      {/* Blocked Warning */}
+      {plan && !plan.success && plan.blocked_reason && (
+        <Card className="p-4 mb-6 border-2 border-red-300 bg-red-50">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-6 w-6 text-red-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-red-800">Невозможно оформить заказ</h3>
+              <p className="text-red-700 mt-1">{plan.blocked_reason}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Unmatched Items Warning */}
+      {plan?.unmatched_intents?.length > 0 && (
+        <Card className="p-4 mb-6 border-2 border-yellow-300 bg-yellow-50">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-6 w-6 text-yellow-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-yellow-800">Некоторые товары не найдены</h3>
+              <p className="text-yellow-700 mt-1">
+                {plan.unmatched_intents.length} позиций не удалось подобрать у поставщиков
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {!hasItems ? (
         <Card className="p-12 text-center">
           <ShoppingCart className="h-16 w-16 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-600 mb-2">Корзина пуста</p>
@@ -234,34 +281,75 @@ export const CustomerCart = () => {
         </Card>
       ) : (
         <div className="space-y-6">
-          {/* Group by Supplier */}
-          {Object.entries(supplierGroups).map(([supplier, data]) => (
-            <Card key={supplier} className="p-6">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                <Package className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-semibold">{supplier}</h3>
-                <Badge className="ml-auto">
-                  {data.items.length} товаров
-                </Badge>
+          {/* Suppliers */}
+          {plan?.suppliers?.map((supplier) => (
+            <Card key={supplier.supplier_id} className="p-6">
+              {/* Supplier Header */}
+              <div className="flex items-center justify-between mb-4 pb-3 border-b">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold">{supplier.supplier_name}</h3>
+                  <Badge className="ml-2">
+                    {supplier.items?.length || 0} товаров
+                  </Badge>
+                </div>
+                
+                {/* Minimum Status */}
+                <div className="flex items-center gap-3">
+                  {supplier.meets_minimum ? (
+                    <div className="flex items-center text-green-600">
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      <span className="text-sm">Минималка выполнена</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center text-red-600">
+                      <AlertTriangle className="h-4 w-4 mr-1" />
+                      <span className="text-sm">
+                        Не хватает {supplier.deficit?.toLocaleString('ru-RU')}₽ до минималки
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* Items */}
               <div className="space-y-3">
-                {data.items.map((item) => {
-                  const quantity = item.effective_qty || item.user_qty || 1;
+                {supplier.items?.map((item, idx) => {
+                  const intent = findIntent(item.reference_id);
+                  const userQty = intent?.qty || item.user_qty;
+                  
                   return (
-                    <div key={item.cart_item_id} className="flex items-center gap-4 p-4 border rounded-lg">
+                    <div key={idx} className="flex items-start gap-4 p-4 border rounded-lg">
                       <div className="flex-1">
                         <p className="font-medium">{item.product_name}</p>
                         <p className="text-sm text-gray-600">
-                          {item.price?.toLocaleString('ru-RU')} ₽ / {item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'}
+                          {item.price?.toLocaleString('ru-RU')} ₽ / 
+                          {item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'}
                         </p>
+                        
+                        {/* Flags */}
+                        {item.flags?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap">
+                            {item.flags.map((flag, i) => (
+                              <FlagBadge key={i} flag={flag} />
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Qty difference indicator */}
+                        {item.final_qty !== userQty && (
+                          <p className="text-xs text-orange-600 mt-1">
+                            Запрошено: {userQty}, будет заказано: {item.final_qty}
+                          </p>
+                        )}
                       </div>
                       
+                      {/* Quantity Controls */}
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateQuantity(item, -1)}
+                          onClick={() => updateQuantity(item.reference_id, Math.max(1, userQty - 1))}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -269,32 +357,34 @@ export const CustomerCart = () => {
                           type="number"
                           min="1"
                           step="1"
-                          value={quantity}
+                          value={userQty}
                           onChange={(e) => {
                             const val = parseInt(e.target.value) || 1;
-                            updateQuantity(item, val - quantity);
+                            updateQuantity(item.reference_id, val);
                           }}
                           className="w-20 text-center"
                         />
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateQuantity(item, 1)}
+                          onClick={() => updateQuantity(item.reference_id, userQty + 1)}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
 
-                      <div className="text-right w-24">
+                      {/* Line Total */}
+                      <div className="text-right w-28">
                         <p className="font-semibold">
-                          {(item.price * quantity).toLocaleString('ru-RU')} ₽
+                          {item.line_total?.toLocaleString('ru-RU')} ₽
                         </p>
                       </div>
 
+                      {/* Remove Button */}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeItem(item.cart_item_id)}
+                        onClick={() => removeItem(item.reference_id)}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -304,10 +394,16 @@ export const CustomerCart = () => {
                 })}
               </div>
 
+              {/* Supplier Subtotal */}
               <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                <span className="font-medium">Итого у {supplier}:</span>
-                <span className="text-xl font-bold">
-                  {data.items.reduce((sum, i) => sum + (i.price * (i.effective_qty || i.user_qty || 1)), 0).toLocaleString('ru-RU')} ₽
+                <div>
+                  <span className="font-medium">Итого у {supplier.supplier_name}:</span>
+                  <span className="text-sm text-gray-500 ml-2">
+                    (мин. заказ: {supplier.min_order_amount?.toLocaleString('ru-RU')}₽)
+                  </span>
+                </div>
+                <span className={`text-xl font-bold ${supplier.meets_minimum ? 'text-green-600' : 'text-red-600'}`}>
+                  {supplier.subtotal?.toLocaleString('ru-RU')} ₽
                 </span>
               </div>
             </Card>
@@ -319,11 +415,11 @@ export const CustomerCart = () => {
               <div>
                 <p className="text-lg font-semibold">Общая сумма заказа:</p>
                 <p className="text-sm text-gray-600">
-                  {cartItems.length} товаров от {Object.keys(supplierGroups).length} поставщиков
+                  {intents.length} позиций от {plan?.suppliers?.length || 0} поставщиков
                 </p>
               </div>
               <p className="text-3xl font-bold text-blue-600">
-                {getCartTotal().toLocaleString('ru-RU')} ₽
+                {plan?.total?.toLocaleString('ru-RU')} ₽
               </p>
             </div>
           </Card>
@@ -375,13 +471,13 @@ export const CustomerCart = () => {
           {/* Bottom checkout button */}
           <Button 
             onClick={handleCheckout} 
-            disabled={processingOrder || !selectedAddress} 
+            disabled={processingOrder || !canCheckout || !selectedAddress} 
             size="lg"
             className="w-full"
             data-testid="checkout-btn-bottom"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
-            {processingOrder ? 'Оформление...' : `Оформить заказ (${cartItems.length})`}
+            {processingOrder ? 'Оформление...' : `Оформить заказ (${plan?.total?.toLocaleString('ru-RU')} ₽)`}
           </Button>
         </div>
       )}
