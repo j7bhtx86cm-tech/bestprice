@@ -674,3 +674,280 @@ async def get_diagnostics():
             'PACK_MATCH_MODE': 'STRICT'
         }
     }
+
+
+# === NEW: INTENT-BASED CART + OPTIMIZER ===
+
+from .optimizer import (
+    build_final_plan, get_plan_summary_for_ui,
+    load_cart_intents, CartIntent, OptFlag
+)
+
+
+class CartIntentRequest(BaseModel):
+    """Запрос добавления intent в корзину"""
+    reference_id: str
+    qty: float = Field(gt=0, description="Количество в единицах (шт/кг/л)")
+    user_id: str
+
+
+class CartIntentUpdateRequest(BaseModel):
+    """Запрос обновления qty в корзине"""
+    qty: float = Field(gt=0, description="Новое количество")
+
+
+@router.post("/cart/intent", summary="Добавить intent в корзину (новая модель)")
+async def add_cart_intent(request: CartIntentRequest):
+    """
+    Добавляет намерение (intent) в корзину.
+    
+    Корзина хранит только reference_id + qty.
+    Поставщик определяется оптимизатором при checkout.
+    """
+    db = get_db()
+    
+    # Проверяем что reference существует
+    ref = db.favorites_v12.find_one({'reference_id': request.reference_id}, {'_id': 0})
+    if not ref:
+        ref = db.favorites_v12.find_one({'id': request.reference_id}, {'_id': 0})
+    if not ref:
+        ref = db.catalog_references.find_one({'reference_id': request.reference_id}, {'_id': 0})
+    
+    if not ref:
+        raise HTTPException(status_code=404, detail="Reference не найден")
+    
+    # Сохраняем intent
+    intent_data = {
+        'user_id': request.user_id,
+        'reference_id': request.reference_id,
+        'qty': request.qty,
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'updated_at': datetime.now(timezone.utc).isoformat(),
+    }
+    
+    db.cart_intents.update_one(
+        {'user_id': request.user_id, 'reference_id': request.reference_id},
+        {'$set': intent_data},
+        upsert=True
+    )
+    
+    return {
+        'status': 'ok',
+        'intent': intent_data,
+        'message': 'Добавлено в корзину'
+    }
+
+
+@router.put("/cart/intent/{reference_id}", summary="Обновить qty intent")
+async def update_cart_intent(
+    reference_id: str,
+    request: CartIntentUpdateRequest,
+    user_id: str = Query(..., description="ID пользователя")
+):
+    """Обновляет количество для intent"""
+    db = get_db()
+    
+    result = db.cart_intents.update_one(
+        {'user_id': user_id, 'reference_id': reference_id},
+        {'$set': {
+            'qty': request.qty,
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Intent не найден")
+    
+    return {'status': 'ok', 'qty': request.qty}
+
+
+@router.delete("/cart/intent/{reference_id}", summary="Удалить intent")
+async def remove_cart_intent(
+    reference_id: str,
+    user_id: str = Query(..., description="ID пользователя")
+):
+    """Удаляет intent из корзины"""
+    db = get_db()
+    
+    result = db.cart_intents.delete_one({'user_id': user_id, 'reference_id': reference_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Intent не найден")
+    
+    return {'status': 'ok'}
+
+
+@router.delete("/cart/intents", summary="Очистить все intents")
+async def clear_cart_intents(user_id: str = Query(..., description="ID пользователя")):
+    """Очищает все intents пользователя"""
+    db = get_db()
+    
+    result = db.cart_intents.delete_many({'user_id': user_id})
+    
+    return {'status': 'ok', 'deleted_count': result.deleted_count}
+
+
+@router.get("/cart/intents", summary="Получить intents")
+async def get_cart_intents(user_id: str = Query(..., description="ID пользователя")):
+    """Получает все intents пользователя с информацией о reference"""
+    db = get_db()
+    
+    intents = list(db.cart_intents.find({'user_id': user_id}, {'_id': 0}))
+    
+    # Обогащаем информацией о reference
+    enriched = []
+    for intent in intents:
+        ref_id = intent['reference_id']
+        
+        # Ищем reference
+        ref = db.favorites_v12.find_one({'reference_id': ref_id}, {'_id': 0})
+        if not ref:
+            ref = db.favorites_v12.find_one({'id': ref_id}, {'_id': 0})
+        if not ref:
+            ref = db.catalog_references.find_one({'reference_id': ref_id}, {'_id': 0})
+        
+        enriched.append({
+            **intent,
+            'product_name': ref.get('product_name', ref.get('name', '')) if ref else '',
+            'unit_type': ref.get('unit_type', 'PIECE') if ref else 'PIECE',
+            'best_price': ref.get('best_price') if ref else None,
+            'super_class': ref.get('super_class', '') if ref else '',
+        })
+    
+    return {
+        'intents': enriched,
+        'count': len(enriched)
+    }
+
+
+@router.get("/cart/plan", summary="Получить оптимизированный план")
+async def get_cart_plan(user_id: str = Query(..., description="ID пользователя")):
+    """
+    Запускает оптимизатор и возвращает план распределения по поставщикам.
+    
+    Вызывать:
+    - После каждого изменения корзины (для preview)
+    - Обязательно перед checkout
+    """
+    db = get_db()
+    
+    result = build_final_plan(db, user_id)
+    
+    return get_plan_summary_for_ui(result)
+
+
+@router.post("/cart/checkout", summary="Подтвердить и создать заказы")
+async def checkout_cart(user_id: str = Query(..., description="ID пользователя")):
+    """
+    Финализирует корзину и создаёт заказы.
+    
+    1. Пересчитывает план
+    2. Проверяет что все поставщики >= минималки
+    3. Создаёт заказы
+    4. Очищает корзину
+    """
+    db = get_db()
+    
+    # 1. Пересчитываем план
+    result = build_final_plan(db, user_id)
+    
+    # 2. Проверяем success
+    if not result.success:
+        return {
+            'status': 'blocked',
+            'message': result.blocked_reason or 'Невозможно оформить заказ',
+            'plan': get_plan_summary_for_ui(result)
+        }
+    
+    # 3. Создаём заказы для каждого поставщика
+    created_orders = []
+    
+    for supplier_plan in result.suppliers:
+        order_items = []
+        for line in supplier_plan.lines:
+            order_items.append({
+                'productName': line.reference_name or line.offer.name_raw,
+                'article': line.offer.supplier_item_id,
+                'quantity': line.final_qty,
+                'price': line.offer.price,
+                'unit': 'кг' if line.offer.unit_type == 'WEIGHT' else 'л' if line.offer.unit_type == 'VOLUME' else 'шт',
+                'flags': line.flags,
+            })
+        
+        # Создаём заказ
+        order_data = {
+            'supplier_company_id': supplier_plan.supplier_id,
+            'customer_user_id': user_id,
+            'amount': supplier_plan.subtotal,
+            'items': order_items,
+            'status': 'pending',
+            'created_at': datetime.now(timezone.utc).isoformat(),
+        }
+        
+        # Сохраняем (используем существующую коллекцию orders)
+        db.orders.insert_one(order_data)
+        created_orders.append({
+            'supplier_id': supplier_plan.supplier_id,
+            'supplier_name': supplier_plan.supplier_name,
+            'amount': supplier_plan.subtotal,
+            'items_count': len(order_items),
+        })
+    
+    # 4. Очищаем корзину
+    db.cart_intents.delete_many({'user_id': user_id})
+    # Также очищаем старую корзину на всякий случай
+    db.cart_items_v12.delete_many({'user_id': user_id})
+    
+    return {
+        'status': 'ok',
+        'message': f'Создано {len(created_orders)} заказов',
+        'orders': created_orders,
+        'total': result.total
+    }
+
+
+# === SUPPLIER MINIMUM MANAGEMENT ===
+
+@router.get("/suppliers/minimums", summary="Получить минималки поставщиков")
+async def get_supplier_minimums():
+    """Возвращает минималки всех поставщиков"""
+    db = get_db()
+    
+    # Получаем всех поставщиков с товарами
+    supplier_ids = db.supplier_items.distinct('supplier_company_id', {'active': True})
+    
+    result = []
+    for sid in supplier_ids:
+        company = db.companies.find_one({'id': sid}, {'_id': 0, 'companyName': 1, 'name': 1, 'min_order_amount': 1})
+        if company:
+            result.append({
+                'supplier_id': sid,
+                'name': company.get('companyName', company.get('name', 'Unknown')),
+                'min_order_amount': company.get('min_order_amount', 10000.0)
+            })
+    
+    return {'suppliers': result}
+
+
+@router.put("/suppliers/{supplier_id}/minimum", summary="Установить минималку поставщика")
+async def set_supplier_minimum(
+    supplier_id: str,
+    min_order_amount: float = Query(..., ge=0, description="Минимальная сумма заказа в рублях")
+):
+    """Устанавливает минималку для поставщика"""
+    db = get_db()
+    
+    result = db.companies.update_one(
+        {'id': supplier_id},
+        {'$set': {'min_order_amount': min_order_amount}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Поставщик не найден")
+    
+    return {
+        'status': 'ok',
+        'supplier_id': supplier_id,
+        'min_order_amount': min_order_amount
+    }
+
