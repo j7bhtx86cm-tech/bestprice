@@ -347,17 +347,26 @@ export const CustomerCatalog = () => {
     }
   };
 
-  // Add to cart (NEW: intent-based)
+  // Add to cart (supports both reference_id and supplier_item_id)
   const handleAddToCart = async (item) => {
     const userId = getUserId();
-    // Используем reference_id для intent-based корзины
-    const referenceId = item.reference_id || item.unique_key || item.id;
     
-    const response = await axios.post(`${API}/v12/cart/intent`, {
-      reference_id: referenceId,
+    // Для каталога используем supplier_item_id (item.id)
+    // Для избранного используем reference_id
+    const requestData = {
       qty: 1,
       user_id: userId
-    }, {
+    };
+    
+    // Определяем что передавать
+    if (item.reference_id) {
+      requestData.reference_id = item.reference_id;
+    } else {
+      // Из каталога - используем id как supplier_item_id
+      requestData.supplier_item_id = item.id || item.unique_key;
+    }
+    
+    const response = await axios.post(`${API}/v12/cart/intent`, requestData, {
       headers: getHeaders()
     });
 
@@ -367,7 +376,8 @@ export const CustomerCatalog = () => {
     
     // Обновляем счётчик корзины
     setCartCount(prev => prev + 1);
-    setCartItems(prev => new Set([...prev, referenceId]));
+    const itemKey = item.reference_id || item.id || item.unique_key;
+    setCartItems(prev => new Set([...prev, itemKey]));
   };
 
   // Search handler - updates immediate input, debounce handles API call
