@@ -1,6 +1,6 @@
 # Best Price Matching Engine - Product Requirements Document
 
-## Дата последнего обновления: 2026-01-15
+## Дата последнего обновления: 2026-01-16
 
 ## Оригинальная проблема
 Система "Best Price" для поиска лучших цен на товары из избранного работала некорректно:
@@ -15,11 +15,42 @@
 - **FIXED**: Ошибка создания заказа (422 - missing article/phone)
 - **FIXED**: Каталог показывал только 658 товаров (2026-01-13)
 
-## Текущий статус: ✅ PRICE SORTING FIX (2026-01-15)
+## Текущий статус: ✅ INTENT-BASED CART & OPTIMIZER (2026-01-16)
 
 ---
 
-### LATEST: Сортировка по цене (2026-01-15) ✅
+### LATEST: Intent-Based Cart + Supplier Optimizer (2026-01-16) ✅
+
+**Реализовано:**
+- ✅ **Корзина = Intent**: Хранит только `reference_id` + `qty`, поставщик определяется оптимизатором
+- ✅ **Минималка поставщика**: `min_order_amount` в `companies` (default 10000₽)
+- ✅ **Жёсткое правило**: В финале НЕТ поставщиков < минималки
+- ✅ **Matching**: `product_core_id` + `unit_type` строго; pack ±20%; PPU fallback
+- ✅ **Оптимизатор**: перенос позиций → добор +10% → блокировка если невозможно
+- ✅ **UI Бейджи**: `BRAND_REPLACED`, `PACK_TOLERANCE_USED`, `PPU_FALLBACK_USED`, `AUTO_TOPUP_10PCT`, `SUPPLIER_CHANGED`
+
+**Новые API endpoints:**
+| Endpoint | Описание |
+|----------|----------|
+| `POST /api/v12/cart/intent` | Добавить intent в корзину |
+| `PUT /api/v12/cart/intent/{id}` | Обновить qty |
+| `DELETE /api/v12/cart/intent/{id}` | Удалить intent |
+| `GET /api/v12/cart/intents` | Получить все intents |
+| `GET /api/v12/cart/plan` | Получить оптимизированный план |
+| `POST /api/v12/cart/checkout` | Создать заказы |
+| `GET /api/v12/suppliers/minimums` | Минималки поставщиков |
+| `PUT /api/v12/suppliers/{id}/minimum` | Установить минималку |
+
+**Новые файлы:**
+- `/app/backend/bestprice_v12/optimizer.py` - Оптимизатор распределения
+- `/app/frontend/src/pages/customer/CustomerCart.js` - Обновлённая корзина
+
+**Коллекции MongoDB:**
+- `cart_intents` - новая коллекция для intent-based корзины
+
+---
+
+### Сортировка по цене (2026-01-15) ✅
 
 **Исправленные баги:**
 - ✅ **Bug#1**: Сортировка теперь по ЦЕНЕ ASC (самая низкая первая)
