@@ -100,16 +100,53 @@ def migrate_favorites(dry_run: bool = True, user_id: str = None):
                 continue
         
         # Find replacement by product_core_id + unit_type
-        replacement = db.supplier_items.find_one(
-            {
-                'active': True,
-                'price': {'$gt': 0},
-                'product_core_id': product_core_id,
-                'unit_type': unit_type
-            },
-            {'_id': 0, 'id': 1, 'price': 1, 'supplier_company_id': 1, 'name_raw': 1},
-            sort=[('price', 1)]  # Cheapest first
-        )
+        # Also try to match brand_id and pack_value if available
+        fav_brand_id = fav.get('brand_id')
+        fav_pack_value = fav.get('pack_value')
+        
+        # Build match query
+        match_query = {
+            'active': True,
+            'price': {'$gt': 0},
+            'product_core_id': product_core_id,
+            'unit_type': unit_type
+        }
+        
+        # First try: exact match with brand
+        replacement = None
+        if fav_brand_id:
+            brand_query = {**match_query, 'brand_id': fav_brand_id}
+            replacement = db.supplier_items.find_one(
+                brand_query,
+                {'_id': 0, 'id': 1, 'price': 1, 'supplier_company_id': 1, 'name_raw': 1},
+                sort=[('price', 1)]
+            )
+        
+        # Second try: match without brand but verify name similarity
+        if not replacement:
+            candidates = list(db.supplier_items.find(
+                match_query,
+                {'_id': 0, 'id': 1, 'price': 1, 'supplier_company_id': 1, 'name_raw': 1},
+                sort=[('price', 1)]
+            ).limit(10))
+            
+            # Simple name similarity check
+            if candidates and product_name:
+                product_name_lower = product_name.lower()
+                key_words = [w for w in product_name_lower.split() if len(w) > 3][:3]
+                
+                for cand in candidates:
+                    cand_name = cand.get('name_raw', '').lower()
+                    # Check if at least 2 key words match
+                    matches = sum(1 for w in key_words if w in cand_name)
+                    if matches >= min(2, len(key_words)):
+                        replacement = cand
+                        break
+                
+                # If no good match, take cheapest if product_core is specific enough
+                if not replacement and product_core_id and '.' in product_core_id:
+                    # product_core_id like "dairy.cheese" is specific enough
+                    replacement = candidates[0] if candidates else None
         
         if replacement:
             new_anchor_id = replacement['id']
