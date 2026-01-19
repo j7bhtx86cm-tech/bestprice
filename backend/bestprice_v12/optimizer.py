@@ -96,6 +96,7 @@ class PlanLine:
     final_qty: float      # после округления
     line_total: float     # final_qty * price
     flags: List[str] = field(default_factory=list)
+    locked: bool = False  # NEW: если True - не заменять оффер при оптимизации
     # Для UI бейджей
     original_brand: Optional[str] = None
     new_brand: Optional[str] = None
