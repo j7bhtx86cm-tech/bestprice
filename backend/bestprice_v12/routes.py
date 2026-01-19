@@ -1026,15 +1026,16 @@ async def checkout_cart(user_id: str = Query(..., description="ID пользов
     from .offer_validator import validate_cart_before_checkout
     cart_valid, removed_items, validation_messages = validate_cart_before_checkout(db, user_id)
     
-    # 1. Пересчитываем план
-    result = build_final_plan(db, user_id)
+    # 1. Пересчитываем план с новым оптимизатором
+    from .optimizer import optimize_cart, plan_to_dict
+    result = optimize_cart(db, user_id)
     
     # 2. Проверяем success
     if not result.success:
         response = {
             'status': 'blocked',
             'message': result.blocked_reason or 'Невозможно оформить заказ',
-            'plan': get_plan_summary_for_ui(result)
+            'plan': plan_to_dict(result)
         }
         # Добавляем информацию об удалённых позициях
         if removed_items:
@@ -1048,13 +1049,21 @@ async def checkout_cart(user_id: str = Query(..., description="ID пользов
     for supplier_plan in result.suppliers:
         order_items = []
         for line in supplier_plan.lines:
+            product_name = line.intent.product_name if line.intent else ''
+            if line.offer:
+                product_name = line.offer.name_raw or product_name
+            
             order_items.append({
-                'productName': line.reference_name or line.offer.name_raw,
-                'article': line.offer.supplier_item_id,
+                'productName': product_name,
+                'article': line.offer.supplier_item_id if line.offer else '',
                 'quantity': line.final_qty,
-                'price': line.offer.price,
-                'unit': 'кг' if line.offer.unit_type == 'WEIGHT' else 'л' if line.offer.unit_type == 'VOLUME' else 'шт',
+                'price': line.offer.price if line.offer else 0,
+                'unit': 'кг' if (line.offer and line.offer.unit_type == 'WEIGHT') else 'л' if (line.offer and line.offer.unit_type == 'VOLUME') else 'шт',
                 'flags': line.flags,
+                'requested_qty': line.requested_qty,
+                'supplier_changed': line.supplier_changed,
+                'brand_changed': line.brand_changed,
+                'qty_changed_by_topup': line.qty_changed_by_topup,
             })
         
         # Создаём заказ
