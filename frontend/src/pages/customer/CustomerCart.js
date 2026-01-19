@@ -328,24 +328,31 @@ export const CustomerCart = () => {
               Адрес доставки
             </h3>
             <div className="space-y-2">
-              {company.deliveryAddresses.map((addr, idx) => (
-                <div 
-                  key={idx}
-                  onClick={() => setSelectedAddress(addr)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedAddress === addr 
-                      ? 'bg-blue-50 border-2 border-blue-500' 
-                      : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      selectedAddress === addr ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
-                    }`} />
-                    <span>{addr}</span>
+              {company.deliveryAddresses.map((addr, idx) => {
+                // addr can be string or object {address, phone, additionalPhone}
+                const addressText = typeof addr === 'string' ? addr : addr?.address || 'Адрес не указан';
+                const isSelected = selectedAddress === addr || 
+                  (typeof selectedAddress === 'object' && selectedAddress?.address === addr?.address);
+                
+                return (
+                  <div 
+                    key={idx}
+                    onClick={() => setSelectedAddress(addr)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      isSelected 
+                        ? 'bg-blue-50 border-2 border-blue-500' 
+                        : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded-full border-2 ${
+                        isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                      }`} />
+                      <span>{addressText}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         )}
