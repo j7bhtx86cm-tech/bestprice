@@ -701,6 +701,8 @@ class CartIntentRequest(BaseModel):
     supplier_item_id: Optional[str] = None  # Для добавления напрямую из каталога
     qty: float = Field(gt=0, description="Количество в единицах (шт/кг/л)")
     user_id: str
+    # NEW: Закрепить конкретный оффер (без авто-замены)
+    lock_offer: bool = Field(default=True, description="Закрепить выбранный оффер без замены")
 
 
 class CartIntentUpdateRequest(BaseModel):
