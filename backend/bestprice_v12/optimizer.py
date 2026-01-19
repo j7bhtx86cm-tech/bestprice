@@ -419,9 +419,11 @@ def load_cart_intents(db: Database, user_id: str) -> List[CartIntent]:
     if intents_raw:
         return [
             CartIntent(
-                reference_id=i['reference_id'],
+                reference_id=i.get('reference_id', ''),
                 qty=i['qty'],
-                user_id=user_id
+                user_id=user_id,
+                supplier_item_id=i.get('supplier_item_id'),  # NEW: конкретный оффер
+                locked=i.get('locked', True)  # NEW: флаг блокировки замены
             )
             for i in intents_raw
         ]
@@ -432,7 +434,9 @@ def load_cart_intents(db: Database, user_id: str) -> List[CartIntent]:
         CartIntent(
             reference_id=i.get('reference_id', ''),
             qty=i.get('user_qty', 1),
-            user_id=user_id
+            user_id=user_id,
+            supplier_item_id=i.get('supplier_item_id'),
+            locked=True
         )
         for i in old_cart if i.get('reference_id')
     ]
