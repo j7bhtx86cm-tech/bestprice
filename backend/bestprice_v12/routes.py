@@ -930,30 +930,45 @@ async def clear_cart_intents(user_id: str = Query(..., description="ID поль�
 
 @router.get("/cart/intents", summary="Получить intents")
 async def get_cart_intents(user_id: str = Query(..., description="ID пользователя")):
-    """Получает все intents пользователя с информацией о reference"""
+    """Получает все intents пользователя с информацией о товаре"""
     db = get_db()
     
     intents = list(db.cart_intents.find({'user_id': user_id}, {'_id': 0}))
     
-    # Обогащаем информацией о reference
+    # Проверяем актуальность каждого intent
     enriched = []
     for intent in intents:
-        ref_id = intent['reference_id']
+        supplier_item_id = intent.get('supplier_item_id')
         
-        # Ищем reference
-        ref = db.favorites_v12.find_one({'reference_id': ref_id}, {'_id': 0})
-        if not ref:
-            ref = db.favorites_v12.find_one({'id': ref_id}, {'_id': 0})
-        if not ref:
-            ref = db.catalog_references.find_one({'reference_id': ref_id}, {'_id': 0})
-        
-        enriched.append({
-            **intent,
-            'product_name': ref.get('product_name', ref.get('name', '')) if ref else '',
-            'unit_type': ref.get('unit_type', 'PIECE') if ref else 'PIECE',
-            'best_price': ref.get('best_price') if ref else None,
-            'super_class': ref.get('super_class', '') if ref else '',
-        })
+        # Проверяем что supplier_item ещё активен
+        if supplier_item_id:
+            item = db.supplier_items.find_one(
+                {'id': supplier_item_id, 'active': True},
+                {'_id': 0}
+            )
+            if item:
+                # Актуальная информация
+                enriched.append({
+                    **intent,
+                    'product_name': item.get('name_raw', intent.get('product_name', '')),
+                    'price': item.get('price', intent.get('price', 0)),
+                    'unit_type': item.get('unit_type', intent.get('unit_type', 'PIECE')),
+                    'super_class': item.get('super_class', intent.get('super_class', '')),
+                    'is_available': True,
+                })
+            else:
+                # Товар стал неактивен
+                enriched.append({
+                    **intent,
+                    'is_available': False,
+                    'unavailable_reason': 'Товар временно недоступен'
+                })
+        else:
+            enriched.append({
+                **intent,
+                'is_available': False,
+                'unavailable_reason': 'Нет привязки к товару'
+            })
     
     return {
         'intents': enriched,
