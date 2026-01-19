@@ -313,18 +313,27 @@ export const CustomerFavorites = () => {
     for (const item of favorites) {
       try {
         const userId = getUserId();
+        
+        // ВАЖНО: Используем anchor_supplier_item_id если есть
+        const anchorId = item.anchor_supplier_item_id || item.best_supplier_id;
         const referenceId = item.reference_id || item.id;
         
-        if (!referenceId) {
+        if (!anchorId && !referenceId) {
           errors++;
           continue;
         }
         
-        const response = await axios.post(`${API}/v12/cart/intent`, {
+        const payload = anchorId ? {
+          supplier_item_id: anchorId,
+          qty: 1,
+          user_id: userId
+        } : {
           reference_id: referenceId,
           qty: 1,
           user_id: userId
-        }, {
+        };
+        
+        const response = await axios.post(`${API}/v12/cart/intent`, payload, {
           headers: getHeaders()
         });
         if (response.data.status === 'ok') added++;
