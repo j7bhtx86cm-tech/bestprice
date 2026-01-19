@@ -577,6 +577,7 @@ def build_initial_plan(
             final_qty=final_qty,
             line_total=final_qty * offer.price,
             flags=flags,
+            locked=intent.locked,  # NEW: передаём флаг блокировки
             original_brand=None,
             new_brand=offer.brand_id if OptFlag.BRAND_REPLACED.value in flags else None,
             original_pack=None,
