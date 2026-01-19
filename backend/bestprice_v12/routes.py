@@ -690,7 +690,7 @@ async def get_diagnostics():
 # === NEW: INTENT-BASED CART + OPTIMIZER ===
 
 from .optimizer import (
-    build_final_plan, get_plan_summary_for_ui,
+    optimize_cart, plan_to_dict,
     load_cart_intents, CartIntent, OptFlag
 )
 
