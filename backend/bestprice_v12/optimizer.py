@@ -707,19 +707,23 @@ def redistribute_under_minimum(
             break
     
     # Собираем unfulfilled из оставшихся под-минималкой поставщиков
+    # НО НЕ УДАЛЯЕМ ИХ! Показываем пользователю с blocked_reason
     under_min_final = [sid for sid, plan in groups.items() if not plan.meets_minimum]
     
-    for sid in under_min_final:
-        plan = groups[sid]
-        for line in plan.lines:
-            # Пробуем ещё раз найти альтернативу
-            if line.offer and line.intent.product_core_id:
-                candidates = find_candidates(db, line.intent, exclude_suppliers={sid})
-                if not candidates:
-                    unfulfilled.append(line)
-        
-        # Удаляем поставщика под минималкой
-        del groups[sid]
+    # Проверяем есть ли хоть один поставщик над минималкой
+    has_good_supplier = any(plan.meets_minimum for plan in groups.values())
+    
+    if not has_good_supplier:
+        # Все под минималкой - возвращаем как есть (не удаляем)
+        # Пользователь увидит blocked_reason
+        pass
+    else:
+        # Есть хорошие поставщики - удаляем плохих и перемещаем их позиции в unfulfilled
+        for sid in under_min_final:
+            plan = groups[sid]
+            for line in plan.lines:
+                unfulfilled.append(line)
+            del groups[sid]
     
     return groups, unfulfilled
 
