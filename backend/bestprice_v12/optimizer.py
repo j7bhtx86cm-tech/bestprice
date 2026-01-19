@@ -678,6 +678,7 @@ def try_move_line_to_other_supplier(
         final_qty=final_qty,
         line_total=final_qty * offer.price,
         flags=flags,
+        locked=False,  # Перемещённые позиции не locked
         original_brand=ref.brand_id,
         new_brand=offer.brand_id if OptFlag.BRAND_REPLACED.value in flags else None,
     )
