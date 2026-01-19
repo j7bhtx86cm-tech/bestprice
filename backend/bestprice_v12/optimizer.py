@@ -692,6 +692,7 @@ def eliminate_under_min_suppliers(
 ) -> Dict[str, SupplierPlan]:
     """
     Переносит позиции от поставщиков под минималкой к другим.
+    ВАЖНО: locked позиции НЕ переносятся!
     """
     # Находим поставщиков под минималкой
     under_min = [sid for sid, plan in groups.items() if not plan.meets_minimum]
@@ -710,8 +711,8 @@ def eliminate_under_min_suppliers(
         # Целевые поставщики - те кто над минималкой
         target_suppliers = {sid for sid, p in groups.items() if p.meets_minimum and sid != weak_sid}
         
-        # Пробуем перенести каждую строку
-        lines_to_move = list(weak_plan.lines)
+        # Пробуем перенести каждую НЕ-locked строку
+        lines_to_move = [line for line in weak_plan.lines if not line.locked]
         
         for line in lines_to_move:
             result = try_move_line_to_other_supplier(
