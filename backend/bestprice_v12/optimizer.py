@@ -1,13 +1,15 @@
 """
-BestPrice v12 - Cart Optimizer
+BestPrice v12 - Cart Optimizer (Phase 3)
 
 Оптимизатор распределения заказа по поставщикам.
 
-Ключевые правила:
-1. Корзина = Intent (reference_id + qty)
-2. Минималка по каждому поставщику отдельно
-3. Matching: product_core_id, unit_type строго; pack ±20%; PPU fallback
-4. В финале НЕТ поставщиков < минималки
+КЛЮЧЕВЫЕ ПРАВИЛА:
+1. Draft корзина - только намерения, БЕЗ оптимизации
+2. Plan (после "Оформить заказ") - оптимизированное распределение
+3. Минималка по каждому поставщику отдельно
+4. +10% topup - ТОЛЬКО увеличение qty существующих позиций
+5. Если минималка не достигнута - ПЕРЕРАСПРЕДЕЛЕНИЕ на других поставщиков
+6. В финале НЕТ поставщиков с суммой < минималки
 """
 
 import logging
@@ -16,6 +18,7 @@ from typing import List, Dict, Any, Optional, Tuple, Set
 from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timezone
+from copy import deepcopy
 
 from pymongo.database import Database
 
@@ -31,7 +34,7 @@ class OptFlag(str, Enum):
     PPU_FALLBACK_USED = "PPU_FALLBACK_USED"        # Другая фасовка по PPU
     MIN_QTY_ROUNDED = "MIN_QTY_ROUNDED"            # Округлено до min_order_qty
     STEP_QTY_APPLIED = "STEP_QTY_APPLIED"          # Округлено по step_qty
-    AUTO_TOPUP_10PCT = "AUTO_TOPUP_10PCT"          # Количество увеличено для минималки
+    AUTO_TOPUP_10PCT = "AUTO_TOPUP_10PCT"          # Количество увеличено для минималки (+10%)
     SUPPLIER_CHANGED = "SUPPLIER_CHANGED"          # Поставщик изменён системой
     NO_OFFER_FOUND = "NO_OFFER_FOUND"              # Нет подходящего оффера
 
@@ -42,27 +45,20 @@ class OptFlag(str, Enum):
 class CartIntent:
     """Намерение в корзине (что пользователь хочет)"""
     reference_id: str
-    qty: float  # в единицах сайта (кг/л/шт)
+    qty: float  # requested qty
     user_id: str = ""
-    # NEW: Конкретный оффер, выбранный пользователем
-    supplier_item_id: Optional[str] = None
-    locked: bool = True  # Если True - не заменять оффер
-
-
-@dataclass
-class Reference:
-    """Карточка каталога / избранного"""
-    reference_id: str
-    product_core_id: str
-    unit_type: str  # WEIGHT, VOLUME, PIECE
-    pack_value: Optional[float] = None
-    pack_unit: Optional[str] = None
+    supplier_item_id: Optional[str] = None  # Конкретный оффер если выбран
+    product_name: str = ""
+    price: float = 0
+    unit_type: str = "PIECE"
+    supplier_id: Optional[str] = None
+    supplier_name: str = ""
+    product_core_id: Optional[str] = None
     brand_id: Optional[str] = None
-    name: str = ""
+    pack_value: Optional[float] = None
+    fat_pct: Optional[float] = None
+    cut: Optional[str] = None
     super_class: str = ""
-    # Критические атрибуты (когда заполнены)
-    fat_pct: Optional[float] = None  # для молочки
-    cut: Optional[str] = None  # для рыбы/мяса
 
 
 @dataclass
@@ -80,8 +76,7 @@ class Offer:
     name_raw: str = ""
     min_order_qty: int = 1
     step_qty: int = 1
-    price_per_base_unit: Optional[float] = None  # руб/кг или руб/л
-    # Критические атрибуты
+    price_per_base_unit: Optional[float] = None
     fat_pct: Optional[float] = None
     cut: Optional[str] = None
 
@@ -90,18 +85,17 @@ class Offer:
 class PlanLine:
     """Строка плана заказа"""
     reference_id: str
-    reference_name: str
-    offer: Offer
-    user_qty: float       # что хотел пользователь
-    final_qty: float      # после округления
-    line_total: float     # final_qty * price
+    intent: CartIntent  # Что хотел клиент
+    offer: Optional[Offer]  # Что назначено (None = unfulfilled)
+    requested_qty: float
+    final_qty: float
+    line_total: float
     flags: List[str] = field(default_factory=list)
-    locked: bool = False  # NEW: если True - не заменять оффер при оптимизации
-    # Для UI бейджей
-    original_brand: Optional[str] = None
-    new_brand: Optional[str] = None
-    original_pack: Optional[str] = None
-    new_pack: Optional[str] = None
+    # Флаги изменений
+    supplier_changed: bool = False
+    brand_changed: bool = False
+    pack_changed: bool = False
+    qty_changed_by_topup: bool = False
 
 
 @dataclass
@@ -121,158 +115,101 @@ class OptimizationResult:
     """Результат оптимизации"""
     success: bool
     suppliers: List[SupplierPlan] = field(default_factory=list)
+    unfulfilled: List[PlanLine] = field(default_factory=list)
     total: float = 0.0
-    unmatched_intents: List[str] = field(default_factory=list)
     blocked_reason: Optional[str] = None
 
 
 # === CONSTANTS ===
 
 DEFAULT_MIN_ORDER_AMOUNT = 10000.0
-PACK_TOLERANCE = 0.20  # ±20%
-MAX_TOPUP_PERCENT = 0.10  # +10%
+PACK_TOLERANCE_PCT = 0.20  # ±20%
+TOPUP_MAX_PCT = 0.10  # +10% максимум
 
 
 # === HELPER FUNCTIONS ===
 
-def get_supplier_min_order(db: Database, supplier_id: str) -> float:
-    """Получает минималку поставщика из companies"""
-    company = db.companies.find_one(
-        {'id': supplier_id},
-        {'min_order_amount': 1}
-    )
-    if company and company.get('min_order_amount'):
-        return float(company['min_order_amount'])
-    return DEFAULT_MIN_ORDER_AMOUNT
+def get_supplier_minimums(db: Database) -> Dict[str, float]:
+    """Загружает минималки поставщиков из БД"""
+    mins = {}
+    for comp in db.companies.find({'type': 'supplier'}, {'_id': 0, 'id': 1, 'min_order_amount': 1}):
+        mins[comp['id']] = comp.get('min_order_amount', DEFAULT_MIN_ORDER_AMOUNT)
+    return mins
 
 
-def load_all_supplier_minimums(db: Database, supplier_ids: Set[str]) -> Dict[str, float]:
-    """Загружает минималки для списка поставщиков"""
-    result = {}
-    for sid in supplier_ids:
-        result[sid] = get_supplier_min_order(db, sid)
-    return result
-
-
-def check_pack_tolerance(ref_pack: Optional[float], offer_pack: Optional[float], unit_type: str = None) -> bool:
-    """
-    Проверяет ±20% по фасовке.
-    
-    Для PIECE товаров: pack_value в reference может быть объём единицы (0.6л),
-    а в offer - количество в упаковке (12шт). В этом случае пропускаем проверку.
-    """
-    # Если нет данных - пропускаем проверку
-    if ref_pack is None or offer_pack is None:
-        return True
-    
-    if ref_pack <= 0 or offer_pack <= 0:
-        return True
-    
-    # Для PIECE: если значения сильно отличаются (>10x), скорее всего это разные единицы
-    # (объём vs количество в упаковке) - пропускаем проверку
+def check_pack_tolerance(ref_pack: Optional[float], offer_pack: Optional[float], unit_type: str) -> bool:
+    """Проверяет pack tolerance ±20%"""
     if unit_type == 'PIECE':
-        ratio = max(ref_pack, offer_pack) / min(ref_pack, offer_pack)
-        if ratio > 10:
-            # Скорее всего это разные единицы, пропускаем проверку
-            return True
-    
-    lower = ref_pack * (1 - PACK_TOLERANCE)
-    upper = ref_pack * (1 + PACK_TOLERANCE)
-    return lower <= offer_pack <= upper
+        return True
+    if not ref_pack or not offer_pack:
+        return True
+    ratio = offer_pack / ref_pack
+    return (1 - PACK_TOLERANCE_PCT) <= ratio <= (1 + PACK_TOLERANCE_PCT)
 
 
-def check_critical_attrs(ref: Reference, offer: Offer) -> Tuple[bool, str]:
-    """
-    Проверяет критические атрибуты.
-    Returns: (matches, reason)
-    """
-    # fat_pct для молочки
-    if ref.super_class and ref.super_class.startswith('dairy'):
-        if ref.fat_pct is not None and offer.fat_pct is not None:
-            if ref.fat_pct != offer.fat_pct:
-                return False, f"fat_pct mismatch: {ref.fat_pct}% vs {offer.fat_pct}%"
+def check_critical_attrs(intent: CartIntent, offer: Offer) -> Tuple[bool, Optional[str]]:
+    """Проверяет критические атрибуты (strict if задано в намерении)"""
+    # Жирность
+    if intent.fat_pct is not None and offer.fat_pct is not None:
+        if abs(intent.fat_pct - offer.fat_pct) > 1.0:
+            return False, "fat_pct mismatch"
     
-    # cut для рыбы/мяса
-    if ref.super_class and (ref.super_class.startswith('seafood') or ref.super_class.startswith('meat')):
-        if ref.cut is not None and offer.cut is not None:
-            if ref.cut != offer.cut:
-                return False, f"cut mismatch: {ref.cut} vs {offer.cut}"
+    # Cut (филе vs тушка)
+    if intent.cut and offer.cut:
+        if intent.cut.lower() != offer.cut.lower():
+            return False, "cut mismatch"
     
-    return True, ""
+    return True, None
 
 
 def apply_qty_constraints(qty: float, offer: Offer) -> Tuple[float, List[str]]:
-    """
-    Применяет min_order_qty и step_qty.
-    Returns: (final_qty, flags)
-    """
+    """Применяет ограничения min_order_qty и step_qty"""
     flags = []
     final_qty = qty
     
     min_qty = offer.min_order_qty or 1
     step_qty = offer.step_qty or 1
     
-    # Округление до min_order_qty
     if final_qty < min_qty:
-        final_qty = float(min_qty)
+        final_qty = min_qty
         flags.append(OptFlag.MIN_QTY_ROUNDED.value)
     
-    # Округление по step_qty
     if step_qty > 1:
-        steps = math.ceil(final_qty / step_qty)
-        new_qty = steps * step_qty
-        if new_qty != final_qty:
-            final_qty = float(new_qty)
-            if OptFlag.STEP_QTY_APPLIED.value not in flags:
-                flags.append(OptFlag.STEP_QTY_APPLIED.value)
+        remainder = final_qty % step_qty
+        if remainder > 0:
+            final_qty = final_qty + (step_qty - remainder)
+            flags.append(OptFlag.STEP_QTY_APPLIED.value)
     
     return final_qty, flags
-
-
-def calculate_ppu_cost(offer: Offer, required_base: float) -> Optional[float]:
-    """
-    Рассчитывает стоимость по PPU для WEIGHT/VOLUME.
-    required_base - сколько кг/л нужно
-    Returns: total_cost или None если PPU недоступен
-    """
-    if offer.unit_type not in ('WEIGHT', 'VOLUME'):
-        return None
-    
-    if not offer.price_per_base_unit or not offer.pack_value:
-        # Пробуем вычислить price_per_base_unit
-        if offer.pack_value and offer.pack_value > 0:
-            offer.price_per_base_unit = offer.price / offer.pack_value
-        else:
-            return None
-    
-    pack_base = offer.pack_value or 1.0
-    need_packs = math.ceil(required_base / pack_base)
-    return need_packs * offer.price
 
 
 # === OFFER MATCHING ===
 
 def find_candidates(
     db: Database,
-    ref: Reference,
+    intent: CartIntent,
     exclude_suppliers: Set[str] = None
 ) -> List[Offer]:
     """
-    Находит кандидатов для reference по правилам matching.
+    Находит кандидатов для intent.
     
     Жёсткие фильтры:
     - active = true
-    - price > 0  
-    - product_core_id == reference.product_core_id
-    - unit_type == reference.unit_type
+    - price > 0
+    - product_core_id совпадает
+    - unit_type совпадает
     """
     exclude_suppliers = exclude_suppliers or set()
+    
+    # Если нет product_core_id - не можем матчить
+    if not intent.product_core_id:
+        return []
     
     query = {
         'active': True,
         'price': {'$gt': 0},
-        'product_core_id': ref.product_core_id,
-        'unit_type': ref.unit_type,
+        'product_core_id': intent.product_core_id,
+        'unit_type': intent.unit_type,
     }
     
     if exclude_suppliers:
@@ -283,14 +220,12 @@ def find_candidates(
     # Конвертируем в Offer
     offers = []
     for item in items:
-        # Получаем название поставщика
         supplier_id = item.get('supplier_company_id', '')
         supplier_name = item.get('supplier_name', '')
         if not supplier_name:
             company = db.companies.find_one({'id': supplier_id}, {'companyName': 1, 'name': 1})
             supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
         
-        # Определяем pack_value
         pack_value = item.get('pack_qty') or item.get('pack_value')
         
         offer = Offer(
@@ -310,7 +245,6 @@ def find_candidates(
             cut=item.get('cut'),
         )
         
-        # Вычисляем price_per_base_unit для WEIGHT/VOLUME
         if offer.unit_type in ('WEIGHT', 'VOLUME') and pack_value and pack_value > 0:
             offer.price_per_base_unit = offer.price / pack_value
         
@@ -320,16 +254,17 @@ def find_candidates(
 
 
 def pick_best_offer(
-    ref: Reference,
-    qty: float,
+    intent: CartIntent,
     candidates: List[Offer],
     prefer_supplier_id: Optional[str] = None
 ) -> Tuple[Optional[Offer], List[str]]:
     """
     Выбирает лучший оффер из кандидатов.
     
-    Tier 0: pack ±20%
-    Tier 1: PPU fallback (только WEIGHT/VOLUME)
+    1. Фильтр по критическим атрибутам
+    2. Фильтр по pack tolerance ±20%
+    3. Brand preference (если задан)
+    4. Минимальная цена
     
     Returns: (offer, flags)
     """
@@ -338,173 +273,115 @@ def pick_best_offer(
     
     flags = []
     
-    # Фильтруем по критическим атрибутам
+    # Фильтр 1: критические атрибуты
     valid_candidates = []
     for offer in candidates:
-        ok, reason = check_critical_attrs(ref, offer)
+        ok, reason = check_critical_attrs(intent, offer)
         if ok:
             valid_candidates.append(offer)
     
     if not valid_candidates:
         return None, [OptFlag.NO_OFFER_FOUND.value]
     
-    # Tier 0: Ищем с pack ±20%
-    tier0 = []
-    for offer in valid_candidates:
-        if check_pack_tolerance(ref.pack_value, offer.pack_value, ref.unit_type):
-            tier0.append(offer)
+    # Фильтр 2: pack tolerance ±20%
+    pack_ok = [o for o in valid_candidates 
+               if check_pack_tolerance(intent.pack_value, o.pack_value, intent.unit_type)]
     
-    # Если есть brand preference - сначала ищем с нужным брендом
-    if ref.brand_id and tier0:
-        brand_matches = [o for o in tier0 if o.brand_id == ref.brand_id]
-        if brand_matches:
-            tier0_with_brand = brand_matches
-        else:
-            tier0_with_brand = tier0
-            if tier0:
-                flags.append(OptFlag.BRAND_REPLACED.value)
+    if pack_ok:
+        valid_candidates = pack_ok
     else:
-        tier0_with_brand = tier0
+        flags.append(OptFlag.PACK_TOLERANCE_USED.value)
     
-    # Выбираем лучший по цене из tier0
-    if tier0_with_brand:
-        # Если есть предпочтительный поставщик и он есть в списке
-        if prefer_supplier_id:
-            preferred = [o for o in tier0_with_brand if o.supplier_id == prefer_supplier_id]
-            if preferred:
-                best = min(preferred, key=lambda o: o.price)
-                return best, flags
-        
-        # Иначе просто минимум по цене
-        best = min(tier0_with_brand, key=lambda o: o.price)
-        
-        # Проверяем pack tolerance (не для PIECE с разными единицами)
-        if ref.pack_value and best.pack_value and ref.unit_type != 'PIECE':
-            if abs(ref.pack_value - best.pack_value) / ref.pack_value > 0.01:
-                flags.append(OptFlag.PACK_TOLERANCE_USED.value)
-        
-        return best, flags
+    # Фильтр 3: brand preference
+    brand_matched = False
+    if intent.brand_id:
+        brand_matches = [o for o in valid_candidates if o.brand_id == intent.brand_id]
+        if brand_matches:
+            valid_candidates = brand_matches
+            brand_matched = True
+        else:
+            flags.append(OptFlag.BRAND_REPLACED.value)
     
-    # Tier 1: PPU fallback (только WEIGHT/VOLUME)
-    if ref.unit_type in ('WEIGHT', 'VOLUME'):
-        ppu_candidates = []
-        for offer in valid_candidates:
-            cost = calculate_ppu_cost(offer, qty)
-            if cost is not None:
-                ppu_candidates.append((offer, cost))
-        
-        if ppu_candidates:
-            # Сортируем по total_cost
-            ppu_candidates.sort(key=lambda x: x[1])
-            best_offer, _ = ppu_candidates[0]
-            
-            flags.append(OptFlag.PPU_FALLBACK_USED.value)
-            
-            # Проверяем бренд
-            if ref.brand_id and best_offer.brand_id != ref.brand_id:
-                if OptFlag.BRAND_REPLACED.value not in flags:
-                    flags.append(OptFlag.BRAND_REPLACED.value)
-            
-            return best_offer, flags
+    # Фильтр 4: prefer_supplier_id (если задан)
+    if prefer_supplier_id:
+        preferred = [o for o in valid_candidates if o.supplier_id == prefer_supplier_id]
+        if preferred:
+            valid_candidates = preferred
     
-    return None, [OptFlag.NO_OFFER_FOUND.value]
+    # Выбираем минимум по цене
+    best = min(valid_candidates, key=lambda o: o.price)
+    
+    return best, flags
 
 
-# === MAIN OPTIMIZER ===
+# === PLAN BUILDING ===
 
 def load_cart_intents(db: Database, user_id: str) -> List[CartIntent]:
-    """Загружает интенты из корзины"""
-    # Сначала пробуем новую коллекцию cart_intents
+    """Загружает намерения из корзины"""
     intents_raw = list(db.cart_intents.find({'user_id': user_id}, {'_id': 0}))
     
-    if intents_raw:
-        return [
-            CartIntent(
-                reference_id=i.get('reference_id', ''),
-                qty=i['qty'],
-                user_id=user_id,
-                supplier_item_id=i.get('supplier_item_id'),  # NEW: конкретный оффер
-                locked=i.get('locked', True)  # NEW: флаг блокировки замены
-            )
-            for i in intents_raw
-        ]
-    
-    # Fallback: старая корзина cart_items_v12
-    old_cart = list(db.cart_items_v12.find({'user_id': user_id}, {'_id': 0}))
-    return [
-        CartIntent(
+    intents = []
+    for i in intents_raw:
+        # Загружаем данные о товаре если есть supplier_item_id
+        supplier_item_id = i.get('supplier_item_id')
+        product_core_id = None
+        brand_id = None
+        pack_value = None
+        fat_pct = None
+        cut = None
+        
+        if supplier_item_id:
+            item = db.supplier_items.find_one({'id': supplier_item_id}, {'_id': 0})
+            if item:
+                product_core_id = item.get('product_core_id')
+                brand_id = item.get('brand_id')
+                pack_value = item.get('pack_qty') or item.get('pack_value')
+                fat_pct = item.get('fat_pct')
+                cut = item.get('cut')
+        
+        intent = CartIntent(
             reference_id=i.get('reference_id', ''),
-            qty=i.get('user_qty', 1),
+            qty=i['qty'],
             user_id=user_id,
-            supplier_item_id=i.get('supplier_item_id'),
-            locked=True
+            supplier_item_id=supplier_item_id,
+            product_name=i.get('product_name', ''),
+            price=i.get('price', 0),
+            unit_type=i.get('unit_type', 'PIECE'),
+            supplier_id=i.get('supplier_id'),
+            supplier_name=i.get('supplier_name', ''),
+            product_core_id=product_core_id,
+            brand_id=brand_id,
+            pack_value=pack_value,
+            fat_pct=fat_pct,
+            cut=cut,
+            super_class=i.get('super_class', ''),
         )
-        for i in old_cart if i.get('reference_id')
-    ]
-
-
-def load_reference(db: Database, reference_id: str) -> Optional[Reference]:
-    """Загружает reference по ID"""
-    # Сначала catalog_references
-    ref_data = db.catalog_references.find_one({'reference_id': reference_id}, {'_id': 0})
+        intents.append(intent)
     
-    if not ref_data:
-        # Fallback: favorites_v12
-        ref_data = db.favorites_v12.find_one({'reference_id': reference_id}, {'_id': 0})
-    
-    if not ref_data:
-        # Еще fallback: по id
-        ref_data = db.favorites_v12.find_one({'id': reference_id}, {'_id': 0})
-        if ref_data:
-            ref_data['reference_id'] = ref_data.get('id', reference_id)
-    
-    if not ref_data:
-        return None
-    
-    return Reference(
-        reference_id=ref_data.get('reference_id', reference_id),
-        product_core_id=ref_data.get('product_core_id', ''),
-        unit_type=ref_data.get('unit_type', 'PIECE'),
-        pack_value=ref_data.get('pack_value'),
-        pack_unit=ref_data.get('pack_unit'),
-        brand_id=ref_data.get('brand_id'),
-        name=ref_data.get('name', ref_data.get('product_name', '')),
-        super_class=ref_data.get('super_class', ''),
-        fat_pct=ref_data.get('fat_pct'),
-        cut=ref_data.get('cut'),
-    )
+    return intents
 
 
 def build_initial_plan(
     db: Database,
     intents: List[CartIntent]
-) -> Tuple[List[PlanLine], List[str]]:
+) -> Tuple[List[PlanLine], List[PlanLine]]:
     """
-    Строит начальный план: для каждого intent использует указанный offer.
+    Строит начальный план: для каждого intent подбирает лучший offer.
     
-    ВАЖНО: Если intent.locked=True и есть supplier_item_id, 
-    используем КОНКРЕТНЫЙ оффер без поиска замены.
-    
-    Returns: (lines, unmatched_reference_ids)
+    Returns: (assigned_lines, unfulfilled_lines)
     """
-    lines = []
-    unmatched = []
+    assigned = []
+    unfulfilled = []
     
     for intent in intents:
-        flags = []
-        offer = None
-        ref_name = ""
-        
-        # НОВАЯ ЛОГИКА: Если есть locked supplier_item_id - используем его напрямую
-        if intent.locked and intent.supplier_item_id:
-            # Загружаем конкретный оффер
+        # Если есть конкретный supplier_item_id - используем его напрямую
+        if intent.supplier_item_id:
             item = db.supplier_items.find_one(
                 {'id': intent.supplier_item_id, 'active': True},
                 {'_id': 0}
             )
             
-            if item:
-                # Получаем имя поставщика
+            if item and item.get('price', 0) > 0:
                 supplier_id = item.get('supplier_company_id', '')
                 supplier_name = ''
                 if supplier_id:
@@ -527,65 +404,100 @@ def build_initial_plan(
                     fat_pct=item.get('fat_pct'),
                     cut=item.get('cut'),
                 )
-                ref_name = item.get('name_raw', '')
+                
+                final_qty, qty_flags = apply_qty_constraints(intent.qty, offer)
+                
+                line = PlanLine(
+                    reference_id=intent.reference_id,
+                    intent=intent,
+                    offer=offer,
+                    requested_qty=intent.qty,
+                    final_qty=final_qty,
+                    line_total=final_qty * offer.price,
+                    flags=qty_flags,
+                    supplier_changed=False,
+                    brand_changed=False,
+                    pack_changed=False,
+                    qty_changed_by_topup=False,
+                )
+                assigned.append(line)
+                continue
             else:
-                # Оффер стал неактивен
-                logger.warning(f"Locked supplier_item {intent.supplier_item_id} is no longer active")
-                unmatched.append(intent.reference_id)
-                continue
+                # Оффер неактивен - будем искать замену
+                pass
         
-        # СТАРАЯ ЛОГИКА: Если нет locked offer - ищем по reference
+        # Ищем кандидатов по product_core_id
+        if not intent.product_core_id:
+            # Нет product_core_id - unfulfilled
+            line = PlanLine(
+                reference_id=intent.reference_id,
+                intent=intent,
+                offer=None,
+                requested_qty=intent.qty,
+                final_qty=0,
+                line_total=0,
+                flags=[OptFlag.NO_OFFER_FOUND.value],
+            )
+            unfulfilled.append(line)
+            continue
+        
+        candidates = find_candidates(db, intent)
+        
+        if not candidates:
+            line = PlanLine(
+                reference_id=intent.reference_id,
+                intent=intent,
+                offer=None,
+                requested_qty=intent.qty,
+                final_qty=0,
+                line_total=0,
+                flags=[OptFlag.NO_OFFER_FOUND.value],
+            )
+            unfulfilled.append(line)
+            continue
+        
+        offer, flags = pick_best_offer(intent, candidates)
+        
         if not offer:
-            ref = load_reference(db, intent.reference_id)
-            if not ref:
-                logger.warning(f"Reference not found: {intent.reference_id}")
-                unmatched.append(intent.reference_id)
-                continue
-            
-            if not ref.product_core_id:
-                logger.warning(f"Reference has no product_core_id: {intent.reference_id}")
-                unmatched.append(intent.reference_id)
-                continue
-            
-            ref_name = ref.name
-            
-            # Ищем кандидатов
-            candidates = find_candidates(db, ref)
-            
-            if not candidates:
-                logger.warning(f"No candidates for reference: {intent.reference_id}")
-                unmatched.append(intent.reference_id)
-                continue
-            
-            # Выбираем лучший оффер (здесь может быть замена!)
-            offer, flags = pick_best_offer(ref, intent.qty, candidates)
-            
-            if not offer:
-                unmatched.append(intent.reference_id)
-                continue
+            line = PlanLine(
+                reference_id=intent.reference_id,
+                intent=intent,
+                offer=None,
+                requested_qty=intent.qty,
+                final_qty=0,
+                line_total=0,
+                flags=flags,
+            )
+            unfulfilled.append(line)
+            continue
         
-        # Применяем qty constraints
         final_qty, qty_flags = apply_qty_constraints(intent.qty, offer)
         flags.extend(qty_flags)
         
-        # Создаём строку плана
+        # Определяем флаги изменений
+        supplier_changed = (intent.supplier_id and offer.supplier_id != intent.supplier_id)
+        brand_changed = OptFlag.BRAND_REPLACED.value in flags
+        pack_changed = OptFlag.PACK_TOLERANCE_USED.value in flags
+        
+        if supplier_changed and OptFlag.SUPPLIER_CHANGED.value not in flags:
+            flags.append(OptFlag.SUPPLIER_CHANGED.value)
+        
         line = PlanLine(
             reference_id=intent.reference_id,
-            reference_name=ref_name,
+            intent=intent,
             offer=offer,
-            user_qty=intent.qty,
+            requested_qty=intent.qty,
             final_qty=final_qty,
             line_total=final_qty * offer.price,
             flags=flags,
-            locked=intent.locked,  # NEW: передаём флаг блокировки
-            original_brand=None,
-            new_brand=offer.brand_id if OptFlag.BRAND_REPLACED.value in flags else None,
-            original_pack=None,
-            new_pack=None,
+            supplier_changed=supplier_changed,
+            brand_changed=brand_changed,
+            pack_changed=pack_changed,
+            qty_changed_by_topup=False,
         )
-        lines.append(line)
+        assigned.append(line)
     
-    return lines, unmatched
+    return assigned, unfulfilled
 
 
 def group_by_supplier(
@@ -596,6 +508,9 @@ def group_by_supplier(
     groups: Dict[str, SupplierPlan] = {}
     
     for line in lines:
+        if not line.offer:
+            continue
+            
         sid = line.offer.supplier_id
         if sid not in groups:
             groups[sid] = SupplierPlan(
@@ -603,10 +518,11 @@ def group_by_supplier(
                 supplier_name=line.offer.supplier_name,
                 min_order_amount=supplier_mins.get(sid, DEFAULT_MIN_ORDER_AMOUNT)
             )
+        
         groups[sid].lines.append(line)
         groups[sid].subtotal += line.line_total
     
-    # Вычисляем deficit и meets_minimum
+    # Вычисляем статусы
     for plan in groups.values():
         plan.deficit = max(0, plan.min_order_amount - plan.subtotal)
         plan.meets_minimum = plan.deficit <= 0
@@ -614,300 +530,298 @@ def group_by_supplier(
     return groups
 
 
-def try_move_line_to_other_supplier(
-    db: Database,
-    line: PlanLine,
-    current_supplier_id: str,
-    target_suppliers: Set[str],
-    supplier_mins: Dict[str, float]
-) -> Optional[Tuple[PlanLine, str]]:
-    """
-    Пытается перенести строку к другому поставщику.
-    
-    Returns: (new_line, target_supplier_id) или None
-    """
-    # Сначала пробуем загрузить reference
-    ref = load_reference(db, line.reference_id)
-    
-    # Если reference не найден, создаём на основе offer
-    if not ref and line.offer:
-        ref = Reference(
-            reference_id=line.reference_id,
-            product_core_id=line.offer.product_core_id or '',
-            unit_type=line.offer.unit_type,
-            pack_value=line.offer.pack_value,
-            pack_unit=line.offer.pack_unit,
-            brand_id=line.offer.brand_id,
-            name=line.reference_name or line.offer.name_raw,
-        )
-    
-    if not ref or not ref.product_core_id:
-        # Без product_core_id не можем искать замену
-        return None
-    
-    # Ищем кандидатов у других поставщиков
-    exclude = {current_supplier_id}
-    candidates = find_candidates(db, ref, exclude_suppliers=exclude)
-    
-    if not candidates:
-        return None
-    
-    # Предпочитаем поставщиков из target_suppliers (где уже есть заказ)
-    preferred_candidates = [c for c in candidates if c.supplier_id in target_suppliers]
-    
-    if preferred_candidates:
-        offer, flags = pick_best_offer(ref, line.user_qty, preferred_candidates)
-    else:
-        offer, flags = pick_best_offer(ref, line.user_qty, candidates)
-    
-    if not offer:
-        return None
-    
-    # Применяем qty constraints
-    final_qty, qty_flags = apply_qty_constraints(line.user_qty, offer)
-    flags.extend(qty_flags)
-    
-    # Добавляем флаг SUPPLIER_CHANGED
-    flags.append(OptFlag.SUPPLIER_CHANGED.value)
-    
-    new_line = PlanLine(
-        reference_id=line.reference_id,
-        reference_name=line.reference_name,
-        offer=offer,
-        user_qty=line.user_qty,
-        final_qty=final_qty,
-        line_total=final_qty * offer.price,
-        flags=flags,
-        locked=False,  # Перемещённые позиции не locked
-        original_brand=ref.brand_id,
-        new_brand=offer.brand_id if OptFlag.BRAND_REPLACED.value in flags else None,
-    )
-    
-    return new_line, offer.supplier_id
+# === OPTIMIZATION: +10% TOPUP ===
 
-
-def eliminate_under_min_suppliers(
-    db: Database,
-    groups: Dict[str, SupplierPlan],
-    supplier_mins: Dict[str, float]
-) -> Dict[str, SupplierPlan]:
-    """
-    Переносит позиции от поставщиков под минималкой к другим.
-    ВАЖНО: locked позиции НЕ переносятся!
-    """
-    # Находим поставщиков под минималкой
-    under_min = [sid for sid, plan in groups.items() if not plan.meets_minimum]
-    
-    if not under_min:
-        return groups
-    
-    # Сортируем по deficit (сначала с меньшим deficit - легче решить)
-    under_min.sort(key=lambda sid: groups[sid].deficit)
-    
-    for weak_sid in under_min:
-        weak_plan = groups.get(weak_sid)
-        if not weak_plan or weak_plan.meets_minimum:
-            continue
-        
-        # Целевые поставщики - те кто над минималкой
-        target_suppliers = {sid for sid, p in groups.items() if p.meets_minimum and sid != weak_sid}
-        
-        # Пробуем перенести каждую НЕ-locked строку
-        lines_to_move = [line for line in weak_plan.lines if not line.locked]
-        
-        for line in lines_to_move:
-            result = try_move_line_to_other_supplier(
-                db, line, weak_sid, target_suppliers, supplier_mins
-            )
-            
-            if result:
-                new_line, target_sid = result
-                
-                # Удаляем из слабого поставщика
-                weak_plan.lines.remove(line)
-                weak_plan.subtotal -= line.line_total
-                
-                # Добавляем к целевому
-                if target_sid not in groups:
-                    groups[target_sid] = SupplierPlan(
-                        supplier_id=target_sid,
-                        supplier_name=new_line.offer.supplier_name,
-                        min_order_amount=supplier_mins.get(target_sid, DEFAULT_MIN_ORDER_AMOUNT)
-                    )
-                
-                groups[target_sid].lines.append(new_line)
-                groups[target_sid].subtotal += new_line.line_total
-                
-                # Обновляем статусы
-                weak_plan.deficit = max(0, weak_plan.min_order_amount - weak_plan.subtotal)
-                weak_plan.meets_minimum = weak_plan.deficit <= 0
-                
-                groups[target_sid].deficit = max(0, groups[target_sid].min_order_amount - groups[target_sid].subtotal)
-                groups[target_sid].meets_minimum = groups[target_sid].deficit <= 0
-                
-                target_suppliers.add(target_sid)
-        
-        # Удаляем пустых поставщиков
-        if not weak_plan.lines:
-            del groups[weak_sid]
-    
-    return groups
-
-
-def apply_topup_10pct(
-    groups: Dict[str, SupplierPlan],
-    supplier_mins: Dict[str, float]
-) -> Dict[str, SupplierPlan]:
+def apply_topup_10pct(groups: Dict[str, SupplierPlan]) -> Dict[str, SupplierPlan]:
     """
     Применяет +10% к qty для достижения минималки.
     ТОЛЬКО увеличение существующих позиций, НЕ добавление новых.
     """
-    for sid, plan in groups.items():
+    for plan in groups.values():
         if plan.meets_minimum:
             continue
         
+        # Пробуем добить минималку увеличением qty
         deficit = plan.deficit
         
-        # Сортируем строки по "шагу стоимости" (дешевле увеличивать)
-        lines_by_cost = sorted(
-            plan.lines,
-            key=lambda l: l.offer.price * (l.offer.min_order_qty or 1)
-        )
-        
-        for line in lines_by_cost:
+        for line in plan.lines:
             if deficit <= 0:
                 break
             
-            # Максимум +10% от текущего qty
-            max_increase = line.final_qty * MAX_TOPUP_PERCENT
+            if not line.offer:
+                continue
             
-            # Округляем по min_order_qty/step_qty
-            step = max(line.offer.min_order_qty or 1, line.offer.step_qty or 1)
-            steps_to_add = min(
-                math.ceil(max_increase / step),
-                math.ceil(deficit / (step * line.offer.price))
-            )
+            # Максимум +10% от requested_qty
+            max_increase = line.requested_qty * TOPUP_MAX_PCT
+            current_qty = line.final_qty
+            max_new_qty = current_qty + max_increase
             
-            if steps_to_add > 0:
-                add_qty = steps_to_add * step
-                add_cost = add_qty * line.offer.price
+            # Сколько можем добавить в деньгах
+            price = line.offer.price
+            max_add_value = max_increase * price
+            
+            # Сколько нужно добавить
+            needed_add_qty = min(max_increase, deficit / price) if price > 0 else 0
+            
+            if needed_add_qty > 0:
+                new_qty = current_qty + needed_add_qty
                 
-                line.final_qty += add_qty
-                line.line_total = line.final_qty * line.offer.price
+                # Округляем по step_qty
+                step = line.offer.step_qty or 1
+                if step > 1:
+                    new_qty = math.ceil(new_qty / step) * step
                 
-                if OptFlag.AUTO_TOPUP_10PCT.value not in line.flags:
-                    line.flags.append(OptFlag.AUTO_TOPUP_10PCT.value)
+                # Не превышаем максимум
+                new_qty = min(new_qty, max_new_qty)
                 
-                deficit -= add_cost
+                if new_qty > current_qty:
+                    added_value = (new_qty - current_qty) * price
+                    
+                    line.final_qty = new_qty
+                    line.line_total = new_qty * price
+                    line.qty_changed_by_topup = True
+                    
+                    if OptFlag.AUTO_TOPUP_10PCT.value not in line.flags:
+                        line.flags.append(OptFlag.AUTO_TOPUP_10PCT.value)
+                    
+                    plan.subtotal += added_value
+                    deficit -= added_value
         
-        # Обновляем subtotal
-        plan.subtotal = sum(l.line_total for l in plan.lines)
+        # Пересчитываем статус
         plan.deficit = max(0, plan.min_order_amount - plan.subtotal)
         plan.meets_minimum = plan.deficit <= 0
     
     return groups
 
 
-def build_final_plan(db: Database, user_id: str) -> OptimizationResult:
+# === OPTIMIZATION: REDISTRIBUTION ===
+
+def redistribute_under_minimum(
+    db: Database,
+    groups: Dict[str, SupplierPlan],
+    supplier_mins: Dict[str, float],
+    max_iterations: int = 10
+) -> Tuple[Dict[str, SupplierPlan], List[PlanLine]]:
     """
-    Главная функция оптимизации.
+    Перераспределяет позиции от поставщиков < минималки к другим.
     
     Алгоритм:
-    1. Загрузить intents из корзины
-    2. Подобрать offer для каждого intent
-    3. Сгруппировать по поставщикам
-    4. Перенести позиции от слабых поставщиков
-    5. Применить +10% topup
-    6. Проверить что нет поставщиков под минималкой
+    1. Найти поставщиков под минималкой
+    2. Для каждой их позиции искать альтернативу у других поставщиков
+    3. Перенести если найдена
+    4. Повторять до стабилизации
+    
+    Returns: (updated_groups, unfulfilled_lines)
     """
-    # 1. Load intents
+    unfulfilled = []
+    
+    for iteration in range(max_iterations):
+        # Находим поставщиков под минималкой
+        under_min = [sid for sid, plan in groups.items() if not plan.meets_minimum]
+        
+        if not under_min:
+            break  # Все ок
+        
+        made_changes = False
+        
+        for weak_sid in under_min:
+            weak_plan = groups.get(weak_sid)
+            if not weak_plan:
+                continue
+            
+            # Пробуем перенести каждую позицию
+            lines_to_redistribute = list(weak_plan.lines)
+            
+            for line in lines_to_redistribute:
+                if not line.offer:
+                    continue
+                
+                intent = line.intent
+                
+                # Ищем альтернативы у ДРУГИХ поставщиков (не weak_sid)
+                candidates = find_candidates(db, intent, exclude_suppliers={weak_sid})
+                
+                # Предпочитаем поставщиков которые уже в плане и над минималкой
+                good_suppliers = {sid for sid, p in groups.items() if p.meets_minimum and sid != weak_sid}
+                
+                preferred_candidates = [c for c in candidates if c.supplier_id in good_suppliers]
+                
+                if preferred_candidates:
+                    new_offer, flags = pick_best_offer(intent, preferred_candidates)
+                elif candidates:
+                    new_offer, flags = pick_best_offer(intent, candidates)
+                else:
+                    new_offer = None
+                    flags = [OptFlag.NO_OFFER_FOUND.value]
+                
+                if new_offer:
+                    # Удаляем из старого поставщика
+                    weak_plan.lines.remove(line)
+                    weak_plan.subtotal -= line.line_total
+                    
+                    # Создаём новую строку
+                    final_qty, qty_flags = apply_qty_constraints(intent.qty, new_offer)
+                    flags.extend(qty_flags)
+                    
+                    if OptFlag.SUPPLIER_CHANGED.value not in flags:
+                        flags.append(OptFlag.SUPPLIER_CHANGED.value)
+                    
+                    new_line = PlanLine(
+                        reference_id=line.reference_id,
+                        intent=intent,
+                        offer=new_offer,
+                        requested_qty=intent.qty,
+                        final_qty=final_qty,
+                        line_total=final_qty * new_offer.price,
+                        flags=flags,
+                        supplier_changed=True,
+                        brand_changed=OptFlag.BRAND_REPLACED.value in flags,
+                        pack_changed=OptFlag.PACK_TOLERANCE_USED.value in flags,
+                        qty_changed_by_topup=False,
+                    )
+                    
+                    # Добавляем к новому поставщику
+                    target_sid = new_offer.supplier_id
+                    if target_sid not in groups:
+                        groups[target_sid] = SupplierPlan(
+                            supplier_id=target_sid,
+                            supplier_name=new_offer.supplier_name,
+                            min_order_amount=supplier_mins.get(target_sid, DEFAULT_MIN_ORDER_AMOUNT)
+                        )
+                    
+                    groups[target_sid].lines.append(new_line)
+                    groups[target_sid].subtotal += new_line.line_total
+                    
+                    made_changes = True
+            
+            # Обновляем статусы
+            for plan in groups.values():
+                plan.deficit = max(0, plan.min_order_amount - plan.subtotal)
+                plan.meets_minimum = plan.deficit <= 0
+            
+            # Удаляем пустых поставщиков
+            if weak_plan.lines == []:
+                del groups[weak_sid]
+        
+        if not made_changes:
+            break
+    
+    # Собираем unfulfilled из оставшихся под-минималкой поставщиков
+    under_min_final = [sid for sid, plan in groups.items() if not plan.meets_minimum]
+    
+    for sid in under_min_final:
+        plan = groups[sid]
+        for line in plan.lines:
+            # Пробуем ещё раз найти альтернативу
+            if line.offer and line.intent.product_core_id:
+                candidates = find_candidates(db, line.intent, exclude_suppliers={sid})
+                if not candidates:
+                    unfulfilled.append(line)
+        
+        # Удаляем поставщика под минималкой
+        del groups[sid]
+    
+    return groups, unfulfilled
+
+
+# === MAIN OPTIMIZATION FUNCTION ===
+
+def optimize_cart(db: Database, user_id: str) -> OptimizationResult:
+    """
+    Главная функция оптимизации корзины.
+    
+    1. Загружает intents
+    2. Строит начальный план (best offer per item)
+    3. Группирует по поставщикам
+    4. Применяет +10% topup
+    5. Перераспределяет от поставщиков < минималки
+    6. Формирует результат
+    """
+    # 1. Загружаем данные
     intents = load_cart_intents(db, user_id)
     
     if not intents:
         return OptimizationResult(
             success=True,
             suppliers=[],
-            total=0.0,
-            unmatched_intents=[]
+            total=0.0
         )
     
-    # 2. Build initial plan
-    lines, unmatched = build_initial_plan(db, intents)
+    supplier_mins = get_supplier_minimums(db)
     
-    if not lines:
+    # 2. Строим начальный план
+    assigned_lines, unfulfilled_lines = build_initial_plan(db, intents)
+    
+    if not assigned_lines:
         return OptimizationResult(
             success=False,
-            suppliers=[],
-            total=0.0,
-            unmatched_intents=unmatched,
-            blocked_reason="Не найдено ни одного подходящего оффера"
+            unfulfilled=[],
+            blocked_reason="Нет доступных товаров у поставщиков"
         )
     
-    # Get supplier IDs and load minimums
-    supplier_ids = {line.offer.supplier_id for line in lines}
-    supplier_mins = load_all_supplier_minimums(db, supplier_ids)
+    # 3. Группируем по поставщикам
+    groups = group_by_supplier(assigned_lines, supplier_mins)
     
-    # 3. Group by supplier
-    groups = group_by_supplier(lines, supplier_mins)
+    # 4. Применяем +10% topup
+    groups = apply_topup_10pct(groups)
     
-    # 4. Eliminate under-min suppliers by moving lines
-    groups = eliminate_under_min_suppliers(db, groups, supplier_mins)
+    # 5. Перераспределяем от поставщиков < минималки
+    groups, extra_unfulfilled = redistribute_under_minimum(db, groups, supplier_mins)
+    unfulfilled_lines.extend(extra_unfulfilled)
     
-    # 5. Apply +10% topup where needed
-    groups = apply_topup_10pct(groups, supplier_mins)
+    # 6. Финальная проверка и применение +10% ещё раз
+    groups = apply_topup_10pct(groups)
     
-    # 6. Second pass: try to eliminate again after topup
-    groups = eliminate_under_min_suppliers(db, groups, supplier_mins)
+    # 7. Проверяем успех
+    under_min = [sid for sid, plan in groups.items() if not plan.meets_minimum]
     
-    # 7. Check for remaining under-min suppliers
-    still_under_min = [sid for sid, p in groups.items() if not p.meets_minimum]
+    if under_min:
+        supplier_names = [groups[sid].supplier_name for sid in under_min]
+        blocked_reason = f"Невозможно достичь минималки для: {', '.join(supplier_names)}. Добавьте товары или удалите позиции этих поставщиков."
+        success = False
+    else:
+        blocked_reason = None
+        success = True
     
-    if still_under_min:
-        # Блокируем checkout
-        supplier_names = [groups[sid].supplier_name for sid in still_under_min]
-        return OptimizationResult(
-            success=False,
-            suppliers=list(groups.values()),
-            total=sum(p.subtotal for p in groups.values()),
-            unmatched_intents=unmatched,
-            blocked_reason=f"Невозможно достичь минималки для: {', '.join(supplier_names)}. "
-                          f"Добавьте товары или удалите позиции этих поставщиков."
-        )
+    # 8. Формируем результат
+    total = sum(plan.subtotal for plan in groups.values())
     
-    # Success!
     return OptimizationResult(
-        success=True,
+        success=success,
         suppliers=list(groups.values()),
-        total=sum(p.subtotal for p in groups.values()),
-        unmatched_intents=unmatched
+        unfulfilled=unfulfilled_lines,
+        total=total,
+        blocked_reason=blocked_reason
     )
 
 
-def get_plan_summary_for_ui(result: OptimizationResult) -> Dict[str, Any]:
-    """Конвертирует результат оптимизации в формат для UI"""
+# === API HELPERS ===
+
+def plan_to_dict(result: OptimizationResult) -> Dict[str, Any]:
+    """Конвертирует результат оптимизации в dict для API"""
     suppliers_data = []
     
     for plan in result.suppliers:
         items_data = []
         for line in plan.lines:
-            items_data.append({
+            item_dict = {
                 'reference_id': line.reference_id,
-                'product_name': line.reference_name or line.offer.name_raw,
-                'supplier_item_id': line.offer.supplier_item_id,
-                'user_qty': line.user_qty,
+                'product_name': line.intent.product_name if line.intent else '',
+                'requested_qty': line.requested_qty,
                 'final_qty': line.final_qty,
-                'price': line.offer.price,
+                'price': line.offer.price if line.offer else 0,
                 'line_total': line.line_total,
-                'unit_type': line.offer.unit_type,
+                'unit_type': line.offer.unit_type if line.offer else line.intent.unit_type,
+                'supplier_item_id': line.offer.supplier_item_id if line.offer else None,
                 'flags': line.flags,
-                # Для бейджей
-                'original_brand': line.original_brand,
-                'new_brand': line.new_brand,
-                'original_pack': line.original_pack,
-                'new_pack': line.new_pack,
-            })
+                'supplier_changed': line.supplier_changed,
+                'brand_changed': line.brand_changed,
+                'pack_changed': line.pack_changed,
+                'qty_changed_by_topup': line.qty_changed_by_topup,
+            }
+            items_data.append(item_dict)
         
-        suppliers_data.append({
+        supplier_dict = {
             'supplier_id': plan.supplier_id,
             'supplier_name': plan.supplier_name,
             'items': items_data,
@@ -915,12 +829,22 @@ def get_plan_summary_for_ui(result: OptimizationResult) -> Dict[str, Any]:
             'min_order_amount': plan.min_order_amount,
             'deficit': plan.deficit,
             'meets_minimum': plan.meets_minimum,
+        }
+        suppliers_data.append(supplier_dict)
+    
+    unfulfilled_data = []
+    for line in result.unfulfilled:
+        unfulfilled_data.append({
+            'reference_id': line.reference_id,
+            'product_name': line.intent.product_name if line.intent else '',
+            'requested_qty': line.requested_qty,
+            'reason': 'Нет доступных предложений у поставщиков',
         })
     
     return {
         'success': result.success,
         'suppliers': suppliers_data,
+        'unfulfilled': unfulfilled_data,
         'total': result.total,
-        'unmatched_intents': result.unmatched_intents,
         'blocked_reason': result.blocked_reason,
     }
