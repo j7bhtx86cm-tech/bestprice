@@ -44,6 +44,9 @@ class CartIntent:
     reference_id: str
     qty: float  # в единицах сайта (кг/л/шт)
     user_id: str = ""
+    # NEW: Конкретный оффер, выбранный пользователем
+    supplier_item_id: Optional[str] = None
+    locked: bool = True  # Если True - не заменять оффер
 
 
 @dataclass
