@@ -383,6 +383,12 @@ export const CustomerCart = () => {
                     <div className="text-sm text-gray-500">
                       {item.price?.toLocaleString('ru-RU')}₽ × {item.final_qty} {getUnitLabel(item.unit_type)}
                     </div>
+                    {/* Show qty change if different */}
+                    {item.qty_changed_by_topup && item.requested_qty !== item.final_qty && (
+                      <div className="text-sm text-orange-600 mt-1">
+                        Запрошено: {item.requested_qty} → Будет заказано: {item.final_qty}
+                      </div>
+                    )}
                     {/* FLAGS SHOWN HERE - ONLY IN OPTIMIZED VIEW */}
                     {item.flags?.length > 0 && (
                       <div className="mt-1 flex flex-wrap">
