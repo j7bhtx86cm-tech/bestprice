@@ -997,15 +997,16 @@ async def get_cart_plan(user_id: str = Query(..., description="ID пользов
     """
     Запускает оптимизатор и возвращает план распределения по поставщикам.
     
-    Вызывать:
-    - После каждого изменения корзины (для preview)
-    - Обязательно перед checkout
+    Вызывать ТОЛЬКО при нажатии "Оформить заказ".
+    До этого корзина отображается как есть (без оптимизации).
     """
     db = get_db()
     
-    result = build_final_plan(db, user_id)
+    from .optimizer import optimize_cart, plan_to_dict
     
-    return get_plan_summary_for_ui(result)
+    result = optimize_cart(db, user_id)
+    
+    return plan_to_dict(result)
 
 
 @router.post("/cart/checkout", summary="Подтвердить и создать заказы")
