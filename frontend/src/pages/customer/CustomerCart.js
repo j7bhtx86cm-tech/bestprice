@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   ShoppingCart, Trash2, Plus, Minus, Package, MapPin, 
@@ -16,7 +15,7 @@ import { useAuth } from '@/context/AuthContext';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Flag badges mapping
+// Flag badges mapping (shown ONLY after optimization)
 const FLAG_BADGES = {
   'BRAND_REPLACED': { label: 'Бренд заменён', color: 'bg-yellow-100 text-yellow-800', icon: Tag },
   'PACK_TOLERANCE_USED': { label: 'Фасовка ±20%', color: 'bg-blue-100 text-blue-800', icon: Scale },
@@ -27,11 +26,9 @@ const FLAG_BADGES = {
   'SUPPLIER_CHANGED': { label: 'Поставщик изменён', color: 'bg-indigo-100 text-indigo-800', icon: Truck },
 };
 
-// Flag Badge Component
 const FlagBadge = ({ flag }) => {
   const config = FLAG_BADGES[flag];
   if (!config) return null;
-  
   const Icon = config.icon;
   return (
     <Badge className={`${config.color} text-xs mr-1 mb-1`}>
@@ -41,15 +38,41 @@ const FlagBadge = ({ flag }) => {
   );
 };
 
+// Get category color
+const getCategoryColor = (superClass) => {
+  if (!superClass) return 'bg-gray-100 text-gray-800';
+  if (superClass.startsWith('seafood')) return 'bg-blue-100 text-blue-800';
+  if (superClass.startsWith('meat')) return 'bg-red-100 text-red-800';
+  if (superClass.startsWith('dairy')) return 'bg-yellow-100 text-yellow-800';
+  if (superClass.startsWith('vegetables')) return 'bg-green-100 text-green-800';
+  if (superClass.startsWith('fruits')) return 'bg-orange-100 text-orange-800';
+  if (superClass.startsWith('canned')) return 'bg-slate-100 text-slate-800';
+  return 'bg-gray-100 text-gray-800';
+};
+
+// Get unit label
+const getUnitLabel = (unitType) => {
+  switch(unitType) {
+    case 'WEIGHT': return 'кг';
+    case 'VOLUME': return 'л';
+    default: return 'шт';
+  }
+};
+
 export const CustomerCart = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [plan, setPlan] = useState(null);
-  const [intents, setIntents] = useState([]);
+  
+  // TWO-PHASE CART STATE
+  const [cartItems, setCartItems] = useState([]);  // Raw items (exact add-to-cart)
+  const [optimizedPlan, setOptimizedPlan] = useState(null);  // Shown only after "Optimize" click
+  const [showOptimized, setShowOptimized] = useState(false);  // Toggle between raw/optimized view
+  
   const [company, setCompany] = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [processingOrder, setProcessingOrder] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [optimizing, setOptimizing] = useState(false);
 
   const getUserId = () => user?.id || 'anonymous';
   
@@ -58,8 +81,8 @@ export const CustomerCart = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  // Load cart plan from optimizer
-  const loadPlan = useCallback(async () => {
+  // Load RAW cart items (no optimization!)
+  const loadRawCart = useCallback(async () => {
     setLoading(true);
     try {
       const userId = getUserId();
@@ -68,20 +91,20 @@ export const CustomerCart = () => {
         return;
       }
       
-      // Get optimized plan
-      const planResponse = await axios.get(`${API}/v12/cart/plan?user_id=${userId}`, {
+      // Get RAW intents - exactly what user added
+      const response = await axios.get(`${API}/v12/cart/intents?user_id=${userId}`, {
         headers: getHeaders()
       });
-      setPlan(planResponse.data);
       
-      // Also get raw intents
-      const intentsResponse = await axios.get(`${API}/v12/cart/intents?user_id=${userId}`, {
-        headers: getHeaders()
-      });
-      setIntents(intentsResponse.data.intents || []);
+      const items = response.data.intents || [];
+      setCartItems(items);
+      
+      // Reset optimized view when cart changes
+      setShowOptimized(false);
+      setOptimizedPlan(null);
       
     } catch (error) {
-      console.error('Failed to fetch cart plan:', error);
+      console.error('Failed to fetch cart:', error);
       toast.error('Ошибка загрузки корзины');
     } finally {
       setLoading(false);
@@ -102,23 +125,22 @@ export const CustomerCart = () => {
 
   useEffect(() => {
     if (user?.id) {
-      loadPlan();
+      loadRawCart();
     }
     fetchCompanyInfo();
-  }, [loadPlan, fetchCompanyInfo, user]);
+  }, [loadRawCart, fetchCompanyInfo, user]);
 
-  // Update quantity
-  const updateQuantity = async (referenceId, newQty) => {
+  // Update quantity (raw, no optimization)
+  const updateQuantity = async (supplierItemId, newQty) => {
     if (newQty < 1) return;
     
     try {
       const userId = getUserId();
-      await axios.put(`${API}/v12/cart/intent/${referenceId}?user_id=${userId}`, 
+      await axios.put(`${API}/v12/cart/intent/${supplierItemId}?user_id=${userId}`, 
         { qty: newQty },
         { headers: getHeaders() }
       );
-      // Reload plan to see optimizer results
-      loadPlan();
+      loadRawCart();
     } catch (error) {
       console.error('Update error:', error);
       toast.error('Ошибка обновления количества');
@@ -126,13 +148,13 @@ export const CustomerCart = () => {
   };
 
   // Remove item
-  const removeItem = async (referenceId) => {
+  const removeItem = async (supplierItemId) => {
     try {
       const userId = getUserId();
-      await axios.delete(`${API}/v12/cart/intent/${referenceId}?user_id=${userId}`, {
+      await axios.delete(`${API}/v12/cart/intent/${supplierItemId}?user_id=${userId}`, {
         headers: getHeaders()
       });
-      loadPlan();
+      loadRawCart();
       toast.success('Удалено из корзины');
     } catch (error) {
       toast.error('Ошибка удаления');
@@ -148,17 +170,41 @@ export const CustomerCart = () => {
       await axios.delete(`${API}/v12/cart/intents?user_id=${userId}`, {
         headers: getHeaders()
       });
-      loadPlan();
+      loadRawCart();
       toast.success('Корзина очищена');
     } catch (error) {
       toast.error('Ошибка очистки');
     }
   };
 
+  // PHASE 2: Run optimizer (only when user clicks "Оформить заказ")
+  const runOptimization = async () => {
+    setOptimizing(true);
+    try {
+      const userId = getUserId();
+      const response = await axios.get(`${API}/v12/cart/plan?user_id=${userId}`, {
+        headers: getHeaders()
+      });
+      setOptimizedPlan(response.data);
+      setShowOptimized(true);
+    } catch (error) {
+      console.error('Optimization failed:', error);
+      toast.error('Ошибка оптимизации');
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
   // Handle checkout
   const handleCheckout = async () => {
-    if (!plan || !plan.success) {
-      toast.error(plan?.blocked_reason || 'Невозможно оформить заказ');
+    // First run optimization if not done
+    if (!showOptimized || !optimizedPlan) {
+      await runOptimization();
+      return; // Show optimization result first, user confirms again
+    }
+    
+    if (!optimizedPlan.success) {
+      toast.error(optimizedPlan.blocked_reason || 'Невозможно оформить заказ');
       return;
     }
 
@@ -178,7 +224,6 @@ export const CustomerCart = () => {
       
       if (response.data.status === 'ok') {
         toast.success(`✓ Создано ${response.data.orders?.length || 0} заказов на сумму ${response.data.total?.toLocaleString('ru-RU')}₽`);
-        // Navigate with checkout info for success banner
         navigate('/customer/orders', {
           state: {
             fromCheckout: true,
@@ -200,10 +245,29 @@ export const CustomerCart = () => {
     }
   };
 
-  // Find intent for reference
-  const findIntent = (referenceId) => {
-    return intents.find(i => i.reference_id === referenceId);
+  // Cancel optimization view, go back to raw cart
+  const cancelOptimization = () => {
+    setShowOptimized(false);
+    setOptimizedPlan(null);
   };
+
+  // Calculate raw cart totals
+  const rawTotal = cartItems.reduce((sum, item) => {
+    return sum + (item.price || 0) * (item.qty || 1);
+  }, 0);
+
+  // Group raw items by supplier
+  const groupedBySupplier = cartItems.reduce((acc, item) => {
+    const supplierId = item.supplier_id || 'unknown';
+    if (!acc[supplierId]) {
+      acc[supplierId] = {
+        supplier_name: item.supplier_name || 'Неизвестный поставщик',
+        items: []
+      };
+    }
+    acc[supplierId].items.push(item);
+    return acc;
+  }, {});
 
   if (loading) {
     return (
@@ -213,9 +277,135 @@ export const CustomerCart = () => {
     );
   }
 
-  const hasItems = plan?.suppliers?.length > 0 || intents.length > 0;
-  const canCheckout = plan?.success && hasItems;
+  const hasItems = cartItems.length > 0;
 
+  // ============ OPTIMIZED VIEW (after clicking "Оформить заказ") ============
+  if (showOptimized && optimizedPlan) {
+    return (
+      <div>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-4xl font-bold mb-2">Подтверждение заказа</h2>
+            <p className="text-base text-muted-foreground">
+              Оптимизированный план закупки с учётом минималок поставщиков
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={cancelOptimization}>
+              ← Назад в корзину
+            </Button>
+            <Button 
+              onClick={handleCheckout} 
+              disabled={processingOrder || !optimizedPlan.success || !selectedAddress} 
+              size="lg"
+              data-testid="confirm-checkout-btn"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {processingOrder ? 'Оформление...' : 'Подтвердить заказ'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Blocked Warning */}
+        {!optimizedPlan.success && optimizedPlan.blocked_reason && (
+          <Card className="p-4 mb-6 border-2 border-red-300 bg-red-50">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-6 w-6 text-red-600 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-red-800">Невозможно оформить заказ</h3>
+                <p className="text-red-700 mt-1">{optimizedPlan.blocked_reason}</p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Delivery Address */}
+        {company?.deliveryAddresses?.length > 0 && (
+          <Card className="p-4 mb-6">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Адрес доставки
+            </h3>
+            <div className="space-y-2">
+              {company.deliveryAddresses.map((addr, idx) => (
+                <div 
+                  key={idx}
+                  onClick={() => setSelectedAddress(addr)}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedAddress === addr 
+                      ? 'bg-blue-50 border-2 border-blue-500' 
+                      : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      selectedAddress === addr ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                    }`} />
+                    <span>{addr}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Optimized Suppliers (with badges) */}
+        {optimizedPlan.suppliers?.map((supplier) => (
+          <Card key={supplier.supplier_id} className="p-6 mb-4">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-semibold">{supplier.supplier_name}</h3>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold">{supplier.subtotal?.toLocaleString('ru-RU')}₽</div>
+                {!supplier.meets_minimum && (
+                  <Badge className="bg-red-100 text-red-800 text-xs">
+                    Минималка: {supplier.min_order_amount?.toLocaleString('ru-RU')}₽
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {supplier.items?.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-4 py-2 border-b last:border-0">
+                  <div className="flex-1">
+                    <div className="font-medium">{item.product_name}</div>
+                    <div className="text-sm text-gray-500">
+                      {item.price?.toLocaleString('ru-RU')}₽ × {item.final_qty} {getUnitLabel(item.unit_type)}
+                    </div>
+                    {/* FLAGS SHOWN HERE - ONLY IN OPTIMIZED VIEW */}
+                    {item.flags?.length > 0 && (
+                      <div className="mt-1 flex flex-wrap">
+                        {item.flags.map((flag, i) => (
+                          <FlagBadge key={i} flag={flag} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right font-semibold">
+                    {item.line_total?.toLocaleString('ru-RU')}₽
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))}
+
+        {/* Total */}
+        <Card className="p-6 bg-gray-50">
+          <div className="flex justify-between items-center text-xl font-bold">
+            <span>Итого:</span>
+            <span>{optimizedPlan.total?.toLocaleString('ru-RU')}₽</span>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // ============ RAW CART VIEW (before checkout) ============
   return (
     <div>
       {/* Header */}
@@ -223,7 +413,7 @@ export const CustomerCart = () => {
         <div>
           <h2 className="text-4xl font-bold mb-2">Корзина</h2>
           <p className="text-base text-muted-foreground">
-            Оптимизированный план закупки
+            {cartItems.length} {cartItems.length === 1 ? 'товар' : 'товаров'} на сумму {rawTotal.toLocaleString('ru-RU')}₽
           </p>
         </div>
         <div className="flex gap-2">
@@ -236,44 +426,25 @@ export const CustomerCart = () => {
           {hasItems && (
             <Button 
               onClick={handleCheckout} 
-              disabled={processingOrder || !canCheckout || !selectedAddress} 
+              disabled={optimizing || !hasItems} 
               size="lg"
               data-testid="checkout-btn"
             >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              {processingOrder ? 'Оформление...' : `Оформить заказ`}
+              {optimizing ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Расчёт...
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Оформить заказ
+                </>
+              )}
             </Button>
           )}
         </div>
       </div>
-
-      {/* Blocked Warning */}
-      {plan && !plan.success && plan.blocked_reason && (
-        <Card className="p-4 mb-6 border-2 border-red-300 bg-red-50">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-6 w-6 text-red-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-red-800">Невозможно оформить заказ</h3>
-              <p className="text-red-700 mt-1">{plan.blocked_reason}</p>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Unmatched Items Warning */}
-      {plan?.unmatched_intents?.length > 0 && (
-        <Card className="p-4 mb-6 border-2 border-yellow-300 bg-yellow-50">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-6 w-6 text-yellow-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-yellow-800">Некоторые товары не найдены</h3>
-              <p className="text-yellow-700 mt-1">
-                {plan.unmatched_intents.length} позиций не удалось подобрать у поставщиков
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
 
       {!hasItems ? (
         <Card className="p-12 text-center">
@@ -291,204 +462,105 @@ export const CustomerCart = () => {
         </Card>
       ) : (
         <div className="space-y-6">
-          {/* Suppliers */}
-          {plan?.suppliers?.map((supplier) => (
-            <Card key={supplier.supplier_id} className="p-6">
+          {/* Items grouped by supplier */}
+          {Object.entries(groupedBySupplier).map(([supplierId, group]) => (
+            <Card key={supplierId} className="p-6">
               {/* Supplier Header */}
-              <div className="flex items-center justify-between mb-4 pb-3 border-b">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold">{supplier.supplier_name}</h3>
-                  <Badge className="ml-2">
-                    {supplier.items?.length || 0} товаров
-                  </Badge>
-                </div>
-                
-                {/* Minimum Status */}
-                <div className="flex items-center gap-3">
-                  {supplier.meets_minimum ? (
-                    <div className="flex items-center text-green-600">
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      <span className="text-sm">Минималка выполнена</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center text-red-600">
-                      <AlertTriangle className="h-4 w-4 mr-1" />
-                      <span className="text-sm">
-                        Не хватает {supplier.deficit?.toLocaleString('ru-RU')}₽ до минималки
-                      </span>
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
+                <Package className="h-5 w-5 text-blue-600" />
+                <h3 className="text-lg font-semibold">{group.supplier_name}</h3>
               </div>
 
               {/* Items */}
               <div className="space-y-3">
-                {supplier.items?.map((item, idx) => {
-                  const intent = findIntent(item.reference_id);
-                  const userQty = intent?.qty || item.user_qty;
-                  
-                  return (
-                    <div key={idx} className="flex items-start gap-4 p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium">{item.product_name}</p>
-                        <p className="text-sm text-gray-600">
-                          {item.price?.toLocaleString('ru-RU')} ₽ / 
-                          {item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'}
-                        </p>
-                        
-                        {/* Flags */}
-                        {item.flags?.length > 0 && (
-                          <div className="mt-2 flex flex-wrap">
-                            {item.flags.map((flag, i) => (
-                              <FlagBadge key={i} flag={flag} />
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Qty difference indicator */}
-                        {item.final_qty !== userQty && (
-                          <p className="text-xs text-orange-600 mt-1">
-                            Запрошено: {userQty}, будет заказано: {item.final_qty}
-                          </p>
-                        )}
-                      </div>
-                      
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateQuantity(item.reference_id, Math.max(1, userQty - 1))}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                          type="number"
-                          min="1"
-                          step="1"
-                          value={userQty}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 1;
-                            updateQuantity(item.reference_id, val);
-                          }}
-                          className="w-20 text-center"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateQuantity(item.reference_id, userQty + 1)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                {group.items.map((item) => (
+                  <div 
+                    key={item.supplier_item_id} 
+                    className={`flex items-center gap-4 py-3 border-b last:border-0 ${
+                      !item.is_available ? 'opacity-50' : ''
+                    }`}
+                  >
+                    {/* Category Badge */}
+                    <Badge className={`${getCategoryColor(item.super_class)} text-xs`}>
+                      {item.super_class?.split('.')[0] || 'other'}
+                    </Badge>
 
-                      {/* Line Total */}
-                      <div className="text-right w-28">
-                        <p className="font-semibold">
-                          {item.line_total?.toLocaleString('ru-RU')} ₽
-                        </p>
+                    {/* Product Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{item.product_name}</div>
+                      <div className="text-sm text-gray-500">
+                        {item.price?.toLocaleString('ru-RU')}₽ / {getUnitLabel(item.unit_type)}
                       </div>
+                      {!item.is_available && (
+                        <div className="text-xs text-red-500 mt-1">
+                          {item.unavailable_reason || 'Товар недоступен'}
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Remove Button */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeItem(item.reference_id)}
-                        className="text-red-600 hover:text-red-700"
+                    {/* Quantity Controls - EXACT qty, no auto-changes */}
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => updateQuantity(item.supplier_item_id, (item.qty || 1) - 1)}
+                        disabled={!item.is_available || (item.qty || 1) <= 1}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      
+                      <span className="w-12 text-center font-medium">
+                        {item.qty || 1}
+                      </span>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => updateQuantity(item.supplier_item_id, (item.qty || 1) + 1)}
+                        disabled={!item.is_available}
+                      >
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-                  );
-                })}
-              </div>
 
-              {/* Supplier Subtotal */}
-              <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                <div>
-                  <span className="font-medium">Итого у {supplier.supplier_name}:</span>
-                  <span className="text-sm text-gray-500 ml-2">
-                    (мин. заказ: {supplier.min_order_amount?.toLocaleString('ru-RU')}₽)
-                  </span>
-                </div>
-                <span className={`text-xl font-bold ${supplier.meets_minimum ? 'text-green-600' : 'text-red-600'}`}>
-                  {supplier.subtotal?.toLocaleString('ru-RU')} ₽
-                </span>
+                    {/* Line Total */}
+                    <div className="text-right w-24">
+                      <div className="font-semibold">
+                        {((item.price || 0) * (item.qty || 1)).toLocaleString('ru-RU')}₽
+                      </div>
+                    </div>
+
+                    {/* Remove */}
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="text-red-500 hover:text-red-700"
+                      onClick={() => removeItem(item.supplier_item_id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </Card>
           ))}
 
-          {/* Total */}
-          <Card className="p-6 bg-blue-50">
+          {/* Raw Total */}
+          <Card className="p-6 bg-gray-50">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-lg font-semibold">Общая сумма заказа:</p>
-                <p className="text-sm text-gray-600">
-                  {intents.length} позиций от {plan?.suppliers?.length || 0} поставщиков
-                </p>
+                <div className="text-lg text-gray-600">Итого в корзине:</div>
+                <div className="text-sm text-gray-500">
+                  * Финальная сумма может измениться с учётом минималок поставщиков
+                </div>
               </div>
-              <p className="text-3xl font-bold text-blue-600">
-                {plan?.total?.toLocaleString('ru-RU')} ₽
-              </p>
-            </div>
-          </Card>
-
-          {/* Delivery Address Selection */}
-          <Card className="p-6 border-2 border-blue-200">
-            <div className="flex items-start gap-3 mb-4">
-              <MapPin className="h-6 w-6 text-blue-600 mt-1" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-1">Адрес доставки</h3>
-                <p className="text-sm text-gray-600">Выберите ресторан для доставки заказа</p>
+              <div className="text-2xl font-bold">
+                {rawTotal.toLocaleString('ru-RU')}₽
               </div>
             </div>
-            
-            {!company?.deliveryAddresses || company.deliveryAddresses.length === 0 ? (
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  ⚠️ Адреса доставки не настроены. Добавьте адреса в профиле компании.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {company.deliveryAddresses.map((addr, idx) => (
-                  <label
-                    key={idx}
-                    className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      selectedAddress?.address === addr.address 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="deliveryAddress"
-                      className="mt-1"
-                      checked={selectedAddress?.address === addr.address}
-                      onChange={() => setSelectedAddress(addr)}
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">{addr.name || `Адрес ${idx + 1}`}</p>
-                      <p className="text-sm text-gray-600">{addr.address}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            )}
           </Card>
-
-          {/* Bottom checkout button */}
-          <Button 
-            onClick={handleCheckout} 
-            disabled={processingOrder || !canCheckout || !selectedAddress} 
-            size="lg"
-            className="w-full"
-            data-testid="checkout-btn-bottom"
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            {processingOrder ? 'Оформление...' : `Оформить заказ (${plan?.total?.toLocaleString('ru-RU')} ₽)`}
-          </Button>
         </div>
       )}
     </div>
