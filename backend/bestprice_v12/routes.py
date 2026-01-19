@@ -879,22 +879,33 @@ async def add_cart_intent(request: CartIntentRequest):
     }
 
 
-@router.put("/cart/intent/{reference_id}", summary="Обновить qty intent")
+@router.put("/cart/intent/{item_id}", summary="Обновить qty intent")
 async def update_cart_intent(
-    reference_id: str,
+    item_id: str,
     request: CartIntentUpdateRequest,
     user_id: str = Query(..., description="ID пользователя")
 ):
-    """Обновляет количество для intent"""
+    """Обновляет количество для intent. item_id = supplier_item_id или reference_id"""
     db = get_db()
     
+    # Try by supplier_item_id first
     result = db.cart_intents.update_one(
-        {'user_id': user_id, 'reference_id': reference_id},
+        {'user_id': user_id, 'supplier_item_id': item_id},
         {'$set': {
             'qty': request.qty,
             'updated_at': datetime.now(timezone.utc).isoformat()
         }}
     )
+    
+    # Fallback: try by reference_id
+    if result.matched_count == 0:
+        result = db.cart_intents.update_one(
+            {'user_id': user_id, 'reference_id': item_id},
+            {'$set': {
+                'qty': request.qty,
+                'updated_at': datetime.now(timezone.utc).isoformat()
+            }}
+        )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Intent не найден")
@@ -902,15 +913,20 @@ async def update_cart_intent(
     return {'status': 'ok', 'qty': request.qty}
 
 
-@router.delete("/cart/intent/{reference_id}", summary="Удалить intent")
+@router.delete("/cart/intent/{item_id}", summary="Удалить intent")
 async def remove_cart_intent(
-    reference_id: str,
+    item_id: str,
     user_id: str = Query(..., description="ID пользователя")
 ):
-    """Удаляет intent из корзины"""
+    """Удаляет intent из корзины. item_id = supplier_item_id или reference_id"""
     db = get_db()
     
-    result = db.cart_intents.delete_one({'user_id': user_id, 'reference_id': reference_id})
+    # Try by supplier_item_id first
+    result = db.cart_intents.delete_one({'user_id': user_id, 'supplier_item_id': item_id})
+    
+    # Fallback: try by reference_id
+    if result.deleted_count == 0:
+        result = db.cart_intents.delete_one({'user_id': user_id, 'reference_id': item_id})
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Intent не найден")
