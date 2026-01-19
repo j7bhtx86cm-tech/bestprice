@@ -252,26 +252,39 @@ export const CustomerFavorites = () => {
     setAdding(item.id);
     try {
       const userId = getUserId();
+      
+      // ВАЖНО: Используем anchor_supplier_item_id если есть (после GOLD миграции)
+      // Это гарантирует что добавится именно выбранный товар без замены
+      const anchorId = item.anchor_supplier_item_id || item.best_supplier_id;
       const referenceId = item.reference_id || item.id;
       
-      if (!referenceId) {
-        toast.error('Нет reference_id для этого товара');
-        throw new Error('No reference_id');
-      }
+      console.log('Adding to cart (intent):', { 
+        referenceId, 
+        anchorId,
+        product_name: item.product_name, 
+        qty 
+      });
       
-      console.log('Adding to cart (intent):', { referenceId, product_name: item.product_name, qty });
-      
-      const response = await axios.post(`${API}/v12/cart/intent`, {
+      // Если есть anchor_supplier_item_id - используем его напрямую
+      const payload = anchorId ? {
+        supplier_item_id: anchorId,
+        qty: qty,
+        user_id: userId
+      } : {
         reference_id: referenceId,
         qty: qty,
         user_id: userId
-      }, {
+      };
+      
+      const response = await axios.post(`${API}/v12/cart/intent`, payload, {
         headers: getHeaders()
       });
 
       if (response.data.status === 'ok') {
         // Помечаем что добавлено в корзину
-        setCartItems(prev => new Set([...prev, referenceId]));
+        const intentData = response.data.intent || {};
+        const addedItemId = intentData.supplier_item_id || referenceId;
+        setCartItems(prev => new Set([...prev, addedItemId]));
         setCartCount(prev => prev + 1);
         toast.success('✓ Добавлено в корзину');
         return true; // Success
@@ -281,9 +294,8 @@ export const CustomerFavorites = () => {
       }
     } catch (error) {
       console.error('Add to cart error:', error);
-      if (!error.message?.includes('No reference_id')) {
-        toast.error('Ошибка добавления в корзину');
-      }
+      const errorMessage = error.response?.data?.detail || 'Ошибка добавления в корзину';
+      toast.error(errorMessage);
       throw error;
     } finally {
       setAdding(null);
