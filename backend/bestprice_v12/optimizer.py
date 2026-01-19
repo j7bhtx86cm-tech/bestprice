@@ -624,8 +624,23 @@ def try_move_line_to_other_supplier(
     
     Returns: (new_line, target_supplier_id) или None
     """
+    # Сначала пробуем загрузить reference
     ref = load_reference(db, line.reference_id)
-    if not ref:
+    
+    # Если reference не найден, создаём на основе offer
+    if not ref and line.offer:
+        ref = Reference(
+            reference_id=line.reference_id,
+            product_core_id=line.offer.product_core_id or '',
+            unit_type=line.offer.unit_type,
+            pack_value=line.offer.pack_value,
+            pack_unit=line.offer.pack_unit,
+            brand_id=line.offer.brand_id,
+            name=line.reference_name or line.offer.name_raw,
+        )
+    
+    if not ref or not ref.product_core_id:
+        # Без product_core_id не можем искать замену
         return None
     
     # Ищем кандидатов у других поставщиков
