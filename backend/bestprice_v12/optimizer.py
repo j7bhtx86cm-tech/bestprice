@@ -479,7 +479,10 @@ def build_initial_plan(
     intents: List[CartIntent]
 ) -> Tuple[List[PlanLine], List[str]]:
     """
-    Строит начальный план: для каждого intent подбирает лучший offer.
+    Строит начальный план: для каждого intent использует указанный offer.
+    
+    ВАЖНО: Если intent.locked=True и есть supplier_item_id, 
+    используем КОНКРЕТНЫЙ оффер без поиска замены.
     
     Returns: (lines, unmatched_reference_ids)
     """
@@ -487,31 +490,78 @@ def build_initial_plan(
     unmatched = []
     
     for intent in intents:
-        ref = load_reference(db, intent.reference_id)
-        if not ref:
-            logger.warning(f"Reference not found: {intent.reference_id}")
-            unmatched.append(intent.reference_id)
-            continue
+        flags = []
+        offer = None
+        ref_name = ""
         
-        if not ref.product_core_id:
-            logger.warning(f"Reference has no product_core_id: {intent.reference_id}")
-            unmatched.append(intent.reference_id)
-            continue
+        # НОВАЯ ЛОГИКА: Если есть locked supplier_item_id - используем его напрямую
+        if intent.locked and intent.supplier_item_id:
+            # Загружаем конкретный оффер
+            item = db.supplier_items.find_one(
+                {'id': intent.supplier_item_id, 'active': True},
+                {'_id': 0}
+            )
+            
+            if item:
+                # Получаем имя поставщика
+                supplier_id = item.get('supplier_company_id', '')
+                supplier_name = ''
+                if supplier_id:
+                    company = db.companies.find_one({'id': supplier_id}, {'companyName': 1, 'name': 1})
+                    supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
+                
+                offer = Offer(
+                    supplier_item_id=item['id'],
+                    supplier_id=supplier_id,
+                    supplier_name=supplier_name,
+                    product_core_id=item.get('product_core_id', ''),
+                    unit_type=item.get('unit_type', 'PIECE'),
+                    price=item['price'],
+                    pack_value=item.get('pack_qty') or item.get('pack_value'),
+                    pack_unit=item.get('pack_unit'),
+                    brand_id=item.get('brand_id'),
+                    name_raw=item.get('name_raw', ''),
+                    min_order_qty=item.get('min_order_qty', 1),
+                    step_qty=item.get('step_qty', 1),
+                    fat_pct=item.get('fat_pct'),
+                    cut=item.get('cut'),
+                )
+                ref_name = item.get('name_raw', '')
+            else:
+                # Оффер стал неактивен
+                logger.warning(f"Locked supplier_item {intent.supplier_item_id} is no longer active")
+                unmatched.append(intent.reference_id)
+                continue
         
-        # Ищем кандидатов
-        candidates = find_candidates(db, ref)
-        
-        if not candidates:
-            logger.warning(f"No candidates for reference: {intent.reference_id}")
-            unmatched.append(intent.reference_id)
-            continue
-        
-        # Выбираем лучший оффер
-        offer, flags = pick_best_offer(ref, intent.qty, candidates)
-        
+        # СТАРАЯ ЛОГИКА: Если нет locked offer - ищем по reference
         if not offer:
-            unmatched.append(intent.reference_id)
-            continue
+            ref = load_reference(db, intent.reference_id)
+            if not ref:
+                logger.warning(f"Reference not found: {intent.reference_id}")
+                unmatched.append(intent.reference_id)
+                continue
+            
+            if not ref.product_core_id:
+                logger.warning(f"Reference has no product_core_id: {intent.reference_id}")
+                unmatched.append(intent.reference_id)
+                continue
+            
+            ref_name = ref.name
+            
+            # Ищем кандидатов
+            candidates = find_candidates(db, ref)
+            
+            if not candidates:
+                logger.warning(f"No candidates for reference: {intent.reference_id}")
+                unmatched.append(intent.reference_id)
+                continue
+            
+            # Выбираем лучший оффер (здесь может быть замена!)
+            offer, flags = pick_best_offer(ref, intent.qty, candidates)
+            
+            if not offer:
+                unmatched.append(intent.reference_id)
+                continue
         
         # Применяем qty constraints
         final_qty, qty_flags = apply_qty_constraints(intent.qty, offer)
@@ -520,16 +570,16 @@ def build_initial_plan(
         # Создаём строку плана
         line = PlanLine(
             reference_id=intent.reference_id,
-            reference_name=ref.name,
+            reference_name=ref_name,
             offer=offer,
             user_qty=intent.qty,
             final_qty=final_qty,
             line_total=final_qty * offer.price,
             flags=flags,
-            original_brand=ref.brand_id,
+            original_brand=None,
             new_brand=offer.brand_id if OptFlag.BRAND_REPLACED.value in flags else None,
-            original_pack=f"{ref.pack_value} {ref.pack_unit}" if ref.pack_value else None,
-            new_pack=f"{offer.pack_value} {offer.pack_unit}" if offer.pack_value and OptFlag.PACK_TOLERANCE_USED.value in flags else None,
+            original_pack=None,
+            new_pack=None,
         )
         lines.append(line)
     
