@@ -15,11 +15,38 @@
 - **FIXED**: Ошибка создания заказа (422 - missing article/phone)
 - **FIXED**: Каталог показывал только 658 товаров (2026-01-13)
 
-## Текущий статус: ✅ GOLD PRICELIST MIGRATION (2026-01-19)
+## Текущий статус: ✅ CART FIX AFTER GOLD MIGRATION (2026-01-19)
 
 ---
 
-### LATEST: GOLD Pricelist Migration (2026-01-19) ✅
+### LATEST: Fix Add-to-Cart After GOLD Migration (2026-01-19) ✅
+
+**Проблема:**
+После миграции на GOLD прайс-листы, добавление товаров в корзину работало некорректно:
+- Товар заменялся на другой (другой поставщик/бренд/цена)
+- Появлялись бейджи "Бренд заменён", "Поставщик изменён" при добавлении
+
+**Исправлено:**
+- ✅ **Backend**: Добавлено поле `locked` в CartIntent и PlanLine
+- ✅ **Backend**: `/cart/intent` теперь сохраняет конкретный `supplier_item_id` с флагом `locked=True`
+- ✅ **Backend**: Оптимизатор НЕ заменяет locked позиции (eliminate_under_min_suppliers)
+- ✅ **Frontend**: CustomerFavorites.js использует `anchor_supplier_item_id` для добавления
+- ✅ **Migration**: Скрипт `migrate_favorites_after_gold.py` для обновления избранного
+
+**Acceptance Criteria:**
+1. ✅ Каперсы из каталога → в корзине тот же товар/цена/поставщик без бейджей замены
+2. ✅ Горошек из каталога → позиция появляется в корзине
+3. ✅ Бейджи замены показываются ТОЛЬКО при checkout оптимизации
+
+**Файлы изменены:**
+- `/app/backend/bestprice_v12/routes.py` - CartIntentRequest с lock_offer
+- `/app/backend/bestprice_v12/optimizer.py` - PlanLine.locked, eliminate_under_min_suppliers
+- `/app/frontend/src/pages/customer/CustomerFavorites.js` - использует anchor_supplier_item_id
+- `/app/backend/migrate_favorites_after_gold.py` - скрипт миграции избранного
+
+---
+
+### GOLD Pricelist Migration (2026-01-19) ✅
 
 **Задача:**
 Полная замена всех прайс-листов поставщиков на новые "GOLD" версии согласно ТЗ.
