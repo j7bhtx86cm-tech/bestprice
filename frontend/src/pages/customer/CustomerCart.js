@@ -407,6 +407,27 @@ export const CustomerCart = () => {
           </Card>
         ))}
 
+        {/* Unfulfilled items */}
+        {optimizedPlan.unfulfilled?.length > 0 && (
+          <Card className="p-6 mb-4 border-2 border-yellow-300 bg-yellow-50">
+            <h3 className="font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Некоторые товары недоступны
+            </h3>
+            <p className="text-sm text-yellow-700 mb-3">
+              Следующие товары временно недоступны у поставщиков. Вы можете заменить их в каталоге.
+            </p>
+            <div className="space-y-2">
+              {optimizedPlan.unfulfilled.map((item, idx) => (
+                <div key={idx} className="p-2 bg-yellow-100 rounded">
+                  <div className="font-medium">{item.product_name}</div>
+                  <div className="text-sm text-yellow-600">{item.reason}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         {/* Total */}
         <Card className="p-6 bg-gray-50">
           <div className="flex justify-between items-center text-xl font-bold">
