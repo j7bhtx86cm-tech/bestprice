@@ -123,19 +123,24 @@ CLASSIFICATION_RULES = [
     (r'\b(репа|turnip)', 'vegetables.turnip'),
     (r'\b(сельдер|celery)', 'vegetables.celery'),
     (r'\b(шпинат|spinach)', 'vegetables.spinach'),
-    (r'\b(салат|lettuce|руккол|arugula)(?!.*морск)', 'vegetables.salad'),
+    # Салат - исключаем "для салата", "контейнер", "упаковка"
+    (r'\b(салат|lettuce|руккол|arugula)(?!.*морск)(?!.*контейнер)(?!.*упаков)(?!.*для)', 'vegetables.salad'),
     (r'\b(укроп|dill)', 'vegetables.dill'),
     (r'\b(петрушк|parsley)', 'vegetables.parsley'),
     (r'\b(кинз|cilantro|coriander)', 'vegetables.cilantro'),
     (r'\b(базилик|basil)', 'vegetables.basil'),
-    (r'\b(мят|mint)', 'vegetables.mint'),
+    # Мята - исключаем чай с мятой
+    (r'\b(мят|mint)(?!.*чай)', 'vegetables.mint'),
     (r'\b(горох|горошек|pea)(?!.*нут)', 'vegetables.peas'),
     (r'\b(нут|chickpea)', 'vegetables.chickpea'),
     (r'\b(фасол|bean)(?!.*стручк)', 'vegetables.beans'),
     (r'\b(фасол.*стручк|стручк.*фасол|green.*bean)', 'vegetables.green_beans'),
-    (r'\b(кукуруз|corn|маис)', 'vegetables.corn'),
+    # Кукуруза - исключаем "хлеб кукурузный", "мука"
+    (r'\b(кукуруз|corn|маис)(?!.*хлеб)(?!.*мук)', 'vegetables.corn'),
     (r'\b(тыкв|pumpkin|squash)', 'vegetables.pumpkin'),
-    (r'\b(грибы|гриб|mushroom|шампиньон|вешенк|белые|лисичк|опят)', 'vegetables.mushrooms'),
+    # Грибы - исключаем "салфетки", "рисунок"
+    (r'\b(грибы|гриб|mushroom|шампиньон|вешенк|лисичк|опят)(?!.*салфетк)(?!.*рисун)', 'vegetables.mushrooms'),
+    # Оливки - исключаем "масло оливковое"
     (r'\b(оливк|olive)(?!.*масл)', 'vegetables.olives'),
     (r'\b(маслин)', 'vegetables.olives'),
     (r'\b(каперс|caper)', 'vegetables.capers'),
