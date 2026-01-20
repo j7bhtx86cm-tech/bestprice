@@ -383,8 +383,9 @@ CLASSIFICATION_RULES = [
     (r'\b(детск.*смес|смес.*детск|formula)', 'baby_food.formula'),
     
     # === ЯЙЦА ===
-    (r'\b(яйц|egg)(?!.*пельм)(?!.*макар)', 'eggs.chicken'),
+    # ВАЖНО: специфичные правила ПЕРЕД общими!
     (r'\b(перепел.*яйц|яйц.*перепел|quail.*egg)', 'eggs.quail'),
+    (r'\b(яйц|egg)(?!.*пельм)(?!.*макар)', 'eggs.chicken'),
 ]
 
 def classify_product(name: str) -> Optional[str]:
