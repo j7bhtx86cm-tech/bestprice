@@ -54,7 +54,31 @@ from search_synonyms import get_synonyms, build_synonym_regex, expand_query_with
 # Import search service (новый модуль)
 from .search_service import search_items, search_with_lemma_only, tokenize_query
 
+# Import modular routers
+from .routes_modules import (
+    cart_router, orders_router, favorites_router,
+    init_all_routers
+)
+
 router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
+
+
+# === INITIALIZE MODULAR ROUTERS ===
+# Note: DB initialization happens in get_db() on first call
+# The modular routers will be included after main router setup
+
+def _init_modules():
+    """Lazy initialization of modular routers"""
+    try:
+        db = get_db()
+        init_all_routers(db)
+    except Exception as e:
+        logger.warning(f"Could not init modular routers: {e}")
+
+# Include modular routers (they use their own DB connection)
+# router.include_router(cart_router)  # TODO: Enable after testing
+# router.include_router(orders_router)  # TODO: Enable after testing
+# router.include_router(favorites_router)  # TODO: Enable after testing
 
 
 # === CATALOG ENDPOINTS ===
