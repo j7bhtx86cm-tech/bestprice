@@ -293,8 +293,9 @@ def pick_best_offer(
     
     1. Фильтр по критическим атрибутам
     2. Фильтр по pack tolerance ±20%
-    3. Brand preference (если задан)
-    4. Минимальная цена
+    3. Фильтр по адекватности цены (±50% от исходной)
+    4. Brand preference (если задан)
+    5. Минимальная цена среди валидных
     
     Returns: (offer, flags)
     """
@@ -322,7 +323,27 @@ def pick_best_offer(
     else:
         flags.append(OptFlag.PACK_TOLERANCE_USED.value)
     
-    # Фильтр 3: brand preference
+    # Фильтр 3: адекватность цены (КРИТИЧЕСКИ ВАЖНО!)
+    # Если есть исходная цена, фильтруем замены с разницей более 50%
+    if intent.price and intent.price > 0:
+        price_min = intent.price * 0.5  # -50%
+        price_max = intent.price * 2.0  # +100%
+        
+        price_ok = [o for o in valid_candidates 
+                    if price_min <= o.price <= price_max]
+        
+        if price_ok:
+            valid_candidates = price_ok
+        else:
+            # Нет адекватных по цене - ищем ближайшую по цене
+            flags.append(OptFlag.PRICE_TOLERANCE_EXCEEDED.value)
+            # Сортируем по близости к исходной цене
+            valid_candidates = sorted(valid_candidates, 
+                                     key=lambda o: abs(o.price - intent.price))
+            # Берём только те, что ближе всего (топ-3)
+            valid_candidates = valid_candidates[:3]
+    
+    # Фильтр 4: brand preference
     brand_matched = False
     if intent.brand_id:
         brand_matches = [o for o in valid_candidates if o.brand_id == intent.brand_id]
@@ -332,13 +353,16 @@ def pick_best_offer(
         else:
             flags.append(OptFlag.BRAND_REPLACED.value)
     
-    # Фильтр 4: prefer_supplier_id (если задан)
+    # Фильтр 5: prefer_supplier_id (если задан)
     if prefer_supplier_id:
         preferred = [o for o in valid_candidates if o.supplier_id == prefer_supplier_id]
         if preferred:
             valid_candidates = preferred
     
-    # Выбираем минимум по цене
+    if not valid_candidates:
+        return None, [OptFlag.NO_OFFER_FOUND.value]
+    
+    # Выбираем минимум по цене среди валидных кандидатов
     best = min(valid_candidates, key=lambda o: o.price)
     
     return best, flags
