@@ -250,6 +250,7 @@ export const CustomerCart = () => {
       const response = await axios.get(`${API}/v12/cart/plan?user_id=${userId}`, {
         headers: getHeaders()
       });
+      // P0.1: План теперь содержит plan_id для snapshot
       setOptimizedPlan(response.data);
       setShowOptimized(true);
     } catch (error) {
@@ -260,7 +261,7 @@ export const CustomerCart = () => {
     }
   };
 
-  // Handle checkout
+  // Handle checkout (P0.1: использует plan_id из snapshot)
   const handleCheckout = async () => {
     // First run optimization if not done
     if (!showOptimized || !optimizedPlan) {
@@ -277,13 +278,31 @@ export const CustomerCart = () => {
       toast.error('Выберите адрес доставки');
       return;
     }
+    
+    // P0.1: Проверяем наличие plan_id
+    if (!optimizedPlan.plan_id) {
+      toast.error('План устарел. Пожалуйста, нажмите "Оформить заказ" снова.');
+      setShowOptimized(false);
+      setOptimizedPlan(null);
+      return;
+    }
 
     setProcessingOrder(true);
     try {
       const userId = getUserId();
+      
+      // Определяем delivery_address_id
+      const deliveryAddressId = typeof selectedAddress === 'string' 
+        ? selectedAddress 
+        : selectedAddress?.id || selectedAddress?.address || null;
+      
+      // P0.1: Отправляем plan_id в body запроса
       const response = await axios.post(
         `${API}/v12/cart/checkout?user_id=${userId}`,
-        {},
+        { 
+          plan_id: optimizedPlan.plan_id,
+          delivery_address_id: deliveryAddressId
+        },
         { headers: getHeaders() }
       );
       
@@ -299,12 +318,25 @@ export const CustomerCart = () => {
             }
           }
         });
+      } else if (response.data.code === 'PLAN_CHANGED') {
+        // P0.1: Корзина изменилась - нужен новый план
+        toast.error('Корзина была изменена. Формируем новый план...');
+        setShowOptimized(false);
+        setOptimizedPlan(null);
+        // Автоматически перегенерируем план
+        setTimeout(() => runOptimization(), 500);
+      } else if (response.data.code === 'PLAN_NOT_FOUND') {
+        // P0.1: План не найден или устарел
+        toast.error('План устарел. Пожалуйста, сформируйте план заново.');
+        setShowOptimized(false);
+        setOptimizedPlan(null);
       } else {
         toast.error(response.data.message || 'Ошибка создания заказа');
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error('Ошибка создания заказа');
+      const errorMessage = error.response?.data?.message || error.response?.data?.detail || 'Ошибка создания заказа';
+      toast.error(errorMessage);
     } finally {
       setProcessingOrder(false);
     }
