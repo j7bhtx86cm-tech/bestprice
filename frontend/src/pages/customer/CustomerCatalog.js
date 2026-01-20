@@ -163,33 +163,17 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
         </p>
       )}
 
-      {/* P1.3: Quantity selector (как в избранном) */}
+      {/* P1.3: Quantity input (как в избранном) */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-sm text-gray-600">Кол-во:</span>
-        <div className="flex items-center border rounded">
-          <button
-            onClick={() => handleQtyChange(-1)}
-            className="px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
-            disabled={qty <= 1 || adding || isInCart || addedToCart}
-          >
-            -
-          </button>
-          <input
-            type="number"
-            min="1"
-            value={qty}
-            onChange={handleQtyInput}
-            className="w-12 text-center border-x py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            disabled={adding || isInCart || addedToCart}
-          />
-          <button
-            onClick={() => handleQtyChange(1)}
-            className="px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
-            disabled={adding || isInCart || addedToCart}
-          >
-            +
-          </button>
-        </div>
+        <label className="text-sm text-gray-600">Кол-во:</label>
+        <Input
+          type="number"
+          min="1"
+          value={qty}
+          onChange={(e) => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+          className="w-20"
+          disabled={adding || isInCart || addedToCart}
+        />
         <span className="text-sm text-gray-500">
           {item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'}
         </span>
