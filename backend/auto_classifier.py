@@ -321,7 +321,7 @@ CLASSIFICATION_RULES = [
     (r'\b(опят.*марин|марин.*опят)', 'canned.mushrooms'),
     
     # === СЛАДОСТИ И ДЕСЕРТЫ ===
-    (r'\b(шоколад|chocolate)(?!.*масл)(?!.*напит)', 'desserts.chocolate'),
+    (r'\b(шоколад|chocolate)(?!.*масл)(?!.*напит)(?!.*waffle)(?!.*стакан)', 'desserts.chocolate'),
     (r'\b(конфет|candy|карамел|caramel)', 'desserts.candy'),
     (r'\b(мармелад|marmalade|желе|jelly)', 'desserts.jelly'),
     (r'\b(зефир|marshmallow)', 'desserts.marshmallow'),
@@ -331,18 +331,20 @@ CLASSIFICATION_RULES = [
     (r'\b(джем|jam)', 'desserts.jam'),
     (r'\b(варень|preserves)', 'desserts.preserves'),
     (r'\b(сироп|syrup)', 'desserts.syrup'),
-    (r'\b(сахар|sugar)', 'desserts.sugar'),
+    # Сахар - исключаем "сахар порционный" (это staples)
+    (r'\b(сахар|sugar)(?!.*порцион)(?!.*стик)', 'desserts.sugar'),
     (r'\b(подсластител|sweetener)', 'desserts.sweetener'),
     (r'\b(ореш|орех|nut|миндал|almond|фундук|hazelnut|грецк|walnut|кешью|cashew|фисташк|pistachio|арахис|peanut)', 'desserts.nuts'),
     (r'\b(семечк|seed|подсолнух)', 'desserts.seeds'),
     
-    # === ЗАМОРОЗКА ===
-    (r'\b(заморож|frozen|с/м|см |с\.м\.|с-м)', 'frozen'),
+    # === ЗАМОРОЗКА (только для замороженных полуфабрикатов без категории) ===
+    # НЕ применять к мясу, рыбе, птице с "с/м" - у них есть своя категория!
+    # (r'\b(заморож|frozen)', 'frozen'),  # ОТКЛЮЧЕНО - слишком агрессивно
     
     # === УПАКОВКА ===
-    (r'\b(контейнер|container)', 'packaging.container'),
+    (r'\b(контейнер|container)(?!.*для)', 'packaging.container'),
     (r'\b(пакет|bag)(?!.*чай)', 'packaging.bag'),
-    (r'\b(плёнк|пленк|film|wrap)', 'packaging.film'),
+    (r'\b(плёнк|пленк|film|wrap)(?!.*пищев)', 'packaging.film'),
     (r'\b(фольг|foil)', 'packaging.foil'),
     (r'\b(бумаг.*пергамент|пергамент)', 'packaging.parchment'),
     (r'\b(коробк|box)', 'packaging.box'),
@@ -350,12 +352,14 @@ CLASSIFICATION_RULES = [
     (r'\b(вакуум.*пакет|пакет.*вакуум)', 'packaging.vacuum_bag'),
     
     # === ОДНОРАЗОВАЯ ПОСУДА ===
-    (r'\b(стакан|cup|стаканчик)(?!.*молок)(?!.*йогурт)', 'disposables.cups'),
+    # Стакан - исключаем waffle, молоко и т.д.
+    (r'\b(стакан|cup|стаканчик)(?!.*молок)(?!.*йогурт)(?!.*waffle)(?!.*black)', 'disposables.cups'),
     (r'\b(тарелк|plate|блюдц)', 'disposables.plates'),
     (r'\b(вилк|fork)', 'disposables.forks'),
     (r'\b(ложк|spoon)', 'disposables.spoons'),
     (r'\b(нож.*одноразов|одноразов.*нож|plastic.*knife)', 'disposables.knives'),
-    (r'\b(салфетк|napkin)', 'disposables.napkins'),
+    # Салфетки - исключаем рисунки
+    (r'\b(салфетк|napkin)(?!.*гриб)(?!.*рисун)', 'disposables.napkins'),
     (r'\b(перчатк|glove)', 'disposables.gloves'),
     (r'\b(трубочк|straw)', 'disposables.straws'),
     
