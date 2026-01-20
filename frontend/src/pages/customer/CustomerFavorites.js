@@ -378,11 +378,8 @@ export const CustomerFavorites = () => {
           </p>
         </div>
         
+        {/* P1.4: Кнопка "Все в корзину" удалена */}
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={handleAddAllToCart} disabled={!favorites.length}>
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Все в корзину
-          </Button>
           {cartCount > 0 && (
             <Button 
               onClick={() => navigate('/customer/cart')}
