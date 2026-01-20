@@ -480,6 +480,36 @@ async def delete_favorite(
     return result
 
 
+@router.post("/favorites/clear", summary="Очистить всё избранное пользователя")
+async def clear_all_favorites(user_id: str = Query(..., description="ID пользователя")):
+    """
+    Удаляет ВСЕ записи избранного для пользователя.
+    
+    Возвращает:
+    - deleted_count: сколько записей удалено
+    - remaining_count: сколько осталось (должно быть 0)
+    """
+    db = get_db()
+    
+    # Считаем сколько было
+    before_count = db.favorites_v12.count_documents({'user_id': user_id})
+    
+    # Удаляем все
+    result = db.favorites_v12.delete_many({'user_id': user_id})
+    
+    # Проверяем что всё удалено
+    remaining_count = db.favorites_v12.count_documents({'user_id': user_id})
+    
+    logger.info(f"Cleared favorites for user {user_id}: deleted={result.deleted_count}, remaining={remaining_count}")
+    
+    return {
+        'status': 'ok',
+        'deleted_count': result.deleted_count,
+        'remaining_count': remaining_count,
+        'message': f'Удалено {result.deleted_count} записей из избранного'
+    }
+
+
 # === CART ENDPOINTS ===
 
 class AddToCartRequestV12(BaseModel):
