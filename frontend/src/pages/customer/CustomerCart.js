@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   ShoppingCart, Trash2, Plus, Minus, Package, MapPin, 
   RefreshCw, AlertTriangle, CheckCircle, ArrowRight,
-  Tag, Scale, Truck
+  Tag, Scale, Truck, Info
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -57,6 +58,70 @@ const getUnitLabel = (unitType) => {
     case 'VOLUME': return 'л';
     default: return 'шт';
   }
+};
+
+// Editable Quantity Component (like in Favorites)
+const EditableQty = ({ value, onChange, disabled }) => {
+  const [editing, setEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(value);
+  const inputRef = useRef(null);
+  
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+  
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+  
+  const handleSubmit = () => {
+    const newVal = parseInt(inputValue, 10);
+    if (isNaN(newVal) || newVal < 1) {
+      setInputValue(value);
+    } else if (newVal !== value) {
+      onChange(newVal);
+    }
+    setEditing(false);
+  };
+  
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    } else if (e.key === 'Escape') {
+      setInputValue(value);
+      setEditing(false);
+    }
+  };
+  
+  if (editing) {
+    return (
+      <Input
+        ref={inputRef}
+        type="number"
+        min="1"
+        step="1"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onBlur={handleSubmit}
+        onKeyDown={handleKeyDown}
+        className="w-16 h-8 text-center p-1"
+        disabled={disabled}
+      />
+    );
+  }
+  
+  return (
+    <button
+      onClick={() => !disabled && setEditing(true)}
+      className={`w-12 h-8 text-center font-medium rounded border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      disabled={disabled}
+    >
+      {value}
+    </button>
+  );
 };
 
 export const CustomerCart = () => {
@@ -256,19 +321,6 @@ export const CustomerCart = () => {
     return sum + (item.price || 0) * (item.qty || 1);
   }, 0);
 
-  // Group raw items by supplier
-  const groupedBySupplier = cartItems.reduce((acc, item) => {
-    const supplierId = item.supplier_id || 'unknown';
-    if (!acc[supplierId]) {
-      acc[supplierId] = {
-        supplier_name: item.supplier_name || 'Неизвестный поставщик',
-        items: []
-      };
-    }
-    acc[supplierId].items.push(item);
-    return acc;
-  }, {});
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -329,7 +381,6 @@ export const CustomerCart = () => {
             </h3>
             <div className="space-y-2">
               {company.deliveryAddresses.map((addr, idx) => {
-                // addr can be string or object {address, phone, additionalPhone}
                 const addressText = typeof addr === 'string' ? addr : addr?.address || 'Адрес не указан';
                 const isSelected = selectedAddress === addr || 
                   (typeof selectedAddress === 'object' && selectedAddress?.address === addr?.address);
@@ -439,7 +490,7 @@ export const CustomerCart = () => {
     );
   }
 
-  // ============ RAW CART VIEW (before checkout) ============
+  // ============ RAW CART VIEW (before checkout) - NO SUPPLIER GROUPS ============
   return (
     <div>
       {/* Header */}
@@ -495,91 +546,96 @@ export const CustomerCart = () => {
           </div>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {/* Items grouped by supplier */}
-          {Object.entries(groupedBySupplier).map(([supplierId, group]) => (
-            <Card key={supplierId} className="p-6">
-              {/* Supplier Header */}
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                <Package className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-semibold">{group.supplier_name}</h3>
-              </div>
+        <div className="space-y-4">
+          {/* Info hint */}
+          <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+            <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span>Поставщики и финальная сумма будут рассчитаны при оформлении заказа.</span>
+          </div>
+          
+          {/* Single card with ALL items (no supplier grouping) */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4 pb-3 border-b flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-gray-600" />
+              Мои товары
+            </h3>
 
-              {/* Items */}
-              <div className="space-y-3">
-                {group.items.map((item) => (
-                  <div 
-                    key={item.supplier_item_id} 
-                    className={`flex items-center gap-4 py-3 border-b last:border-0 ${
-                      !item.is_available ? 'opacity-50' : ''
-                    }`}
-                  >
-                    {/* Category Badge */}
-                    <Badge className={`${getCategoryColor(item.super_class)} text-xs`}>
-                      {item.super_class?.split('.')[0] || 'other'}
-                    </Badge>
+            <div className="space-y-3">
+              {cartItems.map((item) => (
+                <div 
+                  key={item.supplier_item_id} 
+                  className={`flex items-center gap-4 py-3 border-b last:border-0 ${
+                    !item.is_available ? 'opacity-50' : ''
+                  }`}
+                >
+                  {/* Category Badge */}
+                  <Badge className={`${getCategoryColor(item.super_class)} text-xs hidden sm:flex`}>
+                    {item.super_class?.split('.')[0] || 'other'}
+                  </Badge>
 
-                    {/* Product Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{item.product_name}</div>
-                      <div className="text-sm text-gray-500">
-                        {item.price?.toLocaleString('ru-RU')}₽ / {getUnitLabel(item.unit_type)}
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{item.product_name}</div>
+                    <div className="text-sm text-gray-500">
+                      {item.price?.toLocaleString('ru-RU')}₽ / {getUnitLabel(item.unit_type)}
+                    </div>
+                    {!item.is_available && (
+                      <div className="text-xs text-red-500 mt-1">
+                        {item.unavailable_reason || 'Товар недоступен'}
                       </div>
-                      {!item.is_available && (
-                        <div className="text-xs text-red-500 mt-1">
-                          {item.unavailable_reason || 'Товар недоступен'}
-                        </div>
-                      )}
-                    </div>
+                    )}
+                  </div>
 
-                    {/* Quantity Controls - EXACT qty, no auto-changes */}
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => updateQuantity(item.supplier_item_id, (item.qty || 1) - 1)}
-                        disabled={!item.is_available || (item.qty || 1) <= 1}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      
-                      <span className="w-12 text-center font-medium">
-                        {item.qty || 1}
-                      </span>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => updateQuantity(item.supplier_item_id, (item.qty || 1) + 1)}
-                        disabled={!item.is_available}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    {/* Line Total */}
-                    <div className="text-right w-24">
-                      <div className="font-semibold">
-                        {((item.price || 0) * (item.qty || 1)).toLocaleString('ru-RU')}₽
-                      </div>
-                    </div>
-
-                    {/* Remove */}
+                  {/* Quantity Controls with manual input */}
+                  <div className="flex items-center gap-1">
                     <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="text-red-500 hover:text-red-700"
-                      onClick={() => removeItem(item.supplier_item_id)}
+                      variant="outline" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => updateQuantity(item.supplier_item_id, (item.qty || 1) - 1)}
+                      disabled={!item.is_available || (item.qty || 1) <= 1}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    
+                    {/* Editable qty input */}
+                    <EditableQty
+                      value={item.qty || 1}
+                      onChange={(newQty) => updateQuantity(item.supplier_item_id, newQty)}
+                      disabled={!item.is_available}
+                    />
+                    
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => updateQuantity(item.supplier_item_id, (item.qty || 1) + 1)}
+                      disabled={!item.is_available}
+                    >
+                      <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                ))}
-              </div>
-            </Card>
-          ))}
+
+                  {/* Line Total */}
+                  <div className="text-right w-24">
+                    <div className="font-semibold">
+                      {((item.price || 0) * (item.qty || 1)).toLocaleString('ru-RU')}₽
+                    </div>
+                  </div>
+
+                  {/* Remove */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-red-500 hover:text-red-700"
+                    onClick={() => removeItem(item.supplier_item_id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
 
           {/* Raw Total */}
           <Card className="p-6 bg-gray-50">
@@ -587,7 +643,7 @@ export const CustomerCart = () => {
               <div>
                 <div className="text-lg text-gray-600">Итого в корзине:</div>
                 <div className="text-sm text-gray-500">
-                  * Финальная сумма может измениться с учётом минималок поставщиков
+                  * Финальная сумма с учётом минималок будет рассчитана при оформлении
                 </div>
               </div>
               <div className="text-2xl font-bold">
