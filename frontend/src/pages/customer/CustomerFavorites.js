@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Heart, Trash2, ShoppingCart, Search,
-  TrendingDown, Loader2, Layers
+  TrendingDown, Loader2, Layers, AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -166,6 +166,7 @@ export const CustomerFavorites = () => {
   // P1: Состояние модального окна выбора оффера
   const [offerModalOpen, setOfferModalOpen] = useState(false);
   const [selectedItemForOffers, setSelectedItemForOffers] = useState(null);
+  const [clearing, setClearing] = useState(false);
 
   // Categories for filter (same as catalog)
   const categories = [
@@ -263,6 +264,34 @@ export const CustomerFavorites = () => {
       toast.success('Удалено из избранного');
     } catch (error) {
       toast.error('Ошибка удаления');
+    }
+  };
+
+  // Clear ALL favorites
+  const handleClearAll = async () => {
+    if (!confirm(`Удалить ВСЕ ${favorites.length} товаров из избранного? Это действие нельзя отменить.`)) return;
+    
+    setClearing(true);
+    try {
+      const userId = getUserId();
+      const response = await axios.post(`${API}/v12/favorites/clear?user_id=${userId}`, {}, {
+        headers: getHeaders()
+      });
+      
+      // Принудительно обновляем состояние
+      setFavorites([]);
+      
+      // Показываем результат
+      const { deleted_count, remaining_count } = response.data;
+      toast.success(`Удалено: ${deleted_count} записей. Осталось: ${remaining_count}`);
+      
+      // Перезагружаем данные для гарантии
+      await fetchFavorites();
+    } catch (error) {
+      console.error('Clear favorites error:', error);
+      toast.error('Ошибка очистки избранного');
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -438,8 +467,26 @@ export const CustomerFavorites = () => {
           </p>
         </div>
         
-        {/* P1.4: Кнопка "Все в корзину" удалена */}
+        {/* Кнопки действий */}
         <div className="flex gap-2 flex-wrap">
+          {/* Кнопка очистки избранного */}
+          {favorites.length > 0 && (
+            <Button 
+              variant="outline"
+              onClick={handleClearAll}
+              disabled={clearing}
+              className="text-red-600 border-red-300 hover:bg-red-50"
+              data-testid="clear-favorites-btn"
+            >
+              {clearing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Очистить всё
+            </Button>
+          )}
+          
           {cartCount > 0 && (
             <Button 
               onClick={() => navigate('/customer/cart')}
