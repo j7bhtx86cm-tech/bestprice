@@ -997,16 +997,34 @@ async def get_cart_plan(user_id: str = Query(..., description="ID пользов
     """
     Запускает оптимизатор и возвращает план распределения по поставщикам.
     
+    НОВОЕ (P0.1): Сохраняет snapshot плана в БД и возвращает plan_id.
+    Checkout должен использовать этот plan_id, а не пересчитывать план.
+    
     Вызывать ТОЛЬКО при нажатии "Оформить заказ".
     До этого корзина отображается как есть (без оптимизации).
     """
     db = get_db()
     
     from .optimizer import optimize_cart, plan_to_dict
+    from .plan_snapshot import (
+        compute_cart_hash, get_min_order_map, save_plan_snapshot
+    )
     
+    # 1. Запускаем оптимизацию
     result = optimize_cart(db, user_id)
+    plan_payload = plan_to_dict(result)
     
-    return plan_to_dict(result)
+    # 2. Вычисляем хэш корзины и получаем минималки
+    cart_hash = compute_cart_hash(db, user_id)
+    min_order_map = get_min_order_map(db)
+    
+    # 3. Сохраняем snapshot
+    plan_id = save_plan_snapshot(db, user_id, plan_payload, cart_hash, min_order_map)
+    
+    # 4. Добавляем plan_id в ответ
+    plan_payload['plan_id'] = plan_id
+    
+    return plan_payload
 
 
 @router.post("/cart/checkout", summary="Подтвердить и создать заказы")
