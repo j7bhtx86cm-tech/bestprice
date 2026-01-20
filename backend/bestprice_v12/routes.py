@@ -1236,23 +1236,43 @@ async def get_orders_history(user_id: str = Query(..., description="ID поль�
     """
     Возвращает историю заказов пользователя.
     Заказы отсортированы по дате (новые первые).
+    
+    ВАЖНО (P0.3): Читает из orders_v12 (основная коллекция).
     """
     db = get_db()
     
-    orders_raw = list(db.orders.find(
+    # Читаем из orders_v12 (основная коллекция) + fallback на orders (старая)
+    orders_v12 = list(db.orders_v12.find(
         {'customer_user_id': user_id},
         {'_id': 0}
     ).sort('created_at', -1))
     
+    # Также проверяем старую коллекцию orders для обратной совместимости
+    orders_old = list(db.orders.find(
+        {'customer_user_id': user_id},
+        {'_id': 0}
+    ).sort('created_at', -1))
+    
+    # Объединяем и сортируем
+    all_orders_raw = orders_v12 + orders_old
+    all_orders_raw.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+    
     # Enrich with supplier names
     orders = []
-    for order in orders_raw:
+    seen_ids = set()  # Избегаем дубликатов
+    
+    for order in all_orders_raw:
+        order_id = order.get('id', order.get('created_at', ''))
+        if order_id in seen_ids:
+            continue
+        seen_ids.add(order_id)
+        
         supplier_id = order.get('supplier_company_id')
         company = db.companies.find_one({'id': supplier_id}, {'companyName': 1, 'name': 1})
         supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
         
         orders.append({
-            'id': order.get('id', order.get('created_at', '')),  # Use id if exists, fallback to created_at
+            'id': order_id,
             'supplier_id': supplier_id,
             'supplier_name': supplier_name,
             'amount': order.get('amount', 0),
@@ -1260,6 +1280,7 @@ async def get_orders_history(user_id: str = Query(..., description="ID поль�
             'items': order.get('items', []),
             'items_count': len(order.get('items', [])),
             'created_at': order.get('created_at'),
+            'delivery_address_id': order.get('delivery_address_id'),
         })
     
     return {
@@ -1273,10 +1294,24 @@ async def get_order_details(order_id: str):
     """Возвращает детали конкретного заказа"""
     db = get_db()
     
-    order = db.orders.find_one(
-        {'created_at': order_id},
+    # Ищем сначала в orders_v12, потом в orders
+    order = db.orders_v12.find_one(
+        {'id': order_id},
         {'_id': 0}
     )
+    
+    if not order:
+        order = db.orders.find_one(
+            {'id': order_id},
+            {'_id': 0}
+        )
+    
+    # Fallback: поиск по created_at (старый формат)
+    if not order:
+        order = db.orders.find_one(
+            {'created_at': order_id},
+            {'_id': 0}
+        )
     
     if not order:
         raise HTTPException(status_code=404, detail="Заказ не найден")
@@ -1287,13 +1322,14 @@ async def get_order_details(order_id: str):
     supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
     
     return {
-        'id': order.get('created_at', ''),
+        'id': order.get('id', order.get('created_at', '')),
         'supplier_id': supplier_id,
         'supplier_name': supplier_name,
         'amount': order.get('amount', 0),
         'status': order.get('status', 'pending'),
         'items': order.get('items', []),
         'created_at': order.get('created_at'),
+        'delivery_address_id': order.get('delivery_address_id'),
     }
 
 
