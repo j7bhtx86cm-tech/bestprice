@@ -163,14 +163,28 @@ async def get_catalog(
                     escaped_last = re.escape(last_token_raw)
                     query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             else:
+                # Многословный запрос
                 if is_last_token_complete:
-                    query['lemma_tokens'] = {'$all': q_lemmas}
+                    # Все токены полные: lemma search ИЛИ prefix (fallback)
+                    all_tokens_regex = '.*'.join(re.escape(t) for t in q_tokens)
+                    query['$or'] = [
+                        {'lemma_tokens': {'$all': q_lemmas}},
+                        {'name_norm': {'$regex': all_tokens_regex, '$options': 'i'}}
+                    ]
                 else:
+                    # Последний токен неполный: prefix для него + lemma для остальных
                     full_lemmas = generate_lemma_tokens(q_tokens[:-1])
-                    if full_lemmas:
-                        query['lemma_tokens'] = {'$all': full_lemmas}
                     escaped_last = re.escape(last_token_raw)
-                    query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
+                    
+                    if full_lemmas:
+                        # Комбинированный: lemma для полных + prefix для последнего
+                        query['$or'] = [
+                            {'lemma_tokens': {'$all': full_lemmas}, 'name_norm': {'$regex': f'(^|\\s){escaped_last}'}},
+                            {'name_norm': {'$regex': '.*'.join(re.escape(t) for t in q_tokens), '$options': 'i'}}
+                        ]
+                    else:
+                        # Только prefix
+                        query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             
             # === APPLY BRAND FILTER if confident ===
             if use_brand_filter and brand_detection.brand_ids:
