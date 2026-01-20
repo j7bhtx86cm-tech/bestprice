@@ -501,16 +501,20 @@ export const CustomerCatalog = () => {
       {/* Filters */}
       <Card className="p-4">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Поиск товаров..."
-              value={searchInput}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          {/* Search with Autocomplete */}
+          <SearchAutocomplete
+            value={searchInput}
+            onChange={handleSearch}
+            onSelect={(item) => {
+              // При выборе товара из автодополнения - добавляем в корзину или переходим к нему
+              if (item && item.id) {
+                handleAddToCart(item, 1);
+                toast.success(`${item.name_raw?.slice(0, 30)}... добавлено в корзину`);
+              }
+            }}
+            placeholder="Поиск товаров..."
+            className="flex-1"
+          />
 
           {/* Category filter */}
           <select
