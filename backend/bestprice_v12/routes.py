@@ -1020,7 +1020,12 @@ async def checkout_cart(user_id: str = Query(..., description="ID пользов
     4. Создаёт заказы
     5. Очищает корзину
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     db = get_db()
+    
+    logger.info(f"=== CHECKOUT START for user {user_id} ===")
     
     # 0. Валидация корзины - удаляем невалидные позиции
     from .offer_validator import validate_cart_before_checkout
@@ -1030,8 +1035,11 @@ async def checkout_cart(user_id: str = Query(..., description="ID пользов
     from .optimizer import optimize_cart, plan_to_dict
     result = optimize_cart(db, user_id)
     
+    logger.info(f"Optimization result: success={result.success}, suppliers={len(result.suppliers)}, total={result.total}")
+    
     # 2. Проверяем success
     if not result.success:
+        logger.warning(f"Checkout blocked: {result.blocked_reason}")
         response = {
             'status': 'blocked',
             'message': result.blocked_reason or 'Невозможно оформить заказ',
@@ -1066,8 +1074,12 @@ async def checkout_cart(user_id: str = Query(..., description="ID пользов
                 'qty_changed_by_topup': line.qty_changed_by_topup,
             })
         
-        # Создаём заказ
+        # Создаём заказ с уникальным ID
+        import uuid
+        order_id = str(uuid.uuid4())
+        
         order_data = {
+            'id': order_id,
             'supplier_company_id': supplier_plan.supplier_id,
             'customer_user_id': user_id,
             'amount': supplier_plan.subtotal,
@@ -1076,9 +1088,12 @@ async def checkout_cart(user_id: str = Query(..., description="ID пользов
             'created_at': datetime.now(timezone.utc).isoformat(),
         }
         
-        # Сохраняем (используем существующую коллекцию orders)
+        # Сохраняем в БД
         db.orders.insert_one(order_data)
+        logger.info(f"Created order {order_id} for supplier {supplier_plan.supplier_name}, amount={supplier_plan.subtotal}")
+        
         created_orders.append({
+            'id': order_id,
             'supplier_id': supplier_plan.supplier_id,
             'supplier_name': supplier_plan.supplier_name,
             'amount': supplier_plan.subtotal,
@@ -1087,8 +1102,9 @@ async def checkout_cart(user_id: str = Query(..., description="ID пользов
     
     # 4. Очищаем корзину
     db.cart_intents.delete_many({'user_id': user_id})
-    # Также очищаем старую корзину на всякий случай
     db.cart_items_v12.delete_many({'user_id': user_id})
+    
+    logger.info(f"=== CHECKOUT COMPLETE: {len(created_orders)} orders created, total={result.total} ===")
     
     return {
         'status': 'ok',
