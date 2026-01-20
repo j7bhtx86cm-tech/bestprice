@@ -206,27 +206,34 @@ def build_synonym_regex(tokens: List[str]) -> str:
     Строит regex для поиска всех токенов с учётом синонимов.
     Использует lookahead assertions для поиска в любом порядке.
     
+    ВАЖНО: Использует word boundaries чтобы избежать ложных совпадений
+    (например "шкуре" не должно матчить "кур")
+    
     Пример:
         build_synonym_regex(["филе", "курицы"])
-        → "(?=.*(филе|филей))(?=.*(курица|куриц|курин|куриный|цыплен)).*"
+        → "(?=.*\\b(филе|курин|курицы|куриц|цыплен))"
     """
     parts = []
     
     for token in tokens:
         synonyms = get_synonyms(token)
         
-        # Берём короткие основы для regex (минимум 3 символа)
+        # Берём полные синонимы (минимум 4 символа для точности)
         regex_alts = set()
         for syn in synonyms:
-            if len(syn) >= 3:
-                # Берём основу 3-4 символа для fuzzy matching
-                base = syn[:4] if len(syn) >= 4 else syn
-                regex_alts.add(re.escape(base))
+            # Минимум 4 символа чтобы избежать ложных срабатываний
+            if len(syn) >= 4:
+                regex_alts.add(re.escape(syn))
+        
+        # Добавляем оригинальный токен если он достаточно длинный
+        if len(token) >= 3:
+            regex_alts.add(re.escape(token))
         
         if regex_alts:
-            # Создаём альтернативу: (вариант1|вариант2|...)
+            # Создаём альтернативу с word boundary: \b(вариант1|вариант2|...)
+            # \b в начале обеспечивает что мы ищем начало слова
             alt_pattern = '|'.join(sorted(regex_alts, key=len, reverse=True))
-            parts.append(f'(?=.*({alt_pattern}))')
+            parts.append(f'(?=.*\\b({alt_pattern}))')
     
     if parts:
         return ''.join(parts) + '.*'
