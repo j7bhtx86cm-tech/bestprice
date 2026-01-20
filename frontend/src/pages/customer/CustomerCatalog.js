@@ -163,6 +163,38 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
         </p>
       )}
 
+      {/* P1.3: Quantity selector (как в избранном) */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-sm text-gray-600">Кол-во:</span>
+        <div className="flex items-center border rounded">
+          <button
+            onClick={() => handleQtyChange(-1)}
+            className="px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
+            disabled={qty <= 1 || adding || isInCart || addedToCart}
+          >
+            -
+          </button>
+          <input
+            type="number"
+            min="1"
+            value={qty}
+            onChange={handleQtyInput}
+            className="w-12 text-center border-x py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            disabled={adding || isInCart || addedToCart}
+          />
+          <button
+            onClick={() => handleQtyChange(1)}
+            className="px-2 py-1 hover:bg-gray-100 disabled:opacity-50"
+            disabled={adding || isInCart || addedToCart}
+          >
+            +
+          </button>
+        </div>
+        <span className="text-sm text-gray-500">
+          {item.unit_type === 'WEIGHT' ? 'кг' : item.unit_type === 'VOLUME' ? 'л' : 'шт'}
+        </span>
+      </div>
+
       {/* Actions */}
       <div className="flex gap-2">
         <Button
@@ -180,6 +212,7 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
           className={`flex-1 ${(isInCart || addedToCart) ? 'bg-green-600 hover:bg-green-700' : ''}`}
           onClick={handleAddToCart}
           disabled={adding || isInCart || addedToCart}
+          data-testid="add-to-cart-btn"
         >
           <ShoppingCart className="h-4 w-4 mr-1" />
           {(isInCart || addedToCart) ? '✓ В корзине' : 'В корзину'}
