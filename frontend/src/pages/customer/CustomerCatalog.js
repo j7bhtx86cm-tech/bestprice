@@ -505,11 +505,7 @@ export const CustomerCatalog = () => {
             ))}
           </select>
 
-          {/* Refresh */}
-          <Button variant="outline" onClick={() => { fetchCatalog(); }}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Обновить
-          </Button>
+          {/* P1.4: Кнопка "Обновить" удалена */}
         </div>
       </Card>
 
