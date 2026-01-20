@@ -1499,8 +1499,8 @@ async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
     Возвращает альтернативные офферы для ИДЕНТИЧНОГО товара.
     
     Алгоритм поиска альтернатив:
-    1. Если у товара есть product_core_id → ищем ТОЛЬКО по нему
-    2. Иначе → ищем по ТОЧНОМУ совпадению нормализованного названия
+    1. Ищем по ТОЧНОМУ совпадению name_norm (идентичные товары от разных поставщиков)
+    2. Если не найдено, но есть product_core_id → ищем по нему + похожее название
     
     Используется для показа пользователю выбора поставщика/фасовки.
     НЕ показывает похожие товары — только идентичные!
@@ -1517,31 +1517,37 @@ async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
         return {'alternatives': [], 'source': None, 'total': 0}
     
     alternatives = []
-    
-    # 1. Поиск по product_core_id (если есть) — ОСНОВНОЙ метод
+    name_norm = source_item.get('name_norm', '')
     product_core_id = source_item.get('product_core_id')
-    if product_core_id:
-        alt_items = list(db.supplier_items.find(
+    
+    # 1. Сначала ищем по ТОЧНОМУ name_norm — идентичные товары от разных поставщиков
+    if name_norm:
+        exact_matches = list(db.supplier_items.find(
             {
-                'product_core_id': product_core_id,
+                'name_norm': name_norm,  # ТОЧНОЕ совпадение
                 'active': True,
                 'price': {'$gt': 0},
-                'id': {'$ne': item_id}  # Исключаем исходный
+                'id': {'$ne': item_id},
             },
             {'_id': 0}
         ).sort('price', 1).limit(limit))
         
-        alternatives.extend(alt_items)
+        alternatives.extend(exact_matches)
     
-    # 2. Если нет product_core_id → поиск по ТОЧНОМУ name_norm
-    # Не используем fuzzy поиск — только идентичные товары!
-    if not product_core_id and len(alternatives) == 0:
-        name_norm = source_item.get('name_norm', '')
-        if name_norm:
-            # Точное совпадение по name_norm
-            exact_matches = list(db.supplier_items.find(
+    # 2. Если не нашли по точному названию И есть product_core_id → 
+    #    ищем товары с тем же core_id И похожим названием (первые 2 значимых слова)
+    if len(alternatives) == 0 and product_core_id and name_norm:
+        # Берём первые 2-3 значимых слова из названия
+        words = [w for w in name_norm.split()[:4] if len(w) >= 3 and w not in STOP_WORDS]
+        if len(words) >= 2:
+            # Строим regex для поиска товаров, содержащих эти слова
+            regex_parts = [f'(?=.*{re.escape(w)})' for w in words[:2]]
+            search_regex = ''.join(regex_parts) + '.*'
+            
+            similar_matches = list(db.supplier_items.find(
                 {
-                    'name_norm': name_norm,  # ТОЧНОЕ совпадение
+                    'product_core_id': product_core_id,  # Тот же core_id
+                    'name_norm': {'$regex': search_regex, '$options': 'i'},  # Похожее название
                     'active': True,
                     'price': {'$gt': 0},
                     'id': {'$ne': item_id},
@@ -1549,7 +1555,7 @@ async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
                 {'_id': 0}
             ).sort('price', 1).limit(limit))
             
-            alternatives.extend(exact_matches)
+            alternatives.extend(similar_matches)
     
     # Обогащаем данными поставщика
     enriched = []
