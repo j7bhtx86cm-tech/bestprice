@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 # Явные исправления для критических ошибок
 # Формат: (regex_pattern, wrong_category_prefix, correct_category)
 EXPLICIT_FIXES = [
+    # === МОРЕПРОДУКТЫ / МЯСО ===
     # Икра лососевая должна быть seafood.caviar
     (r'икр.*лосос|лосос.*икр', 'seafood.salmon', 'seafood.caviar'),
     (r'икр.*горбуш|горбуш.*икр', 'seafood.salmon', 'seafood.caviar'),
@@ -24,20 +25,51 @@ EXPLICIT_FIXES = [
     # Масло оливковое - это oils, не vegetables
     (r'масл.*оливк|оливк.*масл', 'vegetables', 'oils.olive'),
     
-    # Куриное - это meat.chicken, не seafood
+    # Куриное/говядина/свинина - это meat, не seafood
     (r'курин|куриц|курица|цыпл|бройлер', 'seafood', 'meat.chicken'),
+    (r'говядин|говяж', 'seafood', 'meat.beef'),
+    (r'свинин|свин', 'seafood', 'meat.pork'),
+    (r'баранин|бараний', 'seafood', 'meat.lamb'),
     
+    # Мясо креветки/мидий - это seafood (правильно), НЕ менять
+    
+    # === УПАКОВКА / ПОСУДА ===
     # Упаковка "для салата" - это packaging, не vegetables
-    (r'контейнер.*салат|для.*салат', 'vegetables', 'packaging.container'),
+    (r'контейнер.*салат|для.*салат.*контейнер', 'vegetables', 'packaging.container'),
     
-    # Стаканы - disposables, не bakery
+    # Стаканы - disposables, не bakery/desserts
     (r'стакан.*waffle|waffle.*стакан', 'bakery', 'disposables.cups'),
+    (r'стакан.*бумаж|бумаж.*стакан', 'desserts', 'disposables.cups'),
     
     # Салфетки с рисунком - disposables, не vegetables
     (r'салфетк.*гриб|гриб.*салфетк', 'vegetables', 'disposables.napkins'),
+    (r'салфетк.*100|салфетк.*белы', 'vegetables', 'disposables.napkins'),
     
+    # === ХЛЕБ / ВЫПЕЧКА ===
     # Хлеб кукурузный - bakery, не vegetables
     (r'хлеб.*кукуруз|кукуруз.*хлеб', 'vegetables', 'bakery.bread'),
+    # Хлебные палочки - bakery, не vegetables
+    (r'палочк.*хлебн|хлебн.*палочк|гриссини', 'vegetables', 'bakery.breadsticks'),
+    
+    # === САХАР ===
+    # Сахар порционный (стики) - это staples, не desserts
+    (r'сахар.*порцион|сахар.*стик|сахар.*5г|сахар.*пакет', 'desserts', 'staples.sugar'),
+    # Сахар-песок большой фасовки - staples
+    (r'сахар.*песок.*кг|сахар.*1000', 'desserts', 'staples.sugar'),
+    # Сахарная пудра - оставляем в desserts (правильно для выпечки)
+    
+    # === ЧАЙ ===
+    # Чай с добавками - beverages, не fruits/vegetables
+    (r'чай.*лайм|лайм.*чай', 'fruits', 'beverages.tea'),
+    (r'чай.*малин|малин.*чай', 'fruits', 'beverages.tea'),
+    (r'чай.*мят|мят.*чай', 'vegetables', 'beverages.tea'),
+    (r'чай.*лимон|лимон.*чай', 'fruits', 'beverages.tea'),
+    (r'чай.*зелен|зелен.*чай', 'fruits', 'beverages.tea'),
+    (r'чай.*черн|черн.*чай', 'fruits', 'beverages.tea'),
+    
+    # === ПАКЕТЫ С ОВОЩАМИ ===
+    # "в пакете" - это описание упаковки, товар остаётся овощем
+    # НЕ ИСПРАВЛЯЕМ: "огурцы пакет" правильно vegetables
 ]
 
 
