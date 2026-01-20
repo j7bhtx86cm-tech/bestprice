@@ -41,7 +41,7 @@ const getCategoryColor = (superClass) => {
 };
 
 // Favorite Item Card
-const FavoriteItemCard = ({ item, onRemove, onAddToCart, adding, isInCart }) => {
+const FavoriteItemCard = ({ item, onRemove, onAddToCart, onShowOffers, adding, isInCart }) => {
   const [qty, setQty] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
 
