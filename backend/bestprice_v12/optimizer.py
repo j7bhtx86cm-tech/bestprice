@@ -121,6 +121,11 @@ class PlanLine:
     brand_changed: bool = False
     pack_changed: bool = False
     qty_changed_by_topup: bool = False
+    # P0.2: Reason code для недоступных товаров
+    unavailable_reason_code: Optional[str] = None
+    unavailable_reason_text: Optional[str] = None
+    # Дополнительная информация о locked offer
+    locked: bool = False
 
 
 @dataclass
