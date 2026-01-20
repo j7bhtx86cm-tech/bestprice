@@ -12,7 +12,6 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import OfferSelectModal from '@/components/OfferSelectModal';
-import SearchAutocomplete from '@/components/SearchAutocomplete';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -501,20 +500,18 @@ export const CustomerCatalog = () => {
       {/* Filters */}
       <Card className="p-4">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search with Autocomplete */}
-          <SearchAutocomplete
-            value={searchInput}
-            onChange={handleSearch}
-            onSelect={(item) => {
-              // При выборе товара из автодополнения - добавляем в корзину или переходим к нему
-              if (item && item.id) {
-                handleAddToCart(item, 1);
-                toast.success(`${item.name_raw?.slice(0, 30)}... добавлено в корзину`);
-              }
-            }}
-            placeholder="Поиск товаров..."
-            className="flex-1"
-          />
+          {/* Simple Search Input */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              value={searchInput}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Поиск товаров..."
+              className="pl-10"
+              data-testid="catalog-search-input"
+            />
+          </div>
 
           {/* Category filter */}
           <select
