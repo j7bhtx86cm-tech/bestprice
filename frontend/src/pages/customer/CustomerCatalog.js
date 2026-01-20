@@ -180,6 +180,19 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
         >
           <Heart className={`h-5 w-5 ${inFavorites ? 'fill-red-500' : ''}`} />
         </Button>
+        
+        {/* Кнопка выбора оффера (P1) */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onShowOffers(item)}
+          disabled={adding}
+          title="Сравнить предложения"
+          data-testid="compare-offers-btn"
+        >
+          <Layers className="h-4 w-4" />
+        </Button>
+        
         <Button
           size="sm"
           className={`flex-1 ${(isInCart || addedToCart) ? 'bg-green-600 hover:bg-green-700' : ''}`}
