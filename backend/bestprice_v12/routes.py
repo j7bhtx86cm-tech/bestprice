@@ -1395,6 +1395,113 @@ async def get_order_details(order_id: str):
     }
 
 
+# === OFFER ALTERNATIVES (P1 - Выбор оффера) ===
+
+@router.get("/item/{item_id}/alternatives", summary="Получить альтернативные офферы")
+async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
+    """
+    Возвращает альтернативные офферы для товара.
+    
+    Алгоритм поиска альтернатив:
+    1. Если у товара есть product_core_id → ищем по нему
+    2. Иначе → ищем по похожему названию (первые 3-4 слова)
+    
+    Используется для показа пользователю выбора поставщика/фасовки.
+    """
+    db = get_db()
+    
+    # Получаем исходный товар
+    source_item = db.supplier_items.find_one(
+        {'id': item_id, 'active': True},
+        {'_id': 0}
+    )
+    
+    if not source_item:
+        return {'alternatives': [], 'source': None, 'total': 0}
+    
+    alternatives = []
+    
+    # 1. Поиск по product_core_id (если есть)
+    product_core_id = source_item.get('product_core_id')
+    if product_core_id:
+        alt_items = list(db.supplier_items.find(
+            {
+                'product_core_id': product_core_id,
+                'active': True,
+                'price': {'$gt': 0},
+                'id': {'$ne': item_id}  # Исключаем исходный
+            },
+            {'_id': 0}
+        ).sort('price', 1).limit(limit))
+        
+        alternatives.extend(alt_items)
+    
+    # 2. Если не нашли по core_id → поиск по названию
+    if len(alternatives) < 3:
+        name_norm = source_item.get('name_norm', '')
+        # Берём первые 2-3 значимых слова для поиска
+        words = [w for w in name_norm.split()[:4] if len(w) >= 3 and w not in STOP_WORDS]
+        
+        if words:
+            # Строим regex для поиска всех слов
+            regex_parts = [f'(?=.*{re.escape(w)})' for w in words[:2]]
+            search_regex = ''.join(regex_parts) + '.*'
+            
+            name_matches = list(db.supplier_items.find(
+                {
+                    'name_norm': {'$regex': search_regex, '$options': 'i'},
+                    'active': True,
+                    'price': {'$gt': 0},
+                    'id': {'$ne': item_id},
+                    'id': {'$nin': [a['id'] for a in alternatives]}  # Исключаем уже найденные
+                },
+                {'_id': 0}
+            ).sort('price', 1).limit(limit - len(alternatives)))
+            
+            alternatives.extend(name_matches)
+    
+    # Обогащаем данными поставщика
+    enriched = []
+    supplier_cache = {}
+    
+    for item in alternatives[:limit]:
+        supplier_id = item.get('supplier_company_id')
+        
+        if supplier_id not in supplier_cache:
+            company = db.companies.find_one({'id': supplier_id}, {'companyName': 1, 'name': 1, 'min_order_amount': 1})
+            supplier_cache[supplier_id] = {
+                'name': company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown',
+                'min_order': company.get('min_order_amount', 10000) if company else 10000
+            }
+        
+        enriched.append({
+            'id': item['id'],
+            'name': item.get('name_raw', ''),
+            'price': item.get('price', 0),
+            'pack_qty': item.get('pack_qty'),
+            'unit_type': item.get('unit_type', 'PIECE'),
+            'supplier_id': supplier_id,
+            'supplier_name': supplier_cache[supplier_id]['name'],
+            'supplier_min_order': supplier_cache[supplier_id]['min_order'],
+        })
+    
+    # Сортируем по цене
+    enriched.sort(key=lambda x: x['price'])
+    
+    return {
+        'source': {
+            'id': source_item['id'],
+            'name': source_item.get('name_raw', ''),
+            'price': source_item.get('price', 0),
+            'pack_qty': source_item.get('pack_qty'),
+            'unit_type': source_item.get('unit_type', 'PIECE'),
+            'supplier_id': source_item.get('supplier_company_id'),
+        },
+        'alternatives': enriched,
+        'total': len(enriched)
+    }
+
+
 # === DATA QUALITY / VALIDATION ===
 
 from .offer_validator import (
