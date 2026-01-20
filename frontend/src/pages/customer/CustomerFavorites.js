@@ -321,6 +321,47 @@ export const CustomerFavorites = () => {
     }
   };
 
+  // P1: Показать модальное окно выбора оффера
+  const handleShowOffers = (item) => {
+    // Используем anchor_supplier_item_id как ID для поиска альтернатив
+    const itemId = item.anchor_supplier_item_id || item.best_supplier_id || item.id;
+    
+    setSelectedItemForOffers({
+      id: itemId,
+      name: item.product_name || item.name_raw || item.name,
+      price: item.best_price || item.price,
+      pack_qty: item.pack_value,
+      unit_type: item.unit_type,
+      supplier_name: item.best_supplier_name || item.supplier_name,
+      supplier_id: item.best_supplier_company_id || item.supplier_company_id,
+    });
+    setOfferModalOpen(true);
+  };
+
+  // P1: Добавить выбранный оффер в корзину
+  const handleOfferSelect = async (offer, qty) => {
+    try {
+      const userId = getUserId();
+      const response = await axios.post(`${API}/v12/cart/intent`, {
+        supplier_item_id: offer.id,
+        qty: qty,
+        user_id: userId
+      }, {
+        headers: getHeaders()
+      });
+      
+      if (response.data.status === 'ok') {
+        setCartItems(prev => new Set([...prev, offer.id]));
+        setCartCount(prev => prev + 1);
+        toast.success(`✓ Добавлено в корзину: ${qty} ${offer.unit_type === 'WEIGHT' ? 'кг' : 'шт'}`);
+      } else {
+        toast.error(response.data.message || 'Ошибка добавления');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Ошибка добавления');
+    }
+  };
+
   // Add all to cart
   const handleAddAllToCart = async () => {
     if (!favorites.length) return;
