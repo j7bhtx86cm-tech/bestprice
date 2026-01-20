@@ -2,6 +2,11 @@
 BestPrice v12 - API Routes
 
 FastAPI роутер для v12 функционала
+
+Модульная структура (в процессе рефакторинга):
+- search_service.py: Поиск с lemma_tokens
+- optimizer.py: Оптимизация корзины
+- plan_snapshot.py: Снепшоты планов
 """
 
 import logging
@@ -45,6 +50,9 @@ from search_utils import (
 )
 from russian_stemmer import stem_token_safe, generate_lemma_tokens
 from search_synonyms import get_synonyms, build_synonym_regex, expand_query_with_synonyms
+
+# Import search service (новый модуль)
+from .search_service import search_items, search_with_lemma_only, tokenize_query
 
 router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
 
