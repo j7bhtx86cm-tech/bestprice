@@ -417,6 +417,33 @@ export const CustomerCatalog = () => {
     setCartItems(prev => new Set([...prev, itemKey]));
   };
 
+  // P1: Показать модальное окно выбора оффера
+  const handleShowOffers = (item) => {
+    setSelectedItemForOffers({
+      id: item.id || item.unique_key,
+      name: item.name_raw || item.name,
+      price: item.price || item.best_price,
+      pack_qty: item.pack_qty,
+      unit_type: item.unit_type,
+      supplier_name: item.supplier_name || item.best_supplier_name,
+      supplier_id: item.supplier_company_id,
+    });
+    setOfferModalOpen(true);
+  };
+
+  // P1: Добавить выбранный оффер в корзину
+  const handleOfferSelect = async (offer, qty) => {
+    try {
+      await handleAddToCart({ 
+        id: offer.id,
+        unit_type: offer.unit_type,
+      }, qty);
+      toast.success(`Добавлено в корзину: ${qty} ${offer.unit_type === 'WEIGHT' ? 'кг' : 'шт'}`);
+    } catch (error) {
+      toast.error(error.message || 'Ошибка добавления');
+    }
+  };
+
   // Search handler - updates immediate input, debounce handles API call
   const handleSearch = (value) => {
     setSearchInput(value);
