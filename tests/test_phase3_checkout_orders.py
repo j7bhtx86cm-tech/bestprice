@@ -440,17 +440,27 @@ class TestCartIntentAPI:
     
     def test_clear_all_intents(self):
         """Test clearing all intents"""
+        # First clear any existing items
+        requests.delete(f"{API_URL}/v12/cart/intents?user_id={TEST_USER_ID}")
+        
         # Add multiple items
-        requests.post(f"{API_URL}/v12/cart/intent", json={
+        add1 = requests.post(f"{API_URL}/v12/cart/intent", json={
             "supplier_item_id": TEST_SUPPLIER_ITEM_1,
             "qty": 2,
             "user_id": TEST_USER_ID
         })
-        requests.post(f"{API_URL}/v12/cart/intent", json={
+        assert add1.status_code == 200, f"Failed to add item 1: {add1.text}"
+        
+        add2 = requests.post(f"{API_URL}/v12/cart/intent", json={
             "supplier_item_id": TEST_SUPPLIER_ITEM_2,
             "qty": 3,
             "user_id": TEST_USER_ID
         })
+        assert add2.status_code == 200, f"Failed to add item 2: {add2.text}"
+        
+        # Verify items were added
+        cart_before = requests.get(f"{API_URL}/v12/cart/intents?user_id={TEST_USER_ID}")
+        assert cart_before.json().get('count', 0) >= 2, "Items not added"
         
         # Clear all
         response = requests.delete(f"{API_URL}/v12/cart/intents?user_id={TEST_USER_ID}")
