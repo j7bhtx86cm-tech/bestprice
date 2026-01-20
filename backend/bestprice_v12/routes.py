@@ -1183,7 +1183,7 @@ async def get_orders_history(user_id: str = Query(..., description="ID поль�
         supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
         
         orders.append({
-            'id': order.get('created_at', ''),  # Use created_at as ID for now
+            'id': order.get('id', order.get('created_at', '')),  # Use id if exists, fallback to created_at
             'supplier_id': supplier_id,
             'supplier_name': supplier_name,
             'amount': order.get('amount', 0),
