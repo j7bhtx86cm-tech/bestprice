@@ -37,6 +37,7 @@ class OptFlag(str, Enum):
     AUTO_TOPUP_10PCT = "AUTO_TOPUP_10PCT"          # Количество увеличено для минималки (+10%)
     SUPPLIER_CHANGED = "SUPPLIER_CHANGED"          # Поставщик изменён системой
     NO_OFFER_FOUND = "NO_OFFER_FOUND"              # Нет подходящего оффера
+    PRICE_TOLERANCE_EXCEEDED = "PRICE_TOLERANCE_EXCEEDED"  # Цена замены вне допуска ±50%
 
 
 class UnavailableReason(str, Enum):
