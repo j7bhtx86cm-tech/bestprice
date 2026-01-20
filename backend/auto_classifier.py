@@ -11,13 +11,15 @@ from typing import Optional, Tuple
 # Порядок важен - более специфичные правила первыми
 CLASSIFICATION_RULES = [
     # === МОРЕПРОДУКТЫ ===
+    # ВАЖНО: Икра ПЕРЕД лосось/горбуша, т.к. "икра лососевая" должна быть caviar, не salmon!
+    (r'\b(икра|caviar|roe)(?!.*кабачк)(?!.*баклажан)', 'seafood.caviar'),
     (r'\b(креветк|shrimp|гаммарус)', 'seafood.shrimp'),
     (r'\b(кальмар|squid)', 'seafood.squid'),
     (r'\b(мидии|mussel)', 'seafood.mussels'),
     (r'\b(осьминог|octopus)', 'seafood.octopus'),
     (r'\b(краб|crab)', 'seafood.crab'),
     (r'\b(устриц|oyster)', 'seafood.oyster'),
-    (r'\b(лосось|лосос|сёмга|семга|salmon)', 'seafood.salmon'),
+    (r'\b(лосось|лосос|сёмга|семга|salmon)(?!.*икр)', 'seafood.salmon'),
     (r'\b(форель|trout)', 'seafood.trout'),
     (r'\b(тунец|tuna)', 'seafood.tuna'),
     (r'\b(треска|cod)', 'seafood.cod'),
@@ -26,13 +28,12 @@ CLASSIFICATION_RULES = [
     (r'\b(карп|carp)', 'seafood.carp'),
     (r'\b(сельд|селёд|herring)', 'seafood.herring'),
     (r'\b(скумбри|mackerel)', 'seafood.mackerel'),
-    (r'\b(икра|caviar|roe)', 'seafood.caviar'),
     (r'\b(морск.*коктейль|seafood.*mix)', 'seafood.mix'),
     (r'\b(чука|водоросл|seaweed|нори|wakame)', 'seafood.seaweed'),
     (r'\b(рыб|fish|филе.*рыб)', 'seafood.fish'),
     (r'\b(морепродукт)', 'seafood.mix'),
     (r'\b(минтай|pollock)', 'seafood.pollock'),
-    (r'\b(горбуш|pink.*salmon)', 'seafood.salmon'),
+    (r'\b(горбуш|pink.*salmon)(?!.*икр)', 'seafood.salmon'),
     (r'\b(кета|chum)', 'seafood.salmon'),
     (r'\b(нерка|sockeye)', 'seafood.salmon'),
     (r'\b(палтус|halibut)', 'seafood.halibut'),
