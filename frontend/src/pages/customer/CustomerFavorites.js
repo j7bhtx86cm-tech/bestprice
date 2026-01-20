@@ -503,16 +503,32 @@ export const CustomerFavorites = () => {
       {/* Search and Category Filter */}
       <Card className="p-4">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Поиск в избранном..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          {/* Search with Autocomplete - добавление в избранное */}
+          <SearchAutocomplete
+            value={search}
+            onChange={setSearch}
+            onSelect={async (item) => {
+              // При выборе товара из autocomplete - добавляем в избранное
+              if (item && item.id) {
+                try {
+                  const userId = getUserId();
+                  await axios.post(`${API}/v12/favorites?user_id=${userId}&reference_id=${item.id}`, {}, {
+                    headers: getHeaders()
+                  });
+                  toast.success(`${item.name_raw?.slice(0, 30)}... добавлено в избранное`);
+                  fetchFavorites(); // Обновляем список
+                } catch (error) {
+                  if (error.response?.data?.status === 'exists') {
+                    toast.info('Товар уже в избранном');
+                  } else {
+                    toast.error('Ошибка добавления в избранное');
+                  }
+                }
+              }
+            }}
+            placeholder="Поиск товаров для добавления в избранное..."
+            className="flex-1"
+          />
 
           {/* Category filter */}
           <select
