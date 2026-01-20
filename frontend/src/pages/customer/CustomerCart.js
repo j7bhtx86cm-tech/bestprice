@@ -490,7 +490,7 @@ export const CustomerCart = () => {
           </Card>
         ))}
 
-        {/* Unfulfilled items */}
+        {/* Unfulfilled items - P0.2: показываем reason codes */}
         {optimizedPlan.unfulfilled?.length > 0 && (
           <Card className="p-6 mb-4 border-2 border-yellow-300 bg-yellow-50">
             <h3 className="font-semibold text-yellow-800 mb-3 flex items-center gap-2">
@@ -502,9 +502,17 @@ export const CustomerCart = () => {
             </p>
             <div className="space-y-2">
               {optimizedPlan.unfulfilled.map((item, idx) => (
-                <div key={idx} className="p-2 bg-yellow-100 rounded">
+                <div key={idx} className="p-3 bg-yellow-100 rounded">
                   <div className="font-medium">{item.product_name}</div>
-                  <div className="text-sm text-yellow-600">{item.reason}</div>
+                  <div className="text-sm text-yellow-700 mt-1">
+                    {item.reason}
+                  </div>
+                  {/* P0.2: Показываем код причины для debugging */}
+                  {item.unavailable_reason_code && (
+                    <div className="text-xs text-yellow-600 mt-1 font-mono">
+                      Код: {item.unavailable_reason_code}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
