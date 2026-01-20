@@ -914,6 +914,16 @@ async def update_cart_intent(
     return {'status': 'ok', 'qty': request.qty}
 
 
+@router.delete("/cart/intents", summary="Очистить все intents")
+async def clear_cart_intents(user_id: str = Query(..., description="ID пользователя")):
+    """Очищает все intents пользователя"""
+    db = get_db()
+    
+    result = db.cart_intents.delete_many({'user_id': user_id})
+    
+    return {'status': 'ok', 'deleted_count': result.deleted_count}
+
+
 @router.delete("/cart/intent/{item_id}", summary="Удалить intent")
 async def remove_cart_intent(
     item_id: str,
@@ -933,16 +943,6 @@ async def remove_cart_intent(
         raise HTTPException(status_code=404, detail="Intent не найден")
     
     return {'status': 'ok'}
-
-
-@router.delete("/cart/intents", summary="Очистить все intents")
-async def clear_cart_intents(user_id: str = Query(..., description="ID пользователя")):
-    """Очищает все intents пользователя"""
-    db = get_db()
-    
-    result = db.cart_intents.delete_many({'user_id': user_id})
-    
-    return {'status': 'ok', 'deleted_count': result.deleted_count}
 
 
 @router.get("/cart/intents", summary="Получить intents")
