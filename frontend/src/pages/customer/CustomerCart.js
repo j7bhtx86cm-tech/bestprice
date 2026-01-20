@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { 
   ShoppingCart, Trash2, Plus, Minus, Package, MapPin, 
   RefreshCw, AlertTriangle, CheckCircle, ArrowRight,
-  Tag, Scale, Truck, Info
+  Tag, Scale, Truck, Info, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -15,6 +15,9 @@ import { useAuth } from '@/context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Порог для индикатора изменения цены (25%)
+const PRICE_CHANGE_THRESHOLD = 0.25;
 
 // Flag badges mapping (shown ONLY after optimization)
 const FLAG_BADGES = {
@@ -25,6 +28,7 @@ const FLAG_BADGES = {
   'STEP_QTY_APPLIED': { label: 'Кратность поставщика', color: 'bg-gray-100 text-gray-800', icon: Package },
   'AUTO_TOPUP_10PCT': { label: 'Кол-во +10% для минималки', color: 'bg-orange-100 text-orange-800', icon: Plus },
   'SUPPLIER_CHANGED': { label: 'Поставщик изменён', color: 'bg-indigo-100 text-indigo-800', icon: Truck },
+  'PRICE_TOLERANCE_EXCEEDED': { label: 'Цена вне допуска', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
 };
 
 const FlagBadge = ({ flag }) => {
@@ -36,6 +40,34 @@ const FlagBadge = ({ flag }) => {
       <Icon className="h-3 w-3 mr-1" />
       {config.label}
     </Badge>
+  );
+};
+
+// Компонент индикатора изменения цены
+const PriceChangeIndicator = ({ originalPrice, newPrice }) => {
+  if (!originalPrice || !newPrice || originalPrice === newPrice) return null;
+  
+  const change = ((newPrice - originalPrice) / originalPrice);
+  const changePercent = Math.abs(change * 100).toFixed(0);
+  
+  // Показываем только если изменение > 25%
+  if (Math.abs(change) < PRICE_CHANGE_THRESHOLD) return null;
+  
+  const isIncrease = change > 0;
+  
+  return (
+    <div className={`flex items-center gap-1 text-xs font-medium ${
+      isIncrease ? 'text-red-600' : 'text-green-600'
+    }`} data-testid="price-change-indicator">
+      {isIncrease ? (
+        <TrendingUp className="h-3 w-3" />
+      ) : (
+        <TrendingDown className="h-3 w-3" />
+      )}
+      <span>
+        {isIncrease ? '+' : '-'}{changePercent}% от заказа
+      </span>
+    </div>
   );
 };
 
