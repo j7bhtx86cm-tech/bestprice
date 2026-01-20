@@ -45,8 +45,6 @@ from search_utils import (
 )
 from russian_stemmer import stem_token_safe, generate_lemma_tokens
 
-logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
 
 
