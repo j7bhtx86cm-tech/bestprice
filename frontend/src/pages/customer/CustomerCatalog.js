@@ -30,11 +30,12 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
-// Catalog Item Card - стиль v12
+// Catalog Item Card - стиль v12 (P1.3: добавлен выбор количества)
 const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddToCart, isInFavorites, isInCart }) => {
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [inFavorites, setInFavorites] = useState(isInFavorites);
+  const [qty, setQty] = useState(1);  // P1.3: количество для добавления
 
   // Sync with parent state
   React.useEffect(() => {
@@ -60,12 +61,13 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
     }
   };
 
+  // P1.3: Добавление с выбранным количеством
   const handleAddToCart = async () => {
     setAdding(true);
     try {
-      await onAddToCart(item);
+      await onAddToCart(item, qty);  // Передаём qty
       setAddedToCart(true);
-      toast.success('Добавлено в корзину');
+      toast.success(`Добавлено в корзину: ${qty} шт.`);
     } catch (error) {
       toast.error(error.message || 'Ошибка добавления');
     } finally {
@@ -100,6 +102,18 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
     if (superClass.startsWith('packaging')) return 'bg-stone-100 text-stone-800';
     if (superClass.startsWith('disposables')) return 'bg-neutral-100 text-neutral-800';
     return 'bg-gray-100 text-gray-800';
+  };
+
+  // P1.3: Обработчики изменения qty
+  const handleQtyChange = (delta) => {
+    setQty(prev => Math.max(1, prev + delta));
+  };
+
+  const handleQtyInput = (e) => {
+    const val = parseInt(e.target.value, 10);
+    if (!isNaN(val) && val >= 1) {
+      setQty(val);
+    }
   };
 
   return (
