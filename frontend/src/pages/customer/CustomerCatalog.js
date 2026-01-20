@@ -104,18 +104,6 @@ const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddT
     return 'bg-gray-100 text-gray-800';
   };
 
-  // P1.3: Обработчики изменения qty
-  const handleQtyChange = (delta) => {
-    setQty(prev => Math.max(1, prev + delta));
-  };
-
-  const handleQtyInput = (e) => {
-    const val = parseInt(e.target.value, 10);
-    if (!isNaN(val) && val >= 1) {
-      setQty(val);
-    }
-  };
-
   return (
     <Card className={`p-4 hover:shadow-lg transition-all border-2 ${inFavorites ? 'border-red-300 bg-red-50' : 'hover:border-blue-300'}`}>
       {/* Header with category */}
