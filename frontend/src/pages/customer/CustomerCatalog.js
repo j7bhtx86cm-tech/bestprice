@@ -239,6 +239,10 @@ export const CustomerCatalog = () => {
   const [cartCount, setCartCount] = useState(0);
   const [cartItems, setCartItems] = useState(new Set());
   
+  // P1: Состояние модального окна выбора оффера
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [selectedItemForOffers, setSelectedItemForOffers] = useState(null);
+  
   const LIMIT = 20;
   
   // Debounced search value (300ms delay)
