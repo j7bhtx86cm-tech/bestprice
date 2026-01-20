@@ -1,83 +1,56 @@
 """
-Orders Routes - История заказов
+Orders Routes Module - История заказов
 
-Endpoints:
-- GET /orders - Получить историю заказов
-- GET /orders/{order_id} - Получить детали заказа
+Endpoints для просмотра истории заказов.
 """
 
 import logging
 from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["Orders"])
+router = APIRouter(prefix="/orders", tags=["Orders"])
 
 
-# === Pydantic Models ===
+# === DB Access ===
 
-class OrderSummary(BaseModel):
-    """Краткая информация о заказе"""
-    order_id: str
-    supplier_id: str
-    supplier_name: str
-    status: str
-    total: float
-    items_count: int
-    created_at: datetime
+_db = None
 
-
-class OrderItem(BaseModel):
-    """Позиция в заказе"""
-    product_name: str
-    qty: float
-    price: float
-    line_total: float
-    unit_type: str
-
-
-class OrderDetail(BaseModel):
-    """Детали заказа"""
-    order_id: str
-    supplier_id: str
-    supplier_name: str
-    status: str
-    total: float
-    items: List[OrderItem]
-    created_at: datetime
-    checkout_id: Optional[str] = None
-
-
-# === Helper Functions ===
+def set_db(db):
+    global _db
+    _db = db
 
 def get_db():
-    """Получить подключение к БД"""
-    from .catalog import get_db as catalog_get_db
-    return catalog_get_db()
+    if _db is None:
+        raise RuntimeError("Database not initialized")
+    return _db
 
 
-# === Orders Endpoints ===
+# === Endpoints ===
 
-"""
-Future implementation:
-
-@router.get("/orders")
+@router.get("", summary="Получить историю заказов")
 async def get_orders(
-    user_id: str = Query(...),
+    user_id: str = Query(..., description="ID пользователя"),
     limit: int = Query(50, ge=1, le=100),
     skip: int = Query(0, ge=0),
-    status: Optional[str] = None
+    status: Optional[str] = Query(None, description="Фильтр по статусу")
 ):
+    """
+    Получить список заказов пользователя.
+    
+    Статусы: pending, confirmed, shipped, delivered, cancelled
+    """
     db = get_db()
     
     query = {'user_id': user_id}
     if status:
         query['status'] = status
     
+    # Получаем заказы
     orders = list(db.orders_v12.find(
         query,
         {'_id': 0}
@@ -85,16 +58,33 @@ async def get_orders(
     
     total = db.orders_v12.count_documents(query)
     
+    # Добавляем имена поставщиков
+    supplier_ids = list(set(o.get('supplier_id') for o in orders if o.get('supplier_id')))
+    if supplier_ids:
+        companies = {
+            c['id']: c.get('companyName', c.get('name', 'Unknown'))
+            for c in db.companies.find({'id': {'$in': supplier_ids}}, {'_id': 0})
+        }
+        for order in orders:
+            sid = order.get('supplier_id')
+            if sid:
+                order['supplier_name'] = companies.get(sid, 'Unknown')
+    
     return {
         'orders': orders,
         'total': total,
         'skip': skip,
-        'limit': limit
+        'limit': limit,
+        'has_more': skip + len(orders) < total
     }
 
 
-@router.get("/orders/{order_id}")
-async def get_order_detail(order_id: str, user_id: str = Query(...)):
+@router.get("/{order_id}", summary="Получить детали заказа")
+async def get_order_detail(
+    order_id: str,
+    user_id: str = Query(..., description="ID пользователя")
+):
+    """Получить детальную информацию о заказе"""
     db = get_db()
     
     order = db.orders_v12.find_one(
@@ -105,5 +95,12 @@ async def get_order_detail(order_id: str, user_id: str = Query(...)):
     if not order:
         raise HTTPException(status_code=404, detail="Заказ не найден")
     
+    # Добавляем имя поставщика
+    supplier_id = order.get('supplier_id')
+    if supplier_id:
+        company = db.companies.find_one({'id': supplier_id}, {'_id': 0})
+        if company:
+            order['supplier_name'] = company.get('companyName', company.get('name', 'Unknown'))
+            order['supplier_contact'] = company.get('email')
+    
     return order
-"""
