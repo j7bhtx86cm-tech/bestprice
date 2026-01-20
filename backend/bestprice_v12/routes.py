@@ -977,16 +977,6 @@ async def update_cart_intent(
     return {'status': 'ok', 'qty': request.qty}
 
 
-@router.delete("/cart/intents", summary="Очистить все intents")
-async def clear_cart_intents(user_id: str = Query(..., description="ID пользователя")):
-    """Очищает все intents пользователя"""
-    db = get_db()
-    
-    result = db.cart_intents.delete_many({'user_id': user_id})
-    
-    return {'status': 'ok', 'deleted_count': result.deleted_count}
-
-
 @router.delete("/cart/intent/{item_id}", summary="Удалить intent")
 async def remove_cart_intent(
     item_id: str,
@@ -1006,54 +996,6 @@ async def remove_cart_intent(
         raise HTTPException(status_code=404, detail="Intent не найден")
     
     return {'status': 'ok'}
-
-
-@router.get("/cart/intents", summary="Получить intents")
-async def get_cart_intents(user_id: str = Query(..., description="ID пользователя")):
-    """Получает все intents пользователя с информацией о товаре"""
-    db = get_db()
-    
-    intents = list(db.cart_intents.find({'user_id': user_id}, {'_id': 0}))
-    
-    # Проверяем актуальность каждого intent
-    enriched = []
-    for intent in intents:
-        supplier_item_id = intent.get('supplier_item_id')
-        
-        # Проверяем что supplier_item ещё активен
-        if supplier_item_id:
-            item = db.supplier_items.find_one(
-                {'id': supplier_item_id, 'active': True},
-                {'_id': 0}
-            )
-            if item:
-                # Актуальная информация
-                enriched.append({
-                    **intent,
-                    'product_name': item.get('name_raw', intent.get('product_name', '')),
-                    'price': item.get('price', intent.get('price', 0)),
-                    'unit_type': item.get('unit_type', intent.get('unit_type', 'PIECE')),
-                    'super_class': item.get('super_class', intent.get('super_class', '')),
-                    'is_available': True,
-                })
-            else:
-                # Товар стал неактивен
-                enriched.append({
-                    **intent,
-                    'is_available': False,
-                    'unavailable_reason': 'Товар временно недоступен'
-                })
-        else:
-            enriched.append({
-                **intent,
-                'is_available': False,
-                'unavailable_reason': 'Нет привязки к товару'
-            })
-    
-    return {
-        'intents': enriched,
-        'count': len(enriched)
-    }
 
 
 @router.get("/cart/plan", summary="Получить оптимизированный план")
