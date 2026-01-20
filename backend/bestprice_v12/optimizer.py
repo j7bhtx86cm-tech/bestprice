@@ -946,12 +946,18 @@ def plan_to_dict(result: OptimizationResult) -> Dict[str, Any]:
     for plan in result.suppliers:
         items_data = []
         for line in plan.lines:
+            # Цена из оффера (что будет заказано)
+            offer_price = line.offer.price if line.offer else 0
+            # Исходная цена из intent (что хотел клиент)
+            original_price = line.intent.price if line.intent else 0
+            
             item_dict = {
                 'reference_id': line.reference_id,
                 'product_name': line.intent.product_name if line.intent else '',
                 'requested_qty': line.requested_qty,
                 'final_qty': line.final_qty,
-                'price': line.offer.price if line.offer else 0,
+                'price': offer_price,
+                'original_price': original_price,  # Для UI-индикатора изменения цены
                 'line_total': line.line_total,
                 'unit_type': line.offer.unit_type if line.offer else line.intent.unit_type,
                 'supplier_item_id': line.offer.supplier_item_id if line.offer else None,
@@ -982,6 +988,7 @@ def plan_to_dict(result: OptimizationResult) -> Dict[str, Any]:
             'reference_id': line.reference_id,
             'product_name': line.intent.product_name if line.intent else '',
             'requested_qty': line.requested_qty,
+            'original_price': line.intent.price if line.intent else 0,  # Добавляем для консистентности
             'locked': line.locked,
         }
         
