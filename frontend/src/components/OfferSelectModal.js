@@ -45,7 +45,7 @@ const OfferSelectModal = ({
     setLoading(true);
     try {
       const response = await axios.get(
-        `${API}/v12/item/${sourceItem.id}/alternatives`,
+        `${API}/api/v12/item/${sourceItem.id}/alternatives`,
         { headers: getHeaders?.() || {} }
       );
       setAlternatives(response.data.alternatives || []);
