@@ -394,14 +394,14 @@ export const CustomerCatalog = () => {
     }
   };
 
-  // Add to cart (supports both reference_id and supplier_item_id)
-  const handleAddToCart = async (item) => {
+  // P1.3: Add to cart with quantity support
+  const handleAddToCart = async (item, qty = 1) => {
     const userId = getUserId();
     
     // Для каталога используем supplier_item_id (item.id)
     // Для избранного используем reference_id
     const requestData = {
-      qty: 1,
+      qty: qty,  // P1.3: используем переданное количество
       user_id: userId
     };
     
