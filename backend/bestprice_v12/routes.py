@@ -44,6 +44,7 @@ from search_utils import (
     STOP_WORDS
 )
 from russian_stemmer import stem_token_safe, generate_lemma_tokens
+from search_synonyms import get_synonyms, build_synonym_regex, expand_query_with_synonyms
 
 router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
 
