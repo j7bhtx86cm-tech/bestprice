@@ -39,6 +39,31 @@ class OptFlag(str, Enum):
     NO_OFFER_FOUND = "NO_OFFER_FOUND"              # Нет подходящего оффера
 
 
+class UnavailableReason(str, Enum):
+    """P0.2: Коды причин недоступности товара"""
+    OFFER_INACTIVE = "OFFER_INACTIVE"              # Оффер стал неактивным
+    PRICE_INVALID = "PRICE_INVALID"                # Цена <= 0
+    MIN_QTY_NOT_MET = "MIN_QTY_NOT_MET"            # Не выполнен min_order_qty
+    PACK_TOLERANCE_FAILED = "PACK_TOLERANCE_FAILED"  # Фасовка вне ±20%
+    STRICT_ATTR_MISMATCH = "STRICT_ATTR_MISMATCH"  # Жёсткие атрибуты не совпали (филе/тушка, охл/зам, жирность)
+    CLASSIFICATION_MISSING = "CLASSIFICATION_MISSING"  # Нет product_core_id
+    NO_SUPPLIER_OFFERS = "NO_SUPPLIER_OFFERS"      # У поставщиков нет подходящих офферов
+    OTHER = "OTHER"                                # Другая причина
+
+
+# Человекочитаемые описания причин
+UNAVAILABLE_REASON_TEXTS = {
+    UnavailableReason.OFFER_INACTIVE: "Товар снят с продажи поставщиком",
+    UnavailableReason.PRICE_INVALID: "Некорректная цена товара",
+    UnavailableReason.MIN_QTY_NOT_MET: "Минимальный заказ не достигнут",
+    UnavailableReason.PACK_TOLERANCE_FAILED: "Фасовка не соответствует (±20%)",
+    UnavailableReason.STRICT_ATTR_MISMATCH: "Не совпадают критические атрибуты (тип обработки, жирность и т.д.)",
+    UnavailableReason.CLASSIFICATION_MISSING: "Товар не классифицирован в системе",
+    UnavailableReason.NO_SUPPLIER_OFFERS: "Нет подходящих предложений у поставщиков",
+    UnavailableReason.OTHER: "Товар временно недоступен",
+}
+
+
 # === DATA CLASSES ===
 
 @dataclass
