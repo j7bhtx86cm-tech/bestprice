@@ -497,12 +497,22 @@ export const CustomerFavorites = () => {
               item={item}
               onRemove={handleRemove}
               onAddToCart={handleAddToCart}
+              onShowOffers={handleShowOffers}
               adding={adding}
               isInCart={cartItems.has(item.anchor_supplier_item_id) || cartItems.has(item.reference_id)}
             />
           ))}
         </div>
       )}
+
+      {/* P1: Модальное окно выбора оффера */}
+      <OfferSelectModal
+        isOpen={offerModalOpen}
+        onClose={() => setOfferModalOpen(false)}
+        sourceItem={selectedItemForOffers}
+        onSelect={handleOfferSelect}
+        getHeaders={getHeaders}
+      />
     </div>
   );
 };
