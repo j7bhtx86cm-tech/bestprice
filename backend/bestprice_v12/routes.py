@@ -133,16 +133,33 @@ async def get_catalog(
                 # else: brand_boost_mode (applied in ranking)
             
             # Check if last token looks like a complete word
+            # ВАЖНО: is_complete определяет используем ли lemma_tokens (морфология)
+            # или prefix search (typeahead)
+            # 
+            # Проблема: "лосо" → stem="лос" → is_complete=True → lemma_tokens поиск
+            # Но пользователь ещё печатает! Нужен prefix.
+            #
+            # Новая логика:
+            # - len >= 6: полное слово → lemma search
+            # - stem != original И len >= 5: возможно полное → lemma search
+            # - иначе: пользователь печатает → prefix search
             is_last_token_complete = (
-                last_token_raw != last_token_lemma or
-                len(last_token_raw) >= 6
+                len(last_token_raw) >= 6 or
+                (last_token_raw != last_token_lemma and len(last_token_raw) >= 5)
             )
             
             # Build text search query
+            # Используем комбинированный подход: prefix search всегда + lemma boost
             if len(q_tokens) == 1:
                 if is_last_token_complete and q_lemmas:
-                    query['lemma_tokens'] = {'$all': q_lemmas}
+                    # Полное слово: ищем по lemma ИЛИ prefix (для обратной совместимости)
+                    escaped_last = re.escape(last_token_raw)
+                    query['$or'] = [
+                        {'lemma_tokens': {'$all': q_lemmas}},
+                        {'name_norm': {'$regex': f'(^|\\s){escaped_last}'}}
+                    ]
                 else:
+                    # Typeahead: только prefix search
                     escaped_last = re.escape(last_token_raw)
                     query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             else:
