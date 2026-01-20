@@ -1027,109 +1027,160 @@ async def get_cart_plan(user_id: str = Query(..., description="ID пользов
     return plan_payload
 
 
+class CheckoutRequest(BaseModel):
+    """Запрос checkout с plan_id"""
+    plan_id: str = Field(..., description="ID сохранённого плана из /cart/plan")
+    delivery_address_id: Optional[str] = Field(None, description="ID адреса доставки")
+
+
 @router.post("/cart/checkout", summary="Подтвердить и создать заказы")
-async def checkout_cart(user_id: str = Query(..., description="ID пользователя")):
+async def checkout_cart(
+    request: CheckoutRequest,
+    user_id: str = Query(..., description="ID пользователя")
+):
     """
     Финализирует корзину и создаёт заказы.
     
-    1. Валидирует корзину (удаляет невалидные позиции)
-    2. Пересчитывает план
-    3. Проверяет что все поставщики >= минималки
-    4. Создаёт заказы
-    5. Очищает корзину
+    НОВОЕ (P0.1): Использует сохранённый plan_id, а НЕ пересчитывает план.
+    
+    1. Загружает plan snapshot по plan_id
+    2. Проверяет что корзина не изменилась (cart_hash)
+    3. Если изменилась → возвращает PLAN_CHANGED (409)
+    4. Создаёт заказы из сохранённого плана
+    5. Очищает корзину ТОЛЬКО после успешной записи заказов
     """
-    import logging
-    logger = logging.getLogger(__name__)
+    import uuid as uuid_module
     
     db = get_db()
     
-    logger.info(f"=== CHECKOUT START for user {user_id} ===")
+    logger.info(f"=== CHECKOUT START for user {user_id}, plan_id={request.plan_id} ===")
     
-    # 0. Валидация корзины - удаляем невалидные позиции
-    from .offer_validator import validate_cart_before_checkout
-    cart_valid, removed_items, validation_messages = validate_cart_before_checkout(db, user_id)
+    from .plan_snapshot import (
+        load_plan_snapshot, validate_cart_unchanged, 
+        delete_plan_snapshot, compute_cart_hash
+    )
     
-    # 1. Пересчитываем план с новым оптимизатором
-    from .optimizer import optimize_cart, plan_to_dict
-    result = optimize_cart(db, user_id)
+    # 1. Загружаем snapshot плана
+    plan_data, error = load_plan_snapshot(db, request.plan_id, user_id)
     
-    logger.info(f"Optimization result: success={result.success}, suppliers={len(result.suppliers)}, total={result.total}")
-    
-    # 2. Проверяем success
-    if not result.success:
-        logger.warning(f"Checkout blocked: {result.blocked_reason}")
-        response = {
-            'status': 'blocked',
-            'message': result.blocked_reason or 'Невозможно оформить заказ',
-            'plan': plan_to_dict(result)
+    if error:
+        logger.warning(f"Plan snapshot load failed: {error}")
+        return {
+            'status': 'error',
+            'code': 'PLAN_NOT_FOUND',
+            'message': error
         }
-        # Добавляем информацию об удалённых позициях
-        if removed_items:
-            response['removed_items'] = removed_items
-            response['validation_messages'] = validation_messages
-        return response
     
-    # 3. Создаём заказы для каждого поставщика
+    # 2. Проверяем что корзина не изменилась
+    saved_hash = plan_data.get('cart_hash', '')
+    cart_valid, current_hash = validate_cart_unchanged(db, user_id, saved_hash)
+    
+    if not cart_valid:
+        logger.warning(f"Cart changed since plan was created. Saved: {saved_hash[:8]}, Current: {current_hash[:8]}")
+        return {
+            'status': 'error',
+            'code': 'PLAN_CHANGED',
+            'message': 'Корзина была изменена. Пожалуйста, сформируйте план заново.',
+            'need_replan': True
+        }
+    
+    # 3. Используем сохранённый план
+    plan_payload = plan_data.get('plan_payload', {})
+    
+    # Проверяем success в плане
+    if not plan_payload.get('success', False):
+        logger.warning(f"Checkout blocked: {plan_payload.get('blocked_reason')}")
+        return {
+            'status': 'blocked',
+            'message': plan_payload.get('blocked_reason') or 'Невозможно оформить заказ',
+            'plan': plan_payload
+        }
+    
+    suppliers = plan_payload.get('suppliers', [])
+    
+    if not suppliers:
+        logger.warning("No suppliers in plan")
+        return {
+            'status': 'error',
+            'code': 'EMPTY_PLAN',
+            'message': 'План пуст. Добавьте товары в корзину.'
+        }
+    
+    # 4. Создаём заказы из сохранённого плана
     created_orders = []
+    total_amount = 0
     
-    for supplier_plan in result.suppliers:
-        order_items = []
-        for line in supplier_plan.lines:
-            product_name = line.intent.product_name if line.intent else ''
-            if line.offer:
-                product_name = line.offer.name_raw or product_name
+    try:
+        for supplier_data in suppliers:
+            order_items = []
             
-            order_items.append({
-                'productName': product_name,
-                'article': line.offer.supplier_item_id if line.offer else '',
-                'quantity': line.final_qty,
-                'price': line.offer.price if line.offer else 0,
-                'unit': 'кг' if (line.offer and line.offer.unit_type == 'WEIGHT') else 'л' if (line.offer and line.offer.unit_type == 'VOLUME') else 'шт',
-                'flags': line.flags,
-                'requested_qty': line.requested_qty,
-                'supplier_changed': line.supplier_changed,
-                'brand_changed': line.brand_changed,
-                'qty_changed_by_topup': line.qty_changed_by_topup,
+            for item in supplier_data.get('items', []):
+                order_items.append({
+                    'productName': item.get('product_name', ''),
+                    'article': item.get('supplier_item_id', ''),
+                    'quantity': item.get('final_qty', 0),
+                    'price': item.get('price', 0),
+                    'unit': 'кг' if item.get('unit_type') == 'WEIGHT' else 'л' if item.get('unit_type') == 'VOLUME' else 'шт',
+                    'flags': item.get('flags', []),
+                    'requested_qty': item.get('requested_qty', 0),
+                    'supplier_changed': item.get('supplier_changed', False),
+                    'brand_changed': item.get('brand_changed', False),
+                    'qty_changed_by_topup': item.get('qty_changed_by_topup', False),
+                })
+            
+            order_id = str(uuid_module.uuid4())
+            supplier_subtotal = supplier_data.get('subtotal', 0)
+            
+            order_data = {
+                'id': order_id,
+                'supplier_company_id': supplier_data.get('supplier_id'),
+                'customer_user_id': user_id,
+                'amount': supplier_subtotal,
+                'items': order_items,
+                'status': 'pending',
+                'delivery_address_id': request.delivery_address_id,
+                'plan_id': request.plan_id,  # Ссылка на план
+                'created_at': datetime.now(timezone.utc).isoformat(),
+            }
+            
+            # Сохраняем в orders_v12 (основная коллекция заказов)
+            db.orders_v12.insert_one(order_data)
+            logger.info(f"Created order {order_id} for supplier {supplier_data.get('supplier_name')}, amount={supplier_subtotal}")
+            
+            total_amount += supplier_subtotal
+            
+            created_orders.append({
+                'id': order_id,
+                'supplier_id': supplier_data.get('supplier_id'),
+                'supplier_name': supplier_data.get('supplier_name'),
+                'amount': supplier_subtotal,
+                'items_count': len(order_items),
             })
         
-        # Создаём заказ с уникальным ID
-        import uuid
-        order_id = str(uuid.uuid4())
+        # 5. Очищаем корзину ТОЛЬКО после успешного создания заказов
+        db.cart_intents.delete_many({'user_id': user_id})
+        db.cart_items_v12.delete_many({'user_id': user_id})
         
-        order_data = {
-            'id': order_id,
-            'supplier_company_id': supplier_plan.supplier_id,
-            'customer_user_id': user_id,
-            'amount': supplier_plan.subtotal,
-            'items': order_items,
-            'status': 'pending',
-            'created_at': datetime.now(timezone.utc).isoformat(),
+        # 6. Удаляем использованный план
+        delete_plan_snapshot(db, request.plan_id, user_id)
+        
+        logger.info(f"=== CHECKOUT COMPLETE: {len(created_orders)} orders created, total={total_amount} ===")
+        
+        return {
+            'status': 'ok',
+            'message': f'Создано {len(created_orders)} заказов',
+            'orders': created_orders,
+            'total': total_amount
         }
         
-        # Сохраняем в БД
-        db.orders.insert_one(order_data)
-        logger.info(f"Created order {order_id} for supplier {supplier_plan.supplier_name}, amount={supplier_plan.subtotal}")
-        
-        created_orders.append({
-            'id': order_id,
-            'supplier_id': supplier_plan.supplier_id,
-            'supplier_name': supplier_plan.supplier_name,
-            'amount': supplier_plan.subtotal,
-            'items_count': len(order_items),
-        })
-    
-    # 4. Очищаем корзину
-    db.cart_intents.delete_many({'user_id': user_id})
-    db.cart_items_v12.delete_many({'user_id': user_id})
-    
-    logger.info(f"=== CHECKOUT COMPLETE: {len(created_orders)} orders created, total={result.total} ===")
-    
-    return {
-        'status': 'ok',
-        'message': f'Создано {len(created_orders)} заказов',
-        'orders': created_orders,
-        'total': result.total
-    }
+    except Exception as e:
+        logger.error(f"Checkout failed: {str(e)}")
+        # НЕ очищаем корзину при ошибке!
+        return {
+            'status': 'error',
+            'code': 'CHECKOUT_FAILED',
+            'message': f'Ошибка создания заказа: {str(e)}'
+        }
 
 
 # === SUPPLIER MINIMUM MANAGEMENT ===
