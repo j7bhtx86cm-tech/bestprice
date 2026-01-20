@@ -23,7 +23,7 @@ import json
 from typing import Dict, Optional, List
 
 # Backend URL
-BACKEND_URL = "https://catalog-gold.preview.emergentagent.com/api"
+BACKEND_URL = "https://orderflow-fix-5.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_USER = {
