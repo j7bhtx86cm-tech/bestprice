@@ -544,6 +544,7 @@ export const CustomerCatalog = () => {
               onAddToFavorites={handleAddToFavorites}
               onRemoveFromFavorites={handleRemoveFromFavorites}
               onAddToCart={handleAddToCart}
+              onShowOffers={handleShowOffers}
               isInFavorites={favorites.has(item.id) || favorites.has(item.reference_id)}
               isInCart={cartItems.has(item.id) || cartItems.has(item.reference_id)}
             />
@@ -577,6 +578,15 @@ export const CustomerCatalog = () => {
           </Button>
         </div>
       )}
+
+      {/* P1: Модальное окно выбора оффера */}
+      <OfferSelectModal
+        isOpen={offerModalOpen}
+        onClose={() => setOfferModalOpen(false)}
+        sourceItem={selectedItemForOffers}
+        onSelect={handleOfferSelect}
+        getHeaders={getHeaders}
+      />
     </div>
   );
 };
