@@ -1,71 +1,70 @@
 <analysis>**original_problem_statement:**
-The user's project has evolved significantly from product re-classification to building a sophisticated e-commerce backend. Key completed phases include:
-1.  **Advanced Search Engine**: With Russian morphology and BestPrice ranking.
-2.  **Intent-Based Cart & Optimizer**: A complete re-architecture where the backend optimizes multi-supplier deliveries to meet minimum order amounts.
-3.  **Data Quality & Integrity**: A Data Quality Gate to filter invalid offers and backfill critical product attributes.
-4.  **Pricelist Migration**: A full data replacement, migrating all suppliers to new GOLD standard pricelists.
-5.  **Bug Fixing & UX Refinements**: A series of hotfixes to address issues arising from the GOLD migration, focusing on making the cart and checkout process more intuitive and correct. The current task is to fix three specific bugs related to the cart and order history display.
+The user's initial request was a hotfix for the checkout process and order history, along with several small UI improvements. This evolved into a major overhaul of the search functionality to make it perfect and a deep data cleansing operation to ensure 100% of catalog items are valid and correctly categorized.
+
+The user provided a detailed technical specification (ТЗ) for the work, which included:
+- **P0 (Critical):** Fixing the checkout flow by implementing plan snapshotting to prevent data inconsistencies, adding reason codes for unavailable items, and ensuring completed orders appear in the order history.
+- **P1 (Urgent):** Minor UI fixes, such as adding quantity controls in the catalog, hiding supplier info in the draft cart, and removing obsolete buttons.
+- **Search Overhaul:** Fixing a bug where search results would disappear for 4-character queries (e.g., лосо) and improving search to handle multi-word queries and synonyms (e.g., филе курицы, семга филе).
+- **Data Integrity:** A request to clear the user's favorites, ensure every item in the catalog is valid and orderable, and use auto-classification to assign a category to 100% of the products.
+- **New Feature:** Add a UI for users to choose between multiple offers (pack sizes/suppliers) for the same product, accessible from the catalog and favorites.
 
 **User's preferred language**: Russian
 
 **what currently exists?**
-The application is a full-stack React/FastAPI e-commerce platform. The entire product catalog is sourced from new GOLD standard pricelists. The cart logic is now a two-phase system:
-1.  **Draft Cart**: Shows a simple list of user-added items (intents) without any optimization or supplier information. Quantity can be edited manually.
-2.  **Checkout Plan**: Triggered by Proceed to Checkout, this view shows an optimized plan from the backend, with items grouped by supplier, and includes changes (e.g., quantity top-ups, brand/supplier swaps) made by the optimizer to meet supplier minimums.
-
-The fixes for hiding suppliers in the draft cart and allowing manual quantity input are complete and deployed. The final part of the requested hotfix—ensuring a completed order appears in the order history—is currently broken.
+The application is a full-stack React/FastAPI e-commerce platform with a two-phase cart (Draft vs. Optimized Plan).
+- The critical checkout bug has been resolved by implementing a plan snapshot system, where a  is generated and used to confirm the order, ensuring data consistency. Orders now correctly appear in the user's order history.
+- The search engine has been significantly improved. It now correctly handles short queries, multi-word queries in any order, and uses a synonym dictionary () to provide more relevant results (e.g., searching for семга will also find лосось).
+- A major data cleanup has been performed. A script () was created and run to successfully categorize 100% of the products. All products in the database are confirmed to be valid (have a price, active status, etc.). The user's favorites have been cleared as requested.
+- A new feature to compare offers has been partially implemented. A button appears in the catalog and favorites, which is supposed to open a modal () to show alternative offers. However, this feature is currently buggy.
 
 **Last working item**:
--   **Last item agent was working**: Fixing a critical bug where successfully placing an order does not result in the order appearing in the Order History page. The system incorrectly reports that 0 orders were created. The agent identified that the checkout logic was being triggered with an empty cart state during testing. The agent was attempting to re-populate the cart with valid, active items to perform a clean end-to-end test of the checkout flow.
--   **Status**: IN PROGRESS
--   **Agent Testing Done**: N
--   **Which testing method agent to use?**: backend testing agent. The agent should first use a Python script to populate the test user's cart with valid items, then use  to call the  endpoint, and inspect the backend logs and the  MongoDB collection to debug the order creation failure.
+-   **Last item agent was working**: Performing a deep data analysis and cleanup as requested by the user. This involved three main actions:
+    1.  Clearing all items from the user's favorites list.
+    2.  Creating and running a script () to analyze and assign a category to every product in the database, achieving 100% categorization.
+    3.  Verifying that all 7790 products in the system are working (i.e., valid and orderable).
+-   **Status**: USER VERIFICATION PENDING
+-   **Agent Testing Done**: Y
+-   **Which testing method agent to use?**: Manual testing by user. The user should browse the catalog to verify that categories are correct and that the data appears clean.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Orders Do Not Appear in Order History (P0 - HIGHEST)**
-    -   **Description**: When a user confirms an order from the checkout screen, the backend processes it but fails to create an order document in the database, resulting in an empty order history.
-    -   **Attempted fixes**: The agent added logging to the checkout endpoint. It was discovered that during testing, the cart was being cleared prematurely by a previous step, causing the checkout endpoint to process an empty plan. The agent's last action was attempting to find new active s to add to the cart for a fresh test, but struggled with invalid IDs.
+-   **Issue 1: Offer Selection UI is Unstable (P1 - HIGHEST)**
+    -   **Description**: The new Compare offers feature, which is meant to show a modal with alternative product offers, is buggy. The agent's attempts to test it resulted in frontend errors () and browser crashes.
+    -   **Attempted fixes**: The agent created the component (), the API endpoint, and integrated it into the catalog and favorites pages. Fixes for incorrect import paths and API URLs were applied, but the core instability remains.
     -   **Next debug checklist**:
-        1.  Create a Python script to find several active s from a single supplier (e.g., Интегрита, ID ) whose total value will exceed their minimum order ().
-        2.  Use another script to clear the test user's cart () and then add the items found in step 1.
-        3.  Manually call the  endpoint via  with the test user's ID and a valid delivery address ID.
-        4.  Closely examine the backend logs for the output from the  function in , specifically the  from the  call and the logic within the  block.
-        5.  Query the  collection in MongoDB () to see if an order document was created. The core of the bug is likely that  returns a plan with  even if the cart has items.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical bug that breaks the core functionality of the application. Without it, users cannot place orders.
+        1.  Start the frontend and open the browser's developer console.
+        2.  Navigate to the catalog page ().
+        3.  Click the Сравнить предложения button (layers icon) on any product card to reproduce the error.
+        4.  Examine the  and  files. The error likely stems from the  prop being null or undefined when the modal is initialized. Add a guard clause in  to prevent rendering until  is populated.
+        5.  Trace the state management for  in  to ensure it's being set correctly before the modal is shown.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a new feature requested by the user. Fixing it will allow users to easily compare different pack sizes or suppliers for a single product, improving usability.
     -   **Status**: IN PROGRESS
     -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Both. First backend via , then frontend with a screenshot to confirm the end-to-end flow.
+    -   **Should Test frontend/backend/both after fix?**: Frontend
     -   **Blocked on other issue**: None.
 
 **In progress Task List**:
--   **Task 1: Complete Hotfix for Cart & Order History (P0)**
-    -   **Description**: This task encompasses resolving the final part of the user's hotfix request, which is the order history bug detailed in Issue 1.
-    -   **Where to resume**: At the Next debug checklist for Issue 1. The immediate goal is to prepare a valid test case (a cart with items) and debug the  endpoint.
-    -   **What will be achieved with this?**: The entire checkout flow will be functional, and the application will be stable from a user perspective.
-    -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: Both
-    -   **Blocked on something**: None.
+None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   (P1) **UI for Offer Selection**: When a product has multiple offers (different pack sizes/suppliers), the UI should present a choice to the user before adding it to the cart.
-    -   (P2) **Integrate **: The script for running classification checks should be integrated into the price list import process.
+    -   (P2) **Create  Index for Search Performance**: The current search logic relies heavily on regex fallbacks because the  collection lacks a  field. To improve search speed, a script should be created to populate this field for all 7790 products using the existing  logic.
+    -   (P2) **Integrate  into Pricelist Import Process**: The classification script was run as a one-off. It should be integrated into the data import pipeline to automatically categorize new products when suppliers upload pricelists.
 -   **Future Tasks**:
-    -   (P3) **Supplier Reports**: Implement a feature to provide suppliers with a report on their price list quality after upload.
-    -   (P3) **Telegram Bot Integration**: From the original roadmap.
-    -   (P3) **Refactor  and **: Break down monolithic files into smaller, more focused modules.
-    -   (P3) **UI for Match Debugging**: A UI to show users why a specific product match was accepted or rejected by the optimizer.
+    -   (P3) Implement supplier-facing reports on pricelist quality.
+    -   (P3) Integrate with a Telegram Bot for notifications or ordering.
+    -   (P3) Refactor the monolithic  into smaller, more focused modules (e.g., , , ).
+    -   (P3) Build a UI for debugging product match decisions from the optimizer.
 
 **Completed work in this session**
--   **Hotfix Part 1 & 2 (DONE)**: Successfully implemented and verified fixes to hide suppliers in the draft cart view and added a manual number input for item quantity.
--   **Phase 3 Optimizer (DONE)**: A major rewrite of the cart optimizer to handle supplier minimums, quantity top-ups (+10%), and redistribution of items from suppliers who don't meet their minimum order value. The frontend was updated to show the optimized plan only at checkout.
--   **Exact Add-to-Cart Bug Fix (DONE)**: Solved a critical bug where adding an item to the cart resulted in the quantity or price being changed immediately by the optimizer. This was fixed by creating a two-phase cart (Draft vs. Plan).
--   **Add-to-cart Item Replacement Bug Fix (DONE)**: Fixed a bug where the optimizer would immediately swap a user's chosen item for a cheaper one upon adding it to the cart. Introduced the concept of a locked offer to prevent this.
--   **Full GOLD Pricelist Migration (DONE)**: Completed a full data migration, replacing all old supplier pricelists with 8 new GOLD standard files, plus a subsequent file for the Нордико supplier.
+-   **Checkout & Order History Stability (P0 - DONE)**: Successfully fixed the entire checkout flow by implementing a plan snapshot mechanism. Orders are now created reliably and appear in the order history. Tested with 15 new backend tests.
+-   **Search Engine Overhaul (DONE)**: Fixed a critical search bug and enhanced the engine with multi-word search (any order) and a synonym dictionary for superior relevance.
+-   **Data Integrity & Categorization (DONE)**: Performed a full data cleanup. Cleared user favorites, created an auto-classifier to categorize 100% of products, and verified that all catalog items are valid.
+-   **UI Hotfixes (P1 - DONE)**: Implemented all requested UI tweaks, including quantity controls in the catalog, removal of obsolete buttons, and matching the style of quantity inputs across pages.
+-   **Offer Selection Feature (Partially Done)**: Added the Compare offers button and backend API. The UI component was created but remains buggy.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+None not already listed in the pending issues.
 
 **Known issue recurrence from previous fork**
 None.
@@ -74,71 +73,76 @@ None.
 
 
 **Key Technical Concepts**
--   **Two-Phase Cart**: The application now strictly separates the user's Draft cart from the Plan generated at checkout. The cart UI fetches raw intents (), while the checkout screen fetches the optimized plan ().
--   **Idempotent Optimizer**: The  function is a pure function that takes cart intents and returns an optimized plan without modifying the cart state itself.
--   **Complex Redistribution Logic**: The optimizer attempts to satisfy supplier minimums first by a  quantity top-up, and if that fails, it tries to move items from an under-minimum supplier to other suppliers in the plan.
--   **Locked Offers**: When adding an item, a  is locked. The optimizer must respect this locked choice and should not generate  or  flags for it unless forced to by the redistribution logic.
+-   **Synonym-based Search**: The search query is expanded with a predefined dictionary of synonyms () to improve recall (e.g., семга and лосось are treated as equivalent).
+-   **Dynamic Multi-word Regex**: The backend constructs complex regex patterns with positive lookaheads () to find documents containing multiple search terms in any order.
+-   **Rule-based Auto-classification**: A script () uses a dictionary of keywords and rules to programmatically assign a  category to products based on their name.
 
 **key DB schema**
--   ****: Contains supplier data, including the new  field.
--   ****: Stores user's raw cart. Key fields: , , , .
--   ****: Stores completed orders. The current bug prevents documents from being created here. Key fields: , , , , .
+-   ****: All documents in this collection now have a  field populated with a category string (e.g., ). It does **not** yet have the proposed  field for search optimization.
+-   ****: Unchanged. Stores the user's draft cart.
+-   ****: Now being correctly populated by the checkout process.
+-   ****: A new temporary collection (with a TTL) used to store plan snapshots before checkout.
 
 **All files of reference**
--   : Contains the checkout logic that needs debugging.
--   : Contains the core optimization logic that may be returning an empty plan.
--   : The frontend component for the cart and checkout flow.
--   : The page where the created order should appear.
+-   : Contains the new search logic and API endpoints.
+-   : Contains the logic for the offer selection modal.
+-   : The buggy modal component that needs fixing.
+-   : The script used for data categorization.
+-   : The dictionary for search enhancement.
+-   : The successful test report from the testing agent for the checkout fix.
 
 **Areas that need refactoring**:
--   The  file is becoming very large and could be split into multiple files (e.g., , , ).
+-   The search logic within  has become very complex and should be extracted into a dedicated search service/module.
+-   The  file itself is a monolith and should be broken down by domain (cart, orders, catalog, etc.).
 
 **key api endpoints**
--   : Adds/updates an item in the draft cart.
--   : Retrieves the raw draft cart contents.
--   : Generates the optimized checkout plan.
--   : The endpoint that is currently failing to create an order.
--   : Retrieves the user's order history.
+-   : Now requires a  in the payload.
+-   : New endpoint that returns a list of alternative offers for a given item.
+-   : The search logic for the  parameter has been completely overhauled.
 
 **Critical Info for New Agent**
--   You must first solve the P0 bug: Orders Do Not Appear in Order History. This is the only task.
--   The bug's root cause is that the  endpoint is receiving or processing an empty plan from the  function, even when the user's cart contains items.
--   Follow the Next debug checklist in the issue description to reproduce the bug reliably and trace the backend logic. Do not start by using the frontend; isolate the backend issue first with  or a Python script.
--   The two-phase cart logic is fundamental. The draft cart () is just a list. The optimized plan () is where all complex business rules are applied. The  endpoint consumes the plan to create orders.
+-   The user is Russian-speaking and highly technical. All communication must be in Russian.
+-   The highest priority is to fix the buggy Compare offers UI. The backend API for this is already working.
+-   The search functionality and data integrity have been massively improved, but the user has not yet verified these changes. Be prepared for feedback or further refinement requests.
+-   Before starting new features, confirm with the user that the recent search and data quality improvements meet their expectations.
 
 **documents and test reports created in this job**
--    (Updated with completed tasks)
+-    (Updated)
+-   
+-   
+-   
 -   
 -   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: (PENDING) Submitted a hotfix request with 3 tasks: 1) Hide suppliers in cart, 2) Add manual quantity input in cart, 3) Fix orders not appearing in history.
-2.  **Agent**: Acknowledged completion of the Phase 3 optimizer task.
-3.  **User**: Submitted detailed technical specifications for Phase 3 (cart optimizer with minimums, top-ups, and redistribution).
-4.  **Agent**: Acknowledged completion of the Exact Add-to-Cart bug fix.
-5.  **User**: Reported a critical bug where adding items to the cart would incorrectly change their quantity or price.
-6.  **Agent**: Acknowledged completion of the add to cart bug fix.
-7.  **User**: Submitted a detailed bug report about adding items to the cart causing them to be replaced by different offers.
-8.  **Agent**: Acknowledged completion of the Нордико GOLD migration.
-9.  **User**: Requested the migration of the Нордико supplier to a new GOLD pricelist.
-10. **Agent**: Acknowledged completion of the main GOLD pricelist migration.
+1.  **User**: Reports a critical search bug where results disappear for 4-character queries (e.g., лосо) and asks for a perfect search engine.
+2.  **Agent**: Fixes the bug and improves multi-word search. (Completed)
+3.  **User**: да (Yes), confirming the agent's suggestion to add synonyms.
+4.  **Agent**: Implements and demonstrates synonym-based search. (Completed)
+5.  **User**: Asks to start work on adding brand synonyms and the UI for offer selection.
+6.  **Agent**: Implements the UI for offer selection (with bugs). (In Progress)
+7.  **User**: Добавить в карточку избранного Сравнить предложения (Add Compare offers to the favorites card).
+8.  **Agent**: Adds the Compare offers button to the favorites page. (Completed)
+9.  **User**: Requests to clear favorites, ensure all catalog items are valid, and fix all category errors to 100% accuracy.
+10. **Agent**: Performs the complete data analysis and cleanup as requested. (User Verification Pending)
 
 **Project Health Check:**
--   **Broken**: The checkout process.
--   **Mocked**: None
+-   **Broken**: The Compare Offers modal UI is non-functional and can crash the frontend.
+-   **Mocked**: None.
 
 **3rd Party Integrations**
 -   , : Used for reading  files.
+-   : Used for search morphology.
 
 **Testing status**
--   **Testing agent used after significant changes**: NO
+-   **Testing agent used after significant changes**: YES. The agent ran  after fixing the checkout flow, which generated 15 passing backend tests located in .
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**: None. Testing has been manual via , Python scripts, and screenshots.
--   **Known regressions**: The checkout-to-order-history flow is a critical regression.
+-   **Test files created**: []
+-   **Known regressions**: None. The checkout process was a regression that has now been fixed.
 
 **Credentials to test flow:**
 -   **Customer**:  / 
 -   **User ID for testing**: 
 
 **What agent forgot to execute**
-The agent has not forgotten any tasks but is currently blocked on debugging the final part of the user's hotfix request.</analysis>
+- The agent did not fully debug and fix the Compare Offers UI after encountering browser crashes, instead moving on to other tasks. This remains the most critical pending issue.</analysis>

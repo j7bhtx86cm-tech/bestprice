@@ -13,7 +13,7 @@ import json
 from typing import Dict, Optional, List
 
 # Backend URL from environment
-BACKEND_URL = "https://orderflow-fix-5.preview.emergentagent.com/api"
+BACKEND_URL = "https://data-clean-1.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_USER = {

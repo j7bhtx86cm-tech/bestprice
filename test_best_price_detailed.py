@@ -7,7 +7,7 @@ Analyzes existing favorites to verify weight tolerance and type matching
 import requests
 import json
 
-BACKEND_URL = "https://orderflow-fix-5.preview.emergentagent.com/api"
+BACKEND_URL = "https://data-clean-1.preview.emergentagent.com/api"
 EMAIL = "customer@bestprice.ru"
 PASSWORD = "password123"
 
