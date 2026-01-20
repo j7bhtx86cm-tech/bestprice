@@ -392,6 +392,40 @@ async def get_catalog(
     }
 
 
+@router.get("/search/quick", summary="Быстрый поиск по lemma_tokens")
+async def quick_search(
+    q: str = Query(..., min_length=2, description="Поисковый запрос"),
+    limit: int = Query(10, ge=1, le=50)
+):
+    """
+    Быстрый поиск только по lemma_tokens индексу.
+    Используется для autocomplete/typeahead.
+    
+    Преимущества:
+    - Использует индекс lemma_tokens (быстрее regex)
+    - Поддержка морфологии (молоко/молока/молочный)
+    """
+    db = get_db()
+    
+    results = search_with_lemma_only(db, q, limit=limit)
+    
+    # Добавляем supplier names
+    supplier_ids = list(set(r.get('supplier_company_id') for r in results if r.get('supplier_company_id')))
+    if supplier_ids:
+        companies = {c['id']: c.get('companyName', c.get('name', 'Unknown')) 
+                     for c in db.companies.find({'id': {'$in': supplier_ids}}, {'_id': 0})}
+        for item in results:
+            sid = item.get('supplier_company_id')
+            if sid:
+                item['supplier_name'] = companies.get(sid, 'Unknown')
+    
+    return {
+        'query': q,
+        'results': results,
+        'count': len(results)
+    }
+
+
 @router.get("/catalog/{reference_id}", summary="Получить карточку каталога")
 async def get_catalog_item(reference_id: str):
     """Получает детали карточки каталога"""
