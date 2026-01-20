@@ -398,67 +398,122 @@ def build_initial_plan(
     """
     Строит начальный план: для каждого intent подбирает лучший offer.
     
+    P0.2: При недоступности товара устанавливает unavailable_reason_code.
+    
     Returns: (assigned_lines, unfulfilled_lines)
     """
     assigned = []
     unfulfilled = []
     
     for intent in intents:
-        # Если есть конкретный supplier_item_id - используем его напрямую
+        locked = False  # Флаг что пользователь выбрал конкретный оффер
+        
+        # Если есть конкретный supplier_item_id - используем его напрямую (locked offer)
         if intent.supplier_item_id:
+            locked = True
             item = db.supplier_items.find_one(
-                {'id': intent.supplier_item_id, 'active': True},
+                {'id': intent.supplier_item_id},
                 {'_id': 0}
             )
             
-            if item and item.get('price', 0) > 0:
-                supplier_id = item.get('supplier_company_id', '')
-                supplier_name = ''
-                if supplier_id:
-                    company = db.companies.find_one({'id': supplier_id}, {'companyName': 1, 'name': 1})
-                    supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
-                
-                offer = Offer(
-                    supplier_item_id=item['id'],
-                    supplier_id=supplier_id,
-                    supplier_name=supplier_name,
-                    product_core_id=item.get('product_core_id', ''),
-                    unit_type=item.get('unit_type', 'PIECE'),
-                    price=item['price'],
-                    pack_value=item.get('pack_qty') or item.get('pack_value'),
-                    pack_unit=item.get('pack_unit'),
-                    brand_id=item.get('brand_id'),
-                    name_raw=item.get('name_raw', ''),
-                    min_order_qty=item.get('min_order_qty', 1),
-                    step_qty=item.get('step_qty', 1),
-                    fat_pct=item.get('fat_pct'),
-                    cut=item.get('cut'),
-                )
-                
-                final_qty, qty_flags = apply_qty_constraints(intent.qty, offer)
-                
+            # P0.2: Детальная проверка причин недоступности locked offer
+            if not item:
+                # Товар вообще не найден в БД
                 line = PlanLine(
                     reference_id=intent.reference_id,
                     intent=intent,
-                    offer=offer,
+                    offer=None,
                     requested_qty=intent.qty,
-                    final_qty=final_qty,
-                    line_total=final_qty * offer.price,
-                    flags=qty_flags,
-                    supplier_changed=False,
-                    brand_changed=False,
-                    pack_changed=False,
-                    qty_changed_by_topup=False,
+                    final_qty=0,
+                    line_total=0,
+                    flags=[OptFlag.NO_OFFER_FOUND.value],
+                    unavailable_reason_code=UnavailableReason.OFFER_INACTIVE.value,
+                    unavailable_reason_text=UNAVAILABLE_REASON_TEXTS[UnavailableReason.OFFER_INACTIVE],
+                    locked=locked,
                 )
-                assigned.append(line)
+                unfulfilled.append(line)
                 continue
-            else:
-                # Оффер неактивен - будем искать замену
-                pass
+            
+            if not item.get('active', False):
+                # Товар неактивен
+                line = PlanLine(
+                    reference_id=intent.reference_id,
+                    intent=intent,
+                    offer=None,
+                    requested_qty=intent.qty,
+                    final_qty=0,
+                    line_total=0,
+                    flags=[OptFlag.NO_OFFER_FOUND.value],
+                    unavailable_reason_code=UnavailableReason.OFFER_INACTIVE.value,
+                    unavailable_reason_text=UNAVAILABLE_REASON_TEXTS[UnavailableReason.OFFER_INACTIVE],
+                    locked=locked,
+                )
+                unfulfilled.append(line)
+                continue
+            
+            if item.get('price', 0) <= 0:
+                # Некорректная цена
+                line = PlanLine(
+                    reference_id=intent.reference_id,
+                    intent=intent,
+                    offer=None,
+                    requested_qty=intent.qty,
+                    final_qty=0,
+                    line_total=0,
+                    flags=[OptFlag.NO_OFFER_FOUND.value],
+                    unavailable_reason_code=UnavailableReason.PRICE_INVALID.value,
+                    unavailable_reason_text=UNAVAILABLE_REASON_TEXTS[UnavailableReason.PRICE_INVALID],
+                    locked=locked,
+                )
+                unfulfilled.append(line)
+                continue
+            
+            # Товар валиден - создаём offer
+            supplier_id = item.get('supplier_company_id', '')
+            supplier_name = ''
+            if supplier_id:
+                company = db.companies.find_one({'id': supplier_id}, {'companyName': 1, 'name': 1})
+                supplier_name = company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown'
+            
+            offer = Offer(
+                supplier_item_id=item['id'],
+                supplier_id=supplier_id,
+                supplier_name=supplier_name,
+                product_core_id=item.get('product_core_id', ''),
+                unit_type=item.get('unit_type', 'PIECE'),
+                price=item['price'],
+                pack_value=item.get('pack_qty') or item.get('pack_value'),
+                pack_unit=item.get('pack_unit'),
+                brand_id=item.get('brand_id'),
+                name_raw=item.get('name_raw', ''),
+                min_order_qty=item.get('min_order_qty', 1),
+                step_qty=item.get('step_qty', 1),
+                fat_pct=item.get('fat_pct'),
+                cut=item.get('cut'),
+            )
+            
+            final_qty, qty_flags = apply_qty_constraints(intent.qty, offer)
+            
+            line = PlanLine(
+                reference_id=intent.reference_id,
+                intent=intent,
+                offer=offer,
+                requested_qty=intent.qty,
+                final_qty=final_qty,
+                line_total=final_qty * offer.price,
+                flags=qty_flags,
+                supplier_changed=False,
+                brand_changed=False,
+                pack_changed=False,
+                qty_changed_by_topup=False,
+                locked=locked,
+            )
+            assigned.append(line)
+            continue
         
         # Ищем кандидатов по product_core_id
         if not intent.product_core_id:
-            # Нет product_core_id - unfulfilled
+            # Нет product_core_id - CLASSIFICATION_MISSING
             line = PlanLine(
                 reference_id=intent.reference_id,
                 intent=intent,
@@ -467,6 +522,9 @@ def build_initial_plan(
                 final_qty=0,
                 line_total=0,
                 flags=[OptFlag.NO_OFFER_FOUND.value],
+                unavailable_reason_code=UnavailableReason.CLASSIFICATION_MISSING.value,
+                unavailable_reason_text=UNAVAILABLE_REASON_TEXTS[UnavailableReason.CLASSIFICATION_MISSING],
+                locked=locked,
             )
             unfulfilled.append(line)
             continue
@@ -474,6 +532,7 @@ def build_initial_plan(
         candidates = find_candidates(db, intent)
         
         if not candidates:
+            # Нет подходящих офферов у поставщиков
             line = PlanLine(
                 reference_id=intent.reference_id,
                 intent=intent,
@@ -482,6 +541,9 @@ def build_initial_plan(
                 final_qty=0,
                 line_total=0,
                 flags=[OptFlag.NO_OFFER_FOUND.value],
+                unavailable_reason_code=UnavailableReason.NO_SUPPLIER_OFFERS.value,
+                unavailable_reason_text=UNAVAILABLE_REASON_TEXTS[UnavailableReason.NO_SUPPLIER_OFFERS],
+                locked=locked,
             )
             unfulfilled.append(line)
             continue
@@ -489,6 +551,24 @@ def build_initial_plan(
         offer, flags = pick_best_offer(intent, candidates)
         
         if not offer:
+            # Фильтры отсеяли всех кандидатов - определяем причину
+            reason_code = UnavailableReason.OTHER.value
+            reason_text = UNAVAILABLE_REASON_TEXTS[UnavailableReason.OTHER]
+            
+            # Анализируем почему отсеялись
+            if intent.fat_pct is not None or intent.cut:
+                reason_code = UnavailableReason.STRICT_ATTR_MISMATCH.value
+                reason_text = UNAVAILABLE_REASON_TEXTS[UnavailableReason.STRICT_ATTR_MISMATCH]
+            elif intent.pack_value:
+                # Проверяем есть ли проблема с фасовкой
+                pack_mismatch = all(
+                    not check_pack_tolerance(intent.pack_value, c.pack_value, intent.unit_type)
+                    for c in candidates
+                )
+                if pack_mismatch:
+                    reason_code = UnavailableReason.PACK_TOLERANCE_FAILED.value
+                    reason_text = UNAVAILABLE_REASON_TEXTS[UnavailableReason.PACK_TOLERANCE_FAILED]
+            
             line = PlanLine(
                 reference_id=intent.reference_id,
                 intent=intent,
@@ -497,6 +577,9 @@ def build_initial_plan(
                 final_qty=0,
                 line_total=0,
                 flags=flags,
+                unavailable_reason_code=reason_code,
+                unavailable_reason_text=reason_text,
+                locked=locked,
             )
             unfulfilled.append(line)
             continue
