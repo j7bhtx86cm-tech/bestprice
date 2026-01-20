@@ -935,6 +935,7 @@ def plan_to_dict(result: OptimizationResult) -> Dict[str, Any]:
                 'brand_changed': line.brand_changed,
                 'pack_changed': line.pack_changed,
                 'qty_changed_by_topup': line.qty_changed_by_topup,
+                'locked': line.locked,
             }
             items_data.append(item_dict)
         
@@ -949,14 +950,28 @@ def plan_to_dict(result: OptimizationResult) -> Dict[str, Any]:
         }
         suppliers_data.append(supplier_dict)
     
+    # P0.2: Добавляем reason codes в unfulfilled items
     unfulfilled_data = []
     for line in result.unfulfilled:
-        unfulfilled_data.append({
+        unfulfilled_item = {
             'reference_id': line.reference_id,
             'product_name': line.intent.product_name if line.intent else '',
             'requested_qty': line.requested_qty,
-            'reason': 'Нет доступных предложений у поставщиков',
-        })
+            'locked': line.locked,
+        }
+        
+        # Используем детальный reason если есть, иначе generic
+        if line.unavailable_reason_code:
+            unfulfilled_item['unavailable_reason_code'] = line.unavailable_reason_code
+            unfulfilled_item['reason'] = line.unavailable_reason_text or UNAVAILABLE_REASON_TEXTS.get(
+                UnavailableReason(line.unavailable_reason_code),
+                'Товар временно недоступен'
+            )
+        else:
+            unfulfilled_item['unavailable_reason_code'] = UnavailableReason.OTHER.value
+            unfulfilled_item['reason'] = 'Нет доступных предложений у поставщиков'
+        
+        unfulfilled_data.append(unfulfilled_item)
     
     return {
         'success': result.success,
