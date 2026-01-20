@@ -75,14 +75,14 @@ const OfferSelectModal = ({
   };
 
   // Все офферы включая исходный
-  const allOffers = [
+  const allOffers = sourceItem ? [
     {
       ...sourceItem,
       supplier_name: sourceItem.supplier_name || 'Поставщик',
       isSource: true,
     },
     ...alternatives.map(a => ({ ...a, isSource: false }))
-  ].filter(Boolean);
+  ].filter(Boolean) : [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
