@@ -12,7 +12,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://data-clean-1.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://optimizer-pro.preview.emergentagent.com')
 TEST_USER_ID = "0b3f0b09-d8ba-4ff9-9d2a-519e1c34067e"
 
 

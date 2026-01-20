@@ -10,7 +10,7 @@ import re
 from typing import Dict, List, Optional
 
 # Backend URL
-BACKEND_URL = "https://data-clean-1.preview.emergentagent.com/api"
+BACKEND_URL = "https://optimizer-pro.preview.emergentagent.com/api"
 
 # Test credentials
 EMAIL = "customer@bestprice.ru"

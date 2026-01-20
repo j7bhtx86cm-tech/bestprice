@@ -1,70 +1,86 @@
 <analysis>**original_problem_statement:**
-The user's initial request was a hotfix for the checkout process and order history, along with several small UI improvements. This evolved into a major overhaul of the search functionality to make it perfect and a deep data cleansing operation to ensure 100% of catalog items are valid and correctly categorized.
-
-The user provided a detailed technical specification (ТЗ) for the work, which included:
-- **P0 (Critical):** Fixing the checkout flow by implementing plan snapshotting to prevent data inconsistencies, adding reason codes for unavailable items, and ensuring completed orders appear in the order history.
-- **P1 (Urgent):** Minor UI fixes, such as adding quantity controls in the catalog, hiding supplier info in the draft cart, and removing obsolete buttons.
-- **Search Overhaul:** Fixing a bug where search results would disappear for 4-character queries (e.g., лосо) and improving search to handle multi-word queries and synonyms (e.g., филе курицы, семга филе).
-- **Data Integrity:** A request to clear the user's favorites, ensure every item in the catalog is valid and orderable, and use auto-classification to assign a category to 100% of the products.
-- **New Feature:** Add a UI for users to choose between multiple offers (pack sizes/suppliers) for the same product, accessible from the catalog and favorites.
+The user initially requested a series of critical fixes and improvements for an e-commerce platform. This included:
+- **P0 (Critical Bugs):**
+    - Fixing an unstable checkout process and ensuring orders appear in the history.
+    - Correcting a critical optimizer bug that replaced expensive items (like caviar) with cheap, incorrect alternatives, displaying the wrong price.
+    - Fixing a bug where clearing Favorites did not work.
+    - Resolving a systemic issue where the optimizer failed to find replacements for many items (e.g., the Egg problem) due to missing  data.
+- **P1 (Features & Improvements):**
+    - A complete overhaul of the search engine to be perfect, handling multi-word queries, synonyms, and morphology.
+    - A new feature to compare alternative offers (pack sizes/suppliers) for a product.
+    - A deep data analysis and cleanup to ensure 100% of products are correctly categorized and valid.
+    - A UI indicator to warn users when an automatic product substitution results in a significant price change (25% threshold).
+    - A major refactoring of the monolithic backend  file into a modular structure.
+    - Implementation of a search autocomplete feature.
 
 **User's preferred language**: Russian
 
 **what currently exists?**
-The application is a full-stack React/FastAPI e-commerce platform with a two-phase cart (Draft vs. Optimized Plan).
-- The critical checkout bug has been resolved by implementing a plan snapshot system, where a  is generated and used to confirm the order, ensuring data consistency. Orders now correctly appear in the user's order history.
-- The search engine has been significantly improved. It now correctly handles short queries, multi-word queries in any order, and uses a synonym dictionary () to provide more relevant results (e.g., searching for семга will also find лосось).
-- A major data cleanup has been performed. A script () was created and run to successfully categorize 100% of the products. All products in the database are confirmed to be valid (have a price, active status, etc.). The user's favorites have been cleared as requested.
-- A new feature to compare offers has been partially implemented. A button appears in the catalog and favorites, which is supposed to open a modal () to show alternative offers. However, this feature is currently buggy.
+The application is a full-stack React/FastAPI platform. Most of the user's initial requests have been addressed.
+- **Backend:**
+    - The checkout and order history are stable.
+    - The optimizer now has a price tolerance check (>50%) to prevent incorrect substitutions and correctly finds alternatives for almost all products after a massive data fix ( population).
+    - The  script has been significantly improved with better rules and negative lookaheads to prevent common misclassifications.
+    - Search functionality is now powered by a  field and a dedicated , offering fast, morphologically-aware results. A  endpoint powers the frontend autocomplete.
+    - The monolithic  has been partially refactored. Endpoints for , , and  have been moved to a new  directory.
+    - Database indexes have been heavily optimized for performance.
+- **Frontend:**
+    - The Compare offers modal is stable and functional.
+    - The Favorites page now has a working Clear All button.
+    - A reusable  component has been created and successfully integrated into both the Catalog and Favorites pages.
+    - The Cart page now displays a visual indicator (⚠️ icon with a tooltip) if a substituted item's price changes by more than 25%.
 
 **Last working item**:
--   **Last item agent was working**: Performing a deep data analysis and cleanup as requested by the user. This involved three main actions:
-    1.  Clearing all items from the user's favorites list.
-    2.  Creating and running a script () to analyze and assign a category to every product in the database, achieving 100% categorization.
-    3.  Verifying that all 7790 products in the system are working (i.e., valid and orderable).
--   **Status**: USER VERIFICATION PENDING
--   **Agent Testing Done**: Y
--   **Which testing method agent to use?**: Manual testing by user. The user should browse the catalog to verify that categories are correct and that the data appears clean.
--   **User Testing Done**: N
+- **Last item agent was working**: The agent was working on two user-requested tasks simultaneously:
+    1.  **Backend Refactoring**: Migrating endpoints from the main  into separate, domain-specific modules (, , ).
+    2.  **Frontend Feature**: Adding the  component to the Favorites page search bar.
+- **Status**: USER VERIFICATION PENDING
+- **Agent Testing Done**: Y
+- **Which testing method agent to use?**: Manual testing by user. The user should be asked to test the new autocomplete feature on the  page. Backend changes are not directly user-facing but enable the feature.
+- **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Offer Selection UI is Unstable (P1 - HIGHEST)**
-    -   **Description**: The new Compare offers feature, which is meant to show a modal with alternative product offers, is buggy. The agent's attempts to test it resulted in frontend errors () and browser crashes.
-    -   **Attempted fixes**: The agent created the component (), the API endpoint, and integrated it into the catalog and favorites pages. Fixes for incorrect import paths and API URLs were applied, but the core instability remains.
-    -   **Next debug checklist**:
-        1.  Start the frontend and open the browser's developer console.
-        2.  Navigate to the catalog page ().
-        3.  Click the Сравнить предложения button (layers icon) on any product card to reproduce the error.
-        4.  Examine the  and  files. The error likely stems from the  prop being null or undefined when the modal is initialized. Add a guard clause in  to prevent rendering until  is populated.
-        5.  Trace the state management for  in  to ensure it's being set correctly before the modal is shown.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a new feature requested by the user. Fixing it will allow users to easily compare different pack sizes or suppliers for a single product, improving usability.
-    -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Frontend
-    -   **Blocked on other issue**: None.
+None. The application is in a stable state with the last set of features implemented.
 
 **In progress Task List**:
-None.
+- **Task 1: Complete the refactoring of  (P1 - HIGHEST)**
+    - **Where to resume**: The agent successfully created the  directory and moved endpoints for , , and . However, the main  file still contains numerous other endpoints (e.g., , , ). The next step is to create new modules for these remaining domains (e.g., , ), move the corresponding code, and update the main server file to include these new routers.
+    - **What will be achieved with this?**: A fully modular, maintainable, and scalable backend API structure, which was a direct user request.
+    - **Status**: IN PROGRESS
+    - **Should Test frontend/backend/both after fix?**: Backend
+    - **Blocked on something**: None.
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks**:
-    -   (P2) **Create  Index for Search Performance**: The current search logic relies heavily on regex fallbacks because the  collection lacks a  field. To improve search speed, a script should be created to populate this field for all 7790 products using the existing  logic.
-    -   (P2) **Integrate  into Pricelist Import Process**: The classification script was run as a one-off. It should be integrated into the data import pipeline to automatically categorize new products when suppliers upload pricelists.
--   **Future Tasks**:
-    -   (P3) Implement supplier-facing reports on pricelist quality.
-    -   (P3) Integrate with a Telegram Bot for notifications or ordering.
-    -   (P3) Refactor the monolithic  into smaller, more focused modules (e.g., , , ).
-    -   (P3) Build a UI for debugging product match decisions from the optimizer.
+- **Upcoming Tasks**:
+    - (P2) **User Verification**: The user needs to test and confirm that the new search autocomplete on the Favorites page works as expected.
+- **Future Tasks**:
+    - (P2) Integrate  and  into the regular pricelist import process to prevent data degradation.
+    - (P3) Implement supplier-facing reports on pricelist quality.
+    - (P3) Integrate with a Telegram Bot for notifications.
+    - (P3) Build a UI for debugging product match decisions from the optimizer.
+    - (P3) A/B testing different search configurations.
 
 **Completed work in this session**
--   **Checkout & Order History Stability (P0 - DONE)**: Successfully fixed the entire checkout flow by implementing a plan snapshot mechanism. Orders are now created reliably and appear in the order history. Tested with 15 new backend tests.
--   **Search Engine Overhaul (DONE)**: Fixed a critical search bug and enhanced the engine with multi-word search (any order) and a synonym dictionary for superior relevance.
--   **Data Integrity & Categorization (DONE)**: Performed a full data cleanup. Cleared user favorites, created an auto-classifier to categorize 100% of products, and verified that all catalog items are valid.
--   **UI Hotfixes (P1 - DONE)**: Implemented all requested UI tweaks, including quantity controls in the catalog, removal of obsolete buttons, and matching the style of quantity inputs across pages.
--   **Offer Selection Feature (Partially Done)**: Added the Compare offers button and backend API. The UI component was created but remains buggy.
+- **Critical Bug Fixes:**
+    - Fixed the Clear Favorites feature by adding a dedicated backend endpoint and UI button.
+    - Stabilized the Compare Offers modal, preventing crashes and implementing selection logic.
+    - Resolved the Egg Problem by creating and running a script () to populate missing data for ~6000 items.
+    - Resolved the Caviar Problem by fixing the classifier's rule order and adding a price tolerance check to the optimizer, preventing absurd product substitutions.
+- **Data Integrity & Analysis:**
+    - Ran deep analysis to find and fix dozens of critical misclassifications (e.g., containers being classified as food).
+    - Improved the  with more specific rules and negative lookaheads.
+- **Search Overhaul:**
+    - Created a  field for all products and built a search index on it ().
+    - Refactored search logic into a dedicated .
+- **New Features:**
+    - Implemented a UI indicator in the cart to warn users of significant price changes (>25%) on substituted items.
+    - Created a reusable  component and integrated it into the Catalog and Favorites pages.
+- **Backend Refactoring & Optimization:**
+    - Partially refactored , moving , , and  endpoints into separate modules.
+    - Created over 20 new compound indexes in MongoDB to optimize query performance across the application.
 
 **Earlier issues found/mentioned but not fixed**
-None not already listed in the pending issues.
+None.
 
 **Known issue recurrence from previous fork**
 None.
@@ -73,76 +89,82 @@ None.
 
 
 **Key Technical Concepts**
--   **Synonym-based Search**: The search query is expanded with a predefined dictionary of synonyms () to improve recall (e.g., семга and лосось are treated as equivalent).
--   **Dynamic Multi-word Regex**: The backend constructs complex regex patterns with positive lookaheads () to find documents containing multiple search terms in any order.
--   **Rule-based Auto-classification**: A script () uses a dictionary of keywords and rules to programmatically assign a  category to products based on their name.
+- **Lemma-based Search**: Using a  field (populated by ) for fast and morphologically-aware search, powering both the main search and the new autocomplete feature.
+- **Optimizer with Price Tolerance**: The cart optimizer now includes a check to ensure that substituted items do not have a drastically different price.
+- **Modular Route Refactoring**: The monolithic  is being broken down into smaller, domain-specific files (e.g., ) located in . This work is in progress.
+- **Debounced Autocomplete**: A reusable React component  uses a  hook to fetch suggestions from a dedicated  endpoint as the user types.
 
 **key DB schema**
--   ****: All documents in this collection now have a  field populated with a category string (e.g., ). It does **not** yet have the proposed  field for search optimization.
--   ****: Unchanged. Stores the user's draft cart.
--   ****: Now being correctly populated by the checkout process.
--   ****: A new temporary collection (with a TTL) used to store plan snapshots before checkout.
+- ****:
+    - ****: This field is now correctly populated for >99% of items.
+    - ****: A new array of strings, indexed for fast text search.
+    - Multiple new compound indexes exist to optimize various queries.
+- ****: Structure is unchanged, but it is now managed by a dedicated API module.
 
 **All files of reference**
--   : Contains the new search logic and API endpoints.
--   : Contains the logic for the offer selection modal.
--   : The buggy modal component that needs fixing.
--   : The script used for data categorization.
--   : The dictionary for search enhancement.
--   : The successful test report from the testing agent for the checkout fix.
+- : The monolith being refactored.
+- : Directory containing the new, modular route files.
+- : Contains the critical price tolerance logic.
+- : New service for lemma-based search.
+- : The new frontend component.
+- : The latest page to integrate the autocomplete feature.
+- : The last successful test report from the testing agent.
 
 **Areas that need refactoring**:
--   The search logic within  has become very complex and should be extracted into a dedicated search service/module.
--   The  file itself is a monolith and should be broken down by domain (cart, orders, catalog, etc.).
+- The main  file still needs to be fully refactored. Endpoints for , , and other domains must be moved into their own modules within .
 
 **key api endpoints**
--   : Now requires a  in the payload.
--   : New endpoint that returns a list of alternative offers for a given item.
--   : The search logic for the  parameter has been completely overhauled.
+- : New endpoint to clear all favorites.
+- : New endpoint providing fast suggestions for the autocomplete component.
+- : The response payload now includes  for each line item to support the price-change UI indicator.
 
 **Critical Info for New Agent**
--   The user is Russian-speaking and highly technical. All communication must be in Russian.
--   The highest priority is to fix the buggy Compare offers UI. The backend API for this is already working.
--   The search functionality and data integrity have been massively improved, but the user has not yet verified these changes. Be prepared for feedback or further refinement requests.
--   Before starting new features, confirm with the user that the recent search and data quality improvements meet their expectations.
+- You must continue communicating in **Russian**.
+- The highest priority is to complete the backend refactoring task by moving all remaining endpoints out of  and into the  directory.
+- The user has not yet tested or verified the latest change (autocomplete on the favorites page). You should ask for their feedback on this before moving to new tasks from the backlog.
+- The application's data integrity and core logic are now significantly more robust than at the start of the session.
 
 **documents and test reports created in this job**
--    (Updated)
--   
--   
--   
--   
--   
+-  (Updated multiple times)
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Reports a critical search bug where results disappear for 4-character queries (e.g., лосо) and asks for a perfect search engine.
-2.  **Agent**: Fixes the bug and improves multi-word search. (Completed)
-3.  **User**: да (Yes), confirming the agent's suggestion to add synonyms.
-4.  **Agent**: Implements and demonstrates synonym-based search. (Completed)
-5.  **User**: Asks to start work on adding brand synonyms and the UI for offer selection.
-6.  **Agent**: Implements the UI for offer selection (with bugs). (In Progress)
-7.  **User**: Добавить в карточку избранного Сравнить предложения (Add Compare offers to the favorites card).
-8.  **Agent**: Adds the Compare offers button to the favorites page. (Completed)
-9.  **User**: Requests to clear favorites, ensure all catalog items are valid, and fix all category errors to 100% accuracy.
-10. **Agent**: Performs the complete data analysis and cleanup as requested. (User Verification Pending)
+1.  **User**: Fix the Caviar Problem (optimizer replaces expensive item with cheap one).
+2.  **Agent**: Diagnosed and fixed the issue by improving the classifier and adding price tolerance logic to the optimizer. (DONE)
+3.  **User**: Implement all suggested next steps: deep analysis of classification issues, UI indicator for price changes (25% threshold), and create  index.
+4.  **Agent**: Implemented all three requests. (DONE)
+5.  **User**: Integrate  into search, add more classification rules, and refactor .
+6.  **Agent**: Improved  integration, added classification fixes, and began refactoring  by creating . (DONE)
+7.  **User**: Continue refactoring (cart, orders), add frontend autocomplete, and optimize DB indexes.
+8.  **Agent**: Implemented all three tasks. (DONE)
+9.  **User**: Finish migrating endpoints into modules and add autocomplete to the favorites page.
+10. **Agent**: Moved cart/order/favorites endpoints and added autocomplete to the favorites page. (DONE, pending user verification)
 
 **Project Health Check:**
--   **Broken**: The Compare Offers modal UI is non-functional and can crash the frontend.
--   **Mocked**: None.
+- **Broken**: None.
+- **Mocked**: None.
 
 **3rd Party Integrations**
--   , : Used for reading  files.
--   : Used for search morphology.
+- 
+- 
+- 
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. The agent ran  after fixing the checkout flow, which generated 15 passing backend tests located in .
--   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**: []
--   **Known regressions**: None. The checkout process was a regression that has now been fixed.
+- **Testing agent used after significant changes**: YES, multiple times. The last run was for iteration 11 and all tests passed.
+- **Troubleshoot agent used after agent stuck in loop**: NO
+- **Test files created**: None in this session.
+- **Known regressions**: None.
 
 **Credentials to test flow:**
--   **Customer**:  / 
--   **User ID for testing**: 
+- **Customer**:  / 
+- **User ID for testing**: 
 
 **What agent forgot to execute**
-- The agent did not fully debug and fix the Compare Offers UI after encountering browser crashes, instead moving on to other tasks. This remains the most critical pending issue.</analysis>
+- The user's request to Finish the migration of endpoints into modules is only partially complete. While , , and  routes were moved, the , , and other endpoints still reside in the monolithic . This refactoring task needs to be completed.</analysis>
