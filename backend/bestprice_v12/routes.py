@@ -164,12 +164,16 @@ async def get_catalog(
                     query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             else:
                 # Многословный запрос
+                # Строим regex который найдёт все токены в ЛЮБОМ порядке
+                # Используем lookahead assertions: (?=.*token1)(?=.*token2)
+                lookahead_parts = [f'(?=.*{re.escape(t)})' for t in q_tokens]
+                any_order_regex = ''.join(lookahead_parts) + '.*'
+                
                 if is_last_token_complete:
-                    # Все токены полные: lemma search ИЛИ prefix (fallback)
-                    all_tokens_regex = '.*'.join(re.escape(t) for t in q_tokens)
+                    # Все токены полные: lemma search ИЛИ any-order regex
                     query['$or'] = [
                         {'lemma_tokens': {'$all': q_lemmas}},
-                        {'name_norm': {'$regex': all_tokens_regex, '$options': 'i'}}
+                        {'name_norm': {'$regex': any_order_regex, '$options': 'i'}}
                     ]
                 else:
                     # Последний токен неполный: prefix для него + lemma для остальных
@@ -178,13 +182,14 @@ async def get_catalog(
                     
                     if full_lemmas:
                         # Комбинированный: lemma для полных + prefix для последнего
+                        # + fallback на any-order regex
                         query['$or'] = [
                             {'lemma_tokens': {'$all': full_lemmas}, 'name_norm': {'$regex': f'(^|\\s){escaped_last}'}},
-                            {'name_norm': {'$regex': '.*'.join(re.escape(t) for t in q_tokens), '$options': 'i'}}
+                            {'name_norm': {'$regex': any_order_regex, '$options': 'i'}}
                         ]
                     else:
-                        # Только prefix
-                        query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
+                        # Только any-order regex
+                        query['name_norm'] = {'$regex': any_order_regex, '$options': 'i'}
             
             # === APPLY BRAND FILTER if confident ===
             if use_brand_filter and brand_detection.brand_ids:
