@@ -33,6 +33,9 @@ from .favorites import (
 
 # Import search utilities
 import sys
+
+# Logger
+logger = logging.getLogger(__name__)
 sys.path.insert(0, '/app/backend')
 from search_utils import (
     tokenize, tokenize_with_lemmas, detect_brand_from_query,
