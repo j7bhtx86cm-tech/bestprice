@@ -162,6 +162,10 @@ export const CustomerFavorites = () => {
   const [adding, setAdding] = useState(null);
   const [cartItems, setCartItems] = useState(new Set());
   const [cartCount, setCartCount] = useState(0);
+  
+  // P1: Состояние модального окна выбора оффера
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [selectedItemForOffers, setSelectedItemForOffers] = useState(null);
 
   // Categories for filter (same as catalog)
   const categories = [
