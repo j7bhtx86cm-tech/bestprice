@@ -137,14 +137,14 @@ def build_search_query(
             # Typeahead: prefix search
             query['name_norm'] = {'$regex': f'(^|\\s){escaped}', '$options': 'i'}
     else:
-        # Многословный запрос
+        # Многословный запрос - СТРОГИЙ поиск
         or_conditions = []
         
-        # 1. Lemma search (основной)
+        # 1. Lemma search (основной - самый точный)
         if lemmas:
             or_conditions.append({'lemma_tokens': {'$all': lemmas}})
         
-        # 2. Synonym regex
+        # 2. Synonym regex (с word boundaries)
         if use_synonyms:
             try:
                 synonym_regex = build_synonym_regex(tokens)
@@ -154,23 +154,16 @@ def build_search_query(
             except Exception as e:
                 logger.warning(f"Synonym regex error: {e}")
         
-        # 3. Exact tokens (any order)
-        lookahead = [f'(?=.*{re.escape(t)})' for t in tokens]
+        # 3. Exact tokens с word boundaries
+        lookahead = [f'(?=.*\\b{re.escape(t)})' for t in tokens]
         exact_regex = ''.join(lookahead) + '.*'
         or_conditions.append({
             'name_norm': {'$regex': exact_regex, '$options': 'i'}
         })
         
-        # 4. Short tokens fallback (fuzzy)
-        short_tokens = [t[:4] if len(t) >= 4 else t for t in tokens if len(t) >= 3]
-        if short_tokens:
-            short_lookahead = [f'(?=.*{re.escape(t)})' for t in short_tokens]
-            short_regex = ''.join(short_lookahead) + '.*'
-            or_conditions.append({
-                'name_norm': {'$regex': short_regex, '$options': 'i'}
-            })
+        # УБРАН fuzzy short_tokens - слишком много ложных срабатываний
         
-        # 5. Если последний токен неполный - добавить prefix
+        # 4. Если последний токен неполный - добавить prefix
         if not is_complete:
             escaped_last = re.escape(last_token)
             full_lemmas = generate_lemma_tokens(tokens[:-1])
