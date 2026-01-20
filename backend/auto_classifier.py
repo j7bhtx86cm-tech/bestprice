@@ -197,7 +197,8 @@ CLASSIFICATION_RULES = [
     (r'\b(торт|cake)', 'bakery.cake'),
     (r'\b(кекс|muffin|cupcake)', 'bakery.muffin'),
     (r'\b(печень|cookie|biscuit)', 'bakery.cookie'),
-    (r'\b(вафл|wafer|waffle)', 'bakery.waffle'),
+    # Вафли - исключаем "waffle black" (название стакана)
+    (r'\b(вафл|wafer)(?!.*black)(?!.*стакан)', 'bakery.waffle'),
     (r'\b(блин|pancake|crepe)', 'bakery.pancake'),
     (r'\b(оладь|fritter)', 'bakery.fritter'),
     (r'\b(сырник)', 'bakery.syrniki'),
