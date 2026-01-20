@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Search, Heart, ShoppingCart, Package, TrendingDown,
-  ChevronLeft, ChevronRight, RefreshCw, AlertTriangle
+  ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, Layers
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import OfferSelectModal from '@/components/OfferSelectModal';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -30,8 +31,8 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
-// Catalog Item Card - стиль v12 (P1.3: добавлен выбор количества)
-const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddToCart, isInFavorites, isInCart }) => {
+// Catalog Item Card - стиль v12 (P1: добавлен выбор оффера)
+const CatalogItemCard = ({ item, onAddToFavorites, onRemoveFromFavorites, onAddToCart, onShowOffers, isInFavorites, isInCart }) => {
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [inFavorites, setInFavorites] = useState(isInFavorites);
