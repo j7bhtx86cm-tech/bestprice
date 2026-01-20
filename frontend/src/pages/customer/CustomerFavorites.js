@@ -110,29 +110,43 @@ const FavoriteItemCard = ({ item, onRemove, onAddToCart, onShowOffers, adding, i
         </span>
       </div>
 
-      {/* Add to cart */}
-      <Button
-        className={`w-full ${(isInCart || addedToCart) ? 'bg-green-600 hover:bg-green-700' : ''}`}
-        onClick={handleAddClick}
-        disabled={adding === item.id || isInCart || addedToCart}
-      >
-        {adding === item.id ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Добавление...
-          </>
-        ) : (isInCart || addedToCart) ? (
-          <>
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            ✓ В корзине
-          </>
-        ) : (
-          <>
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            В корзину
-          </>
-        )}
-      </Button>
+      {/* Actions: Compare + Add to cart */}
+      <div className="flex gap-2">
+        {/* Кнопка сравнения предложений */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onShowOffers(item)}
+          title="Сравнить предложения"
+          data-testid="compare-offers-btn"
+        >
+          <Layers className="h-4 w-4" />
+        </Button>
+        
+        {/* Add to cart */}
+        <Button
+          className={`flex-1 ${(isInCart || addedToCart) ? 'bg-green-600 hover:bg-green-700' : ''}`}
+          onClick={handleAddClick}
+          disabled={adding === item.id || isInCart || addedToCart}
+        >
+          {adding === item.id ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Добавление...
+            </>
+          ) : (isInCart || addedToCart) ? (
+            <>
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              ✓ В корзине
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              В корзину
+            </>
+          )}
+        </Button>
+      </div>
     </Card>
   );
 };
