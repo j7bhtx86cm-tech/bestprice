@@ -164,32 +164,43 @@ async def get_catalog(
                     query['name_norm'] = {'$regex': f'(^|\\s){escaped_last}'}
             else:
                 # Многословный запрос
-                # Строим regex который найдёт все токены в ЛЮБОМ порядке
-                # Используем lookahead assertions: (?=.*token1)(?=.*token2)
+                # Строим несколько вариантов regex:
+                # 1. Точные токены в любом порядке
+                # 2. Укороченные токены (первые 3-4 буквы) для лучшего fuzzy matching
+                
+                # Полные токены lookahead
                 lookahead_parts = [f'(?=.*{re.escape(t)})' for t in q_tokens]
                 any_order_regex = ''.join(lookahead_parts) + '.*'
                 
+                # Укороченные токены (min 3 буквы) для fuzzy search
+                # Например: "курицы" → "кур", "филе" → "фил"
+                short_tokens = [t[:4] if len(t) >= 4 else t[:3] if len(t) >= 3 else t for t in q_tokens]
+                short_lookahead = [f'(?=.*{re.escape(t)})' for t in short_tokens if len(t) >= 3]
+                short_regex = ''.join(short_lookahead) + '.*' if short_lookahead else None
+                
                 if is_last_token_complete:
-                    # Все токены полные: lemma search ИЛИ any-order regex
-                    query['$or'] = [
+                    # Все токены полные: lemma search ИЛИ any-order regex ИЛИ short regex
+                    or_conditions = [
                         {'lemma_tokens': {'$all': q_lemmas}},
                         {'name_norm': {'$regex': any_order_regex, '$options': 'i'}}
                     ]
+                    if short_regex:
+                        or_conditions.append({'name_norm': {'$regex': short_regex, '$options': 'i'}})
+                    query['$or'] = or_conditions
                 else:
                     # Последний токен неполный: prefix для него + lemma для остальных
                     full_lemmas = generate_lemma_tokens(q_tokens[:-1])
                     escaped_last = re.escape(last_token_raw)
                     
+                    or_conditions = [{'name_norm': {'$regex': any_order_regex, '$options': 'i'}}]
+                    if short_regex:
+                        or_conditions.append({'name_norm': {'$regex': short_regex, '$options': 'i'}})
+                    
                     if full_lemmas:
                         # Комбинированный: lemma для полных + prefix для последнего
-                        # + fallback на any-order regex
-                        query['$or'] = [
-                            {'lemma_tokens': {'$all': full_lemmas}, 'name_norm': {'$regex': f'(^|\\s){escaped_last}'}},
-                            {'name_norm': {'$regex': any_order_regex, '$options': 'i'}}
-                        ]
-                    else:
-                        # Только any-order regex
-                        query['name_norm'] = {'$regex': any_order_regex, '$options': 'i'}
+                        or_conditions.insert(0, {'lemma_tokens': {'$all': full_lemmas}, 'name_norm': {'$regex': f'(^|\\s){escaped_last}'}})
+                    
+                    query['$or'] = or_conditions
             
             # === APPLY BRAND FILTER if confident ===
             if use_brand_filter and brand_detection.brand_ids:
