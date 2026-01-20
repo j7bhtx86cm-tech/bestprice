@@ -7,11 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Heart, Trash2, ShoppingCart, Search,
-  TrendingDown, Loader2
+  TrendingDown, Loader2, Layers
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import OfferSelectModal from '@/components/OfferSelectModal';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
