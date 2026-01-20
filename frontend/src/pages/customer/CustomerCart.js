@@ -498,6 +498,13 @@ export const CustomerCart = () => {
                     <div className="text-sm text-gray-500">
                       {item.price?.toLocaleString('ru-RU')}₽ × {item.final_qty} {getUnitLabel(item.unit_type)}
                     </div>
+                    {/* Индикатор изменения цены (>25%) */}
+                    {item.original_price && item.price && (
+                      <PriceChangeIndicator 
+                        originalPrice={item.original_price} 
+                        newPrice={item.price} 
+                      />
+                    )}
                     {/* Show qty change if different */}
                     {item.qty_changed_by_topup && item.requested_qty !== item.final_qty && (
                       <div className="text-sm text-orange-600 mt-1">
