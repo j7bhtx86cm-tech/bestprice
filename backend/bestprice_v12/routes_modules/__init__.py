@@ -1,32 +1,43 @@
 """
-Best Price v12 Routes - Modular structure
+BestPrice v12 Routes Modules
 
-Этот файл является точкой входа для всех роутов.
-Логика разделена по модулям:
-- catalog_routes.py: Каталог товаров, поиск
-- cart_routes.py: Корзина, intents, checkout
-- favorites_routes.py: Избранное
-- orders_routes.py: Заказы
-- admin_routes.py: Административные функции
-- suppliers_routes.py: Поставщики
+Модульная структура роутов:
+- cart_routes: Корзина и intents
+- orders_routes: История заказов
+- favorites_routes: Избранное
+
+Использование:
+    from bestprice_v12.routes_modules import cart_router, orders_router, favorites_router
+    
+    # Инициализация БД
+    cart_routes.set_db(db)
+    orders_routes.set_db(db)
+    favorites_routes.set_db(db)
+    
+    # Подключение к main router
+    main_router.include_router(cart_router)
+    main_router.include_router(orders_router)
+    main_router.include_router(favorites_router)
 """
 
-from fastapi import APIRouter
+from .cart_routes import router as cart_router, set_db as set_cart_db
+from .orders_routes import router as orders_router, set_db as set_orders_db
+from .favorites_routes import router as favorites_router, set_db as set_favorites_db
 
-# Основной роутер для /api/v12
-router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
 
-# Импортируем модули (в будущем)
-# from .catalog_routes import router as catalog_router
-# from .cart_routes import router as cart_router
-# from .favorites_routes import router as favorites_router
-# from .orders_routes import router as orders_router
-# from .admin_routes import router as admin_router
-# from .suppliers_routes import router as suppliers_router
+def init_all_routers(db):
+    """Инициализирует все модульные роутеры с подключением к БД"""
+    set_cart_db(db)
+    set_orders_db(db)
+    set_favorites_db(db)
 
-# router.include_router(catalog_router)
-# router.include_router(cart_router)
-# ... и т.д.
 
-# Пока используем монолитный routes.py
-# TODO: Постепенная миграция по модулям
+__all__ = [
+    'cart_router',
+    'orders_router', 
+    'favorites_router',
+    'init_all_routers',
+    'set_cart_db',
+    'set_orders_db',
+    'set_favorites_db'
+]
