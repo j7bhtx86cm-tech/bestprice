@@ -1486,27 +1486,33 @@ async def get_order_details(order_id: str):
 # === OFFER ALTERNATIVES (P1 - Выбор оффера) ===
 
 # Квалификаторы типа обработки продукта
-PROCESSING_QUALIFIERS = {
-    'frozen': ['с/м', 'свежемороз', 'замороз', 'морожен', 'зам.', 'зам '],
-    'chilled': ['охл', 'охлажд'],
-    'smoked': ['копчен', 'копч.', 'х/к', 'г/к', 'холодн копч', 'горяч копч'],
-    'salted': ['солен', 'соления', 'посол', 'слабосол', 'малосол', 'пресерв'],
-    'dried': ['вялен', 'сушен', 'сух.'],
-    'marinated': ['марин'],
-    'canned': ['консерв', 'ж/б', 'жестян'],
-    'fresh': ['свеж'],
-}
+# ВАЖНО: Порядок проверки имеет значение! Более специфичные идут первыми
+PROCESSING_QUALIFIERS_ORDER = [
+    # Специфичные типы (проверяются первыми)
+    ('smoked', ['копчен', 'копч.', 'х/к', 'г/к', 'холодного копчения', 'горячего копчения']),
+    ('salted', ['солен', 'соления', 'посол', 'слабосол', 'малосол', 'пресерв']),
+    ('dried', ['вялен', 'сушен', 'сух.']),
+    ('marinated', ['марин']),
+    ('canned', ['консерв', 'ж/б', 'жестян']),
+    # Базовые типы (проверяются последними)
+    ('chilled', ['охл', 'охлажд']),
+    ('frozen', ['с/м', 'свежемороз', 'замороз', 'морожен', 'зам.', 'зам ']),
+    ('fresh', ['свеж']),
+]
 
 def detect_processing_type(name_norm: str) -> str:
     """
     Определяет тип обработки продукта по названию.
     
+    ВАЖНО: Более специфичные типы проверяются первыми!
+    Например, "копчёный с/м" → 'smoked' (не 'frozen')
+    
     Returns:
-        Тип обработки: 'frozen', 'chilled', 'smoked', 'salted', 'dried', 'marinated', 'canned', 'fresh', или 'unknown'
+        Тип обработки: 'smoked', 'salted', 'frozen', etc. или 'unknown'
     """
     name_lower = name_norm.lower()
     
-    for proc_type, keywords in PROCESSING_QUALIFIERS.items():
+    for proc_type, keywords in PROCESSING_QUALIFIERS_ORDER:
         for kw in keywords:
             if kw in name_lower:
                 return proc_type
@@ -1526,7 +1532,13 @@ def build_processing_filter(name_norm: str) -> dict:
     if proc_type == 'unknown':
         return {}  # Без фильтра если тип неизвестен
     
-    keywords = PROCESSING_QUALIFIERS.get(proc_type, [])
+    # Находим ключевые слова для этого типа
+    keywords = None
+    for pt, kws in PROCESSING_QUALIFIERS_ORDER:
+        if pt == proc_type:
+            keywords = kws
+            break
+    
     if not keywords:
         return {}
     
