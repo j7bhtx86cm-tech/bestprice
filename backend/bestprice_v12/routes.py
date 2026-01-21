@@ -1620,50 +1620,23 @@ def calculate_relevance_score(source_comps: dict, candidate_comps: dict,
     score += len(meaningful_common) * 3
     
     return score
-    
-    return 'unknown'
-
-
-def build_processing_filter(name_norm: str) -> dict:
-    """
-    Строит фильтр MongoDB для поиска товаров с тем же типом обработки.
-    
-    Returns:
-        MongoDB filter dict для name_norm
-    """
-    proc_type = detect_processing_type(name_norm)
-    
-    if proc_type == 'unknown':
-        return {}  # Без фильтра если тип неизвестен
-    
-    # Находим паттерны для этого типа
-    patterns = None
-    for pt, pats in PROCESSING_QUALIFIERS_ORDER:
-        if pt == proc_type:
-            patterns = pats
-            break
-    
-    if not patterns:
-        return {}
-    
-    # Строим regex из паттернов: должен содержать хотя бы один паттерн
-    regex = '(' + '|'.join(patterns) + ')'
-    
-    return {'name_norm': {'$regex': regex, '$options': 'i'}}
 
 
 @router.get("/item/{item_id}/alternatives", summary="Получить альтернативные офферы")
 async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
     """
-    Возвращает альтернативные офферы для ИДЕНТИЧНОГО товара.
+    Возвращает альтернативные офферы для товара, ранжированные по релевантности.
     
-    Алгоритм поиска альтернатив:
-    1. Определяем тип обработки (заморозка, копчение, соление и т.д.)
-    2. Ищем по ТОЧНОМУ совпадению name_norm
-    3. Если не найдено → ищем по product_core_id + тот же тип обработки + похожее название
+    Алгоритм:
+    1. Извлекаем компоненты из названия (вид, форма, обработка)
+    2. Ищем товары с тем же product_core_id от ДРУГИХ поставщиков
+    3. Ранжируем по score релевантности (вид > форма > обработка)
+    4. Отображаем от наиболее релевантных к наименее
     
-    Используется для показа пользователю выбора поставщика/фасовки.
-    НЕ показывает похожие товары — только идентичные!
+    Score:
+    - Совпадение вида (лосось=лосось): +100
+    - Совпадение формы (филе=филе): +50
+    - Совпадение обработки (с/м=с/м): +25
     """
     db = get_db()
     
@@ -1676,91 +1649,66 @@ async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
     if not source_item:
         return {'alternatives': [], 'source': None, 'total': 0}
     
-    alternatives = []
     name_norm = source_item.get('name_norm', '')
     product_core_id = source_item.get('product_core_id')
+    source_supplier = source_item.get('supplier_company_id')
     
-    # Определяем тип обработки исходного товара
-    source_proc_type = detect_processing_type(name_norm)
-    proc_filter = build_processing_filter(name_norm)
+    # Извлекаем компоненты исходного товара
+    source_comps = extract_product_components(name_norm)
     
-    # 1. Сначала ищем по ТОЧНОМУ name_norm — идентичные товары от разных поставщиков
-    if name_norm:
-        exact_matches = list(db.supplier_items.find(
-            {
-                'name_norm': name_norm,  # ТОЧНОЕ совпадение
-                'active': True,
-                'price': {'$gt': 0},
-                'id': {'$ne': item_id},
-            },
-            {'_id': 0}
-        ).sort('price', 1).limit(limit))
-        
-        alternatives.extend(exact_matches)
-    
-    # 2. Если не нашли по точному названию И есть product_core_id → 
-    #    ищем товары с тем же core_id + ТОТ ЖЕ ТИП ОБРАБОТКИ + похожее название
-    if len(alternatives) == 0 and product_core_id and name_norm:
-        # Берём первые 2-3 значимых слова из названия
-        words = [w for w in name_norm.split()[:4] if len(w) >= 3 and w not in STOP_WORDS]
-        
-        # Базовый запрос
-        query = {
-            'product_core_id': product_core_id,  # Тот же core_id
+    # 1. Сначала ищем ТОЧНЫЕ совпадения name_norm
+    exact_matches = list(db.supplier_items.find(
+        {
+            'name_norm': name_norm,
             'active': True,
             'price': {'$gt': 0},
             'id': {'$ne': item_id},
-        }
-        
-        # ВАЖНО: Добавляем фильтр по типу обработки!
-        # Копчёный лосось не должен показывать замороженный
-        if proc_filter:
-            query.update(proc_filter)
-        
-        # Если есть значимые слова — добавляем regex для названия
-        if len(words) >= 2:
-            regex_parts = [f'(?=.*{re.escape(w)})' for w in words[:2]]
-            search_regex = ''.join(regex_parts) + '.*'
-            
-            # Если уже есть фильтр name_norm от типа обработки, объединяем через $and
-            if 'name_norm' in query:
-                existing_filter = query.pop('name_norm')
-                query['$and'] = [
-                    {'name_norm': existing_filter},
-                    {'name_norm': {'$regex': search_regex, '$options': 'i'}}
-                ]
-            else:
-                query['name_norm'] = {'$regex': search_regex, '$options': 'i'}
-        
-        similar_matches = list(db.supplier_items.find(
-            query,
-            {'_id': 0}
-        ).sort('price', 1).limit(limit))
-        
-        alternatives.extend(similar_matches)
-        
-        # 3. Если всё ещё не нашли — ищем только по core_id + тип обработки (без слов)
-        if len(alternatives) == 0 and proc_filter:
-            fallback_query = {
+        },
+        {'_id': 0}
+    ).limit(limit))
+    
+    # Помечаем точные совпадения максимальным score
+    for item in exact_matches:
+        item['_relevance_score'] = 1000  # Максимальный score
+    
+    # 2. Ищем товары с тем же product_core_id (если есть)
+    candidates = []
+    if product_core_id:
+        # Получаем все товары с тем же core_id от ДРУГИХ поставщиков
+        raw_candidates = list(db.supplier_items.find(
+            {
                 'product_core_id': product_core_id,
                 'active': True,
                 'price': {'$gt': 0},
                 'id': {'$ne': item_id},
-            }
-            fallback_query.update(proc_filter)
-            
-            fallback_matches = list(db.supplier_items.find(
-                fallback_query,
-                {'_id': 0}
-            ).sort('price', 1).limit(limit))
-            
-            alternatives.extend(fallback_matches)
+                'name_norm': {'$ne': name_norm},  # Исключаем точные дубли
+                'supplier_company_id': {'$ne': source_supplier},  # От других поставщиков
+            },
+            {'_id': 0}
+        ).limit(100))  # Берём больше для ранжирования
+        
+        # Вычисляем score релевантности для каждого кандидата
+        for item in raw_candidates:
+            item_comps = extract_product_components(item.get('name_norm', ''))
+            score = calculate_relevance_score(
+                source_comps, 
+                item_comps,
+                name_norm,
+                item.get('name_norm', '')
+            )
+            item['_relevance_score'] = score
+        
+        candidates = raw_candidates
     
-    # Обогащаем данными поставщика
+    # 3. Объединяем и сортируем по score (убывание), затем по цене (возрастание)
+    all_matches = exact_matches + candidates
+    all_matches.sort(key=lambda x: (-x.get('_relevance_score', 0), x.get('price', 0)))
+    
+    # 4. Обогащаем данными поставщика
     enriched = []
     supplier_cache = {}
     
-    for item in alternatives[:limit]:
+    for item in all_matches[:limit]:
         supplier_id = item.get('supplier_company_id')
         
         if supplier_id not in supplier_cache:
@@ -1770,28 +1718,33 @@ async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
                 'min_order': company.get('min_order_amount', 10000) if company else 10000
             }
         
+        # Компоненты для отображения
+        item_comps = extract_product_components(item.get('name_norm', ''))
+        
         enriched.append({
             'id': item['id'],
             'name': item.get('name_raw', ''),
+            'name_raw': item.get('name_raw', ''),
             'price': item.get('price', 0),
             'pack_qty': item.get('pack_qty'),
             'unit_type': item.get('unit_type', 'PIECE'),
             'supplier_id': supplier_id,
             'supplier_name': supplier_cache[supplier_id]['name'],
             'supplier_min_order': supplier_cache[supplier_id]['min_order'],
+            'relevance_score': item.get('_relevance_score', 0),
+            'components': item_comps,
         })
-    
-    # Сортируем по цене
-    enriched.sort(key=lambda x: x['price'])
     
     return {
         'source': {
             'id': source_item['id'],
             'name': source_item.get('name_raw', ''),
+            'name_raw': source_item.get('name_raw', ''),
             'price': source_item.get('price', 0),
             'pack_qty': source_item.get('pack_qty'),
             'unit_type': source_item.get('unit_type', 'PIECE'),
             'supplier_id': source_item.get('supplier_company_id'),
+            'components': source_comps,
         },
         'alternatives': enriched,
         'total': len(enriched)
