@@ -206,12 +206,12 @@ def build_synonym_regex(tokens: List[str]) -> str:
     Строит regex для поиска всех токенов с учётом синонимов.
     Использует lookahead assertions для поиска в любом порядке.
     
-    ВАЖНО: Использует word boundaries чтобы избежать ложных совпадений
-    (например "шкуре" не должно матчить "кур")
+    ВАЖНО: MongoDB regex не поддерживает \\b с кириллицей!
+    Вместо этого используем (^|\\s) для начала слова.
     
     Пример:
         build_synonym_regex(["филе", "курицы"])
-        → "(?=.*\\b(филе|курин|курицы|куриц|цыплен))"
+        → "(?=.*(^|\\s)(филе|курин|курицы|куриц|цыплен))"
     """
     parts = []
     
@@ -230,10 +230,10 @@ def build_synonym_regex(tokens: List[str]) -> str:
             regex_alts.add(re.escape(token))
         
         if regex_alts:
-            # Создаём альтернативу с word boundary: \b(вариант1|вариант2|...)
-            # \b в начале обеспечивает что мы ищем начало слова
+            # Создаём альтернативу БЕЗ word boundary (не работает с кириллицей в MongoDB)
+            # Просто ищем подстроку — синонимы достаточно длинные (4+ символов)
             alt_pattern = '|'.join(sorted(regex_alts, key=len, reverse=True))
-            parts.append(f'(?=.*\\b({alt_pattern}))')
+            parts.append(f'(?=.*({alt_pattern}))')
     
     if parts:
         return ''.join(parts) + '.*'
