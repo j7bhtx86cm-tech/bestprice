@@ -154,8 +154,8 @@ def build_search_query(
             except Exception as e:
                 logger.warning(f"Synonym regex error: {e}")
         
-        # 3. Exact tokens с word boundaries
-        lookahead = [f'(?=.*\\b{re.escape(t)})' for t in tokens]
+        # 3. Exact tokens (без \b - не работает с кириллицей в MongoDB)
+        lookahead = [f'(?=.*{re.escape(t)})' for t in tokens]
         exact_regex = ''.join(lookahead) + '.*'
         or_conditions.append({
             'name_norm': {'$regex': exact_regex, '$options': 'i'}
