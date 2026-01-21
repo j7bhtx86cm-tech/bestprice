@@ -1565,6 +1565,10 @@ async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
     name_norm = source_item.get('name_norm', '')
     product_core_id = source_item.get('product_core_id')
     
+    # Определяем тип обработки исходного товара
+    source_proc_type = detect_processing_type(name_norm)
+    proc_filter = build_processing_filter(name_norm)
+    
     # 1. Сначала ищем по ТОЧНОМУ name_norm — идентичные товары от разных поставщиков
     if name_norm:
         exact_matches = list(db.supplier_items.find(
@@ -1580,27 +1584,62 @@ async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
         alternatives.extend(exact_matches)
     
     # 2. Если не нашли по точному названию И есть product_core_id → 
-    #    ищем товары с тем же core_id И похожим названием (первые 2 значимых слова)
+    #    ищем товары с тем же core_id + ТОТ ЖЕ ТИП ОБРАБОТКИ + похожее название
     if len(alternatives) == 0 and product_core_id and name_norm:
         # Берём первые 2-3 значимых слова из названия
         words = [w for w in name_norm.split()[:4] if len(w) >= 3 and w not in STOP_WORDS]
+        
+        # Базовый запрос
+        query = {
+            'product_core_id': product_core_id,  # Тот же core_id
+            'active': True,
+            'price': {'$gt': 0},
+            'id': {'$ne': item_id},
+        }
+        
+        # ВАЖНО: Добавляем фильтр по типу обработки!
+        # Копчёный лосось не должен показывать замороженный
+        if proc_filter:
+            query.update(proc_filter)
+        
+        # Если есть значимые слова — добавляем regex для названия
         if len(words) >= 2:
-            # Строим regex для поиска товаров, содержащих эти слова
             regex_parts = [f'(?=.*{re.escape(w)})' for w in words[:2]]
             search_regex = ''.join(regex_parts) + '.*'
             
-            similar_matches = list(db.supplier_items.find(
-                {
-                    'product_core_id': product_core_id,  # Тот же core_id
-                    'name_norm': {'$regex': search_regex, '$options': 'i'},  # Похожее название
-                    'active': True,
-                    'price': {'$gt': 0},
-                    'id': {'$ne': item_id},
-                },
+            # Если уже есть фильтр name_norm от типа обработки, объединяем через $and
+            if 'name_norm' in query:
+                existing_filter = query.pop('name_norm')
+                query['$and'] = [
+                    {'name_norm': existing_filter},
+                    {'name_norm': {'$regex': search_regex, '$options': 'i'}}
+                ]
+            else:
+                query['name_norm'] = {'$regex': search_regex, '$options': 'i'}
+        
+        similar_matches = list(db.supplier_items.find(
+            query,
+            {'_id': 0}
+        ).sort('price', 1).limit(limit))
+        
+        alternatives.extend(similar_matches)
+        
+        # 3. Если всё ещё не нашли — ищем только по core_id + тип обработки (без слов)
+        if len(alternatives) == 0 and proc_filter:
+            fallback_query = {
+                'product_core_id': product_core_id,
+                'active': True,
+                'price': {'$gt': 0},
+                'id': {'$ne': item_id},
+            }
+            fallback_query.update(proc_filter)
+            
+            fallback_matches = list(db.supplier_items.find(
+                fallback_query,
                 {'_id': 0}
             ).sort('price', 1).limit(limit))
             
-            alternatives.extend(similar_matches)
+            alternatives.extend(fallback_matches)
     
     # Обогащаем данными поставщика
     enriched = []
