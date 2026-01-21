@@ -1485,68 +1485,141 @@ async def get_order_details(order_id: str):
 
 # === OFFER ALTERNATIVES (P1 - Выбор оффера) ===
 
-# Квалификаторы типа обработки продукта
-# ВАЖНО: Порядок проверки имеет значение! Более специфичные идут первыми
-# Используем word boundaries (\b) для избежания ложных срабатываний
-PROCESSING_QUALIFIERS_ORDER = [
-    # Специфичные типы (проверяются первыми)
-    ('smoked', [
-        r'\bкопчен',           # копченый, копчения
-        r'\bкопч\.',           # копч.
-        r'\bх/к\b',            # холодного копчения (аббревиатура)
-        r'\bг/к\b',            # горячего копчения (аббревиатура) — НО НЕ внутри слов!
-        r'холодного копчения',
-        r'горячего копчения',
-    ]),
-    ('salted', [
-        r'\bсолен',            # соленый
-        r'\bпосол',            # посол
-        r'\bслабосол',         # слабосоленый
-        r'\bмалосол',          # малосольный
-        r'\bпресерв',          # пресервы
-    ]),
-    ('dried', [
-        r'\bвялен',            # вяленый
-        r'\bсушен',            # сушеный
-    ]),
-    ('marinated', [
-        r'\bмарин',            # маринованный
-    ]),
-    ('canned', [
-        r'\bконсерв',          # консервированный
-        r'\bж/б\b',            # жестяная банка
-    ]),
-    # Базовые типы (проверяются последними)
-    ('chilled', [
-        r'\bохл',              # охлажденный
-    ]),
-    ('frozen', [
-        r'\bс/м\b',            # свежемороженый
-        r'\bсвежемороз',
-        r'\bзамороз',
-        r'\bморожен',
-    ]),
-    ('fresh', [
-        r'\bсвеж',             # свежий
-    ]),
-]
+# Словари для извлечения компонентов из названия товара
+# ВИД продукта (species)
+SPECIES_PATTERNS = {
+    'лосось': ['лосось', 'лососев', 'сёмга', 'семга', 'семги', 'сёмги', 'атлантическ'],
+    'горбуша': ['горбуша', 'горбуш'],
+    'кета': ['кета', 'кеты'],
+    'форель': ['форель', 'форели'],
+    'минтай': ['минтай', 'минтая'],
+    'треска': ['треска', 'трески', 'трескова'],
+    'сельдь': ['сельдь', 'сельди', 'селёдка', 'селедк'],
+    'скумбрия': ['скумбрия', 'скумбри'],
+    'курица': ['курица', 'курицы', 'куриц', 'курин', 'цыплен', 'цыплят', 'бройлер'],
+    'говядина': ['говядина', 'говяжь', 'говяж', 'телятин'],
+    'свинина': ['свинина', 'свинин', 'свиной', 'свиная'],
+    'индейка': ['индейка', 'индейки', 'индюш'],
+    'утка': ['утка', 'утки', 'утиная', 'утиное'],
+    'кролик': ['кролик', 'кроличь', 'крольчат'],
+    'баранина': ['баранина', 'баранин', 'ягнят', 'ягненок'],
+}
 
-def detect_processing_type(name_norm: str) -> str:
+# ФОРМА продукта (form)
+FORM_PATTERNS = {
+    'филе': ['филе', 'филей'],
+    'тушка': ['тушка', 'тушки'],
+    'стейк': ['стейк', 'стейки'],
+    'потрошеный': ['потрошен', 'потрошён', 'птг', 'пбг'],
+    'набор_суповой': ['набор', 'суповой', 'супов'],
+    'консервы': ['консерв', 'ж/б', 'жб', 'натуральн'],
+    'грудка': ['грудка', 'грудки', 'грудок'],
+    'бедро': ['бедро', 'бедра', 'окорочок', 'окорочк'],
+    'крыло': ['крыло', 'крылья', 'крылышк'],
+    'фарш': ['фарш'],
+    'котлеты': ['котлет'],
+    'колбаса': ['колбас', 'сосиск', 'сардельк'],
+}
+
+# ТИП ОБРАБОТКИ (processing)
+PROCESSING_PATTERNS = {
+    'smoked': ['копчен', 'копч.', 'х/к', 'г/к', 'холодного копчения', 'горячего копчения'],
+    'salted': ['солен', 'посол', 'слабосол', 'малосол', 'пресерв'],
+    'dried': ['вялен', 'сушен'],
+    'marinated': ['марин'],
+    'canned': ['консерв', 'ж/б'],
+    'chilled': ['охл', 'охлажд'],
+    'frozen': ['с/м', 'свежеморож', 'заморож', 'морожен', 'зам.'],
+    'fresh': ['свеж'],
+}
+
+
+def extract_product_components(name_norm: str) -> dict:
     """
-    Определяет тип обработки продукта по названию.
-    
-    ВАЖНО: Более специфичные типы проверяются первыми!
-    Например, "копчёный с/м" → 'smoked' (не 'frozen')
+    Извлекает ключевые компоненты из названия товара.
     
     Returns:
-        Тип обработки: 'smoked', 'salted', 'frozen', etc. или 'unknown'
+        dict с ключами: species, form, processing
     """
-    name_lower = name_norm.lower()
+    name = name_norm.lower()
     
-    for proc_type, patterns in PROCESSING_QUALIFIERS_ORDER:
-        for pattern in patterns:
-            if re.search(pattern, name_lower):
-                return proc_type
+    # Определяем вид
+    species = None
+    for sp, patterns in SPECIES_PATTERNS.items():
+        for p in patterns:
+            if p in name:
+                species = sp
+                break
+        if species:
+            break
+    
+    # Определяем форму
+    form = None
+    for f, patterns in FORM_PATTERNS.items():
+        for p in patterns:
+            if p in name:
+                form = f
+                break
+        if form:
+            break
+    
+    # Определяем обработку
+    processing = None
+    for proc, patterns in PROCESSING_PATTERNS.items():
+        for p in patterns:
+            if p in name:
+                processing = proc
+                break
+        if processing:
+            break
+    
+    return {'species': species, 'form': form, 'processing': processing}
+
+
+def calculate_relevance_score(source_comps: dict, candidate_comps: dict, 
+                               source_name: str, candidate_name: str) -> int:
+    """
+    Вычисляет score релевантности кандидата к исходному товару.
+    
+    Scoring:
+    - species match: +100
+    - form match: +50  
+    - processing match: +25
+    - same brand: +10
+    
+    Returns:
+        int score (больше = более релевантный)
+    """
+    score = 0
+    
+    # ВИД — самый важный (должен совпадать для истинной альтернативы)
+    if source_comps['species'] and source_comps['species'] == candidate_comps['species']:
+        score += 100
+    elif source_comps['species'] is None or candidate_comps['species'] is None:
+        score += 20  # Если не определён — небольшой бонус
+    
+    # ФОРМА — очень важна
+    if source_comps['form'] and source_comps['form'] == candidate_comps['form']:
+        score += 50
+    elif source_comps['form'] is None or candidate_comps['form'] is None:
+        score += 10
+    
+    # ОБРАБОТКА — важна но менее критична
+    if source_comps['processing'] and source_comps['processing'] == candidate_comps['processing']:
+        score += 25
+    elif source_comps['processing'] is None or candidate_comps['processing'] is None:
+        score += 5
+    
+    # Бонус за совпадение слов в названии (нечёткий matching)
+    source_words = set(source_name.lower().split())
+    candidate_words = set(candidate_name.lower().split())
+    common_words = source_words & candidate_words
+    # Исключаем стоп-слова
+    stop_words = {'вес', 'кг', 'гр', 'шт', 'уп', 'россия', 'чили', 'с/м', 'охл'}
+    meaningful_common = [w for w in common_words if len(w) >= 3 and w not in stop_words]
+    score += len(meaningful_common) * 3
+    
+    return score
     
     return 'unknown'
 
