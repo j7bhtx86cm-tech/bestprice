@@ -199,14 +199,14 @@ async def get_catalog(
                 # Многословный запрос - СТРОГИЙ поиск
                 # Приоритет:
                 # 1. lemma_tokens (морфологический поиск) - ГЛАВНЫЙ
-                # 2. synonym regex (с word boundaries)
+                # 2. synonym regex
                 # 3. exact tokens (точные слова)
                 
-                # Полные токены lookahead с word boundaries
-                lookahead_parts = [f'(?=.*\\b{re.escape(t)})' for t in q_tokens]
+                # Полные токены lookahead (без \b - не работает с кириллицей в MongoDB)
+                lookahead_parts = [f'(?=.*{re.escape(t)})' for t in q_tokens]
                 any_order_regex = ''.join(lookahead_parts) + '.*'
                 
-                # Regex с синонимами (с word boundaries)
+                # Regex с синонимами
                 synonym_regex = build_synonym_regex(q_tokens)
                 
                 # УБРАН fuzzy short_tokens - слишком много ложных срабатываний
