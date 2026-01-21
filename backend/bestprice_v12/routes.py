@@ -1487,17 +1487,48 @@ async def get_order_details(order_id: str):
 
 # Квалификаторы типа обработки продукта
 # ВАЖНО: Порядок проверки имеет значение! Более специфичные идут первыми
+# Используем word boundaries (\b) для избежания ложных срабатываний
 PROCESSING_QUALIFIERS_ORDER = [
     # Специфичные типы (проверяются первыми)
-    ('smoked', ['копчен', 'копч.', 'х/к', 'г/к', 'холодного копчения', 'горячего копчения']),
-    ('salted', ['солен', 'соления', 'посол', 'слабосол', 'малосол', 'пресерв']),
-    ('dried', ['вялен', 'сушен', 'сух.']),
-    ('marinated', ['марин']),
-    ('canned', ['консерв', 'ж/б', 'жестян']),
+    ('smoked', [
+        r'\bкопчен',           # копченый, копчения
+        r'\bкопч\.',           # копч.
+        r'\bх/к\b',            # холодного копчения (аббревиатура)
+        r'\bг/к\b',            # горячего копчения (аббревиатура) — НО НЕ внутри слов!
+        r'холодного копчения',
+        r'горячего копчения',
+    ]),
+    ('salted', [
+        r'\bсолен',            # соленый
+        r'\bпосол',            # посол
+        r'\bслабосол',         # слабосоленый
+        r'\bмалосол',          # малосольный
+        r'\bпресерв',          # пресервы
+    ]),
+    ('dried', [
+        r'\bвялен',            # вяленый
+        r'\bсушен',            # сушеный
+    ]),
+    ('marinated', [
+        r'\bмарин',            # маринованный
+    ]),
+    ('canned', [
+        r'\bконсерв',          # консервированный
+        r'\bж/б\b',            # жестяная банка
+    ]),
     # Базовые типы (проверяются последними)
-    ('chilled', ['охл', 'охлажд']),
-    ('frozen', ['с/м', 'свежемороз', 'замороз', 'морожен', 'зам.', 'зам ']),
-    ('fresh', ['свеж']),
+    ('chilled', [
+        r'\bохл',              # охлажденный
+    ]),
+    ('frozen', [
+        r'\bс/м\b',            # свежемороженый
+        r'\bсвежемороз',
+        r'\bзамороз',
+        r'\bморожен',
+    ]),
+    ('fresh', [
+        r'\bсвеж',             # свежий
+    ]),
 ]
 
 def detect_processing_type(name_norm: str) -> str:
@@ -1512,9 +1543,9 @@ def detect_processing_type(name_norm: str) -> str:
     """
     name_lower = name_norm.lower()
     
-    for proc_type, keywords in PROCESSING_QUALIFIERS_ORDER:
-        for kw in keywords:
-            if kw in name_lower:
+    for proc_type, patterns in PROCESSING_QUALIFIERS_ORDER:
+        for pattern in patterns:
+            if re.search(pattern, name_lower):
                 return proc_type
     
     return 'unknown'
@@ -1532,14 +1563,14 @@ def build_processing_filter(name_norm: str) -> dict:
     if proc_type == 'unknown':
         return {}  # Без фильтра если тип неизвестен
     
-    # Находим ключевые слова для этого типа
-    keywords = None
-    for pt, kws in PROCESSING_QUALIFIERS_ORDER:
+    # Находим паттерны для этого типа
+    patterns = None
+    for pt, pats in PROCESSING_QUALIFIERS_ORDER:
         if pt == proc_type:
-            keywords = kws
+            patterns = pats
             break
     
-    if not keywords:
+    if not patterns:
         return {}
     
     # Строим regex: должен содержать хотя бы один из ключевых слов типа обработки
