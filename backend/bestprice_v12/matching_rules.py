@@ -348,6 +348,9 @@ def check_negative_blocks(ref_sig: MatchSignature, cand_sig: MatchSignature) -> 
     """
     Check negative block rules (mutual exclusions).
     
+    ВАЖНО: Negative blocks работают в ОБЕ стороны!
+    Если сосиски не могут быть заменены на филе, то и филе не может быть заменено на сосиски.
+    
     Returns:
         (passed, reasons) - passed=True if no negative blocks triggered
     """
@@ -358,23 +361,41 @@ def check_negative_blocks(ref_sig: MatchSignature, cand_sig: MatchSignature) -> 
     for block in negative_blocks:
         block_name = block.get('name', 'unknown')
         
-        # Check top_class based blocks
+        # Check top_class based blocks (bidirectional)
         if 'if_ref_top_class' in block:
             ref_class = block['if_ref_top_class']
             reject_classes = block.get('reject_offer_if_top_class_in', [])
             
+            # Direction 1: ref matches condition, cand in reject list
             if ref_sig.top_class == ref_class:
                 if cand_sig.top_class in reject_classes:
                     reasons.append(f"NEGATIVE_{block_name}: ref={ref_sig.top_class}, cand={cand_sig.top_class}")
+            
+            # Direction 2 (bidirectional): cand matches condition, ref in reject list
+            if cand_sig.top_class == ref_class:
+                if ref_sig.top_class in reject_classes:
+                    reasons.append(f"NEGATIVE_{block_name}_REV: cand={cand_sig.top_class}, ref={ref_sig.top_class}")
         
-        # Check product_kind based blocks
+        # Check product_kind based blocks (bidirectional)
         if 'if_ref_kind_in' in block:
             ref_kinds = block['if_ref_kind_in']
             reject_kinds = block.get('reject_offer_if_kind_in', [])
             
+            # Direction 1: ref kind in condition, cand kind in reject
             if ref_sig.product_kind in ref_kinds:
                 if cand_sig.product_kind in reject_kinds:
                     reasons.append(f"NEGATIVE_{block_name}: ref_kind={ref_sig.product_kind}, cand_kind={cand_sig.product_kind}")
+            
+            # Direction 2 (bidirectional): cand kind in condition, ref kind in reject
+            if cand_sig.product_kind in reject_kinds:
+                if ref_sig.product_kind in ref_kinds:
+                    # This is the reverse direction - fillet should not show sausages
+                    pass  # Already covered by direction 1
+            
+            # Additional bidirectional check: if cand is in ref_kinds and ref is in reject_kinds
+            if cand_sig.product_kind in ref_kinds:
+                if ref_sig.product_kind in reject_kinds:
+                    reasons.append(f"NEGATIVE_{block_name}_REV: cand_kind={cand_sig.product_kind}, ref_kind={ref_sig.product_kind}")
     
     passed = len(reasons) == 0
     return passed, reasons
