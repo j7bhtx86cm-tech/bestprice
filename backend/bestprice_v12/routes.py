@@ -1485,14 +1485,67 @@ async def get_order_details(order_id: str):
 
 # === OFFER ALTERNATIVES (P1 - Выбор оффера) ===
 
+# Квалификаторы типа обработки продукта
+PROCESSING_QUALIFIERS = {
+    'frozen': ['с/м', 'свежемороз', 'замороз', 'морожен', 'зам.', 'зам '],
+    'chilled': ['охл', 'охлажд'],
+    'smoked': ['копчен', 'копч.', 'х/к', 'г/к', 'холодн копч', 'горяч копч'],
+    'salted': ['солен', 'соления', 'посол', 'слабосол', 'малосол', 'пресерв'],
+    'dried': ['вялен', 'сушен', 'сух.'],
+    'marinated': ['марин'],
+    'canned': ['консерв', 'ж/б', 'жестян'],
+    'fresh': ['свеж'],
+}
+
+def detect_processing_type(name_norm: str) -> str:
+    """
+    Определяет тип обработки продукта по названию.
+    
+    Returns:
+        Тип обработки: 'frozen', 'chilled', 'smoked', 'salted', 'dried', 'marinated', 'canned', 'fresh', или 'unknown'
+    """
+    name_lower = name_norm.lower()
+    
+    for proc_type, keywords in PROCESSING_QUALIFIERS.items():
+        for kw in keywords:
+            if kw in name_lower:
+                return proc_type
+    
+    return 'unknown'
+
+
+def build_processing_filter(name_norm: str) -> dict:
+    """
+    Строит фильтр MongoDB для поиска товаров с тем же типом обработки.
+    
+    Returns:
+        MongoDB filter dict для name_norm
+    """
+    proc_type = detect_processing_type(name_norm)
+    
+    if proc_type == 'unknown':
+        return {}  # Без фильтра если тип неизвестен
+    
+    keywords = PROCESSING_QUALIFIERS.get(proc_type, [])
+    if not keywords:
+        return {}
+    
+    # Строим regex: должен содержать хотя бы один из ключевых слов типа обработки
+    escaped = [re.escape(kw) for kw in keywords]
+    regex = '(' + '|'.join(escaped) + ')'
+    
+    return {'name_norm': {'$regex': regex, '$options': 'i'}}
+
+
 @router.get("/item/{item_id}/alternatives", summary="Получить альтернативные офферы")
 async def get_item_alternatives(item_id: str, limit: int = Query(10, le=20)):
     """
     Возвращает альтернативные офферы для ИДЕНТИЧНОГО товара.
     
     Алгоритм поиска альтернатив:
-    1. Ищем по ТОЧНОМУ совпадению name_norm (идентичные товары от разных поставщиков)
-    2. Если не найдено, но есть product_core_id → ищем по нему + похожее название
+    1. Определяем тип обработки (заморозка, копчение, соление и т.д.)
+    2. Ищем по ТОЧНОМУ совпадению name_norm
+    3. Если не найдено → ищем по product_core_id + тот же тип обработки + похожее название
     
     Используется для показа пользователю выбора поставщика/фасовки.
     НЕ показывает похожие товары — только идентичные!
