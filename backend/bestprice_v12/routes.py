@@ -1573,9 +1573,8 @@ def build_processing_filter(name_norm: str) -> dict:
     if not patterns:
         return {}
     
-    # Строим regex: должен содержать хотя бы один из ключевых слов типа обработки
-    escaped = [re.escape(kw) for kw in keywords]
-    regex = '(' + '|'.join(escaped) + ')'
+    # Строим regex из паттернов: должен содержать хотя бы один паттерн
+    regex = '(' + '|'.join(patterns) + ')'
     
     return {'name_norm': {'$regex': regex, '$options': 'i'}}
 
