@@ -1,83 +1,74 @@
 <analysis>**original_problem_statement:**
-The user initially requested a series of critical fixes and improvements for an e-commerce platform. This included:
-- **P0 (Critical Bugs):**
-    - Fixing an unstable checkout process and ensuring orders appear in the history.
-    - Correcting a critical optimizer bug that replaced expensive items (like caviar) with cheap, incorrect alternatives, displaying the wrong price.
-    - Fixing a bug where clearing Favorites did not work.
-    - Resolving a systemic issue where the optimizer failed to find replacements for many items (e.g., the Egg problem) due to missing  data.
-- **P1 (Features & Improvements):**
-    - A complete overhaul of the search engine to be perfect, handling multi-word queries, synonyms, and morphology.
-    - A new feature to compare alternative offers (pack sizes/suppliers) for a product.
-    - A deep data analysis and cleanup to ensure 100% of products are correctly categorized and valid.
-    - A UI indicator to warn users when an automatic product substitution results in a significant price change (25% threshold).
-    - A major refactoring of the monolithic backend  file into a modular structure.
-    - Implementation of a search autocomplete feature.
+The user's primary goal is to perfect the e-commerce platform's product matching and search relevance. Initially, this involved fixing bugs in the search and Compare Offers modal. However, the task evolved into a complete overhaul of the product comparison logic.
+
+The user provided a detailed technical specification document () and a lexicon file (). The core requirement is to build a new, robust matching engine for the Сравнить предложение (Compare Offers) feature.
+
+**PRODUCT REQUIREMENTS (based on ):**
+- **New Matching Engine:** Create a new backend module that uses  to parse product names into a structured  (containing , , , , etc.).
+- **Hard Blocks (HB):** Implement strict filtering rules. Candidates must be rejected if they don't match the source item's ,  (if defined), or .
+- **Negative Blocks:** Use the lexicon to enforce mutual exclusions (e.g., sausages cannot be matched with fillet, fish cannot be matched with poultry).
+- **Tiered Results:** The response for alternatives must be structured into Tiers:
+    - **Tier A (Identical):** Perfect matches.
+    - **Tier B (Close):** Similar items that don't violate any hard blocks.
+    - **Tier C (Analogues):** Broader matches, only to be shown if a query parameter  is passed.
+- **Strict Attribute Matching:** For attributes like fat percentage, a strict tolerance (e.g., ±2%) must be enforced for Tiers A and B.
+- **Ranking:** Sort results within each tier by , then , then price per unit ().
+- **Universal Logic:** The new matching module must be centralized so it can be reused for the cart optimizer in the future.
+- **Diagnostics:** The system should be able to log why a candidate was matched or rejected.
 
 **User's preferred language**: Russian
 
 **what currently exists?**
-The application is a full-stack React/FastAPI platform. Most of the user's initial requests have been addressed.
+The application is a full-stack React/FastAPI e-commerce platform. The agent has just completed a major overhaul of the product matching logic based on the user's new technical specification.
+
 - **Backend:**
-    - The checkout and order history are stable.
-    - The optimizer now has a price tolerance check (>50%) to prevent incorrect substitutions and correctly finds alternatives for almost all products after a massive data fix ( population).
-    - The  script has been significantly improved with better rules and negative lookaheads to prevent common misclassifications.
-    - Search functionality is now powered by a  field and a dedicated , offering fast, morphologically-aware results. A  endpoint powers the frontend autocomplete.
-    - The monolithic  has been partially refactored. Endpoints for , , and  have been moved to a new  directory.
-    - Database indexes have been heavily optimized for performance.
+    - A new lexicon-based matching engine has been created in .
+    - This engine loads and uses  to parse product attributes.
+    - The  endpoint has been completely rewritten to use this new engine, implementing hard blocks, negative blocks, attribute constraints (like fat %), and result tiering.
+    - The general search functionality was also significantly improved by fixing a critical bug in synonym regex generation that caused false positives (e.g., куриное филе matching кукуруза). The agent corrected the regex to handle Cyrillic word boundaries correctly in MongoDB.
 - **Frontend:**
-    - The Compare offers modal is stable and functional.
-    - The Favorites page now has a working Clear All button.
-    - A reusable  component has been created and successfully integrated into both the Catalog and Favorites pages.
-    - The Cart page now displays a visual indicator (⚠️ icon with a tooltip) if a substituted item's price changes by more than 25%.
+    - The search autocomplete feature, which the user disliked, has been removed from the catalog page, reverting to a simple search input that displays results as product cards.
 
 **Last working item**:
-- **Last item agent was working**: The agent was working on two user-requested tasks simultaneously:
-    1.  **Backend Refactoring**: Migrating endpoints from the main  into separate, domain-specific modules (, , ).
-    2.  **Frontend Feature**: Adding the  component to the Favorites page search bar.
+- **Last item agent was working**: The agent implemented a completely new, lexicon-driven matching engine for the Сравнить предложение (Compare Offers) feature, as per the user's detailed technical specification (). This involved creating , integrating , and rewriting the  API endpoint.
 - **Status**: USER VERIFICATION PENDING
 - **Agent Testing Done**: Y
-- **Which testing method agent to use?**: Manual testing by user. The user should be asked to test the new autocomplete feature on the  page. Backend changes are not directly user-facing but enable the feature.
+- **Which testing method agent to use?**: Manual testing by user. The user should be asked to extensively test the Сравнить предложение feature with various products (e.g., sausages, fish, dairy with specific fat %), confirming that the results are strictly relevant and correctly tiered as per the  document.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-None. The application is in a stable state with the last set of features implemented.
+None. The last set of issues were all addressed by the complete rewrite of the matching engine.
 
 **In progress Task List**:
-- **Task 1: Complete the refactoring of  (P1 - HIGHEST)**
-    - **Where to resume**: The agent successfully created the  directory and moved endpoints for , , and . However, the main  file still contains numerous other endpoints (e.g., , , ). The next step is to create new modules for these remaining domains (e.g., , ), move the corresponding code, and update the main server file to include these new routers.
-    - **What will be achieved with this?**: A fully modular, maintainable, and scalable backend API structure, which was a direct user request.
+- **Task 1: Complete the refactoring of  (P1)**
+    - **Where to resume**: The user's critical request to overhaul the matching logic paused this task. The  file still contains endpoints for , , etc. The next step is to move these into their respective modules inside .
+    - **What will be achieved with this?**: A fully modular, maintainable, and scalable backend API structure.
     - **Status**: IN PROGRESS
     - **Should Test frontend/backend/both after fix?**: Backend
-    - **Blocked on something**: None.
+    - **Blocked on something**: User verification of the new matching engine.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-    - (P2) **User Verification**: The user needs to test and confirm that the new search autocomplete on the Favorites page works as expected.
+    - (P0) **User Verification**: The user needs to test and confirm that the new lexicon-based matching engine for Сравнить предложение works perfectly according to the acceptance criteria in .
+    - (P2) **Test Search Further**: Conduct more tests on the main search for queries like молоко, сыр, говядина to ensure the relevance fixes hold across different categories.
 - **Future Tasks**:
-    - (P2) Integrate  and  into the regular pricelist import process to prevent data degradation.
+    - (P3) Integrate  and  into the regular pricelist import process.
     - (P3) Implement supplier-facing reports on pricelist quality.
     - (P3) Integrate with a Telegram Bot for notifications.
-    - (P3) Build a UI for debugging product match decisions from the optimizer.
+    - (P3) Build a UI for debugging product match decisions from both the matching engine and the optimizer.
     - (P3) A/B testing different search configurations.
 
 **Completed work in this session**
-- **Critical Bug Fixes:**
-    - Fixed the Clear Favorites feature by adding a dedicated backend endpoint and UI button.
-    - Stabilized the Compare Offers modal, preventing crashes and implementing selection logic.
-    - Resolved the Egg Problem by creating and running a script () to populate missing data for ~6000 items.
-    - Resolved the Caviar Problem by fixing the classifier's rule order and adding a price tolerance check to the optimizer, preventing absurd product substitutions.
-- **Data Integrity & Analysis:**
-    - Ran deep analysis to find and fix dozens of critical misclassifications (e.g., containers being classified as food).
-    - Improved the  with more specific rules and negative lookaheads.
-- **Search Overhaul:**
-    - Created a  field for all products and built a search index on it ().
-    - Refactored search logic into a dedicated .
-- **New Features:**
-    - Implemented a UI indicator in the cart to warn users of significant price changes (>25%) on substituted items.
-    - Created a reusable  component and integrated it into the Catalog and Favorites pages.
-- **Backend Refactoring & Optimization:**
-    - Partially refactored , moving , , and  endpoints into separate modules.
-    - Created over 20 new compound indexes in MongoDB to optimize query performance across the application.
+- **Lexicon-based Matching Engine (Major Overhaul):**
+  - Implemented a new, robust matching engine based on  and the user's  specification.
+  - Created  to house all new logic.
+  - Implemented hard blocks, bidirectional negative blocks, strict attribute matching (fat %), and result tiering.
+  - Completely rewrote the  endpoint to use the new engine.
+- **Search Relevance Fixes:**
+  - **Fixed Critical Search Bug:** Resolved an issue where search returned highly irrelevant items (e.g., куриное филе -> кукуруза). The root cause was an incorrect regex ( word boundary not working with Cyrillic in MongoDB) which was fixed by using a  pattern.
+  - **Improved Compare Offers Logic (Iteratively):** Before the full rewrite, the agent added logic to distinguish products by processing type (e.g., , , ) to prevent mixing them in the alternatives modal.
+- **Frontend Adjustments:**
+  - **Removed Search Autocomplete:** Removed the dropdown autocomplete from the catalog search bar per user request, reverting to a simpler card-based result display.
 
 **Earlier issues found/mentioned but not fixed**
 None.
@@ -89,66 +80,52 @@ None.
 
 
 **Key Technical Concepts**
-- **Lemma-based Search**: Using a  field (populated by ) for fast and morphologically-aware search, powering both the main search and the new autocomplete feature.
-- **Optimizer with Price Tolerance**: The cart optimizer now includes a check to ensure that substituted items do not have a drastically different price.
-- **Modular Route Refactoring**: The monolithic  is being broken down into smaller, domain-specific files (e.g., ) located in . This work is in progress.
-- **Debounced Autocomplete**: A reusable React component  uses a  hook to fetch suggestions from a dedicated  endpoint as the user types.
+- **Lexicon-Driven Matching Engine**: A new, sophisticated system that parses product names into a structured  using a JSON lexicon. It then applies a series of strict rules (hard blocks, negative blocks) and tiers the results (A, B, C) to find truly equivalent alternatives. This logic is centralized in .
+- **Cyrillic-Safe Regex for MongoDB**: The agent discovered that the  word boundary anchor in regex does not work reliably with Cyrillic characters in MongoDB's PCRE engine. The fix was to replace  with a pattern like , which checks for a space or start/end of the string. This was critical for fixing search relevance.
+- **Bidirectional Negative Blocks**: The agent improved the negative block logic to be symmetrical, ensuring that if A cannot match B, then B also cannot match A (e.g.,  vs. ).
 
 **key DB schema**
-- ****:
-    - ****: This field is now correctly populated for >99% of items.
-    - ****: A new array of strings, indexed for fast text search.
-    - Multiple new compound indexes exist to optimize various queries.
-- ****: Structure is unchanged, but it is now managed by a dedicated API module.
+- No changes were made to the database schema. All changes were in the application logic that reads from and interprets the data in the  collection.
 
 **All files of reference**
-- : The monolith being refactored.
-- : Directory containing the new, modular route files.
-- : Contains the critical price tolerance logic.
-- : New service for lemma-based search.
-- : The new frontend component.
-- : The latest page to integrate the autocomplete feature.
-- : The last successful test report from the testing agent.
+- : **(NEW & CRITICAL)** The core of the new product matching logic.
+- : **(NEW & CRITICAL)** The user-provided dictionary that drives the new matching engine.
+- : The main routes file, heavily modified to integrate the new matching engine and fix search logic.
+- : Modified to improve synonym matching and fix regex generation.
+- : Modified to use the corrected regex logic.
+- : Modified to remove the search autocomplete feature.
 
 **Areas that need refactoring**:
-- The main  file still needs to be fully refactored. Endpoints for , , and other domains must be moved into their own modules within .
+- The main  file is still partially monolithic. The refactoring task to move , , and other endpoints into the  directory is still pending.
 
 **key api endpoints**
-- : New endpoint to clear all favorites.
-- : New endpoint providing fast suggestions for the autocomplete component.
-- : The response payload now includes  for each line item to support the price-change UI indicator.
+- : **Completely overhauled.** Now powered by the new  engine. It accepts an optional  parameter. The response is now structured with Tiers.
+- : The search logic for this endpoint was significantly improved to be more accurate.
 
 **Critical Info for New Agent**
-- You must continue communicating in **Russian**.
-- The highest priority is to complete the backend refactoring task by moving all remaining endpoints out of  and into the  directory.
-- The user has not yet tested or verified the latest change (autocomplete on the favorites page). You should ask for their feedback on this before moving to new tasks from the backlog.
-- The application's data integrity and core logic are now significantly more robust than at the start of the session.
+- **You must continue communicating in Russian.**
+- The most critical task was the implementation of a new matching engine based on the user's  document and . You MUST familiarize yourself with the logic in  as it is now the core of the Compare Offers feature.
+- **Your immediate next step is to ask the user to verify the new matching logic.** Confirm if it meets all the acceptance criteria from their technical specification. Do not proceed with other tasks until this is verified.
+- The  refactoring task is still pending and has a P1 priority, but it should only be resumed after user verification of the matching engine.
 
 **documents and test reports created in this job**
--  (Updated multiple times)
 - 
 - 
-- 
-- 
-- 
-- 
-- 
-- 
+- User-provided requirement documents (were extracted and used, not stored):
+    - 
+    - 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Fix the Caviar Problem (optimizer replaces expensive item with cheap one).
-2.  **Agent**: Diagnosed and fixed the issue by improving the classifier and adding price tolerance logic to the optimizer. (DONE)
-3.  **User**: Implement all suggested next steps: deep analysis of classification issues, UI indicator for price changes (25% threshold), and create  index.
-4.  **Agent**: Implemented all three requests. (DONE)
-5.  **User**: Integrate  into search, add more classification rules, and refactor .
-6.  **Agent**: Improved  integration, added classification fixes, and began refactoring  by creating . (DONE)
-7.  **User**: Continue refactoring (cart, orders), add frontend autocomplete, and optimize DB indexes.
-8.  **Agent**: Implemented all three tasks. (DONE)
-9.  **User**: Finish migrating endpoints into modules and add autocomplete to the favorites page.
-10. **Agent**: Moved cart/order/favorites endpoints and added autocomplete to the favorites page. (DONE, pending user verification)
+1. **User (Msg 293):** Compare offers is broken and not logical. We need it to be perfect for the cart optimizer. The logic needs to be based on finding the closest items and descending from there.
+2. **Agent (Msg 302):** Acknowledges the issue and diagnoses that the current logic is flawed because of incorrect data classification ( being too broad).
+3. **User (Msg 326/328):** **(CRITICAL)** Stops the agent and provides three new artifacts: two  files with detailed technical specifications () for a complete matching engine rewrite, and a  file to power it.
+4. **Agent (Msg 333):** Acknowledges the new, major task and lays out a plan to build the new lexicon-based matching engine.
+5. **Agent (Msg 353-374):** Implements and tests the new engine, fixing issues like one-way negative blocks and incorrect signature parsing along the way, and confirms all acceptance criteria from the user's document are met.
+6. **User (Msg 381):** A re-paste of the detailed technical specification, confirming this is the current task.
+7. **Agent (Msg 382-onwards):** Continues implementation based on the re-confirmed task, then finishes the implementation and testing.
 
 **Project Health Check:**
-- **Broken**: None.
+- **Broken**: None. The system is in a stable state with the new matching logic implemented.
 - **Mocked**: None.
 
 **3rd Party Integrations**
@@ -157,9 +134,9 @@ None.
 - 
 
 **Testing status**
-- **Testing agent used after significant changes**: YES, multiple times. The last run was for iteration 11 and all tests passed.
+- **Testing agent used after significant changes**: NO. The agent performed extensive self-testing using Python scripts and cURL commands to validate every acceptance criterion from the user's technical specification.
 - **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**: None in this session.
+- **Test files created**: None. All testing was done via  with Python scripts.
 - **Known regressions**: None.
 
 **Credentials to test flow:**
@@ -167,4 +144,4 @@ None.
 - **User ID for testing**: 
 
 **What agent forgot to execute**
-- The user's request to Finish the migration of endpoints into modules is only partially complete. While , , and  routes were moved, the , , and other endpoints still reside in the monolithic . This refactoring task needs to be completed.</analysis>
+- The agent correctly prioritized the user's new P0 task (overhauling the matching engine) over the ongoing P1 task (refactoring ). The refactoring was not forgotten but intentionally postponed and remains in the .</analysis>
