@@ -490,7 +490,7 @@ def check_product_type_exclusions(
     cand_sig: ProductSignature
 ) -> Tuple[bool, Optional[str]]:
     """
-    Проверяет исключения по типу продукта (сосиски ≠ филе).
+    Проверяет исключения по типу продукта (сосиски ≠ филе, гёдза ≠ сырая креветка).
     """
     # Колбасные ≠ сырое мясо
     if source_sig.is_sausage and cand_sig.is_raw_meat:
@@ -503,6 +503,18 @@ def check_product_type_exclusions(
         return False, "TYPE_EXCLUSION: semi_finished cannot match raw_meat"
     if source_sig.is_raw_meat and cand_sig.is_semi_finished:
         return False, "TYPE_EXCLUSION: raw_meat cannot match semi_finished"
+    
+    # Сырые креветки ≠ полуфабрикаты с креветкой (гёдза, в панировке)
+    if source_sig.is_raw_shrimp and cand_sig.is_semi_finished:
+        return False, "TYPE_EXCLUSION: raw_shrimp cannot match semi_finished"
+    if source_sig.is_semi_finished and cand_sig.is_raw_shrimp:
+        return False, "TYPE_EXCLUSION: semi_finished cannot match raw_shrimp"
+    
+    # Сырые креветки ≠ готовые креветки
+    if source_sig.is_raw_shrimp and cand_sig.is_cooked_shrimp:
+        return False, "TYPE_EXCLUSION: raw_shrimp cannot match cooked_shrimp"
+    if source_sig.is_cooked_shrimp and cand_sig.is_raw_shrimp:
+        return False, "TYPE_EXCLUSION: cooked_shrimp cannot match raw_shrimp"
     
     return True, None
 
