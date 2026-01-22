@@ -491,6 +491,9 @@ def check_product_type_exclusions(
 ) -> Tuple[bool, Optional[str]]:
     """
     Проверяет исключения по типу продукта (сосиски ≠ филе, гёдза ≠ сырая креветка).
+    
+    ВАЖНО: Эта проверка имеет приоритет над product_core_id!
+    Даже если product_core_id одинаковый, несовместимые типы блокируются.
     """
     # Колбасные ≠ сырое мясо
     if source_sig.is_sausage and cand_sig.is_raw_meat:
@@ -504,17 +507,23 @@ def check_product_type_exclusions(
     if source_sig.is_raw_meat and cand_sig.is_semi_finished:
         return False, "TYPE_EXCLUSION: raw_meat cannot match semi_finished"
     
-    # Сырые креветки ≠ полуфабрикаты с креветкой (гёдза, в панировке)
-    if source_sig.is_raw_shrimp and cand_sig.is_semi_finished:
-        return False, "TYPE_EXCLUSION: raw_shrimp cannot match semi_finished"
+    # Полуфабрикаты ≠ сырые креветки (гёдза с креветкой ≠ сырые креветки)
     if source_sig.is_semi_finished and cand_sig.is_raw_shrimp:
         return False, "TYPE_EXCLUSION: semi_finished cannot match raw_shrimp"
+    if source_sig.is_raw_shrimp and cand_sig.is_semi_finished:
+        return False, "TYPE_EXCLUSION: raw_shrimp cannot match semi_finished"
     
     # Сырые креветки ≠ готовые креветки
     if source_sig.is_raw_shrimp and cand_sig.is_cooked_shrimp:
         return False, "TYPE_EXCLUSION: raw_shrimp cannot match cooked_shrimp"
     if source_sig.is_cooked_shrimp and cand_sig.is_raw_shrimp:
         return False, "TYPE_EXCLUSION: cooked_shrimp cannot match raw_shrimp"
+    
+    # Полуфабрикаты могут match только с другими полуфабрикатами
+    if source_sig.is_semi_finished and not cand_sig.is_semi_finished:
+        return False, "TYPE_EXCLUSION: semi_finished can only match semi_finished"
+    if not source_sig.is_semi_finished and cand_sig.is_semi_finished:
+        return False, "TYPE_EXCLUSION: non_semi_finished cannot match semi_finished"
     
     return True, None
 
