@@ -54,10 +54,9 @@ from search_synonyms import get_synonyms, build_synonym_regex, expand_query_with
 # Import search service (новый модуль)
 from .search_service import search_items, search_with_lemma_only, tokenize_query
 
-# Import matching rules (v1.3)
-from .matching_rules import (
-    find_alternatives, extract_signature, explain_match,
-    init_matching_rules, get_lexicon
+# Import matching rules (v2.0 - новая логика по ТЗ)
+from .matching_rules_v2 import (
+    find_alternatives, extract_signature, explain_match
 )
 
 # Import modular routers
