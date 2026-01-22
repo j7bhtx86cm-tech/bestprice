@@ -165,6 +165,8 @@ class ProductSignature:
     is_sausage: bool = False
     is_raw_meat: bool = False
     is_semi_finished: bool = False
+    is_raw_shrimp: bool = False
+    is_cooked_shrimp: bool = False
     
     # Сырое название
     name_raw: str = ""
