@@ -1631,32 +1631,36 @@ def calculate_relevance_score(source_comps: dict, candidate_comps: dict,
 async def get_item_alternatives(
     item_id: str, 
     limit: int = Query(10, le=20),
-    include_analogs: bool = Query(False, description="Включить Tier C (аналоги)")
+    include_analogs: bool = Query(False, description="Устаревший параметр, игнорируется")
 ):
     """
-    Возвращает альтернативные офферы для товара, ранжированные по Tiers.
+    Возвращает альтернативные офферы для товара (v2.0).
     
-    Использует lexicon_ru_v1_3.json для matching.
+    НОВАЯ ЛОГИКА (по ТЗ P0):
     
-    Hard Blocks (HB):
-    - HB1: top_class должен совпадать (meat ≠ seafood ≠ dairy)
-    - HB2: product_kind должен совпадать (sausages ≠ fillet)
-    - HB3: main_ingredient должен совпадать (chicken ≠ fish)
-    - HB4: processing — HARD IF PRESENT (копченый ≠ обычный)
-    - HB5: state — HARD IF PRESENT (замороженный ≠ охлажденный)
+    Кандидаты:
+    - ТОЛЬКО из того же product_core_id
+    - active=true, price>0
     
-    Negative Blocks:
-    - Сосиски/колбаса ≠ филе/грудка/тушка/фарш
-    - Рыба ≠ птица/мясо
-    - Копчёный ≠ обычный в Tier A/B
+    Hard-block фильтры (если не прошёл — НЕ показывать):
+    - Упаковка/масштаб: ±20% для обычной еды, ±10% для специй, 0% для крышек
+    - Одноразка: тип должен совпадать (крышка ≠ стакан)
+    - Крышки: размер строго 1:1
+    - Вкус: если есть у source — другой вкус запрещён
+    - Молоко: сгущёнка ≠ dairy ≠ растительное ≠ безлактозное
+    - Овощи: очищенная запрещена если source не очищенная
+    - Креветки: вид/калибр/состояние строго
+    - Сосиски ≠ сырое мясо/филе
     
-    Tiers:
-    - Tier A: Идентичные (все HB совпадают + cut_attrs)
-    - Tier B: Близкие (HB1-3 + без нарушения negative blocks)
-    - Tier C: Аналоги (только при include_analogs=true)
+    Ранжирование:
+    1. Точные по атрибутам (size/flavor/etc)
+    2. Тот же бренд
+    3. Ближайшие по фасовке
+    4. По цене
     
-    Сортировка внутри tier:
-    match_score DESC → price ASC
+    Особенности:
+    - Контейнеры: первые 4 обязаны быть точного размера
+    - Коробки vs штуки: не смешиваются (если source коробка — сначала коробки)
     """
     db = get_db()
     
@@ -1669,88 +1673,68 @@ async def get_item_alternatives(
     if not source_item:
         return {
             'source': None,
-            'tiers': {'A': [], 'B': [], 'C': []},
+            'alternatives': [],
             'total': 0
         }
     
     product_core_id = source_item.get('product_core_id')
-    source_supplier = source_item.get('supplier_company_id')
     
-    # Получаем кандидатов из БД
+    # Получаем кандидатов из БД - ТОЛЬКО из того же product_core_id
     candidates_query = {
         'active': True,
         'price': {'$gt': 0},
         'id': {'$ne': item_id},
     }
     
-    # Если есть product_core_id, используем его для предфильтрации
-    # Но берём широко - финальную фильтрацию делает matching_rules
+    # product_core_id ОБЯЗАТЕЛЕН для фильтрации
     if product_core_id:
         candidates_query['product_core_id'] = product_core_id
+    else:
+        # Если нет product_core_id - альтернатив нет
+        return {
+            'source': {
+                'id': source_item.get('id'),
+                'name': source_item.get('name_raw', ''),
+                'price': source_item.get('price', 0),
+                'product_core_id': None,
+            },
+            'alternatives': [],
+            'total': 0,
+            'reason': 'no_product_core_id'
+        }
     
     raw_candidates = list(db.supplier_items.find(
         candidates_query,
         {'_id': 0}
-    ).limit(200))  # Берём много для фильтрации
+    ).limit(200))
     
-    # Используем matching_rules для определения tiers
+    # Используем новую логику matching v2
     result = find_alternatives(
         source_item=source_item,
         candidates=raw_candidates,
-        include_analogs=include_analogs,
         limit=limit
     )
     
     # Обогащаем данными поставщика
     supplier_cache = {}
     
-    def enrich_items(items: list) -> list:
-        enriched = []
-        for item in items:
-            supplier_id = item.get('supplier_company_id')
-            
-            if supplier_id and supplier_id not in supplier_cache:
-                company = db.companies.find_one(
-                    {'id': supplier_id}, 
-                    {'companyName': 1, 'name': 1, 'min_order_amount': 1}
-                )
-                supplier_cache[supplier_id] = {
-                    'name': company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown',
-                    'min_order': company.get('min_order_amount', 10000) if company else 10000
-                }
-            
-            sup_info = supplier_cache.get(supplier_id, {'name': 'Unknown', 'min_order': 10000})
-            
-            enriched.append({
-                'id': item.get('id'),
-                'name': item.get('name_raw', item.get('name', '')),
-                'name_raw': item.get('name_raw', ''),
-                'price': item.get('price', 0),
-                'pack_qty': item.get('pack_qty'),
-                'unit_type': item.get('unit_type', 'PIECE'),
-                'supplier_id': supplier_id,
-                'supplier_name': sup_info['name'],
-                'supplier_min_order': sup_info['min_order'],
-                'match_score': item.get('match_score', 0),
-                'match_tier': item.get('match_tier'),
-                'match_badges': item.get('match_badges', []),
-                'match_signature': item.get('match_signature', {}),
-            })
-        return enriched
+    def get_supplier_info(supplier_id: str) -> dict:
+        if not supplier_id:
+            return {'name': 'Unknown', 'min_order': 10000}
+        if supplier_id not in supplier_cache:
+            company = db.companies.find_one(
+                {'id': supplier_id}, 
+                {'companyName': 1, 'name': 1, 'min_order_amount': 1}
+            )
+            supplier_cache[supplier_id] = {
+                'name': company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown',
+                'min_order': company.get('min_order_amount', 10000) if company else 10000
+            }
+        return supplier_cache[supplier_id]
     
     # Enrich source
     source_supplier_id = source_item.get('supplier_company_id')
-    if source_supplier_id and source_supplier_id not in supplier_cache:
-        company = db.companies.find_one(
-            {'id': source_supplier_id}, 
-            {'companyName': 1, 'name': 1, 'min_order_amount': 1}
-        )
-        supplier_cache[source_supplier_id] = {
-            'name': company.get('companyName', company.get('name', 'Unknown')) if company else 'Unknown',
-            'min_order': company.get('min_order_amount', 10000) if company else 10000
-        }
-    
-    source_sup_info = supplier_cache.get(source_supplier_id, {'name': 'Unknown', 'min_order': 10000})
+    source_sup_info = get_supplier_info(source_supplier_id)
     source_data = result.get('source', {})
     
     enriched_source = {
@@ -1759,29 +1743,47 @@ async def get_item_alternatives(
         'name_raw': source_item.get('name_raw', ''),
         'price': source_item.get('price', 0),
         'pack_qty': source_item.get('pack_qty'),
+        'net_weight_kg': source_item.get('net_weight_kg'),
         'unit_type': source_item.get('unit_type', 'PIECE'),
+        'brand_id': source_item.get('brand_id'),
+        'product_core_id': product_core_id,
         'supplier_id': source_supplier_id,
         'supplier_name': source_sup_info['name'],
         'supplier_min_order': source_sup_info['min_order'],
-        'match_signature': source_data.get('match_signature', {}),
+        'signature': source_data.get('signature', {}),
     }
     
-    # Build response with tiers
-    tiers = result.get('tiers', {})
-    enriched_tiers = {
-        'A': enrich_items(tiers.get('A', [])),
-        'B': enrich_items(tiers.get('B', [])),
-        'C': enrich_items(tiers.get('C', [])) if include_analogs else [],
-    }
-    
-    total = len(enriched_tiers['A']) + len(enriched_tiers['B']) + len(enriched_tiers['C'])
+    # Enrich alternatives
+    enriched_alternatives = []
+    for alt in result.get('alternatives', []):
+        supplier_id = alt.get('supplier_company_id')
+        sup_info = get_supplier_info(supplier_id)
+        
+        enriched_alternatives.append({
+            'id': alt.get('id'),
+            'name': alt.get('name_raw', alt.get('name', '')),
+            'name_raw': alt.get('name_raw', ''),
+            'price': alt.get('price', 0),
+            'pack_qty': alt.get('pack_qty'),
+            'net_weight_kg': alt.get('net_weight_kg'),
+            'unit_type': alt.get('unit_type', 'PIECE'),
+            'brand_id': alt.get('brand_id'),
+            'supplier_id': supplier_id,
+            'supplier_name': sup_info['name'],
+            'supplier_min_order': sup_info['min_order'],
+            'match_score': alt.get('match_score', 0),
+            'match_badges': alt.get('match_badges', []),
+            'exact_size': alt.get('exact_size', False),
+            'same_brand': alt.get('same_brand', False),
+        })
     
     return {
         'source': enriched_source,
-        'tiers': enriched_tiers,
-        'total': total,
-        # Backward compatibility: flat list for existing frontend
-        'alternatives': enriched_tiers['A'] + enriched_tiers['B'] + (enriched_tiers['C'] if include_analogs else []),
+        'alternatives': enriched_alternatives,
+        'total': len(enriched_alternatives),
+        'total_candidates': result.get('total_candidates', 0),
+        'passed_hard_blocks': result.get('passed_hard_blocks', 0),
+        'rejected_reasons': result.get('rejected_reasons', {}),
     }
 
 
