@@ -306,6 +306,17 @@ def extract_signature(item: Dict) -> ProductSignature:
             sig.is_semi_finished = True
             break
     
+    # Сырые vs готовые креветки
+    for p in PRODUCT_TYPE_EXCLUSIONS['raw_shrimp_markers']:
+        if p in name_norm:
+            sig.is_raw_shrimp = True
+            break
+    
+    for p in PRODUCT_TYPE_EXCLUSIONS['cooked_shrimp_markers']:
+        if p in name_norm:
+            sig.is_cooked_shrimp = True
+            break
+    
     return sig
 
 
