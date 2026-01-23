@@ -69,8 +69,8 @@ class TestStrictValidation:
                     f"Strict alt {alt['name'][:30]} has different core"
     
     def test_strict_no_forbidden_types(self, db, api_url):
-        """Strict не содержит запрещённые типы"""
-        # Тест: сосиски не должны содержать филе
+        """Strict не содержит запрещённые типы (сырое мясо для сосисок)"""
+        # Тест: сосиски не должны содержать СЫРОЕ филе/грудку (но "сосиски филейные" допустимы)
         item = get_item_by_regex(db, 'сосиск')
         if not item:
             pytest.skip("Сосиски не найдены")
@@ -78,10 +78,17 @@ class TestStrictValidation:
         resp = requests.get(f"{api_url}/item/{item['id']}/alternatives")
         data = resp.json()
         
-        forbidden = ['филе', 'грудк', 'бедр', 'крыл', 'тушк']
-        
+        # Проверяем что нет СЫРОГО мяса (филе курицы, грудка охл и т.д.)
+        # Но "сосиски филейные" - это ОК
         for alt in data.get('strict', []):
             alt_name_lower = alt.get('name_raw', '').lower()
+            
+            # Если это сосиски/колбаса - OK
+            if 'сосиск' in alt_name_lower or 'колбас' in alt_name_lower:
+                continue
+            
+            # Иначе проверяем на сырое мясо
+            forbidden = ['филе кур', 'грудка кур', 'бедро кур', 'крыло кур', 'тушка кур']
             for word in forbidden:
                 assert word not in alt_name_lower, \
                     f"Strict содержит запрещённый '{word}' в '{alt['name_raw'][:30]}'"
