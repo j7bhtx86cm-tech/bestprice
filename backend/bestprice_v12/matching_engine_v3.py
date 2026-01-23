@@ -523,19 +523,31 @@ def check_hard_blocks(source: ProductSignature, cand: ProductSignature) -> Tuple
             else:
                 labels.append(f"Форма: {cand.product_form.value}")
     
-    # === HB4: Вкус (если указан) ===
+    # === HB4: Тип продукта (бульон ≠ соус ≠ филе) ===
+    if source.product_type:
+        if cand.product_type and source.product_type != cand.product_type:
+            return False, f"PRODUCT_TYPE_MISMATCH:{source.product_type}!={cand.product_type}", []
+        # Если у source есть тип, а у кандидата нет - блокируем (бульон не может быть альтернативой филе)
+        if not cand.product_type:
+            return False, f"PRODUCT_TYPE_MISSING:source={source.product_type}", []
+    
+    # Обратная проверка: если у кандидата есть тип, а у source нет - тоже блокируем
+    if cand.product_type and not source.product_type:
+        return False, f"PRODUCT_TYPE_MISMATCH:source=none,cand={cand.product_type}", []
+    
+    # === HB5: Вкус (если указан) ===
     if source.flavor:
         if cand.flavor and source.flavor != cand.flavor:
             return False, "FLAVOR_MISMATCH", []
         if not cand.flavor:
             return False, "FLAVOR_MISSING", []
     
-    # === HB5: Тип молока ===
+    # === HB6: Тип молока ===
     if source.milk_type and cand.milk_type:
         if source.milk_type != cand.milk_type:
             return False, "MILK_TYPE_MISMATCH", []
     
-    # === HB6: Мясо/рыба специфичные ===
+    # === HB7: Мясо/рыба специфичные ===
     if source.category_group == 'meat_fish':
         # part_type (филе ≠ тушка)
         if source.part_type and cand.part_type:
@@ -551,7 +563,7 @@ def check_hard_blocks(source: ProductSignature, cand: ProductSignature) -> Tuple
         if cand.breaded and not source.breaded:
             return False, "BREADED_IN_STRICT", []
     
-    # === HB7: Посуда - тип должен совпадать ===
+    # === HB8: Посуда - тип должен совпадать ===
     if source.utensil_type:
         if source.utensil_type != cand.utensil_type:
             return False, "UTENSIL_TYPE_MISMATCH", []
@@ -562,7 +574,7 @@ def check_hard_blocks(source: ProductSignature, cand: ProductSignature) -> Tuple
                 if source.size_value != cand.size_value:
                     return False, "LID_SIZE_MISMATCH", []
     
-    # === HB8: Порционные ===
+    # === HB9: Порционные ===
     if source.is_portion:
         if not cand.is_portion:
             return False, "PORTION_MISMATCH", []
