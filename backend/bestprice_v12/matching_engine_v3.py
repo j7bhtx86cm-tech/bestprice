@@ -172,6 +172,28 @@ PORTION_PATTERNS = [
     r'порцион\w*\s*(\d+(?:[.,]\d+)?)\s*[гg]',  # порционный 5г
 ]
 
+# Известные бренды для извлечения из названия (когда brand_id не заполнен)
+KNOWN_BRAND_PATTERNS = {
+    'heinz': ['хайнц', 'heinz'],
+    'hellmanns': ['хелманс', 'hellmann'],
+    'knorr': ['кнорр', 'knorr'],
+    'calve': ['кальве', 'calve'],
+    'maggi': ['магги', 'maggi'],
+    'mccormick': ['мккормик', 'mccormick'],
+    'tabasco': ['табаско', 'tabasco'],
+    'sriracha': ['сирач', 'sriracha'],
+    'kikkoman': ['киккоман', 'kikkoman'],
+    'barilla': ['барилла', 'barilla'],
+    'dolmio': ['долмио', 'dolmio'],
+    'bonduelle': ['бондюэль', 'bonduelle'],
+    'aroy': ['арой', 'aroy'],
+    'president': ['президент', 'president'],
+    'parmalat': ['пармалат', 'parmalat'],
+    'valio': ['валио', 'valio'],
+    'hochland': ['хохланд', 'hochland'],
+    'danone': ['данон', 'danone'],
+}
+
 
 # ============================================================================
 # DATACLASSES
