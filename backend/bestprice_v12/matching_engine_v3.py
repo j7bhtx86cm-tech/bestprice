@@ -294,6 +294,10 @@ def extract_signature(item: Dict) -> ProductSignature:
     sig.price = item.get('price', 0) or 0
     sig.min_order_qty = item.get('min_order_qty', 1) or 1
     
+    # === Извлекаем бренд из названия если не указан ===
+    if not sig.brand_id:
+        sig.brand_id = _extract_brand_from_name(name_norm)
+    
     # === Вычисляем pack_value ===
     sig.pack_value = _extract_pack_value(name_norm, item)
     
