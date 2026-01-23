@@ -1770,6 +1770,9 @@ async def get_item_alternatives(
     source_sup_info = get_supplier_info(source_supplier_id)
     source_data = result.source
     
+    # Используем brand_id из signature (извлечённый из названия) если в БД пусто
+    source_brand_id = source_item.get('brand_id') or source_data.get('brand_id')
+    
     enriched_source = {
         'id': source_item.get('id'),
         'name': source_item.get('name_raw', ''),
@@ -1778,7 +1781,7 @@ async def get_item_alternatives(
         'pack_qty': source_item.get('pack_qty'),
         'pack_value': source_data.get('pack_value'),
         'unit_type': source_item.get('unit_type', 'PIECE'),
-        'brand_id': source_item.get('brand_id'),
+        'brand_id': source_brand_id,
         'product_core_id': product_core_id,
         'category_group': source_data.get('category_group'),
         'supplier_id': source_supplier_id,
