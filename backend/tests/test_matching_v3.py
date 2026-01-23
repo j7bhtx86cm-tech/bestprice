@@ -160,7 +160,11 @@ class TestHardBlocks:
     
     def test_milk_type_mismatch_blocks(self, milk_regular, milk_condensed):
         """Сгущёнка ≠ обычное молоко (MILK_TYPE_MISMATCH)"""
-        source_sig = extract_signature(milk_regular)
+        # Исправляем unit_type чтобы проверить именно milk_type
+        milk_regular_fixed = milk_regular.copy()
+        milk_regular_fixed['unit_type'] = 'WEIGHT'
+        
+        source_sig = extract_signature(milk_regular_fixed)
         cand_sig = extract_signature(milk_condensed)
         
         passed, reason, _ = check_hard_blocks(source_sig, cand_sig)
