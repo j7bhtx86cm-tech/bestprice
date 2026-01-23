@@ -350,7 +350,18 @@ def extract_signature(item: Dict) -> ProductSignature:
     # === Порционные ===
     sig.is_portion, sig.portion_weight = _extract_portion_info(name_norm)
     
+    # === Тип продукта (бульон/соус/филе/etc) ===
+    sig.product_type = _extract_product_type(name_norm)
+    
     return sig
+
+
+def _extract_product_type(name_norm: str) -> Optional[str]:
+    """Извлекает тип продукта (бульон/соус/филе/etc)"""
+    for ptype, patterns in PRODUCT_TYPE_PATTERNS.items():
+        if _check_patterns(name_norm, patterns):
+            return ptype
+    return None
 
 
 def _extract_pack_value(name_norm: str, item: Dict) -> Optional[float]:
