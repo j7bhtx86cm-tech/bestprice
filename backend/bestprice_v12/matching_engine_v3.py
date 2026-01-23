@@ -884,7 +884,7 @@ def find_alternatives_v3(
             'pack_qty': source_item.get('pack_qty'),
             'pack_value': source_sig.pack_value,
             'unit_type': source_item.get('unit_type'),
-            'brand_id': source_item.get('brand_id'),
+            'brand_id': source_sig.brand_id,  # Используем извлечённый из названия
             'product_core_id': source_sig.product_core_id,
             'category_group': source_sig.category_group,
             'signature': {
