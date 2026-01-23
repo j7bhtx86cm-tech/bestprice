@@ -18,6 +18,7 @@ E-commerce платформа для B2B заказов с оптимизаци�
 
 **2. Hard-атрибуты per group (матрица правил):**
 - **Общие**: `product_form`, `unit_type` (WEIGHT ≠ PIECE ≠ VOLUME)
+- **Тип продукта**: `product_type` (bouillon ≠ sauce ≠ fillet ≠ canned)
 - **Мясо/рыба**: chilled/frozen, part_type, skin, breaded
 - **Молочка**: condensed ≠ dairy ≠ plant ≠ lactose_free ≠ coconut
 - **Соусы/бренды**: приоритет бренда → потом другие
