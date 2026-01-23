@@ -848,6 +848,7 @@ def find_alternatives_v3(
     def format_item(x, mode: str) -> Dict:
         item = x['item']
         result = x['result']
+        cand_sig = extract_signature(item)
         
         return {
             'id': item.get('id'),
@@ -855,9 +856,9 @@ def find_alternatives_v3(
             'name_raw': item.get('name_raw', ''),
             'price': item.get('price', 0),
             'pack_qty': item.get('pack_qty'),
-            'pack_value': extract_signature(item).pack_value,
+            'pack_value': cand_sig.pack_value,
             'unit_type': item.get('unit_type'),
-            'brand_id': item.get('brand_id'),
+            'brand_id': cand_sig.brand_id,  # Используем извлечённый из названия
             'supplier_company_id': item.get('supplier_company_id'),
             'min_order_qty': item.get('min_order_qty', 1),
             'ppu_value': result.ppu_value,
