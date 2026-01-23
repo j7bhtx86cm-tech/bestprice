@@ -231,6 +231,7 @@ class ProductSignature:
     # Hard-атрибуты
     product_form: ProductForm = ProductForm.UNKNOWN
     category_group: Optional[str] = None
+    product_type: Optional[str] = None  # bouillon/sauce/fillet/etc (hard-block)
     
     # Мясо/рыба
     part_type: Optional[str] = None
