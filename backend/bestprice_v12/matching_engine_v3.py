@@ -368,6 +368,14 @@ def _extract_pack_value(name_norm: str, item: Dict) -> Optional[float]:
     return item.get('pack_qty')
 
 
+def _extract_brand_from_name(name_norm: str) -> Optional[str]:
+    """Извлекает известный бренд из названия товара"""
+    for brand_id, patterns in KNOWN_BRAND_PATTERNS.items():
+        if _check_patterns(name_norm, patterns):
+            return brand_id
+    return None
+
+
 def _determine_category_group(product_core_id: Optional[str]) -> Optional[str]:
     """Определяет группу категории для применения правил"""
     if not product_core_id:
