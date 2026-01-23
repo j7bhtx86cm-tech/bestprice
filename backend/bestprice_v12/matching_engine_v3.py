@@ -728,6 +728,11 @@ def match_for_similar(
         result.block_reason = "MILK_TYPE_MISMATCH"
         return result
     
+    # Тип продукта (бульон/соус/филе) - hard-block даже для Similar
+    if source.product_type and cand.product_type and source.product_type != cand.product_type:
+        result.block_reason = f"PRODUCT_TYPE_MISMATCH:{source.product_type}!={cand.product_type}"
+        return result
+    
     # Посуда - тип должен совпадать
     if source.utensil_type and source.utensil_type != cand.utensil_type:
         result.block_reason = "UTENSIL_TYPE_MISMATCH"
