@@ -130,6 +130,17 @@ FLAVOR_PATTERNS = {
     'caramel': ['карамел', 'caramel'],
 }
 
+# Типы продукта (hard-block - бульон ≠ соус ≠ филе)
+PRODUCT_TYPE_PATTERNS = {
+    'bouillon': ['бульон', 'хондаши', 'даши', 'dashi', 'bouillon', 'stock'],  # Бульоны
+    'sauce': ['соус', 'sauce', 'кетчуп', 'майонез', 'горчиц'],  # Соусы
+    'fillet': ['филе', 'fillet', 'filet'],  # Филе
+    'whole_fish': ['тушк', 'целая', 'whole'],  # Целая рыба/тушка
+    'roe': ['икра', 'caviar', 'roe'],  # Икра
+    'liver': ['печень', 'liver'],  # Печень
+    'canned': ['консерв', 'ж/б'],  # Консервы
+}
+
 # Типы посуды/упаковки (hard-block внутри категории)
 UTENSIL_TYPE_PATTERNS = {
     'lid': ['крышк'],
