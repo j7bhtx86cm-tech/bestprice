@@ -1632,36 +1632,39 @@ def calculate_relevance_score(source_comps: dict, candidate_comps: dict,
 async def get_item_alternatives(
     item_id: str, 
     limit: int = Query(10, le=20),
-    include_analogs: bool = Query(False, description="Устаревший параметр, игнорируется")
+    include_similar: bool = Query(True, description="Включить Similar если Strict < 4")
 ):
     """
-    Возвращает альтернативные офферы для товара (v2.0).
+    Возвращает альтернативные офферы для товара (v3.0 - ТЗ v12).
     
-    НОВАЯ ЛОГИКА (по ТЗ P0):
+    ДВУХРЕЖИМНАЯ ВЫДАЧА:
     
-    Кандидаты:
-    - ТОЛЬКО из того же product_core_id
-    - active=true, price>0
+    1. Strict (точные аналоги):
+       - Тот же product_core_id
+       - Все hard-атрибуты совпадают
+       - Совместимая фасовка (±10-20% по категории)
     
-    Hard-block фильтры (если не прошёл — НЕ показывать):
-    - Упаковка/масштаб: ±20% для обычной еды, ±10% для специй, 0% для крышек
-    - Одноразка: тип должен совпадать (крышка ≠ стакан)
-    - Крышки: размер строго 1:1
-    - Вкус: если есть у source — другой вкус запрещён
-    - Молоко: сгущёнка ≠ dairy ≠ растительное ≠ безлактозное
-    - Овощи: очищенная запрещена если source не очищенная
-    - Креветки: вид/калибр/состояние строго
-    - Сосиски ≠ сырое мясо/филе
+    2. Similar (похожие) - если Strict < 4:
+       - Тот же product_core_id
+       - С лейблами отличий
+       - Более мягкие допуски
     
-    Ранжирование:
-    1. Точные по атрибутам (size/flavor/etc)
-    2. Тот же бренд
-    3. Ближайшие по фасовке
-    4. По цене
+    HARD-BLOCKS:
+    - unit_type: WEIGHT ≠ PIECE ≠ VOLUME
+    - product_form: frozen ≠ chilled ≠ canned
+    - Вкус: если указан - строго совпадает
+    - Молоко: condensed ≠ dairy ≠ plant ≠ lactose_free
+    - Мясо/рыба: part_type, skin, breaded
+    - Посуда: тип + размер (крышки 1:1)
     
-    Особенности:
-    - Контейнеры: первые 4 обязаны быть точного размера
-    - Коробки vs штуки: не смешиваются (если source коробка — сначала коробки)
+    РАНЖИРОВАНИЕ:
+    - Бренд (если задан) → фасовка → ppu_value → min_line_total
+    
+    ЛЕЙБЛЫ ОТЛИЧИЙ:
+    - "Бренд другой"
+    - "Фасовка: X vs Y"
+    - "В панировке", "На коже/Без кожи"
+    - "Форма: frozen/chilled"
     """
     db = get_db()
     
@@ -1674,24 +1677,24 @@ async def get_item_alternatives(
     if not source_item:
         return {
             'source': None,
+            'strict': [],
+            'similar': [],
             'alternatives': [],
             'total': 0
         }
     
     product_core_id = source_item.get('product_core_id')
     
-    # Получаем кандидатов из БД - ТОЛЬКО из того же product_core_id
+    # Получаем кандидатов из БД
     candidates_query = {
         'active': True,
         'price': {'$gt': 0},
         'id': {'$ne': item_id},
     }
     
-    # product_core_id ОБЯЗАТЕЛЕН для фильтрации
     if product_core_id:
         candidates_query['product_core_id'] = product_core_id
     else:
-        # Если нет product_core_id - альтернатив нет
         return {
             'source': {
                 'id': source_item.get('id'),
@@ -1699,6 +1702,8 @@ async def get_item_alternatives(
                 'price': source_item.get('price', 0),
                 'product_core_id': None,
             },
+            'strict': [],
+            'similar': [],
             'alternatives': [],
             'total': 0,
             'reason': 'no_product_core_id'
@@ -1707,13 +1712,14 @@ async def get_item_alternatives(
     raw_candidates = list(db.supplier_items.find(
         candidates_query,
         {'_id': 0}
-    ).limit(200))
+    ).limit(300))  # Берём больше для фильтрации
     
-    # Используем новую логику matching v2
-    result = find_alternatives(
+    # Используем matching engine v3
+    result = find_alternatives_v3(
         source_item=source_item,
         candidates=raw_candidates,
-        limit=limit
+        limit=limit,
+        strict_threshold=4 if include_similar else 999
     )
     
     # Обогащаем данными поставщика
@@ -1733,10 +1739,36 @@ async def get_item_alternatives(
             }
         return supplier_cache[supplier_id]
     
+    def enrich_item(alt: dict) -> dict:
+        supplier_id = alt.get('supplier_company_id')
+        sup_info = get_supplier_info(supplier_id)
+        
+        return {
+            'id': alt.get('id'),
+            'name': alt.get('name_raw', alt.get('name', '')),
+            'name_raw': alt.get('name_raw', ''),
+            'price': alt.get('price', 0),
+            'pack_qty': alt.get('pack_qty'),
+            'pack_value': alt.get('pack_value'),
+            'unit_type': alt.get('unit_type', 'PIECE'),
+            'brand_id': alt.get('brand_id'),
+            'supplier_id': supplier_id,
+            'supplier_name': sup_info['name'],
+            'supplier_min_order': sup_info['min_order'],
+            'min_order_qty': alt.get('min_order_qty', 1),
+            'ppu_value': alt.get('ppu_value', 0),
+            'min_line_total': alt.get('min_line_total', 0),
+            'match_score': alt.get('match_score', 0),
+            'match_mode': alt.get('match_mode', 'strict'),
+            'brand_match': alt.get('brand_match', False),
+            'pack_diff_pct': alt.get('pack_diff_pct', 0),
+            'difference_labels': alt.get('difference_labels', []),
+        }
+    
     # Enrich source
     source_supplier_id = source_item.get('supplier_company_id')
     source_sup_info = get_supplier_info(source_supplier_id)
-    source_data = result.get('source', {})
+    source_data = result.source
     
     enriched_source = {
         'id': source_item.get('id'),
@@ -1744,47 +1776,34 @@ async def get_item_alternatives(
         'name_raw': source_item.get('name_raw', ''),
         'price': source_item.get('price', 0),
         'pack_qty': source_item.get('pack_qty'),
-        'net_weight_kg': source_item.get('net_weight_kg'),
+        'pack_value': source_data.get('pack_value'),
         'unit_type': source_item.get('unit_type', 'PIECE'),
         'brand_id': source_item.get('brand_id'),
         'product_core_id': product_core_id,
+        'category_group': source_data.get('category_group'),
         'supplier_id': source_supplier_id,
         'supplier_name': source_sup_info['name'],
         'supplier_min_order': source_sup_info['min_order'],
         'signature': source_data.get('signature', {}),
     }
     
-    # Enrich alternatives
-    enriched_alternatives = []
-    for alt in result.get('alternatives', []):
-        supplier_id = alt.get('supplier_company_id')
-        sup_info = get_supplier_info(supplier_id)
-        
-        enriched_alternatives.append({
-            'id': alt.get('id'),
-            'name': alt.get('name_raw', alt.get('name', '')),
-            'name_raw': alt.get('name_raw', ''),
-            'price': alt.get('price', 0),
-            'pack_qty': alt.get('pack_qty'),
-            'net_weight_kg': alt.get('net_weight_kg'),
-            'unit_type': alt.get('unit_type', 'PIECE'),
-            'brand_id': alt.get('brand_id'),
-            'supplier_id': supplier_id,
-            'supplier_name': sup_info['name'],
-            'supplier_min_order': sup_info['min_order'],
-            'match_score': alt.get('match_score', 0),
-            'match_badges': alt.get('match_badges', []),
-            'exact_size': alt.get('exact_size', False),
-            'same_brand': alt.get('same_brand', False),
-        })
+    # Enrich strict и similar
+    enriched_strict = [enrich_item(alt) for alt in result.strict]
+    enriched_similar = [enrich_item(alt) for alt in result.similar]
+    
+    # Backward compatibility: flat alternatives list
+    all_alternatives = enriched_strict + enriched_similar
     
     return {
         'source': enriched_source,
-        'alternatives': enriched_alternatives,
-        'total': len(enriched_alternatives),
-        'total_candidates': result.get('total_candidates', 0),
-        'passed_hard_blocks': result.get('passed_hard_blocks', 0),
-        'rejected_reasons': result.get('rejected_reasons', {}),
+        'strict': enriched_strict,
+        'similar': enriched_similar,
+        'alternatives': all_alternatives,  # Backward compatible
+        'strict_count': result.strict_count,
+        'similar_count': result.similar_count,
+        'total': len(all_alternatives),
+        'total_candidates': result.total_candidates,
+        'rejected_reasons': result.rejected_reasons,
     }
 
 
