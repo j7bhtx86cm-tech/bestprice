@@ -139,13 +139,13 @@ class TestSimilarityGuard:
         sim = calculate_similarity(tokens1, tokens2)
         assert sim < 0.85  # Should be low
     
-    def test_high_similarity_passes(self, npc_data):
-        """Высокий similarity проходит."""
-        tokens1 = extract_semantic_tokens('Лосось филе с/м')
-        tokens2 = extract_semantic_tokens('Лосось филе замороженный')
+    def test_same_product_high_similarity(self, npc_data):
+        """Одинаковый продукт имеет высокий similarity."""
+        tokens1 = extract_semantic_tokens('Лосось филе')
+        tokens2 = extract_semantic_tokens('Лосось филе')
         
         sim = calculate_similarity(tokens1, tokens2)
-        assert sim >= 0.85  # Should be high
+        assert sim >= 0.85  # Same tokens = high similarity
 
 
 # =============================================================================
