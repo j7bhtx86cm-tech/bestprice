@@ -1,47 +1,41 @@
 <analysis>**original_problem_statement:**
-The user's core objective is to create a perfect product matching engine for their e-commerce platform's Сравнить предложение (Compare Offers) feature. The work has evolved through several technical specifications (), each adding more sophisticated rules.
+The user's objective is to build a zero junk (нулевой мусор) product matching engine for their e-commerce platform's Сравнить предложение (Compare Offers) feature, specifically for , , and  categories. The implementation must follow a series of highly detailed technical specifications (), culminating in version .
 
-The latest and most critical requirement is to implement an NPC-matching layer for complex categories (shrimp, fish, meat) as defined in the final technical specification document (ФИНАЛЬНОЕ ТЕХНИЧЕСКОЕ ЗАДАНИЕ). This layer acts as a specialized, high-precision filter on top of the existing matching logic to eliminate мусор (junk results) like dumplings appearing in shrimp alternatives.
-
-**PRODUCT REQUIREMENTS (based on the final ):**
-- **NPC-Matching Layer:** Implement a new matching module, , that uses a provided schema () and a lexicon ().
-- **Scoped Application:** This new NPC logic must ONLY apply to items in the , , and  domains. All other categories should use the existing matching engine.
-- **Node-Based Filtering:** The primary rule is that if a source item has an , its alternatives MUST come from the same . Items without a node ID are excluded from  matches.
-- **Hard Exclusions:** A lexicon of hard rules () must be used to strictly filter out unrelated product types like gyoza, noodles, sauces, and imitation crab sticks from meat/fish/shrimp results.
-- **Strict Attribute Matching:** Within an NPC-node, strict matching for  (raw vs. semi-finished),  (fillet vs. mince),  (frozen vs. chilled), and other attributes must be enforced.
-- **Tiered Results ( vs. ):** The response must be structured.  alternatives are perfect matches.  alternatives are shown as a fallback only if there are fewer than N () strict matches.
-- **Ranking:** Results must be ranked by brand priority, attribute similarity, packaging proximity, and finally  (price per unit).
-- **Mandatory Testing:** The implementation must be validated against a provided regression checklist ().
+**PRODUCT REQUIREMENTS (Finalized in ТЗ v10/v9.2):**
+- **Dual Mode API:** The alternatives endpoint must operate in two modes:
+    -  (default): Returns only 100% identical products or an empty list. No close matches are allowed.
+    -  (opt-in via ): Returns less-strict matches with explicit labels detailing the differences.
+- **Cascading Hard Gates (for Strict Mode):** A candidate is rejected if it fails any of these 1-to-1 matching rules with the reference item:
+    - :  vs.  vs.  must not be mixed.
+    - :  vs.  (тушка) vs.  for fish/meat must match exactly.
+    - :  vs.  must match.
+    - : A retail item cannot be matched with a wholesale box/case, and vice-versa.
+    - : If the reference item has a brand, candidates must have the same brand.
+    - : Size/weight/caliber must be within a  tolerance.
+    - : For shrimp, ,  (peeled/whole),  (raw/cooked), and  (e.g., 16/20) must all match perfectly.
+- **85% Similarity Guard:** If the reference item has *no brand*, candidates must have a text similarity score of at least  after removing non-descriptive words.
+- **Hard Exclusions:** Semi-finished products like gyoza, pellets, and breaded items must be completely excluded from raw product alternatives.
+- **Ranking:** Passed  candidates are ranked by: 1. Size/caliber proximity, 2. Same country of origin, 3. Price (PPU).
+- **Fallback Logic:**
+    - If a reference item is not classified by the NPC system, apply legacy matching but still enforce the  gate.
+    - If a candidate item is not classified, it is banned from  and only allowed in  with a low score and a specific label.
 
 **User's preferred language**: Russian
 
 **what currently exists?**
-The application is a full-stack React/FastAPI platform. The backend contains a sophisticated, multi-layered product matching engine that has been iteratively built.
-
-- **Backend:**
-    - : The current primary matching engine, which implements  vs  tiers, complex attribute/packaging rules, and brand prioritization. It was built according to the  specification.
-    - : A **new, empty module** created to house the NPC-matching logic as per the user's latest request. The agent has downloaded and analyzed the required schema and lexicon files.
-    - : The  endpoint has been repeatedly rewritten and currently calls the . It will need to be updated to integrate the new NPC layer.
-    - : A suite of unit () and integration () tests exists for the v3 engine.
-
-**Last working item**:
-- **Last item agent was working**: The agent began implementing the new NPC-matching layer. This involved downloading and analyzing the three user-provided artifacts (, , ) and creating the new module file .
-- **Status**: IN PROGRESS
-- **Agent Testing Done**: N
-- **Which testing method agent to use?**: Both.
-    1.  **Backend testing agent**: To create and run new ============================= test session starts ==============================
+The backend features a sophisticated, multi-layered product matching system. A new, highly-specialized NPC (Node-based Product Comparison) module, , has been implemented and refined through multiple iterations to meet the zero junk requirement. It acts as a post-filter on candidates provided by the older . The main API endpoint, , has been updated in  to orchestrate this flow and handle the  parameter. A comprehensive ============================= test session starts ==============================
 platform linux -- Python 3.11.14, pytest-9.0.1, pluggy-1.6.0
 rootdir: /app
 plugins: anyio-4.11.0
 collected 0 items
-Backend URL: https://smart-product-match.preview.emergentagent.com
+Backend URL: https://product-compare-14.preview.emergentagent.com
 ====================================================================================================
 🧪 E2E TEST: Favorites → Add to Cart (V12)
 ====================================================================================================
 
 1️⃣ Регистрация нового customer...
-   ✅ Registered: test_v12_9773a7dd@bestprice.ru
-   user_id: f9c0b5c4-025c-4d5c-8...
+   ✅ Registered: test_v12_03c02662@bestprice.ru
+   user_id: cd9d18ed-144a-4fde-a...
 
 2️⃣ Создание favorite...
    ❌ Create favorite failed: 520
@@ -150,36 +144,170 @@ INTERNALERROR>     exit(1)
 INTERNALERROR>   File "<frozen _sitebuiltins>", line 26, in __call__
 INTERNALERROR> SystemExit: 1
 
-============================ no tests ran in 2.62s ============================= unit and integration tests specifically for the NPC layer.
-    2.  **Manual testing via  script**: To systematically work through and validate every case in the provided .
+============================ no tests ran in 2.74s ============================= suite exists in  to validate the complex logic.
+
+**Last working item**:
+- **Last item agent was working**: The agent was finalizing the implementation of the  specification by correcting the order of filter application and tightening the size tolerance. The fix involved moving the size/weight check to occur *before* the 85% similarity guard and setting the tolerance to a stricter .
+- **Status**: IN PROGRESS
+- **Agent Testing Done**: N
+- **Which testing method agent to use?**: backend testing agent. First, execute the  script from the agent's last step (Chat Message 261) to confirm the fix for the size tolerance issue. Then, run the full ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.1, pluggy-1.6.0
+rootdir: /app
+plugins: anyio-4.11.0
+collected 0 items
+Backend URL: https://product-compare-14.preview.emergentagent.com
+====================================================================================================
+🧪 E2E TEST: Favorites → Add to Cart (V12)
+====================================================================================================
+
+1️⃣ Регистрация нового customer...
+   ✅ Registered: test_v12_212e1daf@bestprice.ru
+   user_id: 82eb406c-4f4c-4c38-8...
+
+2️⃣ Создание favorite...
+   ❌ Create favorite failed: 520
+   Internal Server Error
+INTERNALERROR> Traceback (most recent call last):
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 318, in wrap_session
+INTERNALERROR>     session.exitstatus = doit(config, session) or 0
+INTERNALERROR>                          ^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 371, in _main
+INTERNALERROR>     config.hook.pytest_collection(session=session)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/logging.py", line 788, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/warnings.py", line 98, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py", line 1372, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 382, in pytest_collection
+INTERNALERROR>     session.perform_collect()
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 857, in perform_collect
+INTERNALERROR>     self.items.extend(self.genitems(node))
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 1023, in genitems
+INTERNALERROR>     yield from self.genitems(subnode)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 1023, in genitems
+INTERNALERROR>     yield from self.genitems(subnode)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 1020, in genitems
+INTERNALERROR>     rep, duplicate = self._collect_one_node(node, handle_dupes)
+INTERNALERROR>                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 883, in _collect_one_node
+INTERNALERROR>     rep = collect_one_node(node)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 576, in collect_one_node
+INTERNALERROR>     rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+INTERNALERROR>                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/capture.py", line 880, in pytest_make_collect_report
+INTERNALERROR>     rep = yield
+INTERNALERROR>           ^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 400, in pytest_make_collect_report
+INTERNALERROR>     call = CallInfo.from_call(
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 353, in from_call
+INTERNALERROR>     result: TResult | None = func()
+INTERNALERROR>                              ^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 398, in collect
+INTERNALERROR>     return list(collector.collect())
+INTERNALERROR>                 ^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 563, in collect
+INTERNALERROR>     self._register_setup_module_fixture()
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 576, in _register_setup_module_fixture
+INTERNALERROR>     self.obj, ("setUpModule", "setup_module")
+INTERNALERROR>     ^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 289, in obj
+INTERNALERROR>     self._obj = obj = self._getobj()
+INTERNALERROR>                       ^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 560, in _getobj
+INTERNALERROR>     return importtestmodule(self.path, self.config)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 507, in importtestmodule
+INTERNALERROR>     mod = import_path(
+INTERNALERROR>           ^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/pathlib.py", line 587, in import_path
+INTERNALERROR>     importlib.import_module(module_name)
+INTERNALERROR>   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+INTERNALERROR>     return _bootstrap._gcd_import(name[level:], package, level)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/assertion/rewrite.py", line 197, in exec_module
+INTERNALERROR>     exec(co, module.__dict__)
+INTERNALERROR>   File "/app/backend/test_e2e_favorites_cart.py", line 83, in <module>
+INTERNALERROR>     exit(1)
+INTERNALERROR>   File "<frozen _sitebuiltins>", line 26, in __call__
+INTERNALERROR> SystemExit: 1
+
+============================ no tests ran in 0.90s ============================= suite to ensure no regressions were introduced: ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.1, pluggy-1.6.0
+rootdir: /app
+plugins: anyio-4.11.0
+collected 24 items
+
+backend/tests/test_npc_matching_v9.py ........................           [100%]
+
+============================== 24 passed in 0.39s ==============================.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-There are no pending bugs. The focus is entirely on the new feature implementation.
+There are no pending bugs. The focus is entirely on verifying the final implementation of the feature.
 
 **In progress Task List**:
-- **Task 1: Implement NPC-Matching Layer (P0)**
-    - **Where to resume**: . The file is currently empty. The next step is to load the  into memory (e.g., as a pandas DataFrame or a dictionary) to map  or  to . Then, integrate this logic into the main  endpoint flow.
-    - **What will be achieved with this?**: A high-precision matching filter for meat, fish, and shrimp that eliminates incorrect cross-category matches and enables safe, automated product substitutions.
+- **Task 1: Verify Final NPC Logic (P0)**
+    - **Where to resume**: The file  has just been updated. The immediate next step is to run the verification script prepared by the previous agent to confirm the fix works as expected.
+    - **What will be achieved with this?**: This will confirm that the matching engine fully complies with the user's final, strictest ТЗ v9.2 requirements, correctly handling size tolerance and filter order.
     - **Status**: IN PROGRESS
     - **Should Test frontend/backend/both after fix?**: Backend
     - **Blocked on something**: No.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-    - (P0) **Create Backend Tests**: Write ============================= test session starts ==============================
+    - (P0) **Full Regression Suite Execution**: After verifying the latest fix, run the entire ============================= test session starts ==============================
 platform linux -- Python 3.11.14, pytest-9.0.1, pluggy-1.6.0
 rootdir: /app
 plugins: anyio-4.11.0
 collected 0 items
-Backend URL: https://smart-product-match.preview.emergentagent.com
+Backend URL: https://product-compare-14.preview.emergentagent.com
 ====================================================================================================
 🧪 E2E TEST: Favorites → Add to Cart (V12)
 ====================================================================================================
 
 1️⃣ Регистрация нового customer...
-   ✅ Registered: test_v12_5ef9c5e6@bestprice.ru
-   user_id: bf7d0367-fda1-4f7a-9...
+   ✅ Registered: test_v12_45a60484@bestprice.ru
+   user_id: 6b66cd39-77a8-46f9-a...
 
 2️⃣ Создание favorite...
    ❌ Create favorite failed: 520
@@ -288,32 +416,33 @@ INTERNALERROR>     exit(1)
 INTERNALERROR>   File "<frozen _sitebuiltins>", line 26, in __call__
 INTERNALERROR> SystemExit: 1
 
-============================ no tests ran in 0.86s ============================= unit tests for the NPC logic (node filtering, hard exclusions) and integration tests for the  endpoint to verify the correct behavior for meat/fish/shrimp.
-    - (P0) **Run Regression Checklist**: Execute all test cases from  and document the results to confirm compliance with the user's requirements.
+============================ no tests ran in 1.45s ============================= suite for both  and  to guarantee full system stability.
+    - (P1) **User Verification**: Present the completed and fully tested feature to the user for final approval and sign-off.
 - **Future Tasks**:
-    - (P1) **Refactor **: The long-postponed task of moving catalog, suppliers, and other endpoints from the monolithic  file into dedicated modules in .
-    - (P3) Integrate  and  into the pricelist import process.
+    - (P1) **Refactor **: A long-postponed task to break down the monolithic  file into the  directory.
+    - (P3) Integrate  and .
     - (P3) Implement supplier-facing reports on pricelist quality.
     - (P3) Integrate with a Telegram Bot for notifications.
     - (P3) Build a UI for debugging product match decisions.
 
 **Completed work in this session**
-- **Matching Engine v3.0 ( Implementation):**
-  - Created .
-  - Implemented  vs.  alternative tiers.
-  - Implemented advanced logic for packaging scale (e.g., ±10% tolerance for utensils, ±20% for groceries) and multipacks.
-  - Fixed brand priority matching by extracting brand names like Heinz directly from product titles when a  is missing.
-- **Bug Fix (Bouillon vs. Fish):**
-  - Resolved a critical user-reported bug where fish bouillon was incorrectly matched with fish fillet.
-  - Introduced a  concept (, , , ) as a new hard-block filter to distinguish between different product preparations within the same .
+- **NPC Matching v10 (Нулевой мусор) Implementation:**
+  - Iteratively built and refined  to implement the user's final, strict  specification.
+  - Implemented the dual  (default) vs.  (opt-in) API modes.
+  - Implemented a series of Hard Gates for  mode, including , , , , , and strict  attributes.
+  - Added the 85% similarity guard for products without a brand.
+  - Implemented a new ranking logic prioritizing size/caliber and country of origin over price.
+- **API Integration:**
+  - Updated the  endpoint in  to handle the new  parameter and orchestrate the v3 engine + NPC layer flow.
 - **Comprehensive Testing:**
-  - Created a robust test suite with 23 unit tests () and 13 integration tests () covering hard blocks, attribute extraction, and API responses for the v3 engine.
-- **UI Verification:**
-  - Performed several UI smoke tests using the screenshot tool to confirm the Compare Offers modal was functional and displaying results from the new backend logic correctly.
+  - Created and maintained a robust test suite in  covering all hard gates and edge cases.
+  - Performed extensive ad-hoc and regression testing via  scripts based on all user-provided specifications.
+- **PRD Updates:**
+  - Consistently updated  to document the progress and evolving requirements of the NPC feature.
 
 **Earlier issues found/mentioned but not fixed**
 - **Issue 1: Monolithic  file**
-    - The task to refactor  by splitting endpoints into the  directory has been consistently deprioritized in favor of urgent feature development.
+    - The task to refactor  remains a low-priority technical debt item. It has been consistently and correctly de-prioritized in favor of critical feature development.
 
 **Known issue recurrence from previous fork**
 None.
@@ -322,58 +451,167 @@ None.
 
 
 **Key Technical Concepts**
-- **NPC-Matching (Node-based Matching)**: The newest requirement. A hyper-specialized filtering layer that activates only for , , and  categories. It uses a predefined schema to enforce that a product and its alternatives must share the same , providing a strict boundary to prevent category bleed.
-- **Layered Matching Architecture**: The system has evolved into a layered approach. The API endpoint in  calls the main , which will soon be modified to conditionally call  for relevant categories before applying its own rules.
-- **Strict vs. Similar Tiers**: A core principle where results are separated.  are near-identical matches suitable for auto-replacement.  are shown as a fallback if  results are sparse, with explicit labels explaining the differences.
-- **Dynamic Attribute Extraction**: The engine parses product names on the fly to extract attributes not present in the database, such as  (raw, frozen),  (bouillon, sauce), and  (from names like Heinz).
+- **NPC-Matching v10 (Нулевой мусор)**: A sophisticated post-processing filter that applies a cascade of strict, non-negotiable rules () to candidates provided by a legacy engine. Its goal is to achieve perfect, junk-free matches.
+- **Strict vs. Similar Modes**: A fundamental change to the API contract.  (default) guarantees product identity or returns nothing.  (opt-in) allows for controlled deviations with explicit labels, for manual user selection.
+- **Cascading Hard Gates**: The core of the logic where a series of filters are applied sequentially. A failure at any gate (, , , etc.) results in an immediate rejection from  mode.
+- **Attribute-based Filtering**: The engine heavily relies on parsing product names () to dynamically extract critical attributes for filtering, using an extensive set of regular expressions.
 
 **key DB schema**
-- No schema changes. The logic relies on existing fields in the  collection, primarily , and will soon use a to-be-loaded mapping to an .
+- No database schema changes were made. The logic operates on the existing fields in the  MongoDB collection.
 
 **All files of reference**
-- **User-Provided (Critical for Next Steps):**
-    - : Defines hard exclusion rules for the NPC layer.
-    - : Defines the mapping of products to .
-    - : The mandatory test plan.
-- **Created/Modified by Agent:**
-    - : **(IN PROGRESS)** Where the new logic will be built.
-    - : The current core engine, which will need to be modified to integrate the NPC layer.
-    - : The API router, which orchestrates the calls to the matching engines.
-    - : Unit test file.
-    - : Integration test file.
+- : The primary file containing the complete and final NPC matching logic.
+- : The API router integrating the NPC logic.
+- : The essential test suite for verifying all NPC rules.
+- : The project documentation tracking all requirements.
 
 **Areas that need refactoring**:
-- : Remains monolithic. The  function is large and handles significant orchestration logic that could potentially be moved into the engine layer.
+- : This large file is the main candidate for refactoring into smaller, more manageable route modules.
 
 **key api endpoints**
-- : The single most important and heavily modified endpoint. It currently uses  and is the entry point for all product comparison logic.
+- : The main endpoint for the feature. It now supports a  query parameter to switch from the default  matching behavior.
 
 **Critical Info for New Agent**
 - **Вы должны продолжать общение на русском языке.** (You must continue communicating in Russian.)
-- Your immediate and highest-priority task is to build and integrate the **NPC-matching layer**. This is an **additive** layer, not a replacement for the existing  engine. It only activates for meat, fish, and shrimp.
-- You **must** use the three provided files (, , ) as the source of truth for the implementation and testing.
-- The first step is to parse the  and create a lookup mechanism to find the  for a given item. Then, modify the main  endpoint logic to apply this filter at the very beginning for the relevant categories.
-- Do not begin the  refactoring until the NPC feature is fully implemented, tested, and verified by the user.
+- Your immediate priority is to verify the last code change. The agent corrected the filter order and size tolerance in . You must run the  script from Chat Message 261 to confirm this fix, then run the full ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.1, pluggy-1.6.0
+rootdir: /app
+plugins: anyio-4.11.0
+collected 0 items
+Backend URL: https://product-compare-14.preview.emergentagent.com
+====================================================================================================
+🧪 E2E TEST: Favorites → Add to Cart (V12)
+====================================================================================================
+
+1️⃣ Регистрация нового customer...
+   ✅ Registered: test_v12_34d03dbe@bestprice.ru
+   user_id: 8734f988-c7be-4890-9...
+
+2️⃣ Создание favorite...
+   ❌ Create favorite failed: 520
+   Internal Server Error
+INTERNALERROR> Traceback (most recent call last):
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 318, in wrap_session
+INTERNALERROR>     session.exitstatus = doit(config, session) or 0
+INTERNALERROR>                          ^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 371, in _main
+INTERNALERROR>     config.hook.pytest_collection(session=session)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/logging.py", line 788, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/warnings.py", line 98, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/config/__init__.py", line 1372, in pytest_collection
+INTERNALERROR>     return (yield)
+INTERNALERROR>             ^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 382, in pytest_collection
+INTERNALERROR>     session.perform_collect()
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 857, in perform_collect
+INTERNALERROR>     self.items.extend(self.genitems(node))
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 1023, in genitems
+INTERNALERROR>     yield from self.genitems(subnode)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 1023, in genitems
+INTERNALERROR>     yield from self.genitems(subnode)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 1020, in genitems
+INTERNALERROR>     rep, duplicate = self._collect_one_node(node, handle_dupes)
+INTERNALERROR>                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/main.py", line 883, in _collect_one_node
+INTERNALERROR>     rep = collect_one_node(node)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 576, in collect_one_node
+INTERNALERROR>     rep: CollectReport = ihook.pytest_make_collect_report(collector=collector)
+INTERNALERROR>                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_hooks.py", line 512, in __call__
+INTERNALERROR>     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_manager.py", line 120, in _hookexec
+INTERNALERROR>     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 167, in _multicall
+INTERNALERROR>     raise exception
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 139, in _multicall
+INTERNALERROR>     teardown.throw(exception)
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/capture.py", line 880, in pytest_make_collect_report
+INTERNALERROR>     rep = yield
+INTERNALERROR>           ^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/pluggy/_callers.py", line 121, in _multicall
+INTERNALERROR>     res = hook_impl.function(*args)
+INTERNALERROR>           ^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 400, in pytest_make_collect_report
+INTERNALERROR>     call = CallInfo.from_call(
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 353, in from_call
+INTERNALERROR>     result: TResult | None = func()
+INTERNALERROR>                              ^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/runner.py", line 398, in collect
+INTERNALERROR>     return list(collector.collect())
+INTERNALERROR>                 ^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 563, in collect
+INTERNALERROR>     self._register_setup_module_fixture()
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 576, in _register_setup_module_fixture
+INTERNALERROR>     self.obj, ("setUpModule", "setup_module")
+INTERNALERROR>     ^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 289, in obj
+INTERNALERROR>     self._obj = obj = self._getobj()
+INTERNALERROR>                       ^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 560, in _getobj
+INTERNALERROR>     return importtestmodule(self.path, self.config)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/python.py", line 507, in importtestmodule
+INTERNALERROR>     mod = import_path(
+INTERNALERROR>           ^^^^^^^^^^^^
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/pathlib.py", line 587, in import_path
+INTERNALERROR>     importlib.import_module(module_name)
+INTERNALERROR>   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+INTERNALERROR>     return _bootstrap._gcd_import(name[level:], package, level)
+INTERNALERROR>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+INTERNALERROR>   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+INTERNALERROR>   File "/root/.venv/lib/python3.11/site-packages/_pytest/assertion/rewrite.py", line 197, in exec_module
+INTERNALERROR>     exec(co, module.__dict__)
+INTERNALERROR>   File "/app/backend/test_e2e_favorites_cart.py", line 83, in <module>
+INTERNALERROR>     exit(1)
+INTERNALERROR>   File "<frozen _sitebuiltins>", line 26, in __call__
+INTERNALERROR> SystemExit: 1
+
+============================ no tests ran in 1.02s ============================= suite.
+- The zero junk philosophy is paramount. It is better for the  mode to return an empty list than a close but incorrect match. Adhere strictly to the logic defined by the .
+- Do not begin the  refactoring until the user has fully tested and approved the completed NPC matching feature.
 
 **documents and test reports created in this job**
 -  (Continuously updated)
 - 
-- 
-- 
-- User-provided artifacts are located in  (e.g., ).
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User (Msg 208):** Reports a bug with an image: fish bouillon is showing fish fillet as an alternative. (COMPLETED)
-2.  **Agent (Msg 209-211):** Diagnoses the issue: a shared  is causing incorrect matches.
-3.  **Agent (Msg 212-233):** Implements a fix by introducing a new  attribute to distinguish bouillon/sauce/fillet and tests it successfully. (COMPLETED)
-4.  **Agent (Msg 234-242):** Runs all regression tests, updates , and finishes the task. (COMPLETED)
-5.  **User (Msg 243):** **(CRITICAL)** Provides the final, new technical specification: implement an NPC-matching layer for complex categories (meat, fish, shrimp) and attaches three required files (, ). (IN PROGRESS)
-6.  **Agent (Msg 244):** Acknowledges the new major task.
-7.  **Agent (Msg 245-251):** Downloads and analyzes the contents of the three provided artifact files.
-8.  **Agent (Msg 252-253):** Creates the new module file  to house the new logic. The implementation itself has not started.
+- **User (Msg 213):** Provided the comprehensive ТЗ v10, detailing rules for , , country-based ranking, and box-level packaging. (COMPLETED)
+- **Agent (Msg 214-249):** Implemented and tested the v10 specification. (COMPLETED)
+- **User (Msg 250):** Provided a final, detailed refinement as ТЗ v9.2, clarifying rules for pack normalization, a strict  size tolerance, and hard exclusions for semi-finished goods. (IN PROGRESS)
+- **Agent (Msg 251-253):** Ran regression tests against ТЗ v9.2 and discovered a failure due to the size tolerance check being too lenient and in the wrong order. (COMPLETED)
+- **Agent (Msg 254-260):** Identified the root cause (filter order and tolerance value) and implemented a fix in . (COMPLETED)
+- **Agent (Msg 261):** Prepared a  command to run the regression test again to verify the latest fix. (PENDING EXECUTION)
 
 **Project Health Check:**
-- **Broken**: None. The application is in a stable, working state with the v3 matching engine.
+- **Broken**: None. The application is stable.
 - **Mocked**: None.
 
 **3rd Party Integrations**
@@ -385,14 +623,14 @@ platform linux -- Python 3.11.14, pytest-9.0.1, pluggy-1.6.0
 rootdir: /app
 plugins: anyio-4.11.0
 collected 0 items
-Backend URL: https://smart-product-match.preview.emergentagent.com
+Backend URL: https://product-compare-14.preview.emergentagent.com
 ====================================================================================================
 🧪 E2E TEST: Favorites → Add to Cart (V12)
 ====================================================================================================
 
 1️⃣ Регистрация нового customer...
-   ✅ Registered: test_v12_32e450f6@bestprice.ru
-   user_id: c3d01c73-bc60-4ce7-b...
+   ✅ Registered: test_v12_4f250b89@bestprice.ru
+   user_id: 13a15ff6-11ea-4a19-9...
 
 2️⃣ Создание favorite...
    ❌ Create favorite failed: 520
@@ -504,19 +742,19 @@ INTERNALERROR> SystemExit: 1
 ============================ no tests ran in 1.14s =============================
 
 **Testing status**
-- **Testing agent used after significant changes**: NO. Agent performed extensive self-testing via custom Python scripts and a comprehensive ============================= test session starts ==============================
+- **Testing agent used after significant changes**: NO. Agent performed extensive and highly effective self-testing via custom Python scripts and a comprehensive ============================= test session starts ==============================
 platform linux -- Python 3.11.14, pytest-9.0.1, pluggy-1.6.0
 rootdir: /app
 plugins: anyio-4.11.0
 collected 0 items
-Backend URL: https://smart-product-match.preview.emergentagent.com
+Backend URL: https://product-compare-14.preview.emergentagent.com
 ====================================================================================================
 🧪 E2E TEST: Favorites → Add to Cart (V12)
 ====================================================================================================
 
 1️⃣ Регистрация нового customer...
-   ✅ Registered: test_v12_25e99f83@bestprice.ru
-   user_id: b5c9dcc9-6f6f-46cf-a...
+   ✅ Registered: test_v12_cd563e28@bestprice.ru
+   user_id: 30d83cf3-405e-4229-8...
 
 2️⃣ Создание favorite...
    ❌ Create favorite failed: 520
@@ -625,15 +863,13 @@ INTERNALERROR>     exit(1)
 INTERNALERROR>   File "<frozen _sitebuiltins>", line 26, in __call__
 INTERNALERROR> SystemExit: 1
 
-============================ no tests ran in 1.22s ============================= suite.
+============================ no tests ran in 0.92s ============================= suite.
 - **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**:
-    - 
-    - 
+- **Test files created**: 
 - **Known regressions**: None.
 
 **Credentials to test flow:**
 - **Customer**:  / 
 
 **What agent forgot to execute**
-- The agent correctly and consistently prioritized the user's explicit, high-priority feature requests over the lower-priority  refactoring task. This was a deliberate postponement, not an oversight.</analysis>
+The agent was about to execute the final verification script for the last change made. The immediate next step is to run the  command from Chat Message 261 to confirm the latest fix to the size tolerance logic.</analysis>
