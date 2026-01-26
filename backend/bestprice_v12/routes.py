@@ -60,12 +60,11 @@ from .matching_engine_v3 import (
     AlternativesResult
 )
 
-# Import NPC matching v9 (для SHRIMP/FISH/SEAFOOD/MEAT)
+# Import NPC matching v9.1 (для SHRIMP/FISH/SEAFOOD/MEAT - "Нулевой мусор")
 from .npc_matching_v9 import (
     is_npc_domain_item, get_item_npc_domain,
     apply_npc_filter, format_npc_result,
-    extract_npc_signature, explain_npc_match,
-    STRICT_MIN_THRESHOLD as NPC_STRICT_THRESHOLD
+    extract_npc_signature, explain_npc_match
 )
 
 # Import modular routers
