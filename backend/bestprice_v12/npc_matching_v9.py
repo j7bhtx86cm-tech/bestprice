@@ -786,18 +786,22 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
             result.same_caliber = True
     
     # === 6. FISH SIZE RANGE ===
+    # Size check применяется только для диапазонов (255-311г), а не для единичных размеров
     if source.npc_domain == 'FISH':
         if source.size_gram_min and source.size_gram_max:
-            if candidate.size_gram_min and candidate.size_gram_max:
-                # Проверяем пересечение диапазонов
-                src_mid = (source.size_gram_min + source.size_gram_max) / 2
-                cand_mid = (candidate.size_gram_min + candidate.size_gram_max) / 2
-                diff_pct = abs(src_mid - cand_mid) / src_mid
-                
-                if diff_pct > 0.30:  # Больше 30% разницы — блок
-                    result.block_reason = f"SIZE_MISMATCH:{source.size_gram_min}-{source.size_gram_max}!={candidate.size_gram_min}-{candidate.size_gram_max}"
-                    return result
-                result.same_size_range = True
+            # Только для реальных диапазонов (min != max)
+            if source.size_gram_min != source.size_gram_max:
+                if candidate.size_gram_min and candidate.size_gram_max:
+                    if candidate.size_gram_min != candidate.size_gram_max:
+                        # Оба диапазоны — проверяем пересечение
+                        src_mid = (source.size_gram_min + source.size_gram_max) / 2
+                        cand_mid = (candidate.size_gram_min + candidate.size_gram_max) / 2
+                        diff_pct = abs(src_mid - cand_mid) / src_mid
+                        
+                        if diff_pct > 0.50:  # Больше 50% разницы — блок
+                            result.block_reason = f"SIZE_MISMATCH:{source.size_gram_min}-{source.size_gram_max}!={candidate.size_gram_min}-{candidate.size_gram_max}"
+                            return result
+                        result.same_size_range = True
     
     # === PASSED STRICT ===
     result.passed_strict = True
