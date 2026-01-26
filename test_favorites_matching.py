@@ -10,7 +10,7 @@ import re
 from typing import Dict, List, Optional
 
 # Backend URL
-BACKEND_URL = "https://matchmaker-126.preview.emergentagent.com/api"
+BACKEND_URL = "https://smart-product-match.preview.emergentagent.com/api"
 
 # Test credentials
 EMAIL = "customer@bestprice.ru"

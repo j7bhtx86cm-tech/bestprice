@@ -23,7 +23,7 @@ import json
 from typing import Dict, Optional, List
 
 # Backend URL
-BACKEND_URL = "https://matchmaker-126.preview.emergentagent.com/api"
+BACKEND_URL = "https://smart-product-match.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_USER = {
