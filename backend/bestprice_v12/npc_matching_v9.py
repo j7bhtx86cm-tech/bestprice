@@ -813,15 +813,8 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
                 result.block_reason = f"BRAND_NAME_MISMATCH:{source.brand_name}!={candidate.brand_name}"
                 return result
         result.same_brand = True
-    else:
-        # === 6. 85% GUARD (если бренда нет) ===
-        similarity = calculate_similarity(source.semantic_tokens, candidate.semantic_tokens)
-        result.similarity_score = similarity
-        if similarity < SIMILARITY_THRESHOLD:
-            result.block_reason = f"SIMILARITY_TOO_LOW:{similarity:.2f}<{SIMILARITY_THRESHOLD}"
-            return result
     
-    # === 7. SHRIMP RULES ===
+    # === 6. SHRIMP RULES (перед 85% guard) ===
     if source.npc_domain == 'SHRIMP':
         # STATE
         if source.shrimp_state and candidate.shrimp_state:
@@ -843,7 +836,7 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
                 return result
             result.same_caliber = True
     
-    # === 8. FISH SIZE RANGE ===
+    # === 7. FISH SIZE RANGE (±20% tolerance, перед 85% guard) ===
     if source.npc_domain == 'FISH':
         if source.size_gram_min and source.size_gram_max:
             if source.size_gram_min != source.size_gram_max:  # Real range
@@ -852,10 +845,18 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
                         src_mid = (source.size_gram_min + source.size_gram_max) / 2
                         cand_mid = (candidate.size_gram_min + candidate.size_gram_max) / 2
                         diff_pct = abs(src_mid - cand_mid) / src_mid
-                        if diff_pct > 0.35:
+                        if diff_pct > 0.20:  # ±20% tolerance
                             result.block_reason = f"SIZE_MISMATCH:{source.size_gram_min}-{source.size_gram_max}!={candidate.size_gram_min}-{candidate.size_gram_max}"
                             return result
                         result.same_size_range = True
+    
+    # === 8. 85% GUARD (только если нет бренда и hard-gates пройдены) ===
+    if not source.brand_id:
+        similarity = calculate_similarity(source.semantic_tokens, candidate.semantic_tokens)
+        result.similarity_score = similarity
+        if similarity < SIMILARITY_THRESHOLD:
+            result.block_reason = f"SIMILARITY_TOO_LOW:{similarity:.2f}<{SIMILARITY_THRESHOLD}"
+            return result
     
     # === PASSED STRICT ===
     result.passed_strict = True
