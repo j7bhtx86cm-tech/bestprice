@@ -292,3 +292,59 @@ class TestHardExclusions:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+
+
+# =============================================================================
+# ТЗ v9.2 REGRESSION TESTS
+# =============================================================================
+
+class TestTZv92Regression:
+    """Regression tests from ТЗ v9.2 specification."""
+    
+    @pytest.mark.parametrize("source,candidate,expected_block", [
+        # SHRIMP caliber strict
+        ('Креветки ваннамей б/г с/м 16/20', 'Креветки ваннамей б/г с/м 21/25', True),
+        ('Креветки ваннамей б/г с/м 16/20', 'Креветки ваннамей б/г с/м 31/40', True),
+        # SHRIMP state
+        ('Креветки ваннамей б/г с/м 21/25', 'Креветки ваннамей б/г бланш 21/25', True),
+        # SHRIMP vs semi-finished
+        ('Креветки ваннамей б/г с/м 21/25', 'Гёдза с креветкой с/м', True),
+        ('Креветки ваннамей б/г с/м 21/25', 'Креветки в панировке с/м', True),
+        # FISH cut type
+        ('Окунь тушка с/м 300г', 'Окунь филе с/м 200г', True),
+        ('Окунь филе с/м 200г', 'Окунь тушка с/м 300г', True),
+        # FISH species
+        ('Окунь тушка с/м', 'Сибас тушка с/м', True),
+        ('Окунь филе с/м', 'Тилапия филе с/м', True),
+        # CANNED vs other forms
+        ('Скумбрия в масле ж/б 250г', 'Скумбрия х/к тушка', True),
+        ('Скумбрия консервы ж/б', 'Скумбрия тушка с/м', True),
+        # IS_BOX
+        ('Лосось филе с/м 1кг', 'Лосось филе с/м 10кг/кор', True),
+        ('Креветки 1кг', 'Креветки короб 5кг', True),
+        # SIZE ranges
+        ('Окунь филе 255-311г', 'Окунь филе 150-200г', True),
+    ])
+    def test_strict_blocks(self, npc_data, source, candidate, expected_block):
+        """Test that mismatched items are blocked in Strict mode."""
+        result = explain_npc_match(source, candidate)
+        
+        if expected_block:
+            assert result['strict_result']['passed'] == False, \
+                f"Expected BLOCK for '{source}' vs '{candidate}', but got PASS"
+        else:
+            assert result['strict_result']['passed'] == True, \
+                f"Expected PASS for '{source}' vs '{candidate}', but got BLOCK: {result['strict_result']['block_reason']}"
+    
+    @pytest.mark.parametrize("source,candidate", [
+        # Same products should pass
+        ('Лосось филе с/м 500г', 'Лосось филе с/м 600г'),
+        ('Окунь тушка с/м 300г', 'Окунь тушка с/м 400г'),
+        ('Креветки ваннамей б/г с/м 21/25', 'Креветки ваннамей б/г с/м 21/25 1кг'),
+        ('Окунь филе 255-311г', 'Окунь филе 300-400г'),  # Close size range
+    ])
+    def test_strict_passes(self, npc_data, source, candidate):
+        """Test that matching items pass Strict mode."""
+        result = explain_npc_match(source, candidate)
+        assert result['strict_result']['passed'] == True, \
+            f"Expected PASS for '{source}' vs '{candidate}', but got BLOCK: {result['strict_result']['block_reason']}"
