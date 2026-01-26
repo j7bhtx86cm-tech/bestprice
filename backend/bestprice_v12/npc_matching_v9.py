@@ -945,8 +945,6 @@ def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatch
     # PENALTY: candidate without npc_node_id goes to the bottom
     if source.npc_node_id and not candidate.npc_node_id:
         result.npc_score -= 30  # Significant penalty to push to bottom
-        if "Не классифицирован" not in result.difference_labels:
-            result.difference_labels.append("Не классифицирован")
     
     return result
 
