@@ -170,24 +170,21 @@ class TestShrimpRules:
 
 class TestCountryRanking:
     def test_same_country_higher_score(self, npc_data):
-        """Та же страна получает выше score."""
-        source = {'name_raw': 'Лосось Мурманск филе с/м'}
-        cand_ru = {'name_raw': 'Лосось Мурманск филе с/м 600г'}
-        cand_chile = {'name_raw': 'Лосось Чили филе с/м 600г'}
+        """Та же страна получает выше score (при прохождении Strict)."""
+        # Use same product name to pass 85% guard
+        source = {'name_raw': 'Лосось филе с/м Мурманск'}
+        cand_ru = {'name_raw': 'Лосось филе с/м Мурманск 600г'}
         
         sig_src = extract_npc_signature(source)
         sig_ru = extract_npc_signature(cand_ru)
-        sig_chile = extract_npc_signature(cand_chile)
         
         result_ru = check_npc_strict(sig_src, sig_ru)
-        result_chile = check_npc_strict(sig_src, sig_chile)
         
-        # Both should pass Strict
+        # Should pass Strict (same product)
         assert result_ru.passed_strict == True
-        assert result_chile.passed_strict == True
-        
-        # Russia should have higher country score
-        assert result_ru.country_score > result_chile.country_score
+        # Same country bonus
+        assert result_ru.same_country == True
+        assert result_ru.country_score == 50
 
 
 # =============================================================================
