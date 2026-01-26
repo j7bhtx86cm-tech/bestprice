@@ -1640,40 +1640,39 @@ def calculate_relevance_score(source_comps: dict, candidate_comps: dict,
 async def get_item_alternatives(
     item_id: str, 
     limit: int = Query(10, le=20),
-    include_similar: bool = Query(True, description="Включить Similar если Strict < 4")
+    mode: str = Query('strict', description="Режим: 'strict' (по умолчанию) или 'similar' (по кнопке)"),
+    include_similar: bool = Query(False, description="DEPRECATED: используйте mode='similar'")
 ):
     """
-    Возвращает альтернативные офферы для товара (v3.0 - ТЗ v12).
+    Возвращает альтернативные офферы для товара (v9.1 - "Нулевой мусор").
     
-    ДВУХРЕЖИМНАЯ ВЫДАЧА:
+    РЕЖИМЫ ВЫДАЧИ:
     
-    1. Strict (точные аналоги):
-       - Тот же product_core_id
-       - Все hard-атрибуты совпадают
-       - Совместимая фасовка (±10-20% по категории)
+    1. mode='strict' (по умолчанию):
+       - Только точные аналоги
+       - Если нет — возвращает пустой список
+       - Similar не возвращается
     
-    2. Similar (похожие) - если Strict < 4:
-       - Тот же product_core_id
-       - С лейблами отличий
-       - Более мягкие допуски
+    2. mode='similar' (по кнопке):
+       - Возвращает Strict + Similar
+       - Similar с лейблами отличий
     
-    HARD-BLOCKS:
-    - unit_type: WEIGHT ≠ PIECE ≠ VOLUME
-    - product_form: frozen ≠ chilled ≠ canned
-    - Вкус: если указан - строго совпадает
-    - Молоко: condensed ≠ dairy ≠ plant ≠ lactose_free
-    - Мясо/рыба: part_type, skin, breaded
-    - Посуда: тип + размер (крышки 1:1)
+    HARD-ПРАВИЛА (Strict 1-в-1):
+    - PROCESSING_FORM: CANNED ≠ SMOKED ≠ FROZEN_RAW
+    - CUT_TYPE: FILLET ≠ WHOLE_TUSHKA ≠ STEAK
+    - SPECIES: окунь ≠ сибас ≠ скумбрия
+    - IS_BOX: короб исключается если REF не короб
+    - Креветки: state/form/caliber строго 1-в-1
     
     РАНЖИРОВАНИЕ:
-    - Бренд (если задан) → фасовка → ppu_value → min_line_total
-    
-    ЛЕЙБЛЫ ОТЛИЧИЙ:
-    - "Бренд другой"
-    - "Фасовка: X vs Y"
-    - "В панировке", "На коже/Без кожи"
-    - "Форма: frozen/chilled"
+    1. Близость размера/калибра
+    2. Совпадение бренда
+    3. ppu_value
     """
+    # Backward compatibility: include_similar=true → mode='similar'
+    if include_similar and mode == 'strict':
+        mode = 'similar'
+    
     db = get_db()
     
     # Получаем исходный товар
