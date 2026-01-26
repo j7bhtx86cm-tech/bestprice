@@ -274,9 +274,15 @@ def extract_processing_form(name_norm: str) -> Optional[ProcessingForm]:
                                       'в томат', 'банка', 'ключ', 'жб ', ' жб']):
         return ProcessingForm.CANNED
     
-    # SMOKED
-    if any(x in name_norm for x in ['х/к', 'г/к', 'копч', 'холодн.коп', 'горяч.коп']):
-        return ProcessingForm.SMOKED
+    # SMOKED - используем regex для более точного match
+    # Исключаем ложные срабатывания типа "кг/кор" → "г/к"
+    smoked_patterns = [
+        r'\bх/к\b', r'\bг/к\b', r'копч', r'холодн\.?коп', r'горяч\.?коп',
+        r'холодного\s+копчен', r'горячего\s+копчен'
+    ]
+    for pattern in smoked_patterns:
+        if re.search(pattern, name_norm, re.IGNORECASE):
+            return ProcessingForm.SMOKED
     
     # SALTED/CURED
     if any(x in name_norm for x in ['пресерв', 'солён', 'солен', 'посол', 'малосол', 
