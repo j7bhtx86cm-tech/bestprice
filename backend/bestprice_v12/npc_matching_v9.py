@@ -7,18 +7,22 @@ NPC-matching как дополнительный слой для сложных 
 - FISH + SEAFOOD (рыба и морепродукты)
 - MEAT (мясо и птица)
 
-Для остальных категорий система работает как раньше.
+Для остальных категорий система работает как раньше (legacy через matching_engine_v3).
 
-ЖЁСТКИЕ ЗАПРЕТЫ (никогда не попадают в креветки/рыбу/мясо):
-- гёдза / пельмени / вареники
-- бульоны (Knorr и аналоги)
-- лапша, вермишель, удон
-- нори, чука, водоросли
-- чипсы, снеки
-- соусы
-- крабовые палочки (имитация)
+АРХИТЕКТУРА:
+1. Загрузка npc_schema_v9.xlsx → lookup по npc_node_id
+2. Загрузка lexicon_npc_v9.json → hard exclusions (гёдза, бульоны, соусы и пр.)
+3. В /api/v12/item/{item_id}/alternatives:
+   - Получаем candidates из matching_engine_v3 (topK=200)
+   - Применяем NPC ТОЛЬКО для категорий MEAT/FISH/SEAFOOD/SHRIMP
+   - Split Strict/Similar, фильтры, ранжирование, лейблы
+
+ПРАВИЛА FALLBACK:
+- Если REF без npc_node_id → возвращаем legacy результат (NPC skip)
+- Если candidate без npc_node_id → запрещаем в Strict, разрешаем в Similar при прохождении guards
 
 Version: 9.0
+Date: January 2026
 """
 
 import re
@@ -28,158 +32,168 @@ from typing import Dict, List, Optional, Tuple, Any, Set
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import pandas as pd
+
 logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# NPC DOMAINS
+# NPC DATA LOADING (Singleton pattern)
 # ============================================================================
 
-NPC_DOMAINS = {'SHRIMP', 'FISH', 'SEAFOOD', 'MEAT', 'POULTRY', 'BEEF', 'PORK', 'LAMB'}
+_NPC_SCHEMA: Dict[str, pd.DataFrame] = {}
+_NPC_LEXICON: Dict = {}
+_NPC_SAMPLES: Dict[str, pd.DataFrame] = {}
+_NPC_OUT_OF_SCOPE: pd.DataFrame = None
+_NPC_LOADED = False
+
+NPC_SCHEMA_PATH = Path(__file__).parent / "npc_schema_v9.xlsx"
+NPC_LEXICON_PATH = Path(__file__).parent / "lexicon_npc_v9.json"
+
+
+def load_npc_data():
+    """Загружает NPC схему и лексикон один раз."""
+    global _NPC_SCHEMA, _NPC_LEXICON, _NPC_SAMPLES, _NPC_OUT_OF_SCOPE, _NPC_LOADED
+    
+    if _NPC_LOADED:
+        return
+    
+    try:
+        # Load Excel schema
+        if NPC_SCHEMA_PATH.exists():
+            xls = pd.ExcelFile(NPC_SCHEMA_PATH)
+            
+            # Load NPC nodes (lookup tables)
+            for sheet in xls.sheet_names:
+                if sheet.startswith('NPC_nodes_'):
+                    domain = sheet.replace('NPC_nodes_', '').replace('_top50', '').replace('_top80', '')
+                    _NPC_SCHEMA[domain] = pd.read_excel(xls, sheet)
+                    logger.info(f"Loaded NPC nodes for {domain}: {len(_NPC_SCHEMA[domain])} nodes")
+                
+                elif sheet.startswith('Samples_'):
+                    domain = sheet.replace('Samples_', '').replace('_200', '')
+                    _NPC_SAMPLES[domain] = pd.read_excel(xls, sheet)
+                    logger.info(f"Loaded NPC samples for {domain}: {len(_NPC_SAMPLES[domain])} samples")
+                
+                elif sheet == 'OUT_OF_SCOPE':
+                    _NPC_OUT_OF_SCOPE = pd.read_excel(xls, sheet)
+                    logger.info(f"Loaded OUT_OF_SCOPE: {len(_NPC_OUT_OF_SCOPE)} items")
+        else:
+            logger.warning(f"NPC schema file not found: {NPC_SCHEMA_PATH}")
+        
+        # Load lexicon
+        if NPC_LEXICON_PATH.exists():
+            with open(NPC_LEXICON_PATH, 'r', encoding='utf-8') as f:
+                _NPC_LEXICON = json.load(f)
+            logger.info(f"Loaded NPC lexicon v{_NPC_LEXICON.get('version', 'unknown')}")
+        else:
+            logger.warning(f"NPC lexicon file not found: {NPC_LEXICON_PATH}")
+        
+        _NPC_LOADED = True
+        
+    except Exception as e:
+        logger.error(f"Failed to load NPC data: {e}")
+        _NPC_LOADED = True  # Prevent repeated loading attempts
+
+
+def get_npc_schema(domain: str) -> Optional[pd.DataFrame]:
+    """Возвращает NPC nodes для домена."""
+    load_npc_data()
+    return _NPC_SCHEMA.get(domain)
+
+
+def get_npc_lexicon() -> Dict:
+    """Возвращает NPC лексикон."""
+    load_npc_data()
+    return _NPC_LEXICON
+
+
+def get_npc_samples(domain: str) -> Optional[pd.DataFrame]:
+    """Возвращает samples для домена (для отладки)."""
+    load_npc_data()
+    return _NPC_SAMPLES.get(domain)
 
 
 # ============================================================================
-# ЖЁСТКИЕ ЗАПРЕТЫ (HARD EXCLUDES)
+# NPC DOMAINS & CONSTANTS
 # ============================================================================
 
-# Эти товары НИКОГДА не должны попадать в креветки/рыбу/мясо
-HARD_EXCLUDE_PATTERNS = {
-    # Пельмени и полуфабрикаты
-    'dumplings': r'\b(г[её]дз[аы]|пельмен[ьи]?|вареник[и]?|манты|хинкал[ьи]?|равиол[ьи]|дамплинг[и]?|dumpling[s]?|gyoza)\b',
-    
-    # Бульоны
-    'bouillon': r'\b(бульон[ыа]?|knorr|кнорр|arikon|арикон|profi|бульонн(ый|ая|ые))\b',
-    
-    # Лапша и вермишель
-    'noodles': r'\b(лапша|вермишел[ьи]?|фунчоз[аы]?|удон|соба|рамен|батат|стеклянн(ая|ые))\b',
-    
-    # Водоросли
-    'seaweed': r'\b(нори|чука|водоросл[ьиь]|ламинар|морск(ая|ие)\s+капуст[аы])\b',
-    
-    # Чипсы и снеки
-    'snacks': r'\b(чипс[ыа]?|снек[и]?|сухарик[и]?|крекер[ыа]?)\b',
-    
-    # Соусы
-    'sauce': r'\b(соус[ыа]?|кетчуп|майонез|горчиц|заправк[аи])\b',
-    
-    # Имитация краба
-    'imitation': r'(крабов(ые|ая)?\s+палоч|сурими|краб\.?\s+палоч)',
-    
-    # Овощная икра
-    'veg_spread': r'\bикра\b.*(кабач|баклаж|грибн|овощн)',
-}
+NPC_DOMAINS = {'SHRIMP', 'FISH', 'SEAFOOD', 'MEAT'}
 
-# Паттерны для "ложных друзей" (false friends)
-FALSE_FRIENDS_PATTERNS = {
-    # "рибай" - это говядина, не рыба
-    'ribeye_as_meat': r'\b(рибай|ribeye)\b',
-    
-    # "со вкусом креветки" - это не креветка
-    'shrimp_flavor': r'(со вкус|аромат|вкусом)\s+\w*\s*кревет',
-    
-    # "груша форель" - это фрукт, не рыба
-    'pear_trout': r'\bгруша\b.*\bфорел',
+# Минимальное количество Strict для показа Similar
+STRICT_MIN_THRESHOLD = 4
+
+# Допуски по фасовке
+PACK_TOLERANCE = {
+    'SHRIMP': 0.20,
+    'FISH': 0.20,
+    'SEAFOOD': 0.20,
+    'MEAT': 0.20,
+    'default': 0.20,
 }
 
 
 # ============================================================================
-# NPC FAMILY DETECTION
+# HARD EXCLUSION PATTERNS (from lexicon)
 # ============================================================================
 
-# Токены для определения семейства
-FAMILY_TOKENS = {
-    'SHRIMP': [
-        'кревет', 'креветк', 'shrimp', 'prawn', 'ваннамей', 'vannamei', 
-        'тигров', 'tiger', 'лангустин', 'langoustine', 'северн кревет',
-    ],
-    'FISH': [
-        'рыб', 'fish', 'лосось', 'salmon', 'форель', 'trout', 'семга', 
-        'треск', 'cod', 'сельд', 'herring', 'скумбри', 'mackerel',
-        'тунец', 'tuna', 'палтус', 'halibut', 'камбал', 'flounder',
-        'минтай', 'pollock', 'хек', 'hake', 'окун', 'perch', 'bass',
-        'карп', 'carp', 'сом', 'catfish', 'щук', 'pike', 'судак',
-        'дорад', 'dorado', 'сибас', 'seabass', 'тилапи', 'tilapia',
-        'пангасиус', 'pangasius', 'горбуш', 'кет', 'нерк', 'кижуч',
-        'чавыч', 'анчоус', 'килька', 'мойва', 'сайра', 'сайда',
-        'угорь', 'eel', 'стерлядь', 'осетр',
-    ],
-    'SEAFOOD_OTHER': [
-        'мидии', 'мидия', 'mussel', 'вонголи', 'vongole', 'clam',
-        'устриц', 'oyster', 'кальмар', 'squid', 'осьминог', 'octopus',
-        'октопус', 'сепия', 'cuttlefish', 'краб', 'crab', 'лобстер',
-        'омар', 'lobster', 'каракатиц', 'гребешок', 'scallop',
-    ],
-    'MEAT': [
-        'говяд', 'beef', 'телятин', 'veal', 'свинин', 'pork',
-        'баранин', 'lamb', 'mutton', 'кролик', 'rabbit', 'оленин',
-        'утка', 'duck', 'гус', 'goose', 'индейк', 'turkey',
-        'курин', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер',
-    ],
-}
+def compile_exclusion_patterns() -> Dict[str, re.Pattern]:
+    """Компилирует regex паттерны исключений из лексикона."""
+    lexicon = get_npc_lexicon()
+    patterns = {}
+    
+    # Out of scope patterns
+    oos = lexicon.get('out_of_scope_patterns', {})
+    for category, pattern_list in oos.items():
+        combined = '|'.join(f'({p})' for p in pattern_list)
+        try:
+            patterns[f'oos_{category}'] = re.compile(combined, re.IGNORECASE)
+        except re.error as e:
+            logger.warning(f"Invalid regex in {category}: {e}")
+    
+    # NPC rules
+    rules = lexicon.get('npc', {}).get('rules', {})
+    for rule_name, pattern in rules.items():
+        if pattern and isinstance(pattern, str) and not pattern.startswith('token'):
+            try:
+                patterns[rule_name] = re.compile(pattern, re.IGNORECASE)
+            except re.error as e:
+                logger.warning(f"Invalid regex in {rule_name}: {e}")
+    
+    # Regex section
+    regex_section = lexicon.get('regex', {})
+    for section_name, section_data in regex_section.items():
+        if isinstance(section_data, dict):
+            for key, pattern in section_data.items():
+                if isinstance(pattern, str):
+                    try:
+                        patterns[f'{section_name}_{key}'] = re.compile(pattern, re.IGNORECASE)
+                    except re.error:
+                        pass
+                elif isinstance(pattern, dict):  # nested dict (e.g., shrimp.species)
+                    for subkey, subpattern in pattern.items():
+                        try:
+                            patterns[f'{section_name}_{key}_{subkey}'] = re.compile(subpattern, re.IGNORECASE)
+                        except re.error:
+                            pass
+        elif isinstance(section_data, str):
+            try:
+                patterns[section_name] = re.compile(section_data, re.IGNORECASE)
+            except re.error:
+                pass
+    
+    return patterns
 
-# Подсемейства для мяса
-MEAT_SUBFAMILIES = {
-    'POULTRY': ['курин', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер', 
-                'утка', 'duck', 'гус', 'goose', 'индейк', 'turkey', 'перепел'],
-    'BEEF': ['говяд', 'beef', 'телятин', 'veal', 'рибай', 'ribeye'],
-    'PORK': ['свинин', 'pork'],
-    'LAMB': ['баранин', 'lamb', 'mutton'],
-}
 
-# Форма продукта
-PRODUCT_FORM_PATTERNS = {
-    'frozen': r'\b(с/м|зам|замор|свежеморож|мороз)\b',
-    'chilled': r'\b(охл|охлажд)\b',
-    'canned': r'\b(ж/б|консерв|банка)\b',
-    'breaded': r'\b(панир|кляр|темпур|в паниров)\b',
-    'smoked': r'\b(копч)\b',
-    'salted': r'\b(солен|солё)\b',
-    'dried': r'\b(вялен|сушен|сушё)\b',
-    'marinated': r'\b(марин)\b',
-    'raw': r'\b(сыр(ой|ая|ое)?|свеж(ий|ая|ее)?)\b',
-}
+_EXCLUSION_PATTERNS: Dict[str, re.Pattern] = {}
 
-# Части туши
-CUT_PATTERNS = {
-    'fillet': r'\b(филе|fillet|filet)\b',
-    'breast': r'\b(грудк|breast)\b',
-    'thigh': r'\b(бедр|thigh)\b',
-    'wing': r'\b(крыл|wing)\b',
-    'drumstick': r'\b(голень|drumstick)\b',
-    'carcass': r'\b(тушк|тушка|carcass|whole)\b',
-    'mince': r'\b(фарш|mince|ground)\b',
-    'steak': r'\b(стейк|steak)\b',
-    'loin': r'\b(вырезк|карбонад|loin)\b',
-    'rib': r'\b(ребр|rib)\b',
-    'liver': r'\b(печен|liver)\b',
-    'roe': r'\b(икра|roe|caviar)\b',
-}
 
-# Атрибуты для рыбы
-FISH_SKIN_PATTERNS = {
-    'skin_off': r'\b(без кож|б/к|skinless)\b',
-    'skin_on': r'\b(на коже|с кож|skin[- ]?on)\b',
-}
-
-# Атрибуты для креветок
-SHRIMP_PATTERNS = {
-    'peeled': r'\b(очищ|peeled)\b',
-    'headless': r'\b(без голов|б/г|headless)\b',
-    'tail_on': r'\b(с хвост|tail[- ]?on)\b',
-    'tail_off': r'\b(без хвост|б/хв|tail[- ]?off)\b',
-    'shell_on': r'\b(в панцир|shell[- ]?on)\b',
-}
-
-# Калибр креветок
-SHRIMP_CALIBER_PATTERN = r'(\d{1,3})\s*[/\-]\s*(\d{1,3})'
-
-# Виды креветок
-SHRIMP_SPECIES_PATTERNS = {
-    'vannamei': r'\b(ваннам|vannamei|белоног)\b',
-    'tiger': r'\b(тигр|tiger)\b',
-    'north': r'\b(северн|ботан)\b',
-    'argentine': r'\b(аргент)\b',
-}
+def get_exclusion_patterns() -> Dict[str, re.Pattern]:
+    """Возвращает скомпилированные паттерны исключений (singleton)."""
+    global _EXCLUSION_PATTERNS
+    if not _EXCLUSION_PATTERNS:
+        _EXCLUSION_PATTERNS = compile_exclusion_patterns()
+    return _EXCLUSION_PATTERNS
 
 
 # ============================================================================
@@ -189,39 +203,49 @@ SHRIMP_SPECIES_PATTERNS = {
 @dataclass
 class NPCSignature:
     """NPC сигнатура товара"""
-    # Идентификация
+    # Базовая информация
     name_raw: str = ""
     name_norm: str = ""
     
     # NPC классификация
-    npc_family: Optional[str] = None  # SHRIMP, FISH, SEAFOOD_OTHER, MEAT
-    npc_subfamily: Optional[str] = None  # POULTRY, BEEF, PORK, etc.
-    npc_node_id: Optional[str] = None  # Если присвоен узел
-    
-    # Форма продукта
-    product_form: Optional[str] = None  # frozen, chilled, canned, breaded, etc.
-    is_breaded: bool = False
-    is_canned: bool = False
-    is_semifinished: bool = False  # Полуфабрикат
-    
-    # Часть туши / вид
-    cut_type: Optional[str] = None  # fillet, breast, thigh, etc.
-    fish_species: Optional[str] = None  # salmon, cod, etc.
-    
-    # Рыба специфичные
-    skin: Optional[str] = None  # skin_on, skin_off
+    npc_domain: Optional[str] = None  # SHRIMP, FISH, SEAFOOD, MEAT
+    npc_node_id: Optional[str] = None  # ID узла из схемы
     
     # Креветки специфичные
-    shrimp_species: Optional[str] = None  # vannamei, tiger, etc.
+    shrimp_species: Optional[str] = None  # vannamei, tiger, argentine, north, king, unspecified
     shrimp_caliber: Optional[str] = None  # 16/20, 31/40, etc.
-    shrimp_caliber_band: Optional[str] = None  # small, medium, large, xlarge
-    shrimp_state: Set[str] = field(default_factory=set)  # peeled, headless, etc.
+    shrimp_caliber_band: Optional[str] = None  # small_<=20, medium_21_40, xlarge_>70
+    shrimp_peeled: bool = False
+    shrimp_headless: bool = False
+    shrimp_cooked: bool = False
     
-    # Жёсткие исключения
-    is_excluded: bool = False  # Если товар попадает под HARD_EXCLUDE
+    # Рыба специфичные
+    fish_species: Optional[str] = None  # salmon, tuna, trout, cod, etc.
+    fish_cut: Optional[str] = None  # fillet, whole, steak
+    fish_skin: Optional[str] = None  # skin_on, skin_off
+    fish_canned: bool = False
+    
+    # Морепродукты специфичные
+    seafood_type: Optional[str] = None  # mussels, crab, scallop, squid, octopus
+    
+    # Мясо специфичные
+    meat_animal: Optional[str] = None  # beef, pork, chicken, turkey, lamb, duck, processed
+    meat_cut: Optional[str] = None  # fillet, breast, thigh, wing, tenderloin, mince, sausage
+    
+    # Общие атрибуты
+    state_frozen: bool = False
+    state_chilled: bool = False
+    is_breaded: bool = False
+    is_smoked: bool = False
+    is_salted: bool = False
+    is_marinated: bool = False
+    
+    # Исключения
+    is_excluded: bool = False  # Hard exclude (гёдза, бульон, etc.)
     exclude_reason: Optional[str] = None
-    is_false_friend: bool = False
-    false_friend_reason: Optional[str] = None
+    
+    # Фасовка
+    pack_qty: Optional[float] = None
 
 
 @dataclass
@@ -231,18 +255,18 @@ class NPCMatchResult:
     passed_similar: bool = False
     block_reason: Optional[str] = None
     
-    # NPC совместимость
-    same_family: bool = False
-    same_subfamily: bool = False
+    # Совпадения
+    same_domain: bool = False
     same_node: bool = False
     same_species: bool = False
-    same_form: bool = False
     same_caliber_band: bool = False
+    same_state: bool = False
+    same_form: bool = False
     
     # Для ранжирования
     npc_score: int = 0
     
-    # Лейблы
+    # Лейблы отличий
     difference_labels: List[str] = field(default_factory=list)
 
 
@@ -253,225 +277,449 @@ class NPCMatchResult:
 def extract_npc_signature(item: Dict) -> NPCSignature:
     """
     Извлекает NPC сигнатуру из товара.
+    
+    Используется:
+    1. Паттерны из лексикона
+    2. Готовые атрибуты из БД (если есть)
     """
     sig = NPCSignature()
     
-    name_raw = item.get('name_raw', '')
-    name_norm = item.get('name_norm', name_raw.lower())
+    name_raw = item.get('name_raw', item.get('name', ''))
+    name_norm = name_raw.lower()
     
     sig.name_raw = name_raw
     sig.name_norm = name_norm
+    sig.pack_qty = item.get('pack_qty') or item.get('net_weight_kg')
     
-    # === ПРОВЕРКА ЖЁСТКИХ ИСКЛЮЧЕНИЙ ===
-    for exclude_type, pattern in HARD_EXCLUDE_PATTERNS.items():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            sig.is_excluded = True
-            sig.exclude_reason = exclude_type
-            return sig  # Сразу возвращаем - это не NPC товар
+    patterns = get_exclusion_patterns()
     
-    # === ПРОВЕРКА FALSE FRIENDS ===
-    for ff_type, pattern in FALSE_FRIENDS_PATTERNS.items():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            sig.is_false_friend = True
-            sig.false_friend_reason = ff_type
-            
-            # Специальная обработка рибая
-            if ff_type == 'ribeye_as_meat':
-                sig.npc_family = 'MEAT'
-                sig.npc_subfamily = 'BEEF'
+    # === HARD EXCLUSIONS ===
+    # Проверяем out_of_scope паттерны
+    for pattern_name, pattern in patterns.items():
+        if pattern_name.startswith('oos_'):
+            if pattern.search(name_norm):
+                sig.is_excluded = True
+                sig.exclude_reason = pattern_name
                 return sig
-            
-            # Остальные false friends исключаются из NPC
+    
+    # Проверяем правила исключения из npc.rules
+    if 'shrimp_exclude_dumplings_regex' in patterns:
+        if patterns['shrimp_exclude_dumplings_regex'].search(name_norm):
             sig.is_excluded = True
-            sig.exclude_reason = f'false_friend:{ff_type}'
+            sig.exclude_reason = 'dumplings'
             return sig
     
-    # === ОПРЕДЕЛЕНИЕ СЕМЕЙСТВА ===
-    sig.npc_family = _detect_family(name_norm)
+    if 'meat_exclude_bouillon_regex' in patterns:
+        if patterns['meat_exclude_bouillon_regex'].search(name_norm):
+            sig.is_excluded = True
+            sig.exclude_reason = 'bouillon'
+            return sig
     
-    if not sig.npc_family:
-        return sig  # Не NPC товар
+    if 'meat_exclude_dumplings_regex' in patterns:
+        if patterns['meat_exclude_dumplings_regex'].search(name_norm):
+            sig.is_excluded = True
+            sig.exclude_reason = 'dumplings_meat'
+            return sig
     
-    # === ОПРЕДЕЛЕНИЕ ПОДСЕМЕЙСТВА (для MEAT) ===
-    if sig.npc_family == 'MEAT':
-        sig.npc_subfamily = _detect_meat_subfamily(name_norm)
+    if 'seafood_exclude_seaweed_noodles_regex' in patterns:
+        if patterns['seafood_exclude_seaweed_noodles_regex'].search(name_norm):
+            sig.is_excluded = True
+            sig.exclude_reason = 'seaweed_noodles'
+            return sig
     
-    # === ФОРМА ПРОДУКТА ===
-    sig.product_form = _detect_product_form(name_norm)
-    sig.is_breaded = bool(re.search(PRODUCT_FORM_PATTERNS.get('breaded', ''), name_norm, re.IGNORECASE))
-    sig.is_canned = bool(re.search(PRODUCT_FORM_PATTERNS.get('canned', ''), name_norm, re.IGNORECASE))
+    # === ОПРЕДЕЛЕНИЕ ДОМЕНА ===
+    sig.npc_domain = _detect_npc_domain(name_norm, patterns)
     
-    # === ЧАСТЬ ТУШИ ===
-    sig.cut_type = _detect_cut_type(name_norm)
+    if not sig.npc_domain:
+        return sig
     
-    # === РЫБА СПЕЦИФИЧНЫЕ ===
-    if sig.npc_family == 'FISH':
-        sig.fish_species = _detect_fish_species(name_norm)
-        sig.skin = _detect_fish_skin(name_norm)
+    # === ИЗВЛЕЧЕНИЕ АТРИБУТОВ ПО ДОМЕНУ ===
+    if sig.npc_domain == 'SHRIMP':
+        _extract_shrimp_attributes(sig, name_norm, patterns)
+    elif sig.npc_domain == 'FISH':
+        _extract_fish_attributes(sig, name_norm, patterns)
+    elif sig.npc_domain == 'SEAFOOD':
+        _extract_seafood_attributes(sig, name_norm, patterns)
+    elif sig.npc_domain == 'MEAT':
+        _extract_meat_attributes(sig, name_norm, patterns)
     
-    # === КРЕВЕТКИ СПЕЦИФИЧНЫЕ ===
-    if sig.npc_family == 'SHRIMP':
-        sig.shrimp_species = _detect_shrimp_species(name_norm)
-        sig.shrimp_caliber = _detect_shrimp_caliber(name_norm)
-        sig.shrimp_caliber_band = _caliber_to_band(sig.shrimp_caliber)
-        sig.shrimp_state = _detect_shrimp_state(name_norm)
+    # === ОБЩИЕ АТРИБУТЫ ===
+    _extract_common_attributes(sig, name_norm, patterns)
     
-    # === ПРОВЕРКА НА ПОЛУФАБРИКАТ ===
-    # Если breaded но не явно "сырьё" - это полуфабрикат
-    if sig.is_breaded:
-        sig.is_semifinished = True
+    # === NPC NODE ID (lookup by attributes) ===
+    sig.npc_node_id = _lookup_npc_node_id(sig)
     
     return sig
 
 
-def _detect_family(name_norm: str) -> Optional[str]:
-    """Определяет NPC семейство"""
-    # Приоритет: SHRIMP > SEAFOOD_OTHER > FISH > MEAT
+def _detect_npc_domain(name_norm: str, patterns: Dict[str, re.Pattern]) -> Optional[str]:
+    """Определяет NPC домен товара."""
     
-    for token in FAMILY_TOKENS['SHRIMP']:
+    # Приоритет: SHRIMP > SEAFOOD > FISH > MEAT
+    # (креветки - подмножество seafood, но обрабатываются отдельно)
+    
+    # SHRIMP tokens
+    shrimp_tokens = ['кревет', 'креветк', 'shrimp', 'prawn', 'ваннам', 'vannamei', 
+                     'лангустин', 'langoustine']
+    for token in shrimp_tokens:
         if token in name_norm:
+            # Проверяем что это не "со вкусом креветки"
+            if 'shrimp_exclude_flavor_regex' in patterns:
+                if patterns['shrimp_exclude_flavor_regex'].search(name_norm):
+                    return None
             return 'SHRIMP'
     
-    for token in FAMILY_TOKENS['SEAFOOD_OTHER']:
+    # SEAFOOD tokens (non-fish)
+    seafood_tokens = ['мидии', 'мидия', 'mussel', 'устриц', 'oyster', 'кальмар', 
+                      'squid', 'осьминог', 'octopus', 'гребешок', 'scallop',
+                      'краб', 'crab', 'лобстер', 'омар', 'lobster']
+    for token in seafood_tokens:
         if token in name_norm:
-            return 'SEAFOOD_OTHER'
+            # Исключаем крабовые палочки (имитация)
+            if 'крабов' in name_norm and 'палоч' in name_norm:
+                return None
+            if 'сурими' in name_norm:
+                return None
+            return 'SEAFOOD'
     
-    for token in FAMILY_TOKENS['FISH']:
+    # FISH tokens
+    fish_tokens = ['лосось', 'salmon', 'сёмга', 'семга', 'форель', 'trout',
+                   'треска', 'cod', 'тунец', 'tuna', 'палтус', 'halibut',
+                   'минтай', 'pollock', 'скумбри', 'mackerel', 'сельд', 'herring',
+                   'анчоус', 'anchovy', 'килька', 'мойва', 'сайра', 'хек',
+                   'окун', 'perch', 'судак', 'щук', 'pike', 'карп', 'carp',
+                   'угорь', 'eel', 'осетр', 'дорад', 'сибас', 'тилапи',
+                   'пангасиус', 'горбуш', 'кижуч', 'нерк', 'чавыч']
+    
+    # Сначала проверяем false friends
+    if 'fish_exclude_regex' in patterns:
+        if patterns['fish_exclude_regex'].search(name_norm):
+            # рибай/ribeye - это мясо, не рыба
+            pass
+        else:
+            for token in fish_tokens:
+                if token in name_norm:
+                    # Исключаем "груша форель" (фрукт)
+                    if 'fruit_forel_exclude_regex' in patterns:
+                        if patterns['fruit_forel_exclude_regex'].search(name_norm):
+                            return None
+                    return 'FISH'
+    else:
+        for token in fish_tokens:
+            if token in name_norm:
+                return 'FISH'
+    
+    # MEAT tokens
+    meat_tokens = ['говядин', 'beef', 'телятин', 'veal', 'свинин', 'pork',
+                   'баранин', 'lamb', 'курин', 'курица', 'куриц', 'chicken',
+                   'цыпл', 'бройлер', 'индейк', 'turkey', 'утк', 'duck',
+                   'гус', 'goose', 'кролик', 'rabbit', 'ягнят', 'ягненок']
+    
+    # Рибай - это мясо
+    if 'meat_force_regex' in patterns:
+        if patterns['meat_force_regex'].search(name_norm):
+            return 'MEAT'
+    
+    for token in meat_tokens:
         if token in name_norm:
-            return 'FISH'
+            return 'MEAT'
     
-    for token in FAMILY_TOKENS['MEAT']:
+    # Processed meat
+    processed_tokens = ['колбас', 'сосиск', 'сардельк', 'ветчин', 'бекон',
+                        'шпик', 'буженин', 'корейк', 'грудинк', 'шницел',
+                        'котлет', 'фрикадел', 'наггет']
+    for token in processed_tokens:
         if token in name_norm:
             return 'MEAT'
     
     return None
 
 
-def _detect_meat_subfamily(name_norm: str) -> Optional[str]:
-    """Определяет подсемейство мяса"""
-    for subfamily, tokens in MEAT_SUBFAMILIES.items():
-        for token in tokens:
-            if token in name_norm:
-                return subfamily
-    return None
-
-
-def _detect_product_form(name_norm: str) -> Optional[str]:
-    """Определяет форму продукта"""
-    for form, pattern in PRODUCT_FORM_PATTERNS.items():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            return form
-    return None
-
-
-def _detect_cut_type(name_norm: str) -> Optional[str]:
-    """Определяет часть туши"""
-    for cut, pattern in CUT_PATTERNS.items():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            return cut
-    return None
-
-
-def _detect_fish_species(name_norm: str) -> Optional[str]:
-    """Определяет вид рыбы"""
+def _extract_shrimp_attributes(sig: NPCSignature, name_norm: str, patterns: Dict):
+    """Извлекает атрибуты креветок."""
+    
+    # Species
     species_map = {
-        'salmon': ['лосось', 'salmon', 'семга', 'сёмга'],
-        'trout': ['форель', 'trout'],
-        'cod': ['треск', 'cod'],
-        'herring': ['сельд', 'herring'],
-        'mackerel': ['скумбри', 'mackerel'],
-        'tuna': ['тунец', 'tuna'],
-        'halibut': ['палтус', 'halibut'],
-        'pollock': ['минтай', 'pollock'],
-        'pike': ['щук', 'pike'],
-        'perch': ['окун', 'perch'],
-        'carp': ['карп', 'carp'],
-        'eel': ['угорь', 'eel'],
-        'anchovy': ['анчоус', 'anchovy'],
-        'tilapia': ['тилапи', 'tilapia'],
-        'pangasius': ['пангасиус', 'pangasius'],
-        'seabass': ['сибас', 'seabass'],
-        'dorado': ['дорад', 'dorado'],
+        'vannamei': ['ваннам', 'vannamei', 'белоног'],
+        'tiger': ['тигр', 'tiger'],
+        'argentine': ['аргент'],
+        'north': ['северн', 'ботан'],
+        'king': ['королев', 'king'],
     }
     
     for species, tokens in species_map.items():
         for token in tokens:
             if token in name_norm:
-                return species
-    return None
+                sig.shrimp_species = species
+                break
+        if sig.shrimp_species:
+            break
+    
+    if not sig.shrimp_species:
+        sig.shrimp_species = 'unspecified'
+    
+    # Caliber
+    caliber_match = re.search(r'(\d{1,3})\s*[/\-]\s*(\d{1,3})', name_norm)
+    if caliber_match:
+        sig.shrimp_caliber = f"{caliber_match.group(1)}/{caliber_match.group(2)}"
+        # Caliber band
+        try:
+            low, high = int(caliber_match.group(1)), int(caliber_match.group(2))
+            avg = (low + high) / 2
+            if avg <= 20:
+                sig.shrimp_caliber_band = 'small_<=20'
+            elif avg <= 70:
+                sig.shrimp_caliber_band = 'medium_21_40'  # объединяем 21-40 и 41-70
+            else:
+                sig.shrimp_caliber_band = 'xlarge_>70'
+        except:
+            pass
+    
+    # Peeled
+    if 'shrimp_peeled' in patterns:
+        sig.shrimp_peeled = bool(patterns['shrimp_peeled'].search(name_norm))
+    elif any(x in name_norm for x in ['очищ', 'peeled']):
+        sig.shrimp_peeled = True
+    
+    # Headless
+    if 'shrimp_headless' in patterns:
+        sig.shrimp_headless = bool(patterns['shrimp_headless'].search(name_norm))
+    elif any(x in name_norm for x in ['б/г', 'без голов', 'headless']):
+        sig.shrimp_headless = True
+    
+    # Cooked
+    if any(x in name_norm for x in ['в/м', 'варен', 'cooked']):
+        sig.shrimp_cooked = True
 
 
-def _detect_fish_skin(name_norm: str) -> Optional[str]:
-    """Определяет наличие кожи"""
-    for skin_type, pattern in FISH_SKIN_PATTERNS.items():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            return skin_type
-    return None
+def _extract_fish_attributes(sig: NPCSignature, name_norm: str, patterns: Dict):
+    """Извлекает атрибуты рыбы."""
+    
+    # Species
+    species_map = {
+        'salmon': ['лосось', 'salmon', 'сёмга', 'семга'],
+        'trout': ['форель', 'trout'],
+        'cod': ['треска', 'cod'],
+        'tuna': ['тунец', 'tuna'],
+        'halibut': ['палтус', 'halibut'],
+        'pollock': ['минтай', 'pollock'],
+        'mackerel': ['скумбри', 'mackerel'],
+        'herring': ['сельд', 'herring'],
+        'anchovy': ['анчоус', 'anchovy'],
+        'pike': ['щук', 'pike'],
+        'perch': ['окун', 'perch'],
+        'carp': ['карп', 'carp'],
+        'eel': ['угорь', 'eel'],
+        'sturgeon': ['осетр', 'sturgeon'],
+        'dorado': ['дорад', 'dorado'],
+        'seabass': ['сибас', 'seabass'],
+        'tilapia': ['тилапи', 'tilapia'],
+        'pangasius': ['пангасиус', 'pangasius'],
+    }
+    
+    for species, tokens in species_map.items():
+        for token in tokens:
+            if token in name_norm:
+                sig.fish_species = species
+                break
+        if sig.fish_species:
+            break
+    
+    # Cut
+    if any(x in name_norm for x in ['филе', 'fillet', 'filet']):
+        sig.fish_cut = 'fillet'
+    elif any(x in name_norm for x in ['тушка', 'целая', 'whole']):
+        sig.fish_cut = 'whole'
+    elif any(x in name_norm for x in ['стейк', 'steak']):
+        sig.fish_cut = 'steak'
+    
+    # Skin
+    if any(x in name_norm for x in ['без кож', 'б/к', 'skinless', 'н/к']):
+        sig.fish_skin = 'skin_off'
+    elif any(x in name_norm for x in ['на коже', 'с кож', 'skin on']):
+        sig.fish_skin = 'skin_on'
+    
+    # Canned
+    if any(x in name_norm for x in ['ж/б', 'консерв', 'банка', 'canned', 'в масле', 'в собств']):
+        sig.fish_canned = True
 
 
-def _detect_shrimp_species(name_norm: str) -> Optional[str]:
-    """Определяет вид креветок"""
-    for species, pattern in SHRIMP_SPECIES_PATTERNS.items():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            return species
-    return None
+def _extract_seafood_attributes(sig: NPCSignature, name_norm: str, patterns: Dict):
+    """Извлекает атрибуты морепродуктов (кроме креветок и рыбы)."""
+    
+    type_map = {
+        'mussels': ['мидии', 'мидия', 'mussel'],
+        'crab': ['краб', 'crab'],
+        'scallop': ['гребешок', 'scallop'],
+        'squid': ['кальмар', 'squid'],
+        'octopus': ['осьминог', 'octopus', 'октопус'],
+        'lobster': ['лобстер', 'омар', 'lobster'],
+        'oyster': ['устриц', 'oyster'],
+        'clam': ['вонгол', 'clam', 'венер'],
+    }
+    
+    for seafood_type, tokens in type_map.items():
+        for token in tokens:
+            if token in name_norm:
+                sig.seafood_type = seafood_type
+                break
+        if sig.seafood_type:
+            break
 
 
-def _detect_shrimp_caliber(name_norm: str) -> Optional[str]:
-    """Извлекает калибр креветок (например 16/20)"""
-    match = re.search(SHRIMP_CALIBER_PATTERN, name_norm)
-    if match:
-        return f"{match.group(1)}/{match.group(2)}"
-    return None
+def _extract_meat_attributes(sig: NPCSignature, name_norm: str, patterns: Dict):
+    """Извлекает атрибуты мяса."""
+    
+    # Animal
+    animal_map = {
+        'beef': ['говядин', 'beef', 'телятин', 'veal', 'рибай', 'ribeye'],
+        'pork': ['свинин', 'pork', 'свиной', 'свиная'],
+        'chicken': ['курин', 'курица', 'куриц', 'chicken', 'цыпл', 'бройлер'],
+        'turkey': ['индейк', 'turkey', 'индюш'],
+        'lamb': ['баранин', 'lamb', 'ягнят', 'ягненок'],
+        'duck': ['утк', 'duck', 'утин'],
+        'goose': ['гус', 'goose'],
+        'rabbit': ['кролик', 'rabbit'],
+        'processed': ['колбас', 'сосиск', 'сардельк', 'ветчин', 'бекон',
+                      'шпик', 'буженин', 'мортадел', 'салями'],
+    }
+    
+    for animal, tokens in animal_map.items():
+        for token in tokens:
+            if token in name_norm:
+                sig.meat_animal = animal
+                break
+        if sig.meat_animal:
+            break
+    
+    # Cut
+    cut_map = {
+        'fillet': ['филе', 'fillet'],
+        'breast': ['грудк', 'breast'],
+        'thigh': ['бедр', 'thigh', 'окорочок', 'окорочк'],
+        'wing': ['крыл', 'wing'],
+        'drumstick': ['голень', 'drumstick'],
+        'tenderloin': ['вырезк', 'tenderloin'],
+        'loin': ['карбонад', 'loin', 'корейк'],
+        'rib': ['ребр', 'rib'],
+        'mince': ['фарш', 'mince', 'ground'],
+        'sausage': ['сосиск', 'колбас', 'сардельк', 'sausage'],
+        'brisket': ['грудинк', 'brisket'],
+    }
+    
+    for cut, tokens in cut_map.items():
+        for token in tokens:
+            if token in name_norm:
+                sig.meat_cut = cut
+                break
+        if sig.meat_cut:
+            break
 
 
-def _caliber_to_band(caliber: Optional[str]) -> Optional[str]:
-    """Преобразует калибр в диапазон (small, medium, large, xlarge)"""
-    if not caliber:
+def _extract_common_attributes(sig: NPCSignature, name_norm: str, patterns: Dict):
+    """Извлекает общие атрибуты."""
+    
+    # Temperature state
+    if any(x in name_norm for x in ['с/м', 'зам', 'замор', 'свежеморож', 'мороз', 'frozen']):
+        sig.state_frozen = True
+    if any(x in name_norm for x in ['охл', 'охлажд', 'chilled', 'свеж']):
+        sig.state_chilled = True
+    
+    # Processing
+    if any(x in name_norm for x in ['панир', 'кляр', 'темпур', 'breaded']):
+        sig.is_breaded = True
+    if any(x in name_norm for x in ['копч', 'х/к', 'г/к', 'smoked']):
+        sig.is_smoked = True
+    if any(x in name_norm for x in ['солен', 'солё', 'посол', 'слабосол', 'малосол', 'пресерв']):
+        sig.is_salted = True
+    if any(x in name_norm for x in ['марин', 'marinated']):
+        sig.is_marinated = True
+
+
+def _lookup_npc_node_id(sig: NPCSignature) -> Optional[str]:
+    """
+    Ищет npc_node_id по атрибутам сигнатуры.
+    
+    Логика:
+    - Для SHRIMP: species + caliber_band + состояние (очищ, б/г)
+    - Для FISH: species + cut
+    - Для SEAFOOD: type
+    - Для MEAT: animal + cut
+    """
+    if not sig.npc_domain:
+        return None
+    
+    schema = get_npc_schema(sig.npc_domain)
+    if schema is None or schema.empty:
         return None
     
     try:
-        parts = caliber.split('/')
-        avg = (int(parts[0]) + int(parts[1])) / 2
+        if sig.npc_domain == 'SHRIMP':
+            # Формируем variant string: species | caliber_band | состояние
+            variant_parts = []
+            variant_parts.append(sig.shrimp_species or 'unspecified')
+            variant_parts.append(sig.shrimp_caliber_band or 'medium_21_40')
+            
+            state_parts = []
+            if sig.shrimp_peeled:
+                state_parts.append('очищ')
+            if sig.shrimp_headless:
+                state_parts.append('б/г')
+            if sig.shrimp_cooked:
+                state_parts.append('вар')
+            
+            if state_parts:
+                variant_parts.append(','.join(state_parts))
+            
+            variant_str = ' | '.join(variant_parts)
+            
+            # Ищем в схеме
+            for _, row in schema.iterrows():
+                schema_variant = str(row.get('shrimp_variant', ''))
+                # Нечёткое сравнение: проверяем что все части variant_str есть в schema_variant
+                if all(part in schema_variant for part in variant_parts[:2]):  # species + caliber
+                    return row.get('node_id')
         
-        if avg <= 20:
-            return 'small'  # 16/20, 8/12, etc.
-        elif avg <= 45:
-            return 'medium'  # 21/25, 26/30, 31/40, 41/50
-        elif avg <= 80:
-            return 'large'  # 51/60, 61/70, 71/80
-        else:
-            return 'xlarge'  # 100/200, 200/300, etc.
-    except:
-        return None
-
-
-def _detect_shrimp_state(name_norm: str) -> Set[str]:
-    """Определяет состояние креветок (очищ, б/г, etc.)"""
-    states = set()
-    for state, pattern in SHRIMP_PATTERNS.items():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            states.add(state)
-    return states
+        elif sig.npc_domain == 'FISH':
+            for _, row in schema.iterrows():
+                if sig.fish_species and sig.fish_species == row.get('species'):
+                    return row.get('node_id')
+        
+        elif sig.npc_domain == 'SEAFOOD':
+            for _, row in schema.iterrows():
+                if sig.seafood_type and sig.seafood_type == row.get('type'):
+                    return row.get('node_id')
+        
+        elif sig.npc_domain == 'MEAT':
+            for _, row in schema.iterrows():
+                meat_variant = str(row.get('meat_variant', ''))
+                if sig.meat_animal and sig.meat_animal in meat_variant:
+                    return row.get('node_id')
+    
+    except Exception as e:
+        logger.warning(f"Error looking up NPC node: {e}")
+    
+    return None
 
 
 # ============================================================================
 # NPC MATCHING
 # ============================================================================
 
-def check_npc_compatibility(
-    source: NPCSignature,
-    candidate: NPCSignature
-) -> NPCMatchResult:
+def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchResult:
     """
-    Проверяет NPC совместимость между source и candidate.
+    Строгая проверка NPC совместимости для Strict режима.
     
-    Returns:
-        NPCMatchResult с результатами проверки
+    Правила:
+    - Домен должен совпадать
+    - Если у source есть npc_node_id, candidate должен иметь такой же
+    - Если у candidate нет npc_node_id → блокируем в Strict
+    - Hard exclusions блокируют всё
+    - Атрибуты состояния должны совпадать (frozen/chilled, breaded)
     """
     result = NPCMatchResult()
     
-    # === ИСКЛЮЧЁННЫЕ ТОВАРЫ ===
+    # === HARD EXCLUSIONS ===
     if source.is_excluded:
         result.block_reason = f"SOURCE_EXCLUDED:{source.exclude_reason}"
         return result
@@ -480,206 +728,402 @@ def check_npc_compatibility(
         result.block_reason = f"CANDIDATE_EXCLUDED:{candidate.exclude_reason}"
         return result
     
-    # === НЕ-NPC ТОВАРЫ ===
-    if not source.npc_family:
-        result.block_reason = "SOURCE_NOT_NPC"
+    # === DOMAIN CHECK ===
+    if source.npc_domain != candidate.npc_domain:
+        result.block_reason = f"DOMAIN_MISMATCH:{source.npc_domain}!={candidate.npc_domain}"
         return result
     
-    if not candidate.npc_family:
-        result.block_reason = "CANDIDATE_NOT_NPC"
+    result.same_domain = True
+    
+    # === NPC NODE CHECK ===
+    # Если у source есть node_id, требуем совпадение
+    if source.npc_node_id:
+        if not candidate.npc_node_id:
+            result.block_reason = "CANDIDATE_NO_NPC_NODE"
+            return result
+        
+        if source.npc_node_id != candidate.npc_node_id:
+            result.block_reason = f"NODE_MISMATCH:{source.npc_node_id}!={candidate.npc_node_id}"
+            return result
+        
+        result.same_node = True
+    else:
+        # Source без node_id - используем атрибутное сравнение
+        pass
+    
+    # === STATE CHECK (frozen vs chilled) ===
+    if source.state_frozen and candidate.state_chilled:
+        result.block_reason = "STATE_MISMATCH:frozen!=chilled"
+        return result
+    if source.state_chilled and candidate.state_frozen:
+        result.block_reason = "STATE_MISMATCH:chilled!=frozen"
         return result
     
-    # === СЕМЕЙСТВО ДОЛЖНО СОВПАДАТЬ ===
-    if source.npc_family != candidate.npc_family:
-        result.block_reason = f"FAMILY_MISMATCH:{source.npc_family}!={candidate.npc_family}"
-        return result
+    result.same_state = (source.state_frozen == candidate.state_frozen and 
+                         source.state_chilled == candidate.state_chilled)
     
-    result.same_family = True
-    
-    # === ПОДСЕМЕЙСТВО (для MEAT) ===
-    if source.npc_family == 'MEAT':
-        if source.npc_subfamily and candidate.npc_subfamily:
-            if source.npc_subfamily != candidate.npc_subfamily:
-                result.block_reason = f"SUBFAMILY_MISMATCH:{source.npc_subfamily}!={candidate.npc_subfamily}"
-                return result
-            result.same_subfamily = True
-    
-    # === ФОРМА ПРОДУКТА ===
-    # Сырьё ≠ полуфабрикат
-    if source.is_semifinished != candidate.is_semifinished:
-        result.block_reason = "FORM_MISMATCH:semifinished"
-        return result
-    
-    # Панировка запрещена в Strict (если source без панировки)
+    # === BREADED CHECK ===
+    # Панировка в Strict запрещена если source без панировки
     if candidate.is_breaded and not source.is_breaded:
         result.block_reason = "BREADED_IN_STRICT"
         return result
     
-    # Консервы ≠ замороженное сырьё
-    if source.is_canned != candidate.is_canned:
-        result.block_reason = f"FORM_MISMATCH:canned={source.is_canned}!={candidate.is_canned}"
-        return result
-    
-    # Frozen ≠ Chilled
-    if source.product_form and candidate.product_form:
-        if source.product_form in ('frozen', 'chilled') and candidate.product_form in ('frozen', 'chilled'):
-            if source.product_form != candidate.product_form:
-                result.block_reason = f"TEMP_MISMATCH:{source.product_form}!={candidate.product_form}"
+    # === DOMAIN-SPECIFIC CHECKS ===
+    if source.npc_domain == 'SHRIMP':
+        # Species check
+        if source.shrimp_species and candidate.shrimp_species:
+            if source.shrimp_species != 'unspecified' and candidate.shrimp_species != 'unspecified':
+                if source.shrimp_species != candidate.shrimp_species:
+                    result.block_reason = f"SHRIMP_SPECIES_MISMATCH:{source.shrimp_species}!={candidate.shrimp_species}"
+                    return result
+                result.same_species = True
+        
+        # Caliber band check
+        if source.shrimp_caliber_band and candidate.shrimp_caliber_band:
+            if source.shrimp_caliber_band != candidate.shrimp_caliber_band:
+                result.block_reason = f"CALIBER_MISMATCH:{source.shrimp_caliber_band}!={candidate.shrimp_caliber_band}"
                 return result
+            result.same_caliber_band = True
     
-    result.same_form = True
-    
-    # === РЫБА СПЕЦИФИЧНЫЕ ===
-    if source.npc_family == 'FISH':
-        # Вид рыбы должен совпадать (если указан)
+    elif source.npc_domain == 'FISH':
+        # Species check
         if source.fish_species and candidate.fish_species:
             if source.fish_species != candidate.fish_species:
                 result.block_reason = f"FISH_SPECIES_MISMATCH:{source.fish_species}!={candidate.fish_species}"
                 return result
             result.same_species = True
         
-        # Кожа (если указана)
-        if source.skin and candidate.skin:
-            if source.skin != candidate.skin:
-                result.block_reason = f"SKIN_MISMATCH:{source.skin}!={candidate.skin}"
+        # Cut check
+        if source.fish_cut and candidate.fish_cut:
+            if source.fish_cut != candidate.fish_cut:
+                result.block_reason = f"FISH_CUT_MISMATCH:{source.fish_cut}!={candidate.fish_cut}"
                 return result
+            result.same_form = True
+        
+        # Canned check
+        if source.fish_canned != candidate.fish_canned:
+            result.block_reason = "FISH_CANNED_MISMATCH"
+            return result
     
-    # === КРЕВЕТКИ СПЕЦИФИЧНЫЕ ===
-    if source.npc_family == 'SHRIMP':
-        # Вид креветок
-        if source.shrimp_species and candidate.shrimp_species:
-            if source.shrimp_species != candidate.shrimp_species:
-                result.block_reason = f"SHRIMP_SPECIES_MISMATCH:{source.shrimp_species}!={candidate.shrimp_species}"
+    elif source.npc_domain == 'SEAFOOD':
+        # Type check
+        if source.seafood_type and candidate.seafood_type:
+            if source.seafood_type != candidate.seafood_type:
+                result.block_reason = f"SEAFOOD_TYPE_MISMATCH:{source.seafood_type}!={candidate.seafood_type}"
+                return result
+            result.same_species = True
+    
+    elif source.npc_domain == 'MEAT':
+        # Animal check
+        if source.meat_animal and candidate.meat_animal:
+            if source.meat_animal != candidate.meat_animal:
+                result.block_reason = f"MEAT_ANIMAL_MISMATCH:{source.meat_animal}!={candidate.meat_animal}"
                 return result
             result.same_species = True
         
-        # Калибр (диапазон)
-        if source.shrimp_caliber_band and candidate.shrimp_caliber_band:
-            if source.shrimp_caliber_band != candidate.shrimp_caliber_band:
-                result.block_reason = f"CALIBER_BAND_MISMATCH:{source.shrimp_caliber_band}!={candidate.shrimp_caliber_band}"
+        # Cut check (strict for meat)
+        if source.meat_cut and candidate.meat_cut:
+            if source.meat_cut != candidate.meat_cut:
+                result.block_reason = f"MEAT_CUT_MISMATCH:{source.meat_cut}!={candidate.meat_cut}"
                 return result
-            result.same_caliber_band = True
-    
-    # === ЧАСТЬ ТУШИ ===
-    if source.cut_type and candidate.cut_type:
-        if source.cut_type != candidate.cut_type:
-            result.block_reason = f"CUT_MISMATCH:{source.cut_type}!={candidate.cut_type}"
-            return result
+            result.same_form = True
     
     # === PASSED STRICT ===
     result.passed_strict = True
     result.passed_similar = True
     
-    # === NPC SCORING ===
+    # === SCORING ===
     score = 100
-    
-    if result.same_family:
-        score += 20
-    if result.same_subfamily:
-        score += 15
+    if result.same_node:
+        score += 50
     if result.same_species:
-        score += 25
-    if result.same_form:
-        score += 10
+        score += 30
     if result.same_caliber_band:
         score += 20
+    if result.same_state:
+        score += 10
+    if result.same_form:
+        score += 15
     
     result.npc_score = score
-    
-    # === ЛЕЙБЛЫ ===
-    if source.shrimp_caliber != candidate.shrimp_caliber:
-        if source.shrimp_caliber and candidate.shrimp_caliber:
-            result.difference_labels.append(f"Калибр: {candidate.shrimp_caliber} vs {source.shrimp_caliber}")
-    
-    if source.product_form != candidate.product_form:
-        if candidate.product_form:
-            result.difference_labels.append(f"Форма: {candidate.product_form}")
     
     return result
 
 
-def check_npc_for_similar(
-    source: NPCSignature,
-    candidate: NPCSignature
-) -> NPCMatchResult:
+def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatchResult:
     """
-    Более мягкая проверка для Similar режима.
-    Позволяет соседние калибры, разные формы с лейблами.
+    Мягкая проверка NPC для Similar режима.
+    
+    Правила:
+    - Домен должен совпадать
+    - Candidate без npc_node_id разрешён (с лейблом)
+    - Разные species/caliber разрешены (с лейблами)
+    - Панировка разрешена (с лейблом)
     """
     result = NPCMatchResult()
     
-    # Исключённые товары всегда блокируются
+    # === HARD EXCLUSIONS (всегда блокируют) ===
     if source.is_excluded or candidate.is_excluded:
         result.block_reason = "EXCLUDED"
         return result
     
-    # Семейство должно совпадать даже в Similar
-    if source.npc_family != candidate.npc_family:
-        result.block_reason = "FAMILY_MISMATCH"
+    # === DOMAIN CHECK (обязателен даже для Similar) ===
+    if source.npc_domain != candidate.npc_domain:
+        result.block_reason = f"DOMAIN_MISMATCH"
         return result
     
-    result.same_family = True
+    result.same_domain = True
     
-    # Подсемейство (MEAT) - мягче в Similar
-    if source.npc_family == 'MEAT':
-        if source.npc_subfamily != candidate.npc_subfamily:
-            result.difference_labels.append(f"Другое мясо: {candidate.npc_subfamily or 'не указано'}")
+    # === COLLECT DIFFERENCE LABELS ===
     
-    # Панировка допускается в Similar с лейблом
+    # NPC node difference
+    if source.npc_node_id and not candidate.npc_node_id:
+        result.difference_labels.append("Нет точного соответствия в категории")
+    elif source.npc_node_id and candidate.npc_node_id and source.npc_node_id != candidate.npc_node_id:
+        result.difference_labels.append("Другая подкатегория")
+    
+    # State difference
+    if source.state_frozen and candidate.state_chilled:
+        result.difference_labels.append("Охлаждённый (не замороженный)")
+    elif source.state_chilled and candidate.state_frozen:
+        result.difference_labels.append("Замороженный (не охлаждённый)")
+    
+    # Breaded
     if candidate.is_breaded and not source.is_breaded:
         result.difference_labels.append("В панировке")
     
-    # Форма продукта - с лейблом
-    if source.product_form != candidate.product_form:
-        if candidate.product_form:
-            result.difference_labels.append(f"Форма: {candidate.product_form}")
+    # Domain-specific labels
+    if source.npc_domain == 'SHRIMP':
+        if source.shrimp_species != candidate.shrimp_species:
+            if candidate.shrimp_species:
+                result.difference_labels.append(f"Вид: {candidate.shrimp_species}")
+        if source.shrimp_caliber_band != candidate.shrimp_caliber_band:
+            if candidate.shrimp_caliber:
+                result.difference_labels.append(f"Калибр: {candidate.shrimp_caliber}")
     
-    # Вид - с лейблом если разный
-    if source.npc_family == 'FISH' and source.fish_species != candidate.fish_species:
-        if candidate.fish_species:
-            result.difference_labels.append(f"Вид: {candidate.fish_species}")
+    elif source.npc_domain == 'FISH':
+        if source.fish_species != candidate.fish_species:
+            if candidate.fish_species:
+                result.difference_labels.append(f"Рыба: {candidate.fish_species}")
+        if source.fish_cut != candidate.fish_cut:
+            if candidate.fish_cut:
+                result.difference_labels.append(f"Часть: {candidate.fish_cut}")
+        if source.fish_canned != candidate.fish_canned:
+            if candidate.fish_canned:
+                result.difference_labels.append("Консервы")
     
-    if source.npc_family == 'SHRIMP' and source.shrimp_species != candidate.shrimp_species:
-        if candidate.shrimp_species:
-            result.difference_labels.append(f"Вид: {candidate.shrimp_species}")
+    elif source.npc_domain == 'SEAFOOD':
+        if source.seafood_type != candidate.seafood_type:
+            if candidate.seafood_type:
+                result.difference_labels.append(f"Тип: {candidate.seafood_type}")
     
+    elif source.npc_domain == 'MEAT':
+        if source.meat_animal != candidate.meat_animal:
+            if candidate.meat_animal:
+                result.difference_labels.append(f"Мясо: {candidate.meat_animal}")
+        if source.meat_cut != candidate.meat_cut:
+            if candidate.meat_cut:
+                result.difference_labels.append(f"Часть: {candidate.meat_cut}")
+    
+    # === PASSED SIMILAR ===
     result.passed_similar = True
-    result.npc_score = 50  # Базовый score для Similar
+    
+    # Scoring for Similar (lower than Strict)
+    result.npc_score = 50
+    if result.same_domain:
+        result.npc_score += 20
+    if not result.difference_labels:
+        result.npc_score += 10
     
     return result
 
 
 # ============================================================================
-# HELPERS
+# MAIN API FUNCTIONS
 # ============================================================================
 
-def is_npc_domain(item: Dict) -> bool:
+def is_npc_domain_item(item: Dict) -> bool:
     """
-    Проверяет, относится ли товар к NPC домену.
-    """
-    name_norm = item.get('name_norm', item.get('name_raw', '')).lower()
-    
-    # Сначала проверяем исключения
-    for pattern in HARD_EXCLUDE_PATTERNS.values():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            return False
-    
-    # Проверяем false friends
-    for pattern in FALSE_FRIENDS_PATTERNS.values():
-        if re.search(pattern, name_norm, re.IGNORECASE):
-            # Рибай - это MEAT, поэтому True
-            if 'ribeye_as_meat' in str(pattern):
-                return True
-            return False
-    
-    # Проверяем принадлежность к семейству
-    sig = extract_npc_signature(item)
-    return sig.npc_family is not None
-
-
-def get_npc_family(item: Dict) -> Optional[str]:
-    """
-    Возвращает NPC семейство товара.
+    Проверяет, относится ли товар к NPC домену (SHRIMP/FISH/SEAFOOD/MEAT).
     """
     sig = extract_npc_signature(item)
-    return sig.npc_family
+    return sig.npc_domain is not None and not sig.is_excluded
+
+
+def get_item_npc_domain(item: Dict) -> Optional[str]:
+    """
+    Возвращает NPC домен товара или None.
+    """
+    sig = extract_npc_signature(item)
+    if sig.is_excluded:
+        return None
+    return sig.npc_domain
+
+
+def apply_npc_filter(
+    source_item: Dict,
+    candidates: List[Dict],
+    limit: int = 10,
+    strict_threshold: int = STRICT_MIN_THRESHOLD
+) -> Tuple[List[Dict], List[Dict], Dict[str, int]]:
+    """
+    Применяет NPC фильтрацию к кандидатам.
+    
+    Args:
+        source_item: Исходный товар
+        candidates: Список кандидатов (уже отфильтрованных matching_engine_v3)
+        limit: Максимум результатов на режим
+        strict_threshold: Порог для включения Similar
+    
+    Returns:
+        (strict_results, similar_results, rejected_reasons)
+        
+    Если source не имеет npc_node_id → возвращаем None (используйте legacy)
+    """
+    source_sig = extract_npc_signature(source_item)
+    
+    # Если source excluded → пустой результат
+    if source_sig.is_excluded:
+        return [], [], {'SOURCE_EXCLUDED': 1}
+    
+    # Если source не NPC домен → None (сигнал для legacy fallback)
+    if not source_sig.npc_domain:
+        return None, None, None
+    
+    strict_results = []
+    similar_results = []
+    rejected_reasons: Dict[str, int] = {}
+    
+    for cand in candidates:
+        if cand.get('id') == source_item.get('id'):
+            continue
+        
+        cand_sig = extract_npc_signature(cand)
+        
+        # Strict check
+        strict_result = check_npc_strict(source_sig, cand_sig)
+        
+        if strict_result.passed_strict:
+            strict_results.append({
+                'item': cand,
+                'npc_result': strict_result,
+                'npc_signature': cand_sig,
+            })
+        else:
+            # Record rejection reason
+            reason = strict_result.block_reason or 'UNKNOWN'
+            reason_key = reason.split(':')[0]
+            rejected_reasons[reason_key] = rejected_reasons.get(reason_key, 0) + 1
+            
+            # Try Similar
+            similar_result = check_npc_similar(source_sig, cand_sig)
+            if similar_result.passed_similar:
+                similar_results.append({
+                    'item': cand,
+                    'npc_result': similar_result,
+                    'npc_signature': cand_sig,
+                })
+    
+    # Sort by NPC score
+    strict_results.sort(key=lambda x: -x['npc_result'].npc_score)
+    similar_results.sort(key=lambda x: (-x['npc_result'].npc_score, len(x['npc_result'].difference_labels)))
+    
+    # Apply limits
+    strict_results = strict_results[:limit]
+    
+    # Similar только если Strict < threshold
+    if len(strict_results) >= strict_threshold:
+        similar_results = []
+    else:
+        similar_results = similar_results[:limit]
+    
+    return strict_results, similar_results, rejected_reasons
+
+
+def format_npc_result(
+    item: Dict,
+    npc_result: NPCMatchResult,
+    npc_sig: NPCSignature,
+    mode: str
+) -> Dict:
+    """
+    Форматирует результат NPC matching для API ответа.
+    """
+    return {
+        'id': item.get('id'),
+        'name': item.get('name_raw', ''),
+        'name_raw': item.get('name_raw', ''),
+        'price': item.get('price', 0),
+        'pack_qty': item.get('pack_qty'),
+        'unit_type': item.get('unit_type', 'PIECE'),
+        'brand_id': item.get('brand_id'),
+        'supplier_company_id': item.get('supplier_company_id'),
+        'min_order_qty': item.get('min_order_qty', 1),
+        
+        # NPC specific
+        'npc_domain': npc_sig.npc_domain,
+        'npc_node_id': npc_sig.npc_node_id,
+        'npc_score': npc_result.npc_score,
+        'match_mode': mode,
+        'difference_labels': npc_result.difference_labels,
+        
+        # NPC attributes (for debugging)
+        'npc_attributes': {
+            'shrimp_species': npc_sig.shrimp_species,
+            'shrimp_caliber': npc_sig.shrimp_caliber,
+            'fish_species': npc_sig.fish_species,
+            'fish_cut': npc_sig.fish_cut,
+            'seafood_type': npc_sig.seafood_type,
+            'meat_animal': npc_sig.meat_animal,
+            'meat_cut': npc_sig.meat_cut,
+            'state_frozen': npc_sig.state_frozen,
+            'state_chilled': npc_sig.state_chilled,
+            'is_breaded': npc_sig.is_breaded,
+        }
+    }
+
+
+# ============================================================================
+# UTILITY / DEBUG
+# ============================================================================
+
+def explain_npc_match(source_name: str, candidate_name: str) -> Dict:
+    """
+    Объясняет решение NPC matching между двумя товарами.
+    Для отладки и UI.
+    """
+    source_item = {'name_raw': source_name}
+    cand_item = {'name_raw': candidate_name}
+    
+    source_sig = extract_npc_signature(source_item)
+    cand_sig = extract_npc_signature(cand_item)
+    
+    strict_result = check_npc_strict(source_sig, cand_sig)
+    similar_result = check_npc_similar(source_sig, cand_sig)
+    
+    return {
+        'source': {
+            'name': source_name,
+            'npc_domain': source_sig.npc_domain,
+            'npc_node_id': source_sig.npc_node_id,
+            'is_excluded': source_sig.is_excluded,
+            'exclude_reason': source_sig.exclude_reason,
+        },
+        'candidate': {
+            'name': candidate_name,
+            'npc_domain': cand_sig.npc_domain,
+            'npc_node_id': cand_sig.npc_node_id,
+            'is_excluded': cand_sig.is_excluded,
+            'exclude_reason': cand_sig.exclude_reason,
+        },
+        'strict_result': {
+            'passed': strict_result.passed_strict,
+            'block_reason': strict_result.block_reason,
+            'npc_score': strict_result.npc_score,
+        },
+        'similar_result': {
+            'passed': similar_result.passed_similar,
+            'difference_labels': similar_result.difference_labels,
+            'npc_score': similar_result.npc_score,
+        }
+    }
