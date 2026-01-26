@@ -1777,7 +1777,7 @@ async def get_item_alternatives(
             logger.info(f"NPC returned None for item {item_id}, falling back to legacy")
         else:
             # Форматируем NPC результаты
-            def enrich_npc_item(npc_data: dict, mode: str) -> dict:
+            def enrich_npc_item(npc_data: dict, match_mode: str) -> dict:
                 item = npc_data['item']
                 npc_result = npc_data['npc_result']
                 npc_sig = npc_data['npc_signature']
@@ -1797,11 +1797,16 @@ async def get_item_alternatives(
                     'supplier_min_order': sup_info['min_order'],
                     'min_order_qty': item.get('min_order_qty', 1),
                     'match_score': npc_result.npc_score,
-                    'match_mode': mode,
+                    'size_score': npc_result.size_score,
+                    'match_mode': match_mode,
                     'difference_labels': npc_result.difference_labels,
-                    # NPC specific fields
+                    # NPC v9.1 fields
                     'npc_domain': npc_sig.npc_domain,
                     'npc_node_id': npc_sig.npc_node_id,
+                    'processing_form': npc_sig.processing_form.value if npc_sig.processing_form else None,
+                    'cut_type': npc_sig.cut_type.value if npc_sig.cut_type else None,
+                    'species': npc_sig.species,
+                    'is_box': npc_sig.is_box,
                 }
             
             enriched_strict = [enrich_npc_item(x, 'strict') for x in npc_strict]
@@ -1824,18 +1829,15 @@ async def get_item_alternatives(
                 'supplier_id': source_supplier_id,
                 'supplier_name': source_sup_info['name'],
                 'supplier_min_order': source_sup_info['min_order'],
-                # NPC fields
+                # NPC v9.1 fields
                 'npc_domain': source_npc_sig.npc_domain,
                 'npc_node_id': source_npc_sig.npc_node_id,
-                'npc_signature': {
-                    'shrimp_species': source_npc_sig.shrimp_species,
-                    'shrimp_caliber': source_npc_sig.shrimp_caliber,
-                    'fish_species': source_npc_sig.fish_species,
-                    'fish_cut': source_npc_sig.fish_cut,
-                    'seafood_type': source_npc_sig.seafood_type,
-                    'meat_animal': source_npc_sig.meat_animal,
-                    'meat_cut': source_npc_sig.meat_cut,
-                }
+                'processing_form': source_npc_sig.processing_form.value if source_npc_sig.processing_form else None,
+                'cut_type': source_npc_sig.cut_type.value if source_npc_sig.cut_type else None,
+                'species': source_npc_sig.species,
+                'is_box': source_npc_sig.is_box,
+                'shrimp_caliber': source_npc_sig.shrimp_caliber,
+                'size_range': f"{source_npc_sig.size_gram_min}-{source_npc_sig.size_gram_max}g" if source_npc_sig.size_gram_min else None,
             }
             
             all_alternatives = enriched_strict + enriched_similar
