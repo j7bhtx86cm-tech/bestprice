@@ -883,7 +883,8 @@ def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatch
     
     # NPC node difference
     if source.npc_node_id and not candidate.npc_node_id:
-        result.difference_labels.append("Нет точного соответствия в категории")
+        # Candidate without node_id - not classified, goes to bottom of Similar
+        result.difference_labels.append("Не классифицирован в NPC")
     elif source.npc_node_id and candidate.npc_node_id and source.npc_node_id != candidate.npc_node_id:
         result.difference_labels.append("Другая подкатегория")
     
