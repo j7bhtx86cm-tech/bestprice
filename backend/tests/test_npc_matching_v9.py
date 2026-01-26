@@ -19,7 +19,7 @@ sys.path.insert(0, '/app/backend')
 from bestprice_v12.npc_matching_v9 import (
     extract_npc_signature, is_npc_domain_item, get_item_npc_domain,
     check_npc_strict, check_npc_similar, apply_npc_filter,
-    explain_npc_match, load_npc_data
+    explain_npc_match, load_npc_data, NPCSignature
 )
 
 
