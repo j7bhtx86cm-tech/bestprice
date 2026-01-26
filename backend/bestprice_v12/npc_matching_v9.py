@@ -798,7 +798,7 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
                         cand_mid = (candidate.size_gram_min + candidate.size_gram_max) / 2
                         diff_pct = abs(src_mid - cand_mid) / src_mid
                         
-                        if diff_pct > 0.50:  # Больше 50% разницы — блок
+                        if diff_pct > 0.35:  # Больше 35% разницы — блок
                             result.block_reason = f"SIZE_MISMATCH:{source.size_gram_min}-{source.size_gram_max}!={candidate.size_gram_min}-{candidate.size_gram_max}"
                             return result
                         result.same_size_range = True
