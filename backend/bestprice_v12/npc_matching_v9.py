@@ -861,7 +861,7 @@ def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatch
     
     Правила:
     - Домен должен совпадать
-    - Candidate без npc_node_id разрешён (с лейблом)
+    - Candidate без npc_node_id → ИСКЛЮЧАЕМ ПОЛНОСТЬЮ (не показываем)
     - Разные species/caliber разрешены (с лейблами)
     - Панировка разрешена (с лейблом)
     """
@@ -879,13 +879,16 @@ def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatch
     
     result.same_domain = True
     
+    # === NPC NODE CHECK ===
+    # Candidate без npc_node_id → исключаем ПОЛНОСТЬЮ (даже из Similar)
+    if source.npc_node_id and not candidate.npc_node_id:
+        result.block_reason = "CANDIDATE_NO_NPC_NODE"
+        return result
+    
     # === COLLECT DIFFERENCE LABELS ===
     
-    # NPC node difference
-    if source.npc_node_id and not candidate.npc_node_id:
-        # Candidate without node_id - not classified, goes to bottom of Similar
-        result.difference_labels.append("Не классифицирован в NPC")
-    elif source.npc_node_id and candidate.npc_node_id and source.npc_node_id != candidate.npc_node_id:
+    # NPC node difference (both have node_id but different)
+    if source.npc_node_id and candidate.npc_node_id and source.npc_node_id != candidate.npc_node_id:
         result.difference_labels.append("Другая подкатегория")
     
     # State difference
