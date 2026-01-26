@@ -1769,7 +1769,7 @@ async def get_item_alternatives(
             source_item=source_item,
             candidates=v3_candidates if v3_candidates else raw_candidates,
             limit=limit,
-            strict_threshold=NPC_STRICT_THRESHOLD if include_similar else 999
+            mode=mode  # 'strict' или 'similar'
         )
         
         # Если NPC вернул None - fallback на legacy
