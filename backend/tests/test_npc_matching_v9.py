@@ -207,13 +207,18 @@ class TestNPCStrictMatching:
         assert "STATE" in (result.block_reason or "")
     
     def test_breaded_fails_strict_when_source_not_breaded(self, npc_data):
-        """Breaded candidate should fail strict if source is not breaded."""
+        """Breaded candidate should fail strict if source is not breaded.
+        
+        Note: 'в панировке' items are excluded as frozen_semi_finished per lexicon,
+        so they fail with EXCLUDED reason, not BREADED.
+        """
         source_sig = extract_npc_signature({'name_raw': 'Креветки ваннамей б/г с/м 21/25'})
         cand_sig = extract_npc_signature({'name_raw': 'Креветки ваннамей в панировке с/м 21/25'})
         
         result = check_npc_strict(source_sig, cand_sig)
         assert result.passed_strict == False
-        assert "BREADED" in (result.block_reason or "")
+        # Breaded items are excluded as frozen_semi_finished per lexicon
+        assert "EXCLUDED" in (result.block_reason or "") or "BREADED" in (result.block_reason or "")
     
     def test_excluded_candidate_fails(self, npc_data):
         """Excluded candidate (gyoza) should fail strict."""
