@@ -268,6 +268,23 @@ class TestNPCSimilarMatching:
         
         result = check_npc_similar(source_sig, cand_sig)
         assert result.passed_similar == False
+    
+    def test_candidate_without_node_id_excluded_from_similar(self, npc_data):
+        """Candidate without npc_node_id should be excluded even from Similar."""
+        # Manually create signatures
+        source = NPCSignature()
+        source.npc_domain = 'SHRIMP'
+        source.npc_node_id = 'shr_002'
+        source.state_frozen = True
+        
+        candidate = NPCSignature()
+        candidate.npc_domain = 'SHRIMP'
+        candidate.npc_node_id = None  # No node ID
+        candidate.state_frozen = True
+        
+        result = check_npc_similar(source, candidate)
+        assert result.passed_similar == False
+        assert "CANDIDATE_NO_NPC_NODE" in (result.block_reason or "")
 
 
 # =============================================================================
