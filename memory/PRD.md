@@ -209,11 +209,15 @@ NPC (Node-based Product Classification) — дополнительный сло�
 
 ```
 /app/backend/bestprice_v12/
+├── npc_matching_v9.py      # NPC matching layer (v9 - Финальное ТЗ)
 ├── matching_engine_v3.py   # Core matching engine (v3.0 - ТЗ v12)
 ├── matching_rules_v2.py    # Legacy (v2.0)
 ├── matching_rules.py       # Legacy (v1.3 lexicon-based)
 ├── routes.py               # API endpoints
+├── npc_schema_v9.xlsx      # NPC node schema
+├── lexicon_npc_v9.json     # NPC exclusion lexicon
 └── tests/
+    ├── test_npc_matching_v9.py       # 46 NPC unit tests
     ├── test_matching_v3.py           # 23 unit tests
     └── test_integration_alternatives.py  # 13 integration tests
 ```
