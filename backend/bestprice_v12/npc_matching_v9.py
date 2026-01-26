@@ -382,14 +382,19 @@ def _detect_npc_domain(name_norm: str, patterns: Dict[str, re.Pattern]) -> Optio
                 return None
             return 'SEAFOOD'
     
-    # FISH tokens
-    fish_tokens = ['лосось', 'salmon', 'сёмга', 'семга', 'форель', 'trout',
-                   'треска', 'cod', 'тунец', 'tuna', 'палтус', 'halibut',
-                   'минтай', 'pollock', 'скумбри', 'mackerel', 'сельд', 'herring',
-                   'анчоус', 'anchovy', 'килька', 'мойва', 'сайра', 'хек',
-                   'окун', 'perch', 'судак', 'щук', 'pike', 'карп', 'carp',
-                   'угорь', 'eel', 'осетр', 'дорад', 'сибас', 'тилапи',
-                   'пангасиус', 'горбуш', 'кижуч', 'нерк', 'чавыч']
+    # FISH tokens (with declensions for Russian morphology)
+    fish_tokens = ['лосось', 'лосос', 'salmon', 'сёмга', 'семга', 'сёмги', 'семги',
+                   'форель', 'форели', 'trout',
+                   'треска', 'трески', 'трескова', 'cod', 'тунец', 'тунца', 'tuna',
+                   'палтус', 'палтуса', 'halibut',
+                   'минтай', 'минтая', 'pollock', 'скумбри', 'mackerel',
+                   'сельд', 'сельди', 'herring',
+                   'анчоус', 'анчоусов', 'anchovy', 'килька', 'мойва', 'сайра', 'хек',
+                   'окун', 'окуня', 'perch', 'судак', 'судака', 'щук', 'pike',
+                   'карп', 'карпа', 'carp', 'угорь', 'угря', 'eel',
+                   'осетр', 'осетра', 'осетрин', 'дорад', 'сибас', 'тилапи',
+                   'пангасиус', 'горбуш', 'кижуч', 'нерк', 'чавыч',
+                   'печень трески', 'печен трески']  # compound term for cod liver
     
     # Сначала проверяем false friends
     if 'fish_exclude_regex' in patterns:
