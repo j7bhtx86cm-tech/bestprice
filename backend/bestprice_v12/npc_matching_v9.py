@@ -938,16 +938,11 @@ def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatch
     result.passed_similar = True
     
     # Scoring for Similar (lower than Strict)
-    # Base score for Similar is lower
     result.npc_score = 50
     if result.same_domain:
         result.npc_score += 20
     if not result.difference_labels:
         result.npc_score += 10
-    
-    # PENALTY: candidate without npc_node_id goes to the bottom
-    if source.npc_node_id and not candidate.npc_node_id:
-        result.npc_score -= 30  # Significant penalty to push to bottom
     
     return result
 
