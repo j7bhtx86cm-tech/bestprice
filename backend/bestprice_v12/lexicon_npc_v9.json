@@ -1,0 +1,304 @@
+{
+  "version": "v8",
+  "scope": [
+    "fish",
+    "meat",
+    "seafood_other",
+    "shrimp"
+  ],
+  "npc": {
+    "families": {
+      "SEAFOOD": [
+        "SHRIMP",
+        "FISH",
+        "мидия",
+        "мидии",
+        "мид.",
+        "mussel",
+        "вонголи",
+        "vongole",
+        "венерка",
+        "clam",
+        "clams",
+        "устрица",
+        "устрицы",
+        "oyster",
+        "кальмар",
+        "кальмары",
+        "squid",
+        "осьминог",
+        "осьминоги",
+        "octopus",
+        "октопус",
+        "сепия",
+        "cuttlefish",
+        "краб",
+        "крабы",
+        "crab",
+        "лобстер",
+        "омар",
+        "lobster",
+        "лангустин",
+        "лангустины",
+        "langoustine"
+      ],
+      "MEAT": [
+        "POULTRY",
+        "BEEF",
+        "PORK",
+        "LAMB",
+        "OTHER"
+      ],
+      "SEAFOOD_MOLLUSKS": [
+        "мидия",
+        "мидии",
+        "мид.",
+        "mussel",
+        "вонголи",
+        "vongole",
+        "венерка",
+        "clam",
+        "clams",
+        "устрица",
+        "устрицы",
+        "oyster"
+      ],
+      "SEAFOOD_CEPHALOPODS": [
+        "кальмар",
+        "кальмары",
+        "squid",
+        "осьминог",
+        "осьминоги",
+        "octopus",
+        "октопус",
+        "сепия",
+        "cuttlefish"
+      ],
+      "SEAFOOD_CRABS_LOBSTERS": [
+        "краб",
+        "крабы",
+        "crab",
+        "лобстер",
+        "омар",
+        "lobster",
+        "лангустин",
+        "лангустины",
+        "langoustine"
+      ]
+    },
+    "rules": {
+      "fish_exclude_regex": "\\b(рибай|ribeye)\\b",
+      "fish_match_requires": "token-boundary match of fish tokens; no substring match like 'риб' alone",
+      "meat_force_regex": "\\b(рибай|ribeye)\\b",
+      "shrimp_exclude_flavor_regex": "(со вкус|аромат|вкусом)\\s+\\w*\\s*кревет",
+      "shrimp_tag_after_fish_rule": "if shrimp token occurs after fish species token and far in string, treat as FISH not SHRIMP",
+      "fruit_forel_exclude_regex": "\\bгруша\\b.*\\bфорел",
+      "shrimp_exclude_dumplings_regex": "\\b(г[её]дза|пельмен[ьи]|вареник[и]?|дамплинг[и]?|dumpling[s]?|gyoza)\\b",
+      "seafood_exclude_seaweed_noodles_regex": "\\b(нори|чука|водоросл[ьиь]|ламинар|морск(ая|ие)\\s+капуст[аы]|лапша|вермишел[ьиь]|фунчоз[аы]|батат|стеклянн(ая|ые))\\b",
+      "meat_exclude_bouillon_regex": "\\b(бульон|knorr|кнорр|arikon|арикон|profi|бульонн(ый|ая|ые))\\b",
+      "meat_exclude_dumplings_regex": "\\b(г[её]дз[аы]|пельмен[ьи]|вареник[и]?|манты|хинкал[ьи]|равиол[ьи]|dumpling|gyoza)\\b"
+    },
+    "family_excludes": {
+      "MEAT": [
+        "meat_exclude_bouillon_regex",
+        "meat_exclude_dumplings_regex"
+      ]
+    }
+  },
+  "regex": {
+    "temp_state": {
+      "frozen": "\\bс/м\\b|зам\\b|замор|свежеморож|мороз",
+      "chilled": "охл|охлаж"
+    },
+    "processing": {
+      "breaded": "панир|кляр|темпур|в паниров",
+      "smoked": "копч",
+      "salted": "солен|солё",
+      "dried": "вялен|сушен|сушё",
+      "marinated": "марин"
+    },
+    "fish_form": {
+      "canned": "ж/б|консерв|банка",
+      "roe": "\\bикра\\b"
+    },
+    "fish_skin": {
+      "skin_off": "без кожи|б/к",
+      "skin_on": "на коже|\\bкоже\\b"
+    },
+    "shrimp": {
+      "peeled": "очищ",
+      "headless": "без головы|б/г",
+      "tail_on": "хвост",
+      "caliber": "(\\d{1,3})\\s*[/\\-]\\s*(\\d{1,3})",
+      "species": {
+        "vannamei": "ваннам|vannamei|белоног",
+        "tiger": "тигр",
+        "north": "северн|ботан",
+        "argentine": "аргент"
+      }
+    },
+    "meat_animal": {
+      "beef": "говядин|теля",
+      "pork": "свин",
+      "chicken": "куриц|цыпл",
+      "turkey": "индейк",
+      "lamb": "баран|ягн",
+      "duck": "утк"
+    },
+    "cut": {
+      "fillet": "\\bфиле\\b",
+      "carcass": "\\bтушка\\b",
+      "breast": "\\bгрудк",
+      "thigh": "\\bбедр",
+      "wing": "\\bкрыл",
+      "tenderloin": "вырезк",
+      "mince": "\\bфарш\\b",
+      "brisket": "грудинк",
+      "sausage": "сосиск|колбас"
+    },
+    "dumplings_regex": "\\b(г[её]дза|пельмен[ьи]|вареник[и]?|дамплинг[и]?|dumpling[s]?|gyoza)\\b",
+    "seaweed_noodles_regex": "\\b(нори|чука|водоросл[ьиь]|ламинар|морск(ая|ие)\\s+капуст[аы]|лапша|вермишел[ьиь]|фунчоз[аы]|батат|стеклянн(ая|ые))\\b",
+    "bouillon_regex": "\\b(бульон|knorr|кнорр|arikon|арикон|profi|бульонн(ый|ая|ые))\\b"
+  },
+  "matching_defaults": {
+    "strict_min_results": 4,
+    "similar_max_results": 10,
+    "pack_tolerance_weight_default": 0.2,
+    "pack_tolerance_packaging_default": 0.1,
+    "breaded_allowed_in_strict": false
+  },
+  "group_overrides": {
+    "SHRIMP": {
+      "pack_tolerance_weight": 0.2,
+      "require_same_species_in_strict": true,
+      "caliber_rule": "exact_or_adjacent_only_when_strict_lt_4"
+    },
+    "FISH": {
+      "pack_tolerance_weight": 0.2,
+      "require_same_species_in_strict": true,
+      "forbid_canned_vs_raw_mix": true
+    },
+    "POULTRY": {
+      "pack_tolerance_weight": 0.2
+    },
+    "BEEF": {
+      "pack_tolerance_weight": 0.2
+    },
+    "PORK": {
+      "pack_tolerance_weight": 0.2
+    }
+  },
+  "updated": "2026-01-23",
+  "disambiguation": {
+    "false_friends": [
+      {
+        "token": "рибай",
+        "should_be": "MEAT",
+        "must_not_trigger": "FISH",
+        "reason": "рибай contains 'риб' but is beef cut (ribeye)"
+      },
+      {
+        "token": "ribeye",
+        "should_be": "MEAT",
+        "must_not_trigger": "FISH",
+        "reason": "ribeye is beef cut"
+      }
+    ],
+    "hard_overrides": [
+      {
+        "if_regex": "\\b(рибай|ribeye)\\b",
+        "set": {
+          "family": "MEAT",
+          "animal": "beef"
+        },
+        "priority": 100
+      },
+      {
+        "if_regex": "(со вкус|аромат|вкусом)\\s+\\w*\\s*кревет",
+        "set": {
+          "family": "OTHER"
+        },
+        "priority": 110
+      },
+      {
+        "if_regex": "\\bгруша\\b.*\\bфорел",
+        "set": {
+          "family": "OTHER"
+        },
+        "priority": 110
+      },
+      {
+        "if_regex": "\\b(угор|лосос|семг|форел|треск|тунец|хек|минта|скумбр|палтус|камбал|осетр)\\b.{10,}\\bкревет",
+        "set": {
+          "family": "SEAFOOD",
+          "group": "FISH"
+        },
+        "priority": 105
+      }
+    ]
+  },
+  "out_of_scope_patterns": {
+    "snack_chips": [
+      "\\bчипс"
+    ],
+    "sauce": [
+      "\\bсоус\\b",
+      "кетчуп",
+      "майонез",
+      "терияки",
+      "барбекю",
+      "bbq",
+      "шрирач"
+    ],
+    "frozen_semi_finished": [
+      "\\bполуфаб",
+      "панир",
+      "темпур",
+      "кляр",
+      "наггет",
+      "котлет",
+      "пельмен",
+      "вареник",
+      "шницел",
+      "\\bг[её]дза\\b"
+    ],
+    "seafood_imitation": [
+      "крабов(ые)?\\s+палоч",
+      "сурими"
+    ],
+    "veg_spread": [
+      "\\bикра\\b.*(кабач|баклаж|грибн|овощн)"
+    ],
+    "noodles_pasta": [
+      "\\bлапша\\b",
+      "\\bудон\\b",
+      "\\bвермишел",
+      "\\bфунчоз",
+      "вермишель",
+      "\\bбатат\\w*\\b.*вермишель",
+      "\\bяичн\\w*\\b.*лапша"
+    ],
+    "seaweed": [
+      "\\bнори\\b",
+      "\\bчука\\b",
+      "водоросл"
+    ],
+    "midori_non_seafood": [
+      "(?=.*\\bмидори\\b)(?=.*\\b(лапша|удон|вермиш|нори|чука|водоросл)\\b)"
+    ]
+  },
+  "seafood_types": {
+    "clam": [
+      "вонгол",
+      "vongol",
+      "clams",
+      "венер",
+      "моллюск венер"
+    ],
+    "oyster": [
+      "устриц",
+      "oyster"
+    ]
+  },
+  "notes": "v8: added hard-negative filters to prevent гёдза and Midori noodles/seaweed from попадания в SHRIMP/SEAFOOD группировку."
+}
