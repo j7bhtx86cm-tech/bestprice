@@ -1717,20 +1717,18 @@ async def get_item_alternatives(
             'reason': 'no_product_core_id'
         }
     
+    # Получаем кандидатов (увеличенный лимит для NPC фильтрации)
     raw_candidates = list(db.supplier_items.find(
         candidates_query,
         {'_id': 0}
-    ).limit(300))  # Берём больше для фильтрации
+    ).limit(200))  # topK=200 как в ТЗ
     
-    # Используем matching engine v3
-    result = find_alternatives_v3(
-        source_item=source_item,
-        candidates=raw_candidates,
-        limit=limit,
-        strict_threshold=4 if include_similar else 999
-    )
+    # === NPC MATCHING (для SHRIMP/FISH/SEAFOOD/MEAT) ===
+    # Проверяем, относится ли source к NPC домену
+    source_npc_domain = get_item_npc_domain(source_item)
+    use_npc = source_npc_domain is not None
     
-    # Обогащаем данными поставщика
+    # Обогащаем данными поставщика (общая функция)
     supplier_cache = {}
     
     def get_supplier_info(supplier_id: str) -> dict:
@@ -1746,6 +1744,125 @@ async def get_item_alternatives(
                 'min_order': company.get('min_order_amount', 10000) if company else 10000
             }
         return supplier_cache[supplier_id]
+    
+    if use_npc:
+        # === NPC PATH: применяем NPC фильтрацию ===
+        logger.info(f"Using NPC matching for item {item_id}, domain={source_npc_domain}")
+        
+        # Сначала получаем кандидатов через v3 engine (для базовой фильтрации по product_core_id)
+        v3_result = find_alternatives_v3(
+            source_item=source_item,
+            candidates=raw_candidates,
+            limit=200,  # Берём много для NPC фильтрации
+            strict_threshold=999  # Не применяем Similar threshold на этом этапе
+        )
+        
+        # Собираем всех кандидатов из v3 для NPC фильтрации
+        v3_candidates = []
+        for alt in v3_result.strict:
+            # Находим оригинальный item
+            orig_item = next((c for c in raw_candidates if c.get('id') == alt.get('id')), None)
+            if orig_item:
+                v3_candidates.append(orig_item)
+        
+        # Применяем NPC фильтр
+        npc_strict, npc_similar, npc_rejected = apply_npc_filter(
+            source_item=source_item,
+            candidates=v3_candidates if v3_candidates else raw_candidates,
+            limit=limit,
+            strict_threshold=NPC_STRICT_THRESHOLD if include_similar else 999
+        )
+        
+        # Если NPC вернул None - fallback на legacy
+        if npc_strict is None:
+            use_npc = False
+            logger.info(f"NPC returned None for item {item_id}, falling back to legacy")
+        else:
+            # Форматируем NPC результаты
+            def enrich_npc_item(npc_data: dict, mode: str) -> dict:
+                item = npc_data['item']
+                npc_result = npc_data['npc_result']
+                npc_sig = npc_data['npc_signature']
+                supplier_id = item.get('supplier_company_id')
+                sup_info = get_supplier_info(supplier_id)
+                
+                return {
+                    'id': item.get('id'),
+                    'name': item.get('name_raw', ''),
+                    'name_raw': item.get('name_raw', ''),
+                    'price': item.get('price', 0),
+                    'pack_qty': item.get('pack_qty'),
+                    'unit_type': item.get('unit_type', 'PIECE'),
+                    'brand_id': item.get('brand_id'),
+                    'supplier_id': supplier_id,
+                    'supplier_name': sup_info['name'],
+                    'supplier_min_order': sup_info['min_order'],
+                    'min_order_qty': item.get('min_order_qty', 1),
+                    'match_score': npc_result.npc_score,
+                    'match_mode': mode,
+                    'difference_labels': npc_result.difference_labels,
+                    # NPC specific fields
+                    'npc_domain': npc_sig.npc_domain,
+                    'npc_node_id': npc_sig.npc_node_id,
+                }
+            
+            enriched_strict = [enrich_npc_item(x, 'strict') for x in npc_strict]
+            enriched_similar = [enrich_npc_item(x, 'similar') for x in npc_similar]
+            
+            # Source enrichment
+            source_npc_sig = extract_npc_signature(source_item)
+            source_supplier_id = source_item.get('supplier_company_id')
+            source_sup_info = get_supplier_info(source_supplier_id)
+            
+            enriched_source = {
+                'id': source_item.get('id'),
+                'name': source_item.get('name_raw', ''),
+                'name_raw': source_item.get('name_raw', ''),
+                'price': source_item.get('price', 0),
+                'pack_qty': source_item.get('pack_qty'),
+                'unit_type': source_item.get('unit_type', 'PIECE'),
+                'brand_id': source_item.get('brand_id'),
+                'product_core_id': product_core_id,
+                'supplier_id': source_supplier_id,
+                'supplier_name': source_sup_info['name'],
+                'supplier_min_order': source_sup_info['min_order'],
+                # NPC fields
+                'npc_domain': source_npc_sig.npc_domain,
+                'npc_node_id': source_npc_sig.npc_node_id,
+                'npc_signature': {
+                    'shrimp_species': source_npc_sig.shrimp_species,
+                    'shrimp_caliber': source_npc_sig.shrimp_caliber,
+                    'fish_species': source_npc_sig.fish_species,
+                    'fish_cut': source_npc_sig.fish_cut,
+                    'seafood_type': source_npc_sig.seafood_type,
+                    'meat_animal': source_npc_sig.meat_animal,
+                    'meat_cut': source_npc_sig.meat_cut,
+                }
+            }
+            
+            all_alternatives = enriched_strict + enriched_similar
+            
+            return {
+                'source': enriched_source,
+                'strict': enriched_strict,
+                'similar': enriched_similar,
+                'alternatives': all_alternatives,
+                'strict_count': len(enriched_strict),
+                'similar_count': len(enriched_similar),
+                'total': len(all_alternatives),
+                'total_candidates': len(v3_candidates) if v3_candidates else len(raw_candidates),
+                'rejected_reasons': npc_rejected,
+                'matching_mode': 'npc',
+                'npc_domain': source_npc_domain,
+            }
+    
+    # === LEGACY PATH: используем matching_engine_v3 ===
+    result = find_alternatives_v3(
+        source_item=source_item,
+        candidates=raw_candidates,
+        limit=limit,
+        strict_threshold=4 if include_similar else 999
+    )
     
     def enrich_item(alt: dict) -> dict:
         supplier_id = alt.get('supplier_company_id')
@@ -1815,6 +1932,7 @@ async def get_item_alternatives(
         'total': len(all_alternatives),
         'total_candidates': result.total_candidates,
         'rejected_reasons': result.rejected_reasons,
+        'matching_mode': 'legacy',
     }
 
 
