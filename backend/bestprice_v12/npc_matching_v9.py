@@ -1350,18 +1350,33 @@ def apply_npc_filter(
     mode: str = 'strict'
 ) -> Tuple[List[Dict], List[Dict], Dict[str, int]]:
     """
-    Применяет NPC фильтрацию v11 (SHRIMP Zero-Trash).
+    Применяет NPC фильтрацию v12 (ZERO-TRASH).
     
     mode='strict': только точные аналоги, Similar=[]
     mode='similar': Strict + Similar с лейблами
     
+    ZERO-TRASH ПРАВИЛА:
+    1. Если REF похож на креветки (looks_like_shrimp) или имеет caliber pattern
+       → ЗАПРЕЩЁН legacy_v3, используется только NPC
+    2. Если REF shrimp-like но caliber не определён → пустой strict
+    3. НИКОГДА не показывать 31/40 для REF 16/20
+    
     РАНЖИРОВАНИЕ:
-    1. brand_match (тот же бренд выше)
-    2. country_match (та же страна выше)
-    3. text_similarity
-    4. ppu (не реализовано здесь, на уровне API)
+    1. caliber_exact (САМЫЙ ВАЖНЫЙ)
+    2. brand_match
+    3. country_match
+    4. text_similarity
     """
     source_sig = extract_npc_signature(source_item)
+    
+    # Получаем name для ZERO-TRASH проверок
+    name_raw = source_item.get('name_raw', source_item.get('name', ''))
+    name_norm = name_raw.lower()
+    
+    # ZERO-TRASH: Проверяем выглядит ли REF как креветки
+    is_shrimp_like = looks_like_shrimp(name_norm)
+    has_caliber = has_caliber_pattern(name_norm)
+    caliber_direct, _, _ = extract_shrimp_caliber(name_norm)
     
     # Blacklisted source
     if source_sig.is_blacklisted:
@@ -1370,11 +1385,22 @@ def apply_npc_filter(
     if source_sig.is_excluded:
         return [], [], {'SOURCE_EXCLUDED': 1}
     
+    # ZERO-TRASH: Если REF shrimp-like но npc_domain=None → всё равно НЕ fallback на legacy
     if not source_sig.npc_domain:
-        # v12 FIX: НЕ fallback на legacy! Strict должен быть пустым при неклассифицируемом REF
-        # Это гарантирует "нулевой мусор" — лучше пустой список, чем мусорные результаты
-        logger.warning(f"REF item not classified to NPC domain: {source_item.get('name_raw', '')[:50]}")
-        return [], [], {'REF_NOT_CLASSIFIED': 1}
+        if is_shrimp_like or has_caliber:
+            # REF выглядит как креветки, но не классифицирован → пустой strict (не legacy!)
+            logger.warning(f"ZERO-TRASH: REF shrimp-like but not classified: {name_raw[:50]}")
+            return [], [], {'REF_SHRIMP_LIKE_NOT_CLASSIFIED': 1}
+        else:
+            # REF не похож на креветки и не классифицирован → пустой strict
+            logger.warning(f"REF item not classified to NPC domain: {name_raw[:50]}")
+            return [], [], {'REF_NOT_CLASSIFIED': 1}
+    
+    # ZERO-TRASH: Для SHRIMP domain, если калибр в тексте есть но не распарсен → пустой strict
+    if source_sig.npc_domain == 'SHRIMP':
+        if has_caliber and not source_sig.shrimp_caliber:
+            logger.warning(f"ZERO-TRASH: SHRIMP with caliber pattern but parse failed: {name_raw[:50]}")
+            return [], [], {'REF_CALIBER_PARSE_FAILED': 1}
     
     strict_results = []
     similar_results = []
