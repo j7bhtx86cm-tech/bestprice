@@ -1972,6 +1972,7 @@ async def get_item_alternatives(
             # v12: DEBUG OUTPUT
             'ruleset_version': 'npc_shrimp_v12',
             'ref_parsed': ref_parsed,
+            'ref_debug': ref_debug,  # ZERO-TRASH DEBUG
             'debug_id': debug_id
         })
     
