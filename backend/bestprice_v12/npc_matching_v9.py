@@ -1376,17 +1376,35 @@ def apply_npc_filter(
                         'rejected_reason': strict_result.rejected_reason,
                     })
     
-    # v11: RANKING by brand_match → country_match → text_similarity → npc_score
+    # v12: RANKING (калибр > tail > breaded > similarity > brand > country > ppu)
+    # Hard gates уже гарантируют точное совпадение калибра, но оставляем для будущего расширения
     def sort_key_strict(x):
         r = x['npc_result']
-        # Higher brand_score first, then country_score, then similarity, then npc_score
-        return (-r.brand_score, -r.country_score, -r.similarity_score, -r.npc_score)
+        # v12: caliber_exact TOP PRIORITY, затем tail, breaded, similarity, brand, country
+        return (
+            -int(r.caliber_exact),       # 1. Калибр (точный) — САМЫЙ ВАЖНЫЙ
+            -r.size_score,               # 2. Близость размера (для будущего)
+            -int(r.same_tail_state),     # 3. tail_state match
+            -int(r.same_breaded),        # 4. breaded_flag match
+            -r.similarity_score,         # 5. text_similarity
+            -r.brand_score,              # 6. brand (НЕ выше калибра!)
+            -r.country_score,            # 7. country (НЕ выше калибра!)
+            -r.npc_score,                # 8. остальное
+        )
     
     strict_results.sort(key=sort_key_strict)
     strict_results = strict_results[:limit]
     
     if mode == 'similar':
-        similar_results.sort(key=lambda x: (-x['npc_result'].brand_score, -x['npc_result'].country_score, -x['npc_result'].npc_score))
+        # Аналогичная сортировка для similar
+        similar_results.sort(key=lambda x: (
+            -int(x['npc_result'].caliber_exact),
+            -x['npc_result'].size_score,
+            -x['npc_result'].similarity_score,
+            -x['npc_result'].brand_score,
+            -x['npc_result'].country_score,
+            -x['npc_result'].npc_score
+        ))
         similar_results = similar_results[:limit]
     else:
         similar_results = []
