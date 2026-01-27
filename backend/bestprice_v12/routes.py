@@ -1804,8 +1804,19 @@ async def get_item_alternatives(
         # v12 FIX: NPC больше не возвращает None — всегда возвращает пустой список
         # при неклассифицируемом REF (REF_NOT_CLASSIFIED). Это гарантирует "нулевой мусор".
         # Legacy fallback ПОЛНОСТЬЮ ОТКЛЮЧЁН для режима strict.
-        if npc_rejected and 'REF_NOT_CLASSIFIED' in npc_rejected:
-            logger.info(f"[{debug_id}] item_id={item_id} REF_NOT_CLASSIFIED strict_count=0")
+        
+        # ZERO-TRASH: Проверяем все причины пустого strict
+        zero_trash_reasons = [
+            'REF_NOT_CLASSIFIED', 
+            'REF_SHRIMP_LIKE_NOT_CLASSIFIED',
+            'REF_CALIBER_PARSE_FAILED',
+            'SOURCE_BLACKLISTED',
+            'SOURCE_EXCLUDED'
+        ]
+        
+        if npc_rejected and any(r in npc_rejected for r in zero_trash_reasons):
+            reason = next((r for r in zero_trash_reasons if r in npc_rejected), 'UNKNOWN')
+            logger.info(f"[{debug_id}] item_id={item_id} {reason} strict_count=0")
             # Возвращаем пустой результат с информацией о причине
             source_supplier_id = source_item.get('supplier_company_id')
             source_sup_info = get_supplier_info(source_supplier_id)
@@ -1836,7 +1847,8 @@ async def get_item_alternatives(
                 'matching_mode': 'npc',
                 'npc_domain': None,
                 'ruleset_version': 'npc_shrimp_v12',
-                'ref_parsed': {'npc_domain': None, 'reason': 'REF_NOT_CLASSIFIED'},
+                'ref_parsed': {'npc_domain': None, 'reason': reason},
+                'ref_debug': ref_debug,  # ZERO-TRASH DEBUG
                 'debug_id': debug_id
             })
         
