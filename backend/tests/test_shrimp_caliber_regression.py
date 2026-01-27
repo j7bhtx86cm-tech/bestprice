@@ -188,7 +188,9 @@ class TestAllHardGates:
         result = explain_npc_match(ref, candidate)
         assert result['strict_result']['passed'] == False, f"{candidate} should be rejected"
         reason = result['strict_result']['block_reason'] or ''
-        assert expected_reject in reason, f"Expected {expected_reject} in {reason}"
+        # Может быть несколько допустимых причин (через |)
+        expected_options = expected_reject.split('|')
+        assert any(opt in reason for opt in expected_options), f"Expected one of {expected_options} in {reason}"
 
 
 # =============================================================================
