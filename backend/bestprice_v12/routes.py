@@ -1923,6 +1923,9 @@ async def get_item_alternatives(
         
         all_alternatives = enriched_strict + enriched_similar
         
+        # v12 P0: Логируем NPC результат ПЕРЕД return
+        logger.info(f"[{debug_id}] item_id={item_id} ref_caliber={ref_parsed.get('shrimp_caliber')} strict_count={len(enriched_strict)} rejected={npc_rejected}")
+        
         return make_response({
             'source': enriched_source,
             'strict': enriched_strict,
@@ -1940,9 +1943,6 @@ async def get_item_alternatives(
             'ref_parsed': ref_parsed,
             'debug_id': debug_id
         })
-    
-    # v12 P0: Логируем NPC результат
-    logger.info(f"[{debug_id}] item_id={item_id} ref_caliber={ref_parsed.get('shrimp_caliber')} strict_count={len(enriched_strict)} rejected={npc_rejected}")
     
     # === LEGACY PATH: используем matching_engine_v3 ===
     result = find_alternatives_v3(
