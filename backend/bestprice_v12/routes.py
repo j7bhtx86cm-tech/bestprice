@@ -1717,7 +1717,7 @@ async def get_item_alternatives(
     if product_core_id:
         candidates_query['product_core_id'] = product_core_id
     else:
-        return {
+        return make_response({
             'source': {
                 'id': source_item.get('id'),
                 'name': source_item.get('name_raw', ''),
@@ -1728,8 +1728,11 @@ async def get_item_alternatives(
             'similar': [],
             'alternatives': [],
             'total': 0,
-            'reason': 'no_product_core_id'
-        }
+            'reason': 'no_product_core_id',
+            'ruleset_version': 'npc_shrimp_v12',
+            'ref_parsed': None,
+            'rejected_reasons': {}
+        })
     
     # Получаем кандидатов (увеличенный лимит для NPC фильтрации)
     raw_candidates = list(db.supplier_items.find(
