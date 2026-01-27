@@ -64,7 +64,8 @@ from .matching_engine_v3 import (
 # Import NPC matching v10 (для SHRIMP/FISH/SEAFOOD/MEAT - "Нулевой мусор")
 from .npc_matching_v9 import (
     is_npc_domain_item, get_item_npc_domain,
-    apply_npc_filter, extract_npc_signature, explain_npc_match
+    apply_npc_filter, extract_npc_signature, explain_npc_match,
+    build_ref_debug, looks_like_shrimp, has_caliber_pattern
 )
 
 # Import modular routers
