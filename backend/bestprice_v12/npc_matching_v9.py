@@ -813,6 +813,10 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
         if candidate.brand_id and source.brand_id != candidate.brand_id:
             result.block_reason = f"BRAND_MISMATCH:{source.brand_id}!={candidate.brand_id}"
             return result
+        # SHRIMP v1: если у REF есть brand, а у candidate нет → BLOCKED
+        if source.npc_domain == 'SHRIMP' and not candidate.brand_id:
+            result.block_reason = f"BRAND_MISSING:ref_has_brand={source.brand_id}"
+            return result
         if not candidate.brand_id and source.brand_name:
             # Пробуем сравнить по brand_name
             if candidate.brand_name and source.brand_name.lower() != candidate.brand_name.lower():
