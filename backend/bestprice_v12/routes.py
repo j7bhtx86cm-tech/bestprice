@@ -1808,6 +1808,7 @@ async def get_item_alternatives(
                     'supplier_min_order': source_sup_info['min_order'],
                     'npc_domain': None,
                 },
+                'strict_after_gates': [],  # P0 ZERO-TRASH
                 'strict': [],
                 'similar': [],
                 'alternatives': [],
