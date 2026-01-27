@@ -1962,7 +1962,17 @@ async def get_item_alternatives(
     # Backward compatibility: flat alternatives list
     all_alternatives = enriched_strict + enriched_similar
     
-    return {
+    # v12: ref_parsed для legacy path
+    legacy_ref_parsed = {
+        'npc_domain': None,
+        'species': None,
+        'shrimp_caliber': None,
+        'shrimp_state': None,
+        'shrimp_form': None,
+        'note': 'legacy_path_no_npc'
+    }
+    
+    return make_response({
         'source': enriched_source,
         'strict': enriched_strict,
         'similar': enriched_similar,
@@ -1973,7 +1983,10 @@ async def get_item_alternatives(
         'total_candidates': result.total_candidates,
         'rejected_reasons': result.rejected_reasons,
         'matching_mode': 'legacy',
-    }
+        # v12: DEBUG OUTPUT (even for legacy)
+        'ruleset_version': 'legacy_v3',
+        'ref_parsed': legacy_ref_parsed,
+    })
 
 
 # === DATA QUALITY / VALIDATION ===
