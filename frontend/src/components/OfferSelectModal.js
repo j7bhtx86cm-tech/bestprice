@@ -28,6 +28,8 @@ const OfferSelectModal = ({
   const [error, setError] = useState(null);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [qty, setQty] = useState(1);
+  // P0 DEBUG: Техническая информация для отладки
+  const [debugInfo, setDebugInfo] = useState(null);
 
   // GUARD: Не загружаем данные если sourceItem не установлен
   useEffect(() => {
@@ -43,6 +45,7 @@ const OfferSelectModal = ({
       setQty(1);
       setAlternatives([]);
       setError(null);
+      setDebugInfo(null);
     }
   }, [isOpen]);
 
