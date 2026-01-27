@@ -1339,7 +1339,10 @@ def apply_npc_filter(
         return [], [], {'SOURCE_EXCLUDED': 1}
     
     if not source_sig.npc_domain:
-        return None, None, None  # Fallback to legacy
+        # v12 FIX: НЕ fallback на legacy! Strict должен быть пустым при неклассифицируемом REF
+        # Это гарантирует "нулевой мусор" — лучше пустой список, чем мусорные результаты
+        logger.warning(f"REF item not classified to NPC domain: {source_item.get('name_raw', '')[:50]}")
+        return [], [], {'REF_NOT_CLASSIFIED': 1}
     
     strict_results = []
     similar_results = []
