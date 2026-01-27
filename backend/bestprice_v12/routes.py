@@ -1789,7 +1789,7 @@ async def get_item_alternatives(
         # при неклассифицируемом REF (REF_NOT_CLASSIFIED). Это гарантирует "нулевой мусор".
         # Legacy fallback ПОЛНОСТЬЮ ОТКЛЮЧЁН для режима strict.
         if npc_rejected and 'REF_NOT_CLASSIFIED' in npc_rejected:
-            logger.info(f"REF item {item_id} not classified, returning empty strict list (no legacy fallback)")
+            logger.info(f"[{debug_id}] item_id={item_id} REF_NOT_CLASSIFIED strict_count=0")
             # Возвращаем пустой результат с информацией о причине
             source_supplier_id = source_item.get('supplier_company_id')
             source_sup_info = get_supplier_info(source_supplier_id)
@@ -1820,6 +1820,7 @@ async def get_item_alternatives(
                 'npc_domain': None,
                 'ruleset_version': 'npc_shrimp_v12',
                 'ref_parsed': {'npc_domain': None, 'reason': 'REF_NOT_CLASSIFIED'},
+                'debug_id': debug_id
             })
         
         # REF успешно классифицирован — обрабатываем результаты
