@@ -291,6 +291,48 @@ STOPWORDS = {
     'эквадор', 'ecuador', 'индонез', 'индонезия', 'indonesia', 'таиланд', 'thailand',
 }
 
+# ============================================================================
+# v11: GLOBAL NEVER BLACKLIST (Strict + Similar)
+# ============================================================================
+
+GLOBAL_BLACKLIST_PATTERNS = [
+    # Полуфабрикаты / готовые блюда
+    r'\bгёдза\b', r'\bгедза\b', r'\bпельмен', r'\bваренник', r'\bхинкали\b',
+    r'\bполуфабрикат', r'\bп/ф\b', r'\bготовое\s+блюдо',
+    # Супы/салаты/наборы
+    r'\bсуп\b', r'\bсупа\b', r'\bсупов\b', r'\bсалат', r'\bнабор', r'\bассорти\b',
+    # Котлеты/наггетсы
+    r'\bкотлет', r'\bнаггетс', r'\bфрикадел',
+    # Лапша/паста
+    r'\bлапша\b', r'\bудон\b', r'\bрамен\b', r'\bспагетти\b',
+    # Соусы/снеки
+    r'\bсоус', r'\bчипс', r'\bснек', r'\bкрекер',
+    # Имитация
+    r'\bсо\s+вкусом\b', r'\bвкус\s+кревет',
+    # Крабовые палочки (имитация)
+    r'\bкрабов\w*\s+палоч', r'\bсурими\b',
+]
+
+_BLACKLIST_REGEX: Optional[re.Pattern] = None
+
+
+def get_blacklist_regex() -> re.Pattern:
+    """Компилирует regex для blacklist."""
+    global _BLACKLIST_REGEX
+    if _BLACKLIST_REGEX is None:
+        combined = '|'.join(f'({p})' for p in GLOBAL_BLACKLIST_PATTERNS)
+        _BLACKLIST_REGEX = re.compile(combined, re.IGNORECASE)
+    return _BLACKLIST_REGEX
+
+
+def check_blacklist(name_norm: str) -> Tuple[bool, Optional[str]]:
+    """Проверяет, попадает ли название в Global NEVER blacklist."""
+    regex = get_blacklist_regex()
+    match = regex.search(name_norm)
+    if match:
+        return True, f"FORBIDDEN_CLASS:{match.group(0)}"
+    return False, None
+
 
 def extract_semantic_tokens(name: str) -> List[str]:
     """Извлекает смысловые токены для similarity."""
