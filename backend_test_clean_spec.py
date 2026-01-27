@@ -13,7 +13,7 @@ import json
 from typing import Dict, Optional, List
 
 # Backend URL from environment
-BACKEND_URL = "https://product-compare-14.preview.emergentagent.com/api"
+BACKEND_URL = "https://zerojunkmatch.preview.emergentagent.com/api"
 
 # Test credentials
 TEST_USER = {

@@ -7,7 +7,7 @@ Analyzes existing favorites to verify weight tolerance and type matching
 import requests
 import json
 
-BACKEND_URL = "https://product-compare-14.preview.emergentagent.com/api"
+BACKEND_URL = "https://zerojunkmatch.preview.emergentagent.com/api"
 EMAIL = "customer@bestprice.ru"
 PASSWORD = "password123"
 
