@@ -1341,7 +1341,7 @@ def apply_npc_filter(
 
 
 def explain_npc_match(source_name: str, candidate_name: str) -> Dict:
-    """Объясняет решение NPC matching."""
+    """Объясняет решение NPC matching v11."""
     source = extract_npc_signature({'name_raw': source_name})
     cand = extract_npc_signature({'name_raw': candidate_name})
     
@@ -1359,6 +1359,15 @@ def explain_npc_match(source_name: str, candidate_name: str) -> Dict:
             'brand_id': source.brand_id,
             'origin_country': source.origin_country,
             'is_excluded': source.is_excluded,
+            'is_blacklisted': source.is_blacklisted,
+            # v11: SHRIMP attrs
+            'shrimp_caliber': source.shrimp_caliber,
+            'shrimp_state': source.shrimp_state,
+            'shrimp_form': source.shrimp_form,
+            'shrimp_tail_state': source.shrimp_tail_state,
+            'shrimp_breaded': source.shrimp_breaded,
+            'uom': source.uom,
+            'weight_kg': source.weight_kg,
         },
         'candidate': {
             'name': candidate_name,
@@ -1370,15 +1379,29 @@ def explain_npc_match(source_name: str, candidate_name: str) -> Dict:
             'brand_id': cand.brand_id,
             'origin_country': cand.origin_country,
             'is_excluded': cand.is_excluded,
+            'is_blacklisted': cand.is_blacklisted,
+            # v11: SHRIMP attrs
+            'shrimp_caliber': cand.shrimp_caliber,
+            'shrimp_state': cand.shrimp_state,
+            'shrimp_form': cand.shrimp_form,
+            'shrimp_tail_state': cand.shrimp_tail_state,
+            'shrimp_breaded': cand.shrimp_breaded,
+            'uom': cand.uom,
+            'weight_kg': cand.weight_kg,
         },
         'strict_result': {
             'passed': strict.passed_strict,
             'block_reason': strict.block_reason,
+            'rejected_reason': strict.rejected_reason,
             'npc_score': strict.npc_score,
             'similarity_score': strict.similarity_score,
+            # v11: Debug output
+            'passed_gates': strict.passed_gates,
+            'rank_features': strict.rank_features,
         },
         'similar_result': {
             'passed': similar.passed_similar,
             'difference_labels': similar.difference_labels,
+            'rank_features': similar.rank_features,
         }
     }
