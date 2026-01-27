@@ -177,10 +177,11 @@ const OfferSelectModal = ({
               <AlertCircle className="h-8 w-8 mb-2" />
               <span>{error}</span>
             </div>
-          ) : allOffers.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+          ) : allOffers.length <= 1 ? (
+            <div className="text-center py-8 text-gray-500" data-testid="no-strict-alternatives">
               <AlertCircle className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
-              Нет альтернативных предложений
+              <p className="font-medium">Нет сопоставимых предложений</p>
+              <p className="text-sm mt-1">Strict-режим: альтернативы с точным совпадением параметров не найдены</p>
             </div>
           ) : (
             <div className="space-y-2">
