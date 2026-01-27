@@ -715,7 +715,7 @@ def extract_brand_from_name(name_norm: str) -> Optional[str]:
 # ============================================================================
 
 def extract_npc_signature(item: Dict) -> NPCSignature:
-    """Извлекает полную NPC сигнатуру v10."""
+    """Извлекает полную NPC сигнатуру v11 (SHRIMP Zero-Trash)."""
     sig = NPCSignature()
     
     name_raw = item.get('name_raw', item.get('name', ''))
@@ -725,14 +725,24 @@ def extract_npc_signature(item: Dict) -> NPCSignature:
     sig.name_norm = name_norm
     sig.pack_qty = item.get('pack_qty') or item.get('net_weight_kg')
     
-    # v10: Brand & Country from item
+    # v11: Global NEVER blacklist check (FIRST!)
+    is_blacklisted, blacklist_reason = check_blacklist(name_norm)
+    if is_blacklisted:
+        sig.is_blacklisted = True
+        sig.blacklist_reason = blacklist_reason
+        # Продолжаем извлечение для debug, но флаг is_blacklisted блокирует
+    
+    # v10: Brand & Country from item (только для ранжирования)
     sig.brand_id = item.get('brand_id')
     sig.brand_name = item.get('brand_name') or extract_brand_from_name(name_norm)
     sig.origin_country = item.get('origin_country') or extract_origin_country(name_norm)
     
+    # v11: UOM и вес
+    sig.uom, sig.weight_kg = extract_uom(name_norm, item)
+    
     patterns = get_exclusion_patterns()
     
-    # HARD EXCLUSIONS
+    # HARD EXCLUSIONS (legacy)
     for pattern_name, pattern in patterns.items():
         if pattern_name.startswith('oos_'):
             if pattern.search(name_norm):
@@ -771,6 +781,9 @@ def extract_npc_signature(item: Dict) -> NPCSignature:
         sig.shrimp_caliber, sig.shrimp_caliber_min, sig.shrimp_caliber_max = extract_shrimp_caliber(name_norm)
         sig.shrimp_state = extract_shrimp_state(name_norm)
         sig.shrimp_form = extract_shrimp_form(name_norm)
+        # v11: Новые атрибуты
+        sig.shrimp_tail_state = extract_shrimp_tail_state(name_norm)
+        sig.shrimp_breaded = extract_shrimp_breaded(name_norm)
     
     elif sig.npc_domain == 'FISH':
         sig.fish_species = sig.species
