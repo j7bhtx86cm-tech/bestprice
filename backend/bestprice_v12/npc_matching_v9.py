@@ -601,22 +601,80 @@ def has_caliber_pattern(name_norm: str) -> bool:
     return bool(re.search(r'\d{1,3}\s*[/\-:]\s*\d{1,3}', name_norm))
 
 
+# ============================================================================
+# SHRIMP DETECTION CONSTANTS (P0 ZERO-TRASH)
+# ============================================================================
+
+# Термины, которые ЯВНО указывают на креветки
+SHRIMP_TERMS = [
+    'креветк', 'креветоч', 'shrimp', 'prawn',
+    'ваннамей', 'ванамей', 'vannamei', 'vanamei', 'vannameii',
+    'тигров', 'tiger',
+    'королевск', 'king', 'royal',
+    'лангустин', 'langoustine', 'langostin',
+    'северн', 'северян', 'north', 'northern',
+    'аргентин', 'argentin', 'argentina',
+    'черномор',  # черноморская
+]
+
+# Атрибуты, которые В СОЧЕТАНИИ с калибром указывают на креветки
+SHRIMP_ATTRS = [
+    # Форма
+    'б/г', 'с/г', 'без голов', 'с голов', 'headless', 'head on', 'head-on',
+    'очищ', 'неочищ', 'peeled', 'unpeeled', 'shell on', 'shell-on',
+    'б/хв', 'с/хв', 'без хвост', 'с хвост', 'tail on', 'tail off', 'tail-on', 'tail-off',
+    # Состояние
+    'с/м', 'в/м', 'в/п', 'raw', 'cooked', 'бланш',
+    # Упаковка/форма
+    'шт/ф', 'штуч', 'iqf', 'block', 'блок', 'во льду', 'глазур',
+    # Размер (вспомогательные)
+    'калибр', 'размер', 'size',
+]
+
+# Слова-исключения (не креветки, даже если есть калибр)
+SHRIMP_EXCLUDES = [
+    'со вкусом', 'вкус кревет', 'ароматизатор', 'чипс', 'снек',
+    'сухар', 'крекер', 'соус', 'заправ', 'маринад',
+]
+
+
 def looks_like_shrimp(name_norm: str) -> bool:
     """Проверяет выглядит ли название как креветки (для ZERO-TRASH).
     
-    Используется для определения нужно ли применять strict caliber matching
-    даже если npc_domain не определён.
+    P0: Расширенная логика:
+    1. Если есть SHRIMP_TERM → True
+    2. Если есть калибр-паттерн И есть SHRIMP_ATTR → True
+    3. Если есть SHRIMP_EXCLUDE → False
     """
-    shrimp_keywords = [
-        'креветк', 'креветоч', 'shrimp', 'prawn',
-        'ваннамей', 'vannamei', 'vanamei',
-        'тигров', 'tiger',
-        'королевск', 'king', 'royal',
-        'лангустин', 'langoustine',
-        'северн', 'северян', 'north',
-        'аргентин', 'argentin',
-    ]
-    return any(kw in name_norm for kw in shrimp_keywords)
+    # Исключения
+    if any(exc in name_norm for exc in SHRIMP_EXCLUDES):
+        return False
+    
+    # Явные термины креветок
+    if any(term in name_norm for term in SHRIMP_TERMS):
+        return True
+    
+    # Калибр + атрибуты креветок
+    if has_caliber_pattern(name_norm):
+        if any(attr in name_norm for attr in SHRIMP_ATTRS):
+            return True
+    
+    return False
+
+
+def detect_shrimp_by_context(name_norm: str) -> bool:
+    """Определяет SHRIMP по контексту (калибр + атрибуты).
+    
+    Используется для расширения npc_domain detection.
+    Возвращает True если:
+    - Есть калибр-паттерн И
+    - Есть хотя бы 2 SHRIMP_ATTR
+    """
+    if not has_caliber_pattern(name_norm):
+        return False
+    
+    attr_count = sum(1 for attr in SHRIMP_ATTRS if attr in name_norm)
+    return attr_count >= 2
 
 
 def extract_shrimp_state(name_norm: str) -> Optional[str]:
