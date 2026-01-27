@@ -65,7 +65,8 @@ from .matching_engine_v3 import (
 from .npc_matching_v9 import (
     is_npc_domain_item, get_item_npc_domain,
     apply_npc_filter, extract_npc_signature, explain_npc_match,
-    build_ref_debug, looks_like_shrimp, has_caliber_pattern
+    build_ref_debug, looks_like_shrimp, has_caliber_pattern,
+    detect_shrimp_by_context, SHRIMP_TERMS, SHRIMP_ATTRS
 )
 
 # Import modular routers
