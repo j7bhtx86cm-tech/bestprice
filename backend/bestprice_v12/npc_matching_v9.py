@@ -232,7 +232,7 @@ class NPCSignature:
 
 @dataclass
 class NPCMatchResult:
-    """Результат NPC matching v10"""
+    """Результат NPC matching v11 (SHRIMP Zero-Trash)"""
     passed_strict: bool = False
     passed_similar: bool = False
     block_reason: Optional[str] = None
@@ -247,6 +247,13 @@ class NPCMatchResult:
     same_brand: bool = False
     same_country: bool = False
     
+    # v11: SHRIMP-specific matches
+    same_shrimp_state: bool = False
+    same_shrimp_form: bool = False
+    same_tail_state: bool = False
+    same_breaded: bool = False
+    same_uom: bool = False
+    
     # v10: Similarity score
     similarity_score: float = 0.0
     
@@ -258,6 +265,11 @@ class NPCMatchResult:
     
     # Лейблы
     difference_labels: List[str] = field(default_factory=list)
+    
+    # v11: Debug output
+    passed_gates: List[str] = field(default_factory=list)
+    rejected_reason: Optional[str] = None
+    rank_features: Dict[str, Any] = field(default_factory=dict)
 
 
 # ============================================================================
