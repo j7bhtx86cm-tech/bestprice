@@ -1738,7 +1738,8 @@ async def get_item_alternatives(
             'reason': 'no_product_core_id',
             'ruleset_version': 'npc_shrimp_v12',
             'ref_parsed': None,
-            'rejected_reasons': {}
+            'rejected_reasons': {},
+            'debug_id': debug_id
         })
     
     # Получаем кандидатов (увеличенный лимит для NPC фильтрации)
@@ -1746,6 +1747,8 @@ async def get_item_alternatives(
         candidates_query,
         {'_id': 0}
     ).limit(200))  # topK=200 как в ТЗ
+    
+    logger.info(f"[{debug_id}] item_id={item_id} raw_candidates={len(raw_candidates)} product_core_id={product_core_id}")
     
     # === NPC MATCHING (для SHRIMP/FISH/SEAFOOD/MEAT) ===
     # Проверяем, относится ли source к NPC домену
