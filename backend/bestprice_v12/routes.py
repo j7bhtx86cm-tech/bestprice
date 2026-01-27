@@ -1687,6 +1687,10 @@ async def get_item_alternatives(
     
     db = get_db()
     
+    # v12 P0: Генерируем debug_id для трассировки
+    import uuid
+    debug_id = str(uuid.uuid4())[:8]
+    
     # Получаем исходный товар
     source_item = db.supplier_items.find_one(
         {'id': item_id, 'active': True},
@@ -1694,6 +1698,7 @@ async def get_item_alternatives(
     )
     
     if not source_item:
+        logger.info(f"[{debug_id}] item_id={item_id} NOT_FOUND")
         return make_response({
             'source': None,
             'strict': [],
@@ -1702,7 +1707,8 @@ async def get_item_alternatives(
             'total': 0,
             'ruleset_version': 'npc_shrimp_v12',
             'ref_parsed': None,
-            'rejected_reasons': {}
+            'rejected_reasons': {},
+            'debug_id': debug_id
         })
     
     product_core_id = source_item.get('product_core_id')
@@ -1717,6 +1723,7 @@ async def get_item_alternatives(
     if product_core_id:
         candidates_query['product_core_id'] = product_core_id
     else:
+        logger.info(f"[{debug_id}] item_id={item_id} NO_PRODUCT_CORE_ID")
         return make_response({
             'source': {
                 'id': source_item.get('id'),
