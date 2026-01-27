@@ -598,16 +598,23 @@ def extract_shrimp_state(name_norm: str) -> Optional[str]:
 def extract_shrimp_form(name_norm: str) -> Optional[str]:
     """Форма креветок (очищ/неочищ, б/г, с/г)."""
     forms = []
-    if any(x in name_norm for x in ['очищ', 'peeled', 'о/м']):
+    
+    # Peeled vs shell_on - проверяем сначала "неочищ"
+    if any(x in name_norm for x in ['неочищ', 'в панцир', 'в скорлуп', 'unpeeled', 'shell on']):
+        forms.append('shell_on')
+    elif any(x in name_norm for x in ['очищ', 'peeled', 'о/м', 'чищен']):
         forms.append('peeled')
     else:
-        forms.append('shell_on')
+        forms.append('shell_on')  # default
+    
+    # Head: headless vs head_on
     if any(x in name_norm for x in ['б/г', 'без голов', 'headless']):
         forms.append('headless')
-    elif any(x in name_norm for x in ['с/г', 'с голов']):
+    elif any(x in name_norm for x in ['с/г', 'с голов', 'head on']):
         forms.append('head_on')
     else:
-        forms.append('headless')
+        forms.append('headless')  # default
+    
     return '_'.join(forms) if forms else None
 
 
