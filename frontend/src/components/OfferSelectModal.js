@@ -75,6 +75,17 @@ const OfferSelectModal = ({
       
       const data = response.data;
       
+      // P0 ZERO-TRASH: Сохраняем debug info для отображения в UI
+      setDebugInfo({
+        source: `/api/v12/item/${sourceItem.id}/alternatives`,
+        ruleset_version: data.ruleset_version || 'unknown',
+        debug_id: data.debug_id || 'none',
+        ref_caliber: data.ref_parsed?.shrimp_caliber || 'null',
+        ref_domain: data.ref_parsed?.npc_domain || 'null',
+        strict_count: data.strict_after_gates?.length || 0,
+        rejected_reasons: data.rejected_reasons || {},
+      });
+      
       // P0 ZERO-TRASH: DEBUG OUTPUT
       console.log('=== ZERO-TRASH STRICT DEBUG ===');
       console.log('debug_id:', data.debug_id);
