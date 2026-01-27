@@ -2070,6 +2070,7 @@ async def get_item_alternatives(
         # v12: DEBUG OUTPUT (even for legacy)
         'ruleset_version': 'legacy_v3',
         'ref_parsed': legacy_ref_parsed,
+        'ref_debug': ref_debug,  # ZERO-TRASH DEBUG
         'debug_id': debug_id
     })
 
