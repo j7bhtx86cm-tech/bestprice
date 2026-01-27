@@ -2020,6 +2020,9 @@ async def get_item_alternatives(
         'note': 'legacy_path_no_npc'
     }
     
+    # v12 P0: Логируем Legacy path
+    logger.info(f"[{debug_id}] item_id={item_id} LEGACY_PATH strict_count={result.strict_count}")
+    
     return make_response({
         'source': enriched_source,
         'strict': enriched_strict,
@@ -2034,6 +2037,7 @@ async def get_item_alternatives(
         # v12: DEBUG OUTPUT (even for legacy)
         'ruleset_version': 'legacy_v3',
         'ref_parsed': legacy_ref_parsed,
+        'debug_id': debug_id
     })
 
 
