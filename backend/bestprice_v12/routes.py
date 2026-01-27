@@ -1639,10 +1639,11 @@ async def get_item_alternatives(
     item_id: str, 
     limit: int = Query(10, le=20),
     mode: str = Query('strict', description="Режим: 'strict' (по умолчанию) или 'similar' (по кнопке)"),
-    include_similar: bool = Query(False, description="DEPRECATED: используйте mode='similar'")
+    include_similar: bool = Query(False, description="DEPRECATED: используйте mode='similar'"),
+    ts: int = Query(None, description="Cache-bust timestamp")
 ):
     """
-    Возвращает альтернативные офферы для товара (v9.1 - "Нулевой мусор").
+    Возвращает альтернативные офферы для товара (v12 - NPC SHRIMP Zero-Trash).
     
     РЕЖИМЫ ВЫДАЧИ:
     
