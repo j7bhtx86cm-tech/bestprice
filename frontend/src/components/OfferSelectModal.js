@@ -72,21 +72,43 @@ const OfferSelectModal = ({
       
       const data = response.data;
       
-      // v12: DEBUG OUTPUT в console
-      console.log('=== NPC ALTERNATIVES DEBUG ===');
-      console.log('ruleset_version:', data.ruleset_version);
-      console.log('ref_parsed:', data.ref_parsed);
-      console.log('ref_parsed.shrimp_caliber:', data.ref_parsed?.shrimp_caliber);
+      // v12 P0 HOTFIX: DEBUG OUTPUT — доказательство источника данных
+      console.log('=== NPC ALTERNATIVES DEBUG (P0) ===');
+      console.log('alts keys:', Object.keys(data));
+      console.log('strict:', data.strict?.length);
+      console.log('similar:', data.similar?.length); 
+      console.log('alternatives:', data.alternatives?.length);
+      console.log('ruleset:', data.ruleset_version);
+      console.log('ref_cal:', data.ref_parsed?.shrimp_caliber);
+      console.log('rejected_reasons:', data.rejected_reasons);
+      console.log('total_candidates:', data.total_candidates);
       if (data.strict?.[0]) {
-        console.log('strict[0].cand_parsed:', data.strict[0].cand_parsed);
         console.log('strict[0].cand_parsed.shrimp_caliber:', data.strict[0].cand_parsed?.shrimp_caliber);
         console.log('strict[0].passed_gates:', data.strict[0].passed_gates);
       }
-      console.log('rejected_reasons:', data.rejected_reasons);
-      console.log('matching_mode:', data.matching_mode);
-      console.log('==============================');
+      console.log('===================================');
       
-      setAlternatives(data.alternatives || []);
+      // P0 HOTFIX: Модал показывает ТОЛЬКО strict-after-gates
+      // ЗАПРЕЩЕНО использовать data.alternatives (это strict + similar)
+      // ЗАПРЕЩЕНО показывать similar, сырые candidates, или любой другой массив
+      const strictOnly = data.strict || [];
+      
+      // Дополнительная валидация: проверяем что калибры совпадают (если REF распознан)
+      const refCaliber = data.ref_parsed?.shrimp_caliber;
+      if (refCaliber) {
+        const validStrict = strictOnly.filter(item => {
+          const candCaliber = item.cand_parsed?.shrimp_caliber;
+          // Если у кандидата есть калибр — он должен совпадать с REF
+          if (candCaliber && candCaliber !== refCaliber) {
+            console.warn(`P0 HOTFIX: Отфильтрован кандидат с неверным калибром: ${candCaliber} (REF: ${refCaliber})`);
+            return false;
+          }
+          return true;
+        });
+        setAlternatives(validStrict);
+      } else {
+        setAlternatives(strictOnly);
+      }
     } catch (err) {
       console.error('Failed to fetch alternatives:', err);
       setError('Не удалось загрузить альтернативы');
