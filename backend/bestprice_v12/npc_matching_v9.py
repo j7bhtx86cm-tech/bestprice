@@ -1159,15 +1159,26 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
 
 
 def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatchResult:
-    """Мягкая проверка для Similar режима."""
+    """Мягкая проверка для Similar режима (v11).
+    
+    Blacklist действует и в Similar — FORBIDDEN_CLASS блокирует везде.
+    """
     result = NPCMatchResult()
+    
+    # === GLOBAL NEVER BLACKLIST (Strict + Similar) ===
+    if candidate.is_blacklisted:
+        result.block_reason = f"FORBIDDEN_CLASS:{candidate.blacklist_reason}"
+        result.rejected_reason = result.block_reason
+        return result
     
     if source.is_excluded or candidate.is_excluded:
         result.block_reason = "EXCLUDED"
+        result.rejected_reason = result.block_reason
         return result
     
     if source.npc_domain != candidate.npc_domain:
         result.block_reason = "DOMAIN_MISMATCH"
+        result.rejected_reason = result.block_reason
         return result
     result.same_domain = True
     
@@ -1203,6 +1214,18 @@ def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatch
         if source.shrimp_caliber and candidate.shrimp_caliber:
             if source.shrimp_caliber != candidate.shrimp_caliber:
                 result.difference_labels.append(f"Другой калибр ({candidate.shrimp_caliber})")
+        if source.shrimp_state and candidate.shrimp_state:
+            if source.shrimp_state != candidate.shrimp_state:
+                result.difference_labels.append(f"Другое состояние ({candidate.shrimp_state})")
+        if source.shrimp_form and candidate.shrimp_form:
+            if source.shrimp_form != candidate.shrimp_form:
+                result.difference_labels.append(f"Другая форма ({candidate.shrimp_form})")
+        if source.shrimp_tail_state and candidate.shrimp_tail_state:
+            if source.shrimp_tail_state != candidate.shrimp_tail_state:
+                result.difference_labels.append(f"Хвост: {candidate.shrimp_tail_state}")
+        if source.shrimp_breaded != candidate.shrimp_breaded:
+            if candidate.shrimp_breaded:
+                result.difference_labels.append("В панировке")
     
     if source.npc_domain == 'FISH':
         if source.size_gram_min and candidate.size_gram_min:
@@ -1221,6 +1244,14 @@ def check_npc_similar(source: NPCSignature, candidate: NPCSignature) -> NPCMatch
         result.same_brand = True
     
     result.npc_score += result.country_score + result.brand_score
+    
+    # Debug rank_features
+    result.rank_features = {
+        'brand_match': result.same_brand,
+        'country_match': result.same_country,
+        'difference_labels': result.difference_labels,
+        'npc_score': result.npc_score,
+    }
     
     return result
 
