@@ -585,7 +585,7 @@ def extract_shrimp_caliber(name_norm: str) -> Tuple[Optional[str], Optional[int]
 
 
 def extract_shrimp_state(name_norm: str) -> Optional[str]:
-    """Состояние креветок."""
+    """Состояние креветок (с/м vs в/м)."""
     if any(x in name_norm for x in ['варён', 'варен', 'в/м', 'cooked']):
         return 'cooked_frozen'
     if any(x in name_norm for x in ['бланш', 'blanch']):
@@ -596,7 +596,7 @@ def extract_shrimp_state(name_norm: str) -> Optional[str]:
 
 
 def extract_shrimp_form(name_norm: str) -> Optional[str]:
-    """Форма креветок."""
+    """Форма креветок (очищ/неочищ, б/г, с/г)."""
     forms = []
     if any(x in name_norm for x in ['очищ', 'peeled', 'о/м']):
         forms.append('peeled')
@@ -608,9 +608,75 @@ def extract_shrimp_form(name_norm: str) -> Optional[str]:
         forms.append('head_on')
     else:
         forms.append('headless')
-    if any(x in name_norm for x in ['с хвост', 'хвостик', 'tail']):
-        forms.append('tail_on')
     return '_'.join(forms) if forms else None
+
+
+def extract_shrimp_tail_state(name_norm: str) -> Optional[str]:
+    """v11: Состояние хвоста (tail_on / tail_off)."""
+    if any(x in name_norm for x in ['с хвост', 'хвостик', 'tail on', 'tail-on']):
+        return 'tail_on'
+    if any(x in name_norm for x in ['без хвост', 'tail off', 'tail-off', 'tailless']):
+        return 'tail_off'
+    # По умолчанию не определено
+    return None
+
+
+def extract_shrimp_breaded(name_norm: str) -> bool:
+    """v11: Флаг панировки/темпуры/кляра."""
+    breaded_patterns = [
+        'панир', 'темпур', 'кляр', 'breaded', 'tempura', 'batter',
+        'в панир', 'в кляр', 'в темпур',
+    ]
+    return any(x in name_norm for x in breaded_patterns)
+
+
+def extract_uom(name_norm: str, item: Dict) -> Tuple[Optional[str], Optional[float]]:
+    """v11: Извлекает UOM (единицу измерения) и нормализованный вес."""
+    # Сначала из item
+    uom_from_item = item.get('uom') or item.get('unit')
+    weight_from_item = item.get('net_weight_kg') or item.get('weight_kg')
+    
+    # Нормализация веса из текста
+    weight_kg = None
+    
+    # Ищем вес в кг: 1кг, 1.5кг, 10 кг
+    match_kg = re.search(r'(\d+(?:[.,]\d+)?)\s*кг\b', name_norm)
+    if match_kg:
+        weight_kg = float(match_kg.group(1).replace(',', '.'))
+    
+    # Ищем вес в граммах: 500г, 1000 г
+    if not weight_kg:
+        match_g = re.search(r'(\d+)\s*г(?:р)?\b', name_norm)
+        if match_g:
+            grams = int(match_g.group(1))
+            if 50 <= grams <= 10000:  # разумный диапазон
+                weight_kg = grams / 1000
+    
+    # Используем вес из item если не нашли в тексте
+    if not weight_kg and weight_from_item:
+        weight_kg = float(weight_from_item)
+    
+    # Определяем UOM
+    uom = None
+    if uom_from_item:
+        uom_lower = str(uom_from_item).lower()
+        if uom_lower in ('кг', 'kg', 'kilogram'):
+            uom = 'kg'
+        elif uom_lower in ('шт', 'pcs', 'piece', 'штука'):
+            uom = 'pcs'
+        elif uom_lower in ('уп', 'упак', 'pack', 'упаковка'):
+            uom = 'pack'
+    
+    # Пытаемся определить из текста если не задано
+    if not uom:
+        if re.search(r'\b(\d+)\s*шт\b', name_norm):
+            uom = 'pcs'
+        elif re.search(r'\b(\d+(?:[.,]\d+)?)\s*кг\b', name_norm):
+            uom = 'kg'
+        elif weight_kg:
+            uom = 'kg'
+    
+    return uom, weight_kg
 
 
 def extract_origin_country(name_norm: str) -> Optional[str]:
