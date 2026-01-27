@@ -1669,6 +1669,18 @@ async def get_item_alternatives(
     2. Совпадение бренда
     3. ppu_value
     """
+    # v12: Anti-cache headers
+    anti_cache_headers = {
+        "Cache-Control": "no-store, no-cache, max-age=0, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+        "Vary": "Authorization, Cookie"
+    }
+    
+    def make_response(data: dict) -> JSONResponse:
+        """Helper to create response with anti-cache headers."""
+        return JSONResponse(content=data, headers=anti_cache_headers)
+    
     # Backward compatibility: include_similar=true → mode='similar'
     if include_similar and mode == 'strict':
         mode = 'similar'
@@ -1682,13 +1694,16 @@ async def get_item_alternatives(
     )
     
     if not source_item:
-        return {
+        return make_response({
             'source': None,
             'strict': [],
             'similar': [],
             'alternatives': [],
-            'total': 0
-        }
+            'total': 0,
+            'ruleset_version': 'npc_shrimp_v12',
+            'ref_parsed': None,
+            'rejected_reasons': {}
+        })
     
     product_core_id = source_item.get('product_core_id')
     
