@@ -933,11 +933,20 @@ def extract_npc_signature(item: Dict) -> NPCSignature:
 
 
 def _detect_npc_domain(name_norm: str) -> Optional[str]:
-    """Определяет NPC домен."""
-    # SHRIMP
-    if any(x in name_norm for x in ['кревет', 'shrimp', 'prawn', 'ваннам', 'лангустин']):
-        if 'со вкусом' in name_norm or 'вкус кревет' in name_norm:
-            return None
+    """Определяет NPC домен.
+    
+    P0 ZERO-TRASH: Расширенная логика для SHRIMP:
+    1. Явные термины (креветк, shrimp, ваннам, etc.)
+    2. Контекстное определение (калибр + атрибуты креветок)
+    """
+    # SHRIMP - Проверка исключений
+    if any(exc in name_norm for exc in SHRIMP_EXCLUDES):
+        pass  # Не SHRIMP если исключение
+    # SHRIMP - Явные термины
+    elif any(term in name_norm for term in SHRIMP_TERMS):
+        return 'SHRIMP'
+    # SHRIMP - Контекстное определение (калибр + атрибуты)
+    elif detect_shrimp_by_context(name_norm):
         return 'SHRIMP'
     
     # SEAFOOD
