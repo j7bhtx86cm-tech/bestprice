@@ -266,3 +266,123 @@ class TestAcceptanceCriteria:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
+
+
+# =============================================================================
+# v11: NEW TESTS FOR SHRIMP Zero-Trash
+# =============================================================================
+
+class TestGlobalBlacklist:
+    """v11: Global NEVER blacklist (Strict + Similar)."""
+    
+    @pytest.mark.parametrize("name,expected_blocked", [
+        ('Гёдза с креветкой', True),
+        ('Пельмени морские', True),
+        ('Вареники с креветкой', True),
+        ('Хинкали с креветкой', True),
+        ('Суп с креветками', True),
+        ('Салат с креветками', True),
+        ('Набор морепродуктов', True),
+        ('Ассорти креветок', True),
+        ('Котлеты из креветок', True),
+        ('Наггетсы креветочные', True),
+        ('Лапша удон с креветкой', True),
+        ('Креветки 21/25 с/м', False),  # Normal product
+    ])
+    def test_blacklist(self, npc_data, name, expected_blocked):
+        from bestprice_v12.npc_matching_v9 import check_blacklist
+        is_blocked, _ = check_blacklist(name.lower())
+        assert is_blocked == expected_blocked
+
+
+class TestShrimpOnlyGate:
+    """v11: SHRIMP-only gate."""
+    
+    def test_non_shrimp_rejected(self, npc_data):
+        result = explain_npc_match('Креветки 21/25 с/м', 'Лосось филе с/м')
+        assert result['strict_result']['passed'] == False
+        assert 'NOT_SHRIMP' in result['strict_result']['block_reason']
+    
+    def test_shrimp_to_shrimp_passes(self, npc_data):
+        result = explain_npc_match('Креветки 21/25 с/м', 'Креветки 21/25 с/м 1кг')
+        assert result['strict_result']['passed'] == True
+
+
+class TestTailState:
+    """v11: tail_state hard gate."""
+    
+    def test_tail_on_vs_tail_off_blocked(self, npc_data):
+        result = explain_npc_match('Креветки с хвостом 21/25 с/м', 'Креветки без хвоста 21/25 с/м')
+        assert result['strict_result']['passed'] == False
+        assert 'TAIL_STATE_MISMATCH' in result['strict_result']['block_reason']
+    
+    def test_same_tail_passes(self, npc_data):
+        result = explain_npc_match('Креветки с хвостом 21/25 с/м', 'Креветки с хвостом 21/25 с/м 1кг')
+        assert result['strict_result']['passed'] == True
+
+
+class TestBreadedFlag:
+    """v11: breaded_flag hard gate."""
+    
+    def test_breaded_vs_plain_blocked(self, npc_data):
+        result = explain_npc_match('Креветки 21/25 с/м', 'Креветки в панировке 21/25')
+        assert result['strict_result']['passed'] == False
+        assert 'BREADED_MISMATCH' in result['strict_result']['block_reason']
+    
+    def test_tempura_vs_plain_blocked(self, npc_data):
+        result = explain_npc_match('Креветки в темпуре 21/25', 'Креветки 21/25 с/м')
+        assert result['strict_result']['passed'] == False
+
+
+class TestUOMGate:
+    """v11: UOM gate (шт vs кг)."""
+    
+    def test_kg_vs_pcs_blocked(self, npc_data):
+        result = explain_npc_match('Креветки 21/25 1кг', 'Креветки 21/25 10шт')
+        assert result['strict_result']['passed'] == False
+        assert 'UOM_MISMATCH' in result['strict_result']['block_reason']
+    
+    def test_same_uom_passes(self, npc_data):
+        result = explain_npc_match('Креветки 21/25 1кг', 'Креветки 21/25 500г')
+        assert result['strict_result']['passed'] == True
+
+
+class TestDebugOutput:
+    """v11: Debug output в ответе."""
+    
+    def test_passed_gates_present(self, npc_data):
+        result = explain_npc_match('Креветки ваннамей 21/25 с/м', 'Креветки ваннамей 21/25 с/м 1кг')
+        assert 'passed_gates' in result['strict_result']
+        assert len(result['strict_result']['passed_gates']) > 0
+    
+    def test_rank_features_present(self, npc_data):
+        result = explain_npc_match('Креветки ваннамей 21/25 с/м', 'Креветки ваннамей 21/25 с/м 1кг')
+        assert 'rank_features' in result['strict_result']
+        rf = result['strict_result']['rank_features']
+        assert 'brand_match' in rf
+        assert 'country_match' in rf
+        assert 'text_similarity' in rf
+
+
+class TestRankingOrder:
+    """v11: Ранжирование brand_match → country_match → text_similarity."""
+    
+    def test_brand_higher_than_country(self, npc_data):
+        """Тот же бренд выше чем та же страна."""
+        source = {'name_raw': 'Креветки VICI Вьетнам 21/25 с/м', 'brand_id': 'vici'}
+        cand_brand = {'name_raw': 'Креветки VICI Индия 21/25 с/м', 'brand_id': 'vici'}  # Same brand, diff country
+        cand_country = {'name_raw': 'Креветки AGAMA Вьетнам 21/25 с/м', 'brand_id': 'agama'}  # Diff brand, same country
+        
+        sig_s = extract_npc_signature(source)
+        sig_brand = extract_npc_signature(cand_brand)
+        sig_country = extract_npc_signature(cand_country)
+        
+        r_brand = check_npc_strict(sig_s, sig_brand)
+        r_country = check_npc_strict(sig_s, sig_country)
+        
+        # Both should pass
+        assert r_brand.passed_strict == True
+        assert r_country.passed_strict == True
+        
+        # Brand match should have higher score
+        assert r_brand.brand_score > r_country.brand_score
