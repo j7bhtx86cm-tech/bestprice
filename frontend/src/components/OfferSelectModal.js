@@ -183,6 +183,24 @@ const OfferSelectModal = ({
           <DialogDescription>
             {sourceItem.name ? `${sourceItem.name.slice(0, 60)}${sourceItem.name.length > 60 ? '...' : ''}` : 'Товар'}
           </DialogDescription>
+          {/* P0 DEBUG: Техническая плашка для отладки */}
+          {debugInfo && (
+            <div 
+              className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono text-gray-600 break-all"
+              data-testid="debug-banner"
+            >
+              <div><strong>source=</strong>{debugInfo.source}</div>
+              <div>
+                <strong>ruleset=</strong>{debugInfo.ruleset_version} | 
+                <strong> debug_id=</strong>{debugInfo.debug_id} | 
+                <strong> ref_caliber=</strong>{debugInfo.ref_caliber}
+              </div>
+              <div>
+                <strong>strict_count=</strong>{debugInfo.strict_count} | 
+                <strong> rejected=</strong>{JSON.stringify(debugInfo.rejected_reasons)}
+              </div>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-4">
