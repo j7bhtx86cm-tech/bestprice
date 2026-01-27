@@ -1568,18 +1568,37 @@ def build_ref_debug(item: Dict) -> Dict:
     is_shrimp_like = looks_like_shrimp(ref_text_after_normalize)
     has_caliber = has_caliber_pattern(ref_text_after_normalize)
     
-    # Определяем ruleset и причину legacy
+    # P0: Контекстное определение SHRIMP
+    is_shrimp_by_context = detect_shrimp_by_context(ref_text_after_normalize)
+    shrimp_attr_count = sum(1 for attr in SHRIMP_ATTRS if attr in ref_text_after_normalize)
+    
+    # Определяем ruleset и причину legacy/empty
+    why_empty_strict = None
     if sig.npc_domain:
         ruleset_selected = 'npc_shrimp_v12'
         why_legacy = None
+        # Проверяем почему strict может быть пустым
+        if sig.npc_domain == 'SHRIMP' and has_caliber and not sig.shrimp_caliber:
+            why_empty_strict = 'CALIBER_PRESENT_BUT_PARSE_FAILED'
     else:
         ruleset_selected = 'legacy_v3'
         if sig.is_blacklisted:
             why_legacy = f'BLACKLISTED:{sig.blacklist_reason}'
+            why_empty_strict = f'FORBIDDEN_CLASS:{sig.blacklist_reason}'
         elif sig.is_excluded:
             why_legacy = f'EXCLUDED:{sig.exclude_reason}'
+            why_empty_strict = f'EXCLUDED:{sig.exclude_reason}'
         elif not ref_text_used:
             why_legacy = 'name_raw_EMPTY'
+            why_empty_strict = 'name_raw_EMPTY'
+        elif has_caliber and is_shrimp_like:
+            # Калибр есть, похоже на креветки, но domain не определён
+            why_legacy = 'SHRIMP_LIKE_BUT_DOMAIN_NOT_DETECTED'
+            why_empty_strict = 'CALIBER_PRESENT_SHRIMP_UNCONFIRMED'
+        elif has_caliber:
+            # Калибр есть, но не похоже на креветки
+            why_legacy = 'CALIBER_WITHOUT_SHRIMP_CONTEXT'
+            why_empty_strict = 'CALIBER_PRESENT_SHRIMP_UNCONFIRMED'
         else:
             why_legacy = 'npc_domain_NOT_DETECTED'
     
@@ -1588,6 +1607,8 @@ def build_ref_debug(item: Dict) -> Dict:
         'ref_text_used': ref_text_used[:100],  # Truncate for readability
         'ref_text_after_normalize': ref_text_after_normalize[:100],
         'looks_like_shrimp': is_shrimp_like,
+        'is_shrimp_by_context': is_shrimp_by_context,
+        'shrimp_attr_count': shrimp_attr_count,
         'has_caliber_pattern': has_caliber,
         'caliber_pattern_match': caliber_direct,
         'is_blacklisted': sig.is_blacklisted,
@@ -1599,6 +1620,7 @@ def build_ref_debug(item: Dict) -> Dict:
         'parse_method': 'npc_v12' if sig.npc_domain else 'none',
         'ruleset_selected': ruleset_selected,
         'why_legacy': why_legacy,
+        'why_empty_strict': why_empty_strict,
     }
 
 
