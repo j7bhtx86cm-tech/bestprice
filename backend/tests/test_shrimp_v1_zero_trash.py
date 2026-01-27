@@ -125,10 +125,10 @@ class TestShrimpPackaging:
 # =============================================================================
 
 class TestShrimpBrandCountry:
-    """Brand gate и Country ranking."""
+    """Brand gate и Country ranking — v11: только ранжирование, НЕ hard gates."""
     
-    def test_brand_same_passes(self, npc_data):
-        """Тот же бренд проходит."""
+    def test_brand_same_higher_rank(self, npc_data):
+        """Тот же бренд = выше rank."""
         source = {'name_raw': 'Креветки VICI 21/25 с/м', 'brand_id': 'vici'}
         candidate = {'name_raw': 'Креветки VICI 21/25 с/м 1кг', 'brand_id': 'vici'}
         
@@ -138,9 +138,10 @@ class TestShrimpBrandCountry:
         
         assert result.passed_strict == True
         assert result.same_brand == True
+        assert result.brand_score > 0  # Brand влияет на score
     
-    def test_brand_different_blocked(self, npc_data):
-        """Другой бренд блокируется."""
+    def test_brand_different_passes_lower_rank(self, npc_data):
+        """v11: Другой бренд НЕ блокирует, но rank ниже."""
         source = {'name_raw': 'Креветки VICI 21/25 с/м', 'brand_id': 'vici'}
         candidate = {'name_raw': 'Креветки AGAMA 21/25 с/м', 'brand_id': 'agama'}
         
@@ -148,11 +149,13 @@ class TestShrimpBrandCountry:
         sig_c = extract_npc_signature(candidate)
         result = check_npc_strict(sig_s, sig_c)
         
-        assert result.passed_strict == False
-        assert 'BRAND_MISMATCH' in result.block_reason
+        # v11: Brand не блокирует
+        assert result.passed_strict == True
+        assert result.same_brand == False
+        assert result.brand_score == 0  # No brand bonus
     
-    def test_brand_missing_blocked_for_shrimp(self, npc_data):
-        """Если REF с брендом, candidate без бренда — blocked."""
+    def test_brand_missing_passes_lower_rank(self, npc_data):
+        """v11: Candidate без бренда НЕ блокируется, но rank ниже."""
         source = {'name_raw': 'Креветки VICI 21/25 с/м', 'brand_id': 'vici'}
         candidate = {'name_raw': 'Креветки 21/25 с/м'}
         
@@ -160,8 +163,9 @@ class TestShrimpBrandCountry:
         sig_c = extract_npc_signature(candidate)
         result = check_npc_strict(sig_s, sig_c)
         
-        assert result.passed_strict == False
-        assert 'BRAND_MISSING' in result.block_reason
+        # v11: Brand не блокирует
+        assert result.passed_strict == True
+        assert result.same_brand == False
     
     def test_country_does_not_block(self, npc_data):
         """Разные страны НЕ блокируют (только ранжирование)."""
