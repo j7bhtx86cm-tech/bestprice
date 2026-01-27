@@ -1158,22 +1158,33 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
     if result.same_uom:
         score += 5
     
-    # Size score (for caliber proximity in SHRIMP)
+    # v12: Caliber score — TOP PRIORITY
+    # Для SHRIMP калибр exact = 100, для FISH размерная близость
     if source.npc_domain == 'SHRIMP' and source.shrimp_caliber_min and candidate.shrimp_caliber_min:
-        result.size_score = 100  # Exact match
+        result.size_score = 100  # Exact match (калибр уже прошёл hard gate)
     elif source.npc_domain == 'FISH' and source.size_gram_min and candidate.size_gram_min:
         src_mid = (source.size_gram_min + source.size_gram_max) / 2
         cand_mid = (candidate.size_gram_min + candidate.size_gram_max) / 2
         diff_pct = abs(src_mid - cand_mid) / src_mid if src_mid else 0
         result.size_score = int(100 * (1 - diff_pct))
     
+    # v12: Caliber exact flag (для ранжирования)
+    result.caliber_exact = result.same_caliber
+    
     result.npc_score = score + result.size_score + result.country_score + result.brand_score
     
-    # === DEBUG: rank_features ===
+    # === DEBUG: rank_features v12 ===
     result.rank_features = {
+        # v12: Новый порядок ранжирования
+        'caliber_exact': result.same_caliber,
+        'caliber_score': result.size_score,
+        'tail_match': result.same_tail_state,
+        'breaded_match': result.same_breaded,
+        'uom_match': result.same_uom,
+        'text_similarity': round(result.similarity_score, 2),
         'brand_match': result.same_brand,
         'country_match': result.same_country,
-        'text_similarity': round(result.similarity_score, 2),
+        # Legacy
         'npc_score': result.npc_score,
         'brand_score': result.brand_score,
         'country_score': result.country_score,
