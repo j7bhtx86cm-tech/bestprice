@@ -941,7 +941,6 @@ def _detect_npc_domain(name_norm: str) -> Optional[str]:
     3. Контекстное определение (калибр + атрибуты креветок)
     """
     # P0: FORBIDDEN_CLASS проверка ПЕРВАЯ — блокирует определение домена
-    from .npc_matching_v9 import check_blacklist
     is_blacklisted, _ = check_blacklist(name_norm)
     if is_blacklisted:
         return None  # Blacklisted items не получают домен
