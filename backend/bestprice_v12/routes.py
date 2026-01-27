@@ -1938,7 +1938,11 @@ async def get_item_alternatives(
             # v12: DEBUG OUTPUT
             'ruleset_version': 'npc_shrimp_v12',
             'ref_parsed': ref_parsed,
+            'debug_id': debug_id
         })
+    
+    # v12 P0: Логируем NPC результат
+    logger.info(f"[{debug_id}] item_id={item_id} ref_caliber={ref_parsed.get('shrimp_caliber')} strict_count={len(enriched_strict)} rejected={npc_rejected}")
     
     # === LEGACY PATH: используем matching_engine_v3 ===
     result = find_alternatives_v3(
