@@ -1701,6 +1701,7 @@ async def get_item_alternatives(
         logger.info(f"[{debug_id}] item_id={item_id} NOT_FOUND")
         return make_response({
             'source': None,
+            'strict_after_gates': [],  # P0 ZERO-TRASH
             'strict': [],
             'similar': [],
             'alternatives': [],
@@ -1731,6 +1732,7 @@ async def get_item_alternatives(
                 'price': source_item.get('price', 0),
                 'product_core_id': None,
             },
+            'strict_after_gates': [],  # P0 ZERO-TRASH
             'strict': [],
             'similar': [],
             'alternatives': [],
