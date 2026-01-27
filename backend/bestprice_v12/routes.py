@@ -1780,7 +1780,39 @@ async def get_item_alternatives(
         # Legacy fallback ПОЛНОСТЬЮ ОТКЛЮЧЁН для режима strict.
         if npc_rejected and 'REF_NOT_CLASSIFIED' in npc_rejected:
             logger.info(f"REF item {item_id} not classified, returning empty strict list (no legacy fallback)")
-        else:
+            # Возвращаем пустой результат с информацией о причине
+            source_supplier_id = source_item.get('supplier_company_id')
+            source_sup_info = get_supplier_info(source_supplier_id)
+            return make_response({
+                'source': {
+                    'id': source_item.get('id'),
+                    'name': source_item.get('name_raw', ''),
+                    'name_raw': source_item.get('name_raw', ''),
+                    'price': source_item.get('price', 0),
+                    'pack_qty': source_item.get('pack_qty'),
+                    'unit_type': source_item.get('unit_type', 'PIECE'),
+                    'brand_id': source_item.get('brand_id'),
+                    'product_core_id': product_core_id,
+                    'supplier_id': source_supplier_id,
+                    'supplier_name': source_sup_info['name'],
+                    'supplier_min_order': source_sup_info['min_order'],
+                    'npc_domain': None,
+                },
+                'strict': [],
+                'similar': [],
+                'alternatives': [],
+                'strict_count': 0,
+                'similar_count': 0,
+                'total': 0,
+                'total_candidates': len(raw_candidates),
+                'rejected_reasons': npc_rejected,
+                'matching_mode': 'npc',
+                'npc_domain': None,
+                'ruleset_version': 'npc_shrimp_v12',
+                'ref_parsed': {'npc_domain': None, 'reason': 'REF_NOT_CLASSIFIED'},
+            })
+        
+        # REF успешно классифицирован — обрабатываем результаты
             # v12: Извлекаем ref_parsed для debug output
             source_npc_sig = extract_npc_signature(source_item)
             
