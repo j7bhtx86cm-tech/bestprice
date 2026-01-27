@@ -203,7 +203,12 @@ const OfferSelectModal = ({
               </div>
               <div>
                 <strong>strict_count=</strong>{debugInfo.strict_count} | 
-                <strong> rejected=</strong>{JSON.stringify(debugInfo.rejected_reasons)}
+                <strong> shrimp_like=</strong>{String(debugInfo.looks_like_shrimp)} |
+                <strong> has_caliber=</strong>{String(debugInfo.has_caliber_pattern)}
+              </div>
+              <div>
+                <strong>rejected=</strong>{JSON.stringify(debugInfo.rejected_reasons)}
+                {debugInfo.why_legacy && <span className="text-red-500"> | <strong>why_legacy=</strong>{debugInfo.why_legacy}</span>}
               </div>
             </div>
           )}
