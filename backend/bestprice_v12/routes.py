@@ -1813,121 +1813,121 @@ async def get_item_alternatives(
             })
         
         # REF успешно классифицирован — обрабатываем результаты
-            # v12: Извлекаем ref_parsed для debug output
-            source_npc_sig = extract_npc_signature(source_item)
+        # v12: Извлекаем ref_parsed для debug output
+        source_npc_sig = extract_npc_signature(source_item)
+        
+        ref_parsed = {
+            'npc_domain': source_npc_sig.npc_domain,
+            'species': source_npc_sig.species,
+            'shrimp_caliber': source_npc_sig.shrimp_caliber,
+            'shrimp_state': source_npc_sig.shrimp_state,
+            'shrimp_form': source_npc_sig.shrimp_form,
+            'shrimp_tail_state': source_npc_sig.shrimp_tail_state,
+            'shrimp_breaded': source_npc_sig.shrimp_breaded,
+            'uom': source_npc_sig.uom,
+            'is_box': source_npc_sig.is_box,
+            'is_blacklisted': source_npc_sig.is_blacklisted,
+        }
+        
+        # v12: Форматируем NPC результаты с debug output
+        def enrich_npc_item(npc_data: dict, match_mode: str) -> dict:
+            item = npc_data['item']
+            npc_result = npc_data['npc_result']
+            npc_sig = npc_data['npc_signature']
+            supplier_id = item.get('supplier_company_id')
+            sup_info = get_supplier_info(supplier_id)
             
-            ref_parsed = {
-                'npc_domain': source_npc_sig.npc_domain,
-                'species': source_npc_sig.species,
-                'shrimp_caliber': source_npc_sig.shrimp_caliber,
-                'shrimp_state': source_npc_sig.shrimp_state,
-                'shrimp_form': source_npc_sig.shrimp_form,
-                'shrimp_tail_state': source_npc_sig.shrimp_tail_state,
-                'shrimp_breaded': source_npc_sig.shrimp_breaded,
-                'uom': source_npc_sig.uom,
-                'is_box': source_npc_sig.is_box,
-                'is_blacklisted': source_npc_sig.is_blacklisted,
+            # v12: cand_parsed для debug
+            cand_parsed = {
+                'npc_domain': npc_sig.npc_domain,
+                'species': npc_sig.species,
+                'shrimp_caliber': npc_sig.shrimp_caliber,
+                'shrimp_state': npc_sig.shrimp_state,
+                'shrimp_form': npc_sig.shrimp_form,
+                'shrimp_tail_state': npc_sig.shrimp_tail_state,
+                'shrimp_breaded': npc_sig.shrimp_breaded,
+                'uom': npc_sig.uom,
+                'is_box': npc_sig.is_box,
+                'is_blacklisted': npc_sig.is_blacklisted,
             }
             
-            # v12: Форматируем NPC результаты с debug output
-            def enrich_npc_item(npc_data: dict, match_mode: str) -> dict:
-                item = npc_data['item']
-                npc_result = npc_data['npc_result']
-                npc_sig = npc_data['npc_signature']
-                supplier_id = item.get('supplier_company_id')
-                sup_info = get_supplier_info(supplier_id)
-                
-                # v12: cand_parsed для debug
-                cand_parsed = {
-                    'npc_domain': npc_sig.npc_domain,
-                    'species': npc_sig.species,
-                    'shrimp_caliber': npc_sig.shrimp_caliber,
-                    'shrimp_state': npc_sig.shrimp_state,
-                    'shrimp_form': npc_sig.shrimp_form,
-                    'shrimp_tail_state': npc_sig.shrimp_tail_state,
-                    'shrimp_breaded': npc_sig.shrimp_breaded,
-                    'uom': npc_sig.uom,
-                    'is_box': npc_sig.is_box,
-                    'is_blacklisted': npc_sig.is_blacklisted,
-                }
-                
-                return {
-                    'id': item.get('id'),
-                    'name': item.get('name_raw', ''),
-                    'name_raw': item.get('name_raw', ''),
-                    'price': item.get('price', 0),
-                    'pack_qty': item.get('pack_qty'),
-                    'unit_type': item.get('unit_type', 'PIECE'),
-                    'brand_id': item.get('brand_id'),
-                    'supplier_id': supplier_id,
-                    'supplier_name': sup_info['name'],
-                    'supplier_min_order': sup_info['min_order'],
-                    'min_order_qty': item.get('min_order_qty', 1),
-                    'match_score': npc_result.npc_score,
-                    'size_score': npc_result.size_score,
-                    'match_mode': match_mode,
-                    'difference_labels': npc_result.difference_labels,
-                    # NPC v9.1 fields
-                    'npc_domain': npc_sig.npc_domain,
-                    'npc_node_id': npc_sig.npc_node_id,
-                    'processing_form': npc_sig.processing_form.value if npc_sig.processing_form else None,
-                    'cut_type': npc_sig.cut_type.value if npc_sig.cut_type else None,
-                    'species': npc_sig.species,
-                    'is_box': npc_sig.is_box,
-                    # v12: DEBUG OUTPUT
-                    'cand_parsed': cand_parsed,
-                    'passed_gates': npc_data.get('passed_gates', npc_result.passed_gates),
-                    'rank_features': npc_result.rank_features,
-                }
-            
-            enriched_strict = [enrich_npc_item(x, 'strict') for x in npc_strict]
-            enriched_similar = [enrich_npc_item(x, 'similar') for x in npc_similar]
-            
-            # Source enrichment
-            source_supplier_id = source_item.get('supplier_company_id')
-            source_sup_info = get_supplier_info(source_supplier_id)
-            
-            enriched_source = {
-                'id': source_item.get('id'),
-                'name': source_item.get('name_raw', ''),
-                'name_raw': source_item.get('name_raw', ''),
-                'price': source_item.get('price', 0),
-                'pack_qty': source_item.get('pack_qty'),
-                'unit_type': source_item.get('unit_type', 'PIECE'),
-                'brand_id': source_item.get('brand_id'),
-                'product_core_id': product_core_id,
-                'supplier_id': source_supplier_id,
-                'supplier_name': source_sup_info['name'],
-                'supplier_min_order': source_sup_info['min_order'],
+            return {
+                'id': item.get('id'),
+                'name': item.get('name_raw', ''),
+                'name_raw': item.get('name_raw', ''),
+                'price': item.get('price', 0),
+                'pack_qty': item.get('pack_qty'),
+                'unit_type': item.get('unit_type', 'PIECE'),
+                'brand_id': item.get('brand_id'),
+                'supplier_id': supplier_id,
+                'supplier_name': sup_info['name'],
+                'supplier_min_order': sup_info['min_order'],
+                'min_order_qty': item.get('min_order_qty', 1),
+                'match_score': npc_result.npc_score,
+                'size_score': npc_result.size_score,
+                'match_mode': match_mode,
+                'difference_labels': npc_result.difference_labels,
                 # NPC v9.1 fields
-                'npc_domain': source_npc_sig.npc_domain,
-                'npc_node_id': source_npc_sig.npc_node_id,
-                'processing_form': source_npc_sig.processing_form.value if source_npc_sig.processing_form else None,
-                'cut_type': source_npc_sig.cut_type.value if source_npc_sig.cut_type else None,
-                'species': source_npc_sig.species,
-                'is_box': source_npc_sig.is_box,
-                'shrimp_caliber': source_npc_sig.shrimp_caliber,
-                'size_range': f"{source_npc_sig.size_gram_min}-{source_npc_sig.size_gram_max}g" if source_npc_sig.size_gram_min else None,
-            }
-            
-            all_alternatives = enriched_strict + enriched_similar
-            
-            return make_response({
-                'source': enriched_source,
-                'strict': enriched_strict,
-                'similar': enriched_similar,
-                'alternatives': all_alternatives,
-                'strict_count': len(enriched_strict),
-                'similar_count': len(enriched_similar),
-                'total': len(all_alternatives),
-                'total_candidates': len(raw_candidates),
-                'rejected_reasons': npc_rejected,
-                'matching_mode': 'npc',
-                'npc_domain': source_npc_domain,
+                'npc_domain': npc_sig.npc_domain,
+                'npc_node_id': npc_sig.npc_node_id,
+                'processing_form': npc_sig.processing_form.value if npc_sig.processing_form else None,
+                'cut_type': npc_sig.cut_type.value if npc_sig.cut_type else None,
+                'species': npc_sig.species,
+                'is_box': npc_sig.is_box,
                 # v12: DEBUG OUTPUT
-                'ruleset_version': 'npc_shrimp_v12',
-                'ref_parsed': ref_parsed,
-            })
+                'cand_parsed': cand_parsed,
+                'passed_gates': npc_data.get('passed_gates', npc_result.passed_gates),
+                'rank_features': npc_result.rank_features,
+            }
+        
+        enriched_strict = [enrich_npc_item(x, 'strict') for x in npc_strict]
+        enriched_similar = [enrich_npc_item(x, 'similar') for x in npc_similar]
+        
+        # Source enrichment
+        source_supplier_id = source_item.get('supplier_company_id')
+        source_sup_info = get_supplier_info(source_supplier_id)
+        
+        enriched_source = {
+            'id': source_item.get('id'),
+            'name': source_item.get('name_raw', ''),
+            'name_raw': source_item.get('name_raw', ''),
+            'price': source_item.get('price', 0),
+            'pack_qty': source_item.get('pack_qty'),
+            'unit_type': source_item.get('unit_type', 'PIECE'),
+            'brand_id': source_item.get('brand_id'),
+            'product_core_id': product_core_id,
+            'supplier_id': source_supplier_id,
+            'supplier_name': source_sup_info['name'],
+            'supplier_min_order': source_sup_info['min_order'],
+            # NPC v9.1 fields
+            'npc_domain': source_npc_sig.npc_domain,
+            'npc_node_id': source_npc_sig.npc_node_id,
+            'processing_form': source_npc_sig.processing_form.value if source_npc_sig.processing_form else None,
+            'cut_type': source_npc_sig.cut_type.value if source_npc_sig.cut_type else None,
+            'species': source_npc_sig.species,
+            'is_box': source_npc_sig.is_box,
+            'shrimp_caliber': source_npc_sig.shrimp_caliber,
+            'size_range': f"{source_npc_sig.size_gram_min}-{source_npc_sig.size_gram_max}g" if source_npc_sig.size_gram_min else None,
+        }
+        
+        all_alternatives = enriched_strict + enriched_similar
+        
+        return make_response({
+            'source': enriched_source,
+            'strict': enriched_strict,
+            'similar': enriched_similar,
+            'alternatives': all_alternatives,
+            'strict_count': len(enriched_strict),
+            'similar_count': len(enriched_similar),
+            'total': len(all_alternatives),
+            'total_candidates': len(raw_candidates),
+            'rejected_reasons': npc_rejected,
+            'matching_mode': 'npc',
+            'npc_domain': source_npc_domain,
+            # v12: DEBUG OUTPUT
+            'ruleset_version': 'npc_shrimp_v12',
+            'ref_parsed': ref_parsed,
+        })
     
     # === LEGACY PATH: используем matching_engine_v3 ===
     result = find_alternatives_v3(
