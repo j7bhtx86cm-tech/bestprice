@@ -1447,6 +1447,68 @@ def apply_npc_filter(
     return strict_results, similar_results, rejected_reasons
 
 
+def build_ref_debug(item: Dict) -> Dict:
+    """Строит расширенную debug информацию для REF item.
+    
+    Возвращает все детали парсинга для диагностики проблем с ref_caliber=null.
+    """
+    # Определяем source field
+    if item.get('name_raw'):
+        ref_text_source_field = 'name_raw'
+        ref_text_used = item.get('name_raw', '')
+    elif item.get('name'):
+        ref_text_source_field = 'name'
+        ref_text_used = item.get('name', '')
+    else:
+        ref_text_source_field = 'NONE'
+        ref_text_used = ''
+    
+    ref_text_after_normalize = ref_text_used.lower()
+    
+    # Парсим сигнатуру
+    sig = extract_npc_signature(item)
+    
+    # Прямой парсинг калибра (без проверки domain)
+    caliber_direct, _, _ = extract_shrimp_caliber(ref_text_after_normalize)
+    
+    # Проверки для ZERO-TRASH
+    is_shrimp_like = looks_like_shrimp(ref_text_after_normalize)
+    has_caliber = has_caliber_pattern(ref_text_after_normalize)
+    
+    # Определяем ruleset и причину legacy
+    if sig.npc_domain:
+        ruleset_selected = 'npc_shrimp_v12'
+        why_legacy = None
+    else:
+        ruleset_selected = 'legacy_v3'
+        if sig.is_blacklisted:
+            why_legacy = f'BLACKLISTED:{sig.blacklist_reason}'
+        elif sig.is_excluded:
+            why_legacy = f'EXCLUDED:{sig.exclude_reason}'
+        elif not ref_text_used:
+            why_legacy = 'name_raw_EMPTY'
+        else:
+            why_legacy = 'npc_domain_NOT_DETECTED'
+    
+    return {
+        'ref_text_source_field': ref_text_source_field,
+        'ref_text_used': ref_text_used[:100],  # Truncate for readability
+        'ref_text_after_normalize': ref_text_after_normalize[:100],
+        'looks_like_shrimp': is_shrimp_like,
+        'has_caliber_pattern': has_caliber,
+        'caliber_pattern_match': caliber_direct,
+        'is_blacklisted': sig.is_blacklisted,
+        'blacklist_reason': sig.blacklist_reason,
+        'is_excluded': sig.is_excluded,
+        'exclude_reason': sig.exclude_reason,
+        'npc_domain': sig.npc_domain,
+        'ref_caliber': sig.shrimp_caliber,
+        'parse_method': 'npc_v12' if sig.npc_domain else 'none',
+        'ruleset_selected': ruleset_selected,
+        'why_legacy': why_legacy,
+    }
+
+
 def explain_npc_match(source_name: str, candidate_name: str) -> Dict:
     """Объясняет решение NPC matching v11."""
     source = extract_npc_signature({'name_raw': source_name})
