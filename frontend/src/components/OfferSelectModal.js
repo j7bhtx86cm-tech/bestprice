@@ -57,11 +57,36 @@ const OfferSelectModal = ({
     setError(null);
     
     try {
+      // v12: Cache-bust с timestamp + refetch при каждом открытии
+      const ts = Date.now();
       const response = await axios.get(
-        `${API}/api/v12/item/${sourceItem.id}/alternatives`,
-        { headers: getHeaders?.() || {} }
+        `${API}/api/v12/item/${sourceItem.id}/alternatives?ts=${ts}`,
+        { 
+          headers: {
+            ...(getHeaders?.() || {}),
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        }
       );
-      setAlternatives(response.data.alternatives || []);
+      
+      const data = response.data;
+      
+      // v12: DEBUG OUTPUT в console
+      console.log('=== NPC ALTERNATIVES DEBUG ===');
+      console.log('ruleset_version:', data.ruleset_version);
+      console.log('ref_parsed:', data.ref_parsed);
+      console.log('ref_parsed.shrimp_caliber:', data.ref_parsed?.shrimp_caliber);
+      if (data.strict?.[0]) {
+        console.log('strict[0].cand_parsed:', data.strict[0].cand_parsed);
+        console.log('strict[0].cand_parsed.shrimp_caliber:', data.strict[0].cand_parsed?.shrimp_caliber);
+        console.log('strict[0].passed_gates:', data.strict[0].passed_gates);
+      }
+      console.log('rejected_reasons:', data.rejected_reasons);
+      console.log('matching_mode:', data.matching_mode);
+      console.log('==============================');
+      
+      setAlternatives(data.alternatives || []);
     } catch (err) {
       console.error('Failed to fetch alternatives:', err);
       setError('Не удалось загрузить альтернативы');
