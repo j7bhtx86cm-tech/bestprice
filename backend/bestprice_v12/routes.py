@@ -1743,29 +1743,14 @@ async def get_item_alternatives(
         return supplier_cache[supplier_id]
     
     if use_npc:
-        # === NPC PATH: применяем NPC фильтрацию ===
-        logger.info(f"Using NPC matching for item {item_id}, domain={source_npc_domain}")
+        # === NPC PATH: применяем NPC фильтрацию НАПРЯМУЮ к raw_candidates ===
+        logger.info(f"Using NPC matching v12 for item {item_id}, domain={source_npc_domain}")
         
-        # Сначала получаем кандидатов через v3 engine (для базовой фильтрации по product_core_id)
-        v3_result = find_alternatives_v3(
-            source_item=source_item,
-            candidates=raw_candidates,
-            limit=200,  # Берём много для NPC фильтрации
-            strict_threshold=999  # Не применяем Similar threshold на этом этапе
-        )
-        
-        # Собираем всех кандидатов из v3 для NPC фильтрации
-        v3_candidates = []
-        for alt in v3_result.strict:
-            # Находим оригинальный item
-            orig_item = next((c for c in raw_candidates if c.get('id') == alt.get('id')), None)
-            if orig_item:
-                v3_candidates.append(orig_item)
-        
-        # Применяем NPC фильтр
+        # v12: Применяем NPC фильтр НАПРЯМУЮ к raw_candidates (без v3 preprocessing)
+        # Это гарантирует, что hard gates применяются ДО любого ранжирования
         npc_strict, npc_similar, npc_rejected = apply_npc_filter(
             source_item=source_item,
-            candidates=v3_candidates if v3_candidates else raw_candidates,
+            candidates=raw_candidates,
             limit=limit,
             mode=mode  # 'strict' или 'similar'
         )
@@ -1775,13 +1760,43 @@ async def get_item_alternatives(
             use_npc = False
             logger.info(f"NPC returned None for item {item_id}, falling back to legacy")
         else:
-            # Форматируем NPC результаты
+            # v12: Извлекаем ref_parsed для debug output
+            source_npc_sig = extract_npc_signature(source_item)
+            
+            ref_parsed = {
+                'npc_domain': source_npc_sig.npc_domain,
+                'species': source_npc_sig.species,
+                'shrimp_caliber': source_npc_sig.shrimp_caliber,
+                'shrimp_state': source_npc_sig.shrimp_state,
+                'shrimp_form': source_npc_sig.shrimp_form,
+                'shrimp_tail_state': source_npc_sig.shrimp_tail_state,
+                'shrimp_breaded': source_npc_sig.shrimp_breaded,
+                'uom': source_npc_sig.uom,
+                'is_box': source_npc_sig.is_box,
+                'is_blacklisted': source_npc_sig.is_blacklisted,
+            }
+            
+            # v12: Форматируем NPC результаты с debug output
             def enrich_npc_item(npc_data: dict, match_mode: str) -> dict:
                 item = npc_data['item']
                 npc_result = npc_data['npc_result']
                 npc_sig = npc_data['npc_signature']
                 supplier_id = item.get('supplier_company_id')
                 sup_info = get_supplier_info(supplier_id)
+                
+                # v12: cand_parsed для debug
+                cand_parsed = {
+                    'npc_domain': npc_sig.npc_domain,
+                    'species': npc_sig.species,
+                    'shrimp_caliber': npc_sig.shrimp_caliber,
+                    'shrimp_state': npc_sig.shrimp_state,
+                    'shrimp_form': npc_sig.shrimp_form,
+                    'shrimp_tail_state': npc_sig.shrimp_tail_state,
+                    'shrimp_breaded': npc_sig.shrimp_breaded,
+                    'uom': npc_sig.uom,
+                    'is_box': npc_sig.is_box,
+                    'is_blacklisted': npc_sig.is_blacklisted,
+                }
                 
                 return {
                     'id': item.get('id'),
@@ -1806,13 +1821,16 @@ async def get_item_alternatives(
                     'cut_type': npc_sig.cut_type.value if npc_sig.cut_type else None,
                     'species': npc_sig.species,
                     'is_box': npc_sig.is_box,
+                    # v12: DEBUG OUTPUT
+                    'cand_parsed': cand_parsed,
+                    'passed_gates': npc_data.get('passed_gates', npc_result.passed_gates),
+                    'rank_features': npc_result.rank_features,
                 }
             
             enriched_strict = [enrich_npc_item(x, 'strict') for x in npc_strict]
             enriched_similar = [enrich_npc_item(x, 'similar') for x in npc_similar]
             
             # Source enrichment
-            source_npc_sig = extract_npc_signature(source_item)
             source_supplier_id = source_item.get('supplier_company_id')
             source_sup_info = get_supplier_info(source_supplier_id)
             
@@ -1849,10 +1867,13 @@ async def get_item_alternatives(
                 'strict_count': len(enriched_strict),
                 'similar_count': len(enriched_similar),
                 'total': len(all_alternatives),
-                'total_candidates': len(v3_candidates) if v3_candidates else len(raw_candidates),
+                'total_candidates': len(raw_candidates),
                 'rejected_reasons': npc_rejected,
                 'matching_mode': 'npc',
                 'npc_domain': source_npc_domain,
+                # v12: DEBUG OUTPUT
+                'ruleset_version': 'npc_shrimp_v12',
+                'ref_parsed': ref_parsed,
             }
     
     # === LEGACY PATH: используем matching_engine_v3 ===
