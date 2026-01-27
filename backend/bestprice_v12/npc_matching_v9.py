@@ -936,10 +936,17 @@ def _detect_npc_domain(name_norm: str) -> Optional[str]:
     """Определяет NPC домен.
     
     P0 ZERO-TRASH: Расширенная логика для SHRIMP:
-    1. Явные термины (креветк, shrimp, ваннам, etc.)
-    2. Контекстное определение (калибр + атрибуты креветок)
+    1. Проверка blacklist (FORBIDDEN_CLASS) — блокирует domain
+    2. Явные термины (креветк, shrimp, ваннам, etc.)
+    3. Контекстное определение (калибр + атрибуты креветок)
     """
-    # SHRIMP - Проверка исключений
+    # P0: FORBIDDEN_CLASS проверка ПЕРВАЯ — блокирует определение домена
+    from .npc_matching_v9 import check_blacklist
+    is_blacklisted, _ = check_blacklist(name_norm)
+    if is_blacklisted:
+        return None  # Blacklisted items не получают домен
+    
+    # SHRIMP - Проверка исключений (вкусовые добавки)
     if any(exc in name_norm for exc in SHRIMP_EXCLUDES):
         pass  # Не SHRIMP если исключение
     # SHRIMP - Явные термины
