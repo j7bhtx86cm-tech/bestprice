@@ -619,11 +619,29 @@ def extract_shrimp_form(name_norm: str) -> Optional[str]:
 
 
 def extract_shrimp_tail_state(name_norm: str) -> Optional[str]:
-    """v11: Состояние хвоста (tail_on / tail_off)."""
-    if any(x in name_norm for x in ['с хвост', 'хвостик', 'tail on', 'tail-on']):
-        return 'tail_on'
-    if any(x in name_norm for x in ['без хвост', 'tail off', 'tail-off', 'tailless']):
-        return 'tail_off'
+    """v12: Состояние хвоста (tail_on / tail_off).
+    
+    Распознаёт варианты:
+    - tail_on: с/хв, с хв, с хвостом, хвост, tail-on, t-on
+    - tail_off: б/хв, без хв, без хвоста, tail-off, t-off
+    """
+    # Сначала проверяем "без хвоста" (должно быть ДО "с хвостом")
+    tail_off_patterns = [
+        r'\bб/хв\b', r'\bбез\s*хв', r'\bбез\s*хвост', r'\btail[\s\-]?off\b', r'\bt[\s\-]?off\b',
+        r'\btailless\b',
+    ]
+    for pattern in tail_off_patterns:
+        if re.search(pattern, name_norm, re.IGNORECASE):
+            return 'tail_off'
+    
+    # Затем проверяем "с хвостом"
+    tail_on_patterns = [
+        r'\bс/хв\b', r'\bс\s+хв\b', r'\bс\s*хвост', r'\bхвостик', r'\btail[\s\-]?on\b', r'\bt[\s\-]?on\b',
+    ]
+    for pattern in tail_on_patterns:
+        if re.search(pattern, name_norm, re.IGNORECASE):
+            return 'tail_on'
+    
     # По умолчанию не определено
     return None
 
