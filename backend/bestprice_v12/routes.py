@@ -1928,12 +1928,14 @@ async def get_item_alternatives(
         
         return make_response({
             'source': enriched_source,
-            'strict': enriched_strict,
+            # P0 ZERO-TRASH: strict_after_gates — ЕДИНСТВЕННЫЙ массив для UI в strict режиме
+            'strict_after_gates': enriched_strict,
+            'strict': enriched_strict,  # Backward compatibility
             'similar': enriched_similar,
-            'alternatives': all_alternatives,
+            'alternatives': enriched_strict + enriched_similar,  # Deprecated
             'strict_count': len(enriched_strict),
             'similar_count': len(enriched_similar),
-            'total': len(all_alternatives),
+            'total': len(enriched_strict) + len(enriched_similar),
             'total_candidates': len(raw_candidates),
             'rejected_reasons': npc_rejected,
             'matching_mode': 'npc',
