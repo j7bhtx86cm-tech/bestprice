@@ -1775,10 +1775,11 @@ async def get_item_alternatives(
             mode=mode  # 'strict' или 'similar'
         )
         
-        # Если NPC вернул None - fallback на legacy
-        if npc_strict is None:
-            use_npc = False
-            logger.info(f"NPC returned None for item {item_id}, falling back to legacy")
+        # v12 FIX: NPC больше не возвращает None — всегда возвращает пустой список
+        # при неклассифицируемом REF (REF_NOT_CLASSIFIED). Это гарантирует "нулевой мусор".
+        # Legacy fallback ПОЛНОСТЬЮ ОТКЛЮЧЁН для режима strict.
+        if npc_rejected and 'REF_NOT_CLASSIFIED' in npc_rejected:
+            logger.info(f"REF item {item_id} not classified, returning empty strict list (no legacy fallback)")
         else:
             # v12: Извлекаем ref_parsed для debug output
             source_npc_sig = extract_npc_signature(source_item)
