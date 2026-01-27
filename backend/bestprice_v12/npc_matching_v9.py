@@ -160,7 +160,7 @@ def get_exclusion_patterns() -> Dict[str, re.Pattern]:
 
 @dataclass
 class NPCSignature:
-    """NPC сигнатура товара v10"""
+    """NPC сигнатура товара v11 (SHRIMP Zero-Trash)"""
     name_raw: str = ""
     name_norm: str = ""
     
@@ -174,7 +174,7 @@ class NPCSignature:
     species: Optional[str] = None
     is_box: bool = False
     
-    # v10: Brand & Country
+    # v10: Brand & Country (только для ранжирования, не hard gate)
     brand_id: Optional[str] = None
     brand_name: Optional[str] = None
     origin_country: Optional[str] = None
@@ -190,6 +190,10 @@ class NPCSignature:
     shrimp_caliber_max: Optional[int] = None
     shrimp_state: Optional[str] = None
     shrimp_form: Optional[str] = None
+    
+    # v11: Новые SHRIMP атрибуты
+    shrimp_tail_state: Optional[str] = None  # tail_on / tail_off
+    shrimp_breaded: bool = False  # панировка/темпура/кляр
     
     # Рыба
     fish_species: Optional[str] = None
@@ -211,8 +215,16 @@ class NPCSignature:
     is_excluded: bool = False
     exclude_reason: Optional[str] = None
     
+    # v11: Global NEVER blacklist
+    is_blacklisted: bool = False
+    blacklist_reason: Optional[str] = None
+    
     # Фасовка
     pack_qty: Optional[float] = None
+    
+    # v11: UOM (единица измерения)
+    uom: Optional[str] = None  # 'kg' / 'pcs' / 'pack'
+    weight_kg: Optional[float] = None  # нормализованный вес в кг
     
     # v10: Similarity tokens
     semantic_tokens: List[str] = field(default_factory=list)
