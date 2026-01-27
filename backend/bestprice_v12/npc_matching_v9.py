@@ -578,13 +578,45 @@ def extract_size_grams(name_norm: str) -> Tuple[Optional[int], Optional[int]]:
 
 
 def extract_shrimp_caliber(name_norm: str) -> Tuple[Optional[str], Optional[int], Optional[int]]:
-    """Извлекает калибр креветок."""
-    match = re.search(r'(\d{1,3})\s*[/\-]\s*(\d{1,3})', name_norm)
+    """Извлекает калибр креветок.
+    
+    Поддерживаемые форматы:
+    - 16/20, 16-20, 16 / 20, 16 - 20
+    - 16:20, 16 : 20
+    - 16/20*, 16/20шт
+    """
+    # Расширенный паттерн: digit separator digit (с опциональными пробелами)
+    # Separators: / - : 
+    match = re.search(r'(\d{1,3})\s*[/\-:]\s*(\d{1,3})', name_norm)
     if match:
         min_cal = int(match.group(1))
         max_cal = int(match.group(2))
+        # Нормализуем к формату "min/max"
         return f"{min_cal}/{max_cal}", min_cal, max_cal
     return None, None, None
+
+
+def has_caliber_pattern(name_norm: str) -> bool:
+    """Проверяет наличие паттерна калибра в тексте (для ZERO-TRASH)."""
+    return bool(re.search(r'\d{1,3}\s*[/\-:]\s*\d{1,3}', name_norm))
+
+
+def looks_like_shrimp(name_norm: str) -> bool:
+    """Проверяет выглядит ли название как креветки (для ZERO-TRASH).
+    
+    Используется для определения нужно ли применять strict caliber matching
+    даже если npc_domain не определён.
+    """
+    shrimp_keywords = [
+        'креветк', 'креветоч', 'shrimp', 'prawn',
+        'ваннамей', 'vannamei', 'vanamei',
+        'тигров', 'tiger',
+        'королевск', 'king', 'royal',
+        'лангустин', 'langoustine',
+        'северн', 'северян', 'north',
+        'аргентин', 'argentin',
+    ]
+    return any(kw in name_norm for kw in shrimp_keywords)
 
 
 def extract_shrimp_state(name_norm: str) -> Optional[str]:
