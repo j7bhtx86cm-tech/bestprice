@@ -1879,7 +1879,7 @@ async def get_item_alternatives(
             
             all_alternatives = enriched_strict + enriched_similar
             
-            return {
+            return make_response({
                 'source': enriched_source,
                 'strict': enriched_strict,
                 'similar': enriched_similar,
@@ -1894,7 +1894,7 @@ async def get_item_alternatives(
                 # v12: DEBUG OUTPUT
                 'ruleset_version': 'npc_shrimp_v12',
                 'ref_parsed': ref_parsed,
-            }
+            })
     
     # === LEGACY PATH: используем matching_engine_v3 ===
     result = find_alternatives_v3(
