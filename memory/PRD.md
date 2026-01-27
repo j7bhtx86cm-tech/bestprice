@@ -5,6 +5,56 @@ E-commerce платформа для B2B заказов с оптимизаци�
 
 ## ✅ Выполненные задачи
 
+### Phase 25 - ZERO-TRASH: ref_debug + расширенный парсер калибра — 28 января 2026
+
+**ЗАДАЧА:** Добавить полную диагностику парсинга REF, расширить парсер калибра, запретить legacy для shrimp-like товаров.
+
+**РЕШЕНИЕ:**
+
+1. **Расширенный парсер калибра (`npc_matching_v9.py`):**
+   - Поддержка форматов: `16/20`, `16-20`, `16 / 20`, `16 - 20`, `16:20`, `16 : 20`
+   - Новые функции: `has_caliber_pattern()`, `looks_like_shrimp()`
+   - Калибр парсится ВСЕГДА (не только для npc_domain=SHRIMP)
+
+2. **ref_debug в API Response:**
+   ```json
+   {
+     "ref_debug": {
+       "ref_text_source_field": "name_raw",
+       "ref_text_used": "КРЕВЕТКИ ваннамей 16/20 с/м",
+       "ref_text_after_normalize": "креветки ваннамей 16/20 с/м",
+       "looks_like_shrimp": true,
+       "has_caliber_pattern": true,
+       "caliber_pattern_match": "16/20",
+       "npc_domain": "SHRIMP",
+       "ref_caliber": "16/20",
+       "ruleset_selected": "npc_shrimp_v12",
+       "why_legacy": null
+     }
+   }
+   ```
+
+3. **ZERO-TRASH правила:**
+   - Если REF `looks_like_shrimp=true` или `has_caliber_pattern=true` → ЗАПРЕЩЁН legacy_v3
+   - Если REF shrimp-like но `npc_domain=None` → `REF_SHRIMP_LIKE_NOT_CLASSIFIED` → пустой strict
+   - Если калибр в тексте есть но не распарсен → `REF_CALIBER_PARSE_FAILED` → пустой strict
+
+4. **UI Debug Banner (расширенный):**
+   ```
+   source=/api/v12/item/{id}/alternatives
+   ruleset=npc_shrimp_v12 | debug_id=abc123 | ref_caliber=16/20
+   strict_count=10 | shrimp_like=true | has_caliber=true
+   rejected={...} | why_legacy=null
+   ```
+
+**Acceptance Criteria:**
+- ✅ При REF "vannamei 16/20" в strict НЕТ 31/40, 26/30, 21/25
+- ✅ Если ref_caliber=null для shrimp-like → список пустой (не мусор)
+- ✅ ref_debug показывает полный путь парсинга
+- ✅ 334 теста прошли
+
+---
+
 ### Phase 24 - P0 ZERO-TRASH: strict_after_gates — 28 января 2026
 
 **ЗАДАЧА:** Модал "Выберите предложение" показывал мусор (31/40, 26/30, гёдза) при REF 16/20.
