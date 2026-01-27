@@ -232,7 +232,7 @@ class NPCSignature:
 
 @dataclass
 class NPCMatchResult:
-    """Результат NPC matching v11 (SHRIMP Zero-Trash)"""
+    """Результат NPC matching v12 (SHRIMP Zero-Trash)"""
     passed_strict: bool = False
     passed_similar: bool = False
     block_reason: Optional[str] = None
@@ -253,6 +253,9 @@ class NPCMatchResult:
     same_tail_state: bool = False
     same_breaded: bool = False
     same_uom: bool = False
+    
+    # v12: Caliber exact flag (для ранжирования)
+    caliber_exact: bool = False
     
     # v10: Similarity score
     similarity_score: float = 0.0
