@@ -880,180 +880,280 @@ def _lookup_npc_node_id(sig: NPCSignature) -> Optional[str]:
 
 
 # ============================================================================
-# NPC STRICT MATCHING v10
+# NPC STRICT MATCHING v11 (SHRIMP Zero-Trash)
 # ============================================================================
 
 def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchResult:
     """
-    Строгая проверка NPC v10.
+    Строгая проверка NPC v11 (SHRIMP Zero-Trash).
     
-    HARD GATES (все должны совпадать):
-    1. processing_form
-    2. cut_type
-    3. species
-    4. is_box (в обе стороны)
-    5. brand (если у source есть)
-    6. 85% similarity (если бренда нет)
-    7. SHRIMP: state/form/caliber
+    ПОРЯДОК ПРОВЕРОК:
+    0. Global NEVER blacklist (Strict + Similar)
+    1. SHRIMP-only gate (если source = SHRIMP)
+    2. Hard gates для SHRIMP:
+       - species
+       - shrimp_state (с/м vs в/м)
+       - shrimp_form (очищ/неочищ)
+       - tail_state (с хвостом vs без)
+       - breaded_flag (панировка)
+       - shrimp_caliber (НИКОГДА не ослабляется)
+    3. UOM gate (шт vs кг)
+    4. Box gate
+    5. Processing form gate
+    
+    Brand/Country — только ранжирование, НЕ hard gates.
     """
     result = NPCMatchResult()
     
-    # === EXCLUSIONS ===
+    # === 0. GLOBAL NEVER BLACKLIST (Strict + Similar) ===
+    if candidate.is_blacklisted:
+        result.block_reason = f"FORBIDDEN_CLASS:{candidate.blacklist_reason}"
+        result.rejected_reason = result.block_reason
+        return result
+    
+    # === LEGACY EXCLUSIONS ===
     if source.is_excluded:
         result.block_reason = f"SOURCE_EXCLUDED:{source.exclude_reason}"
+        result.rejected_reason = result.block_reason
         return result
     if candidate.is_excluded:
         result.block_reason = f"CANDIDATE_EXCLUDED:{candidate.exclude_reason}"
+        result.rejected_reason = result.block_reason
         return result
     
-    # === DOMAIN ===
-    if source.npc_domain != candidate.npc_domain:
-        result.block_reason = f"DOMAIN_MISMATCH:{source.npc_domain}!={candidate.npc_domain}"
-        return result
-    result.same_domain = True
-    
-    # === NPC NODE ===
-    if source.npc_node_id and not candidate.npc_node_id:
-        result.block_reason = "CANDIDATE_NO_NPC_NODE"
-        return result
-    
-    # === 1. PROCESSING_FORM (1-в-1) ===
-    if source.processing_form and candidate.processing_form:
-        if source.processing_form != candidate.processing_form:
-            result.block_reason = f"PROCESSING_FORM_MISMATCH:{source.processing_form.value}!={candidate.processing_form.value}"
+    # === 1. SHRIMP-ONLY GATE ===
+    if source.npc_domain == 'SHRIMP':
+        if candidate.npc_domain != 'SHRIMP':
+            result.block_reason = f"NOT_SHRIMP:{candidate.npc_domain or 'UNKNOWN'}"
+            result.rejected_reason = result.block_reason
             return result
-        result.same_processing_form = True
+        result.same_domain = True
+        result.passed_gates.append('SHRIMP_DOMAIN')
+        
+        # === 2. SHRIMP HARD GATES (строго 1-в-1) ===
+        
+        # 2a. SPECIES
+        if source.shrimp_species:
+            if not candidate.shrimp_species:
+                result.block_reason = f"SPECIES_MISSING:source={source.shrimp_species}"
+                result.rejected_reason = result.block_reason
+                return result
+            if source.shrimp_species != candidate.shrimp_species:
+                result.block_reason = f"SPECIES_MISMATCH:{source.shrimp_species}!={candidate.shrimp_species}"
+                result.rejected_reason = result.block_reason
+                return result
+            result.same_species = True
+            result.passed_gates.append('SPECIES')
+        
+        # 2b. SHRIMP_STATE (с/м vs в/м)
+        if source.shrimp_state and candidate.shrimp_state:
+            if source.shrimp_state != candidate.shrimp_state:
+                result.block_reason = f"SHRIMP_STATE_MISMATCH:{source.shrimp_state}!={candidate.shrimp_state}"
+                result.rejected_reason = result.block_reason
+                return result
+            result.same_shrimp_state = True
+            result.passed_gates.append('SHRIMP_STATE')
+        
+        # 2c. SHRIMP_FORM (очищ/неочищ, б/г, с/г)
+        if source.shrimp_form and candidate.shrimp_form:
+            if source.shrimp_form != candidate.shrimp_form:
+                result.block_reason = f"SHRIMP_FORM_MISMATCH:{source.shrimp_form}!={candidate.shrimp_form}"
+                result.rejected_reason = result.block_reason
+                return result
+            result.same_shrimp_form = True
+            result.passed_gates.append('SHRIMP_FORM')
+        
+        # 2d. TAIL_STATE (с хвостом vs без хвоста)
+        if source.shrimp_tail_state and candidate.shrimp_tail_state:
+            if source.shrimp_tail_state != candidate.shrimp_tail_state:
+                result.block_reason = f"TAIL_STATE_MISMATCH:{source.shrimp_tail_state}!={candidate.shrimp_tail_state}"
+                result.rejected_reason = result.block_reason
+                return result
+            result.same_tail_state = True
+            result.passed_gates.append('TAIL_STATE')
+        
+        # 2e. BREADED_FLAG (панировка/темпура/кляр)
+        if source.shrimp_breaded != candidate.shrimp_breaded:
+            if source.shrimp_breaded:
+                result.block_reason = "BREADED_MISMATCH:source_breaded_candidate_not"
+            else:
+                result.block_reason = "BREADED_MISMATCH:candidate_breaded"
+            result.rejected_reason = result.block_reason
+            return result
+        result.same_breaded = True
+        result.passed_gates.append('BREADED_FLAG')
+        
+        # 2f. CALIBER (НИКОГДА не ослабляется)
+        if source.shrimp_caliber:
+            if not candidate.shrimp_caliber:
+                result.block_reason = f"CALIBER_MISSING:source={source.shrimp_caliber}"
+                result.rejected_reason = result.block_reason
+                return result
+            if source.shrimp_caliber != candidate.shrimp_caliber:
+                result.block_reason = f"CALIBER_MISMATCH:{source.shrimp_caliber}!={candidate.shrimp_caliber}"
+                result.rejected_reason = result.block_reason
+                return result
+            result.same_caliber = True
+            result.passed_gates.append('CALIBER')
     
-    # === 2. CUT_TYPE (1-в-1) ===
-    if source.cut_type:
-        if candidate.cut_type and source.cut_type != candidate.cut_type:
-            result.block_reason = f"CUT_TYPE_MISMATCH:{source.cut_type.value}!={candidate.cut_type.value}"
+    else:
+        # === NON-SHRIMP DOMAIN LOGIC (legacy) ===
+        if source.npc_domain != candidate.npc_domain:
+            result.block_reason = f"DOMAIN_MISMATCH:{source.npc_domain}!={candidate.npc_domain}"
+            result.rejected_reason = result.block_reason
             return result
-        if not candidate.cut_type:
-            result.block_reason = f"CUT_TYPE_MISSING:source={source.cut_type.value}"
-            return result
-        result.same_cut_type = True
+        result.same_domain = True
+        result.passed_gates.append('DOMAIN')
+        
+        # PROCESSING_FORM
+        if source.processing_form and candidate.processing_form:
+            if source.processing_form != candidate.processing_form:
+                result.block_reason = f"PROCESSING_FORM_MISMATCH:{source.processing_form.value}!={candidate.processing_form.value}"
+                result.rejected_reason = result.block_reason
+                return result
+            result.same_processing_form = True
+            result.passed_gates.append('PROCESSING_FORM')
+        
+        # CUT_TYPE
+        if source.cut_type:
+            if candidate.cut_type and source.cut_type != candidate.cut_type:
+                result.block_reason = f"CUT_TYPE_MISMATCH:{source.cut_type.value}!={candidate.cut_type.value}"
+                result.rejected_reason = result.block_reason
+                return result
+            if not candidate.cut_type:
+                result.block_reason = f"CUT_TYPE_MISSING:source={source.cut_type.value}"
+                result.rejected_reason = result.block_reason
+                return result
+            result.same_cut_type = True
+            result.passed_gates.append('CUT_TYPE')
+        
+        # SPECIES
+        if source.species:
+            if candidate.species and source.species != candidate.species:
+                result.block_reason = f"SPECIES_MISMATCH:{source.species}!={candidate.species}"
+                result.rejected_reason = result.block_reason
+                return result
+            if not candidate.species:
+                result.block_reason = f"SPECIES_MISSING:source={source.species}"
+                result.rejected_reason = result.block_reason
+                return result
+            result.same_species = True
+            result.passed_gates.append('SPECIES')
+        
+        # FISH SIZE RANGE
+        if source.npc_domain == 'FISH':
+            if source.size_gram_min and source.size_gram_max:
+                if source.size_gram_min != source.size_gram_max:
+                    if candidate.size_gram_min and candidate.size_gram_max:
+                        if candidate.size_gram_min != candidate.size_gram_max:
+                            src_mid = (source.size_gram_min + source.size_gram_max) / 2
+                            cand_mid = (candidate.size_gram_min + candidate.size_gram_max) / 2
+                            diff_pct = abs(src_mid - cand_mid) / src_mid
+                            if diff_pct > 0.20:
+                                result.block_reason = f"SIZE_MISMATCH:{source.size_gram_min}-{source.size_gram_max}!={candidate.size_gram_min}-{candidate.size_gram_max}"
+                                result.rejected_reason = result.block_reason
+                                return result
+                            result.same_size_range = True
+                            result.passed_gates.append('SIZE_RANGE')
     
-    # === 3. SPECIES (1-в-1) ===
-    if source.species:
-        if candidate.species and source.species != candidate.species:
-            result.block_reason = f"SPECIES_MISMATCH:{source.species}!={candidate.species}"
+    # === 3. UOM GATE (шт vs кг) — жёсткий после нормализации ===
+    if source.uom and candidate.uom:
+        if source.uom != candidate.uom:
+            result.block_reason = f"UOM_MISMATCH:{source.uom}!={candidate.uom}"
+            result.rejected_reason = result.block_reason
             return result
-        if not candidate.species:
-            result.block_reason = f"SPECIES_MISSING:source={source.species}"
-            return result
-        result.same_species = True
+        result.same_uom = True
+        result.passed_gates.append('UOM')
     
-    # === 4. IS_BOX (в обе стороны) ===
+    # === 4. BOX GATE (в обе стороны) ===
     if source.is_box != candidate.is_box:
         if source.is_box and not candidate.is_box:
             result.block_reason = "IS_BOX_MISMATCH:ref_is_box_but_candidate_not"
         else:
             result.block_reason = "IS_BOX_MISMATCH:candidate_is_box"
+        result.rejected_reason = result.block_reason
         return result
+    result.passed_gates.append('BOX')
     
-    # === 5. BRAND GATE ===
-    if source.brand_id:
-        # Если у REF есть brand → только тот же бренд
-        if candidate.brand_id and source.brand_id != candidate.brand_id:
-            result.block_reason = f"BRAND_MISMATCH:{source.brand_id}!={candidate.brand_id}"
-            return result
-        # SHRIMP v1: если у REF есть brand, а у candidate нет → BLOCKED
-        if source.npc_domain == 'SHRIMP' and not candidate.brand_id:
-            result.block_reason = f"BRAND_MISSING:ref_has_brand={source.brand_id}"
-            return result
-        if not candidate.brand_id and source.brand_name:
-            # Пробуем сравнить по brand_name
-            if candidate.brand_name and source.brand_name.lower() != candidate.brand_name.lower():
-                result.block_reason = f"BRAND_NAME_MISMATCH:{source.brand_name}!={candidate.brand_name}"
-                return result
-        result.same_brand = True
-    
-    # === 6. SHRIMP RULES (перед 85% guard) ===
-    if source.npc_domain == 'SHRIMP':
-        # STATE
-        if source.shrimp_state and candidate.shrimp_state:
-            if source.shrimp_state != candidate.shrimp_state:
-                result.block_reason = f"SHRIMP_STATE_MISMATCH:{source.shrimp_state}!={candidate.shrimp_state}"
-                return result
-        # FORM
-        if source.shrimp_form and candidate.shrimp_form:
-            if source.shrimp_form != candidate.shrimp_form:
-                result.block_reason = f"SHRIMP_FORM_MISMATCH:{source.shrimp_form}!={candidate.shrimp_form}"
-                return result
-        # CALIBER
-        if source.shrimp_caliber:
-            if not candidate.shrimp_caliber:
-                result.block_reason = f"SHRIMP_CALIBER_MISSING:source={source.shrimp_caliber}"
-                return result
-            if source.shrimp_caliber != candidate.shrimp_caliber:
-                result.block_reason = f"SHRIMP_CALIBER_MISMATCH:{source.shrimp_caliber}!={candidate.shrimp_caliber}"
-                return result
-            result.same_caliber = True
-    
-    # === 7. FISH SIZE RANGE (±20% tolerance, перед 85% guard) ===
-    if source.npc_domain == 'FISH':
-        if source.size_gram_min and source.size_gram_max:
-            if source.size_gram_min != source.size_gram_max:  # Real range
-                if candidate.size_gram_min and candidate.size_gram_max:
-                    if candidate.size_gram_min != candidate.size_gram_max:
-                        src_mid = (source.size_gram_min + source.size_gram_max) / 2
-                        cand_mid = (candidate.size_gram_min + candidate.size_gram_max) / 2
-                        diff_pct = abs(src_mid - cand_mid) / src_mid
-                        if diff_pct > 0.20:  # ±20% tolerance
-                            result.block_reason = f"SIZE_MISMATCH:{source.size_gram_min}-{source.size_gram_max}!={candidate.size_gram_min}-{candidate.size_gram_max}"
-                            return result
-                        result.same_size_range = True
-    
-    # === 8. 85% GUARD (только если нет бренда и hard-gates пройдены) ===
-    if not source.brand_id:
+    # === 5. 85% GUARD (для не-SHRIMP, если нет бренда) ===
+    if source.npc_domain != 'SHRIMP' and not source.brand_id:
         similarity = calculate_similarity(source.semantic_tokens, candidate.semantic_tokens)
         result.similarity_score = similarity
         if similarity < SIMILARITY_THRESHOLD:
             result.block_reason = f"SIMILARITY_TOO_LOW:{similarity:.2f}<{SIMILARITY_THRESHOLD}"
+            result.rejected_reason = result.block_reason
             return result
+        result.passed_gates.append('SIMILARITY')
     
     # === PASSED STRICT ===
     result.passed_strict = True
     result.passed_similar = True
     
-    # === COUNTRY CHECK (for ranking) ===
+    # === RANKING (Brand/Country — только ранжирование, НЕ hard gates) ===
+    
+    # Brand match
+    if source.brand_id and candidate.brand_id:
+        result.same_brand = source.brand_id == candidate.brand_id
+    elif source.brand_name and candidate.brand_name:
+        result.same_brand = source.brand_name.lower() == candidate.brand_name.lower()
+    
+    # Country match
     if source.origin_country and candidate.origin_country:
         result.same_country = source.origin_country == candidate.origin_country
     
-    # === SCORING ===
+    # Text similarity
+    if not result.similarity_score:
+        result.similarity_score = calculate_similarity(source.semantic_tokens, candidate.semantic_tokens)
+    
+    # === SCORING (по новому ранжированию) ===
+    # 1. brand_match → 2. country_match → 3. text_similarity → 4. ppu
+    
+    # Brand score (highest priority)
+    if result.same_brand:
+        result.brand_score = 100
+    
+    # Country score
+    if result.same_country:
+        result.country_score = 50
+    
+    # NPC score based on gates passed
     score = 100
-    if result.same_processing_form:
-        score += 30
-    if result.same_cut_type:
-        score += 25
     if result.same_species:
         score += 20
     if result.same_caliber:
         score += 20
-    if result.same_size_range:
+    if result.same_shrimp_state:
         score += 15
-    if result.same_brand:
-        score += 50  # Brand bonus
+    if result.same_shrimp_form:
+        score += 15
+    if result.same_tail_state:
+        score += 10
+    if result.same_breaded:
+        score += 5
+    if result.same_uom:
+        score += 5
     
-    # Size/caliber proximity
+    # Size score (for caliber proximity in SHRIMP)
     if source.npc_domain == 'SHRIMP' and source.shrimp_caliber_min and candidate.shrimp_caliber_min:
-        result.size_score = 100
+        result.size_score = 100  # Exact match
     elif source.npc_domain == 'FISH' and source.size_gram_min and candidate.size_gram_min:
         src_mid = (source.size_gram_min + source.size_gram_max) / 2
         cand_mid = (candidate.size_gram_min + candidate.size_gram_max) / 2
         diff_pct = abs(src_mid - cand_mid) / src_mid if src_mid else 0
         result.size_score = int(100 * (1 - diff_pct))
     
-    # Country score
-    if result.same_country:
-        result.country_score = 50
-    
-    # Brand score
-    if result.same_brand:
-        result.brand_score = 50
-    
     result.npc_score = score + result.size_score + result.country_score + result.brand_score
+    
+    # === DEBUG: rank_features ===
+    result.rank_features = {
+        'brand_match': result.same_brand,
+        'country_match': result.same_country,
+        'text_similarity': round(result.similarity_score, 2),
+        'npc_score': result.npc_score,
+        'brand_score': result.brand_score,
+        'country_score': result.country_score,
+        'size_score': result.size_score,
+    }
     
     return result
 
