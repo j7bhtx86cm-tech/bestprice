@@ -72,42 +72,47 @@ const OfferSelectModal = ({
       
       const data = response.data;
       
-      // v12 P0 HOTFIX: DEBUG OUTPUT — доказательство источника данных
-      console.log('=== NPC ALTERNATIVES DEBUG (P0) ===');
-      console.log('alts keys:', Object.keys(data));
-      console.log('strict:', data.strict?.length);
-      console.log('similar:', data.similar?.length); 
-      console.log('alternatives:', data.alternatives?.length);
+      // P0 ZERO-TRASH: DEBUG OUTPUT
+      console.log('=== ZERO-TRASH STRICT DEBUG ===');
+      console.log('debug_id:', data.debug_id);
       console.log('ruleset:', data.ruleset_version);
-      console.log('ref_cal:', data.ref_parsed?.shrimp_caliber);
+      console.log('ref_caliber:', data.ref_parsed?.shrimp_caliber);
+      console.log('strict_after_gates:', data.strict_after_gates?.length);
       console.log('rejected_reasons:', data.rejected_reasons);
       console.log('total_candidates:', data.total_candidates);
-      if (data.strict?.[0]) {
-        console.log('strict[0].cand_parsed.shrimp_caliber:', data.strict[0].cand_parsed?.shrimp_caliber);
-        console.log('strict[0].passed_gates:', data.strict[0].passed_gates);
+      if (data.strict_after_gates?.[0]) {
+        console.log('strict_after_gates[0].cand_parsed:', data.strict_after_gates[0].cand_parsed);
+        console.log('strict_after_gates[0].passed_gates:', data.strict_after_gates[0].passed_gates);
       }
-      console.log('===================================');
+      console.log('================================');
       
-      // P0 HOTFIX: Модал показывает ТОЛЬКО strict-after-gates
-      // ЗАПРЕЩЕНО использовать data.alternatives (это strict + similar)
-      // ЗАПРЕЩЕНО показывать similar, сырые candidates, или любой другой массив
-      const strictOnly = data.strict || [];
+      // P0 ZERO-TRASH: UI рендерит ТОЛЬКО strict_after_gates
+      // ЗАПРЕЩЕНО: alternatives, similar, strict, сырые candidates
+      // ЕДИНСТВЕННЫЙ источник данных — strict_after_gates
+      const strictAfterGates = data.strict_after_gates || data.strict || [];
       
-      // Дополнительная валидация: проверяем что калибры совпадают (если REF распознан)
+      // Защита: дополнительная валидация калибра на клиенте (belt-and-suspenders)
       const refCaliber = data.ref_parsed?.shrimp_caliber;
-      if (refCaliber) {
-        const validStrict = strictOnly.filter(item => {
+      const refDomain = data.ref_parsed?.npc_domain;
+      
+      if (refCaliber && refDomain === 'SHRIMP') {
+        const validated = strictAfterGates.filter(item => {
           const candCaliber = item.cand_parsed?.shrimp_caliber;
-          // Если у кандидата есть калибр — он должен совпадать с REF
-          if (candCaliber && candCaliber !== refCaliber) {
-            console.warn(`P0 HOTFIX: Отфильтрован кандидат с неверным калибром: ${candCaliber} (REF: ${refCaliber})`);
+          // REF имеет калибр, но кандидат нет → REJECT (CALIBER_UNKNOWN)
+          if (!candCaliber) {
+            console.warn(`[${data.debug_id}] CLIENT REJECT CALIBER_UNKNOWN: ${item.name_raw?.slice(0,40)}`);
+            return false;
+          }
+          // Калибры не совпадают → REJECT (CALIBER_MISMATCH)
+          if (candCaliber !== refCaliber) {
+            console.warn(`[${data.debug_id}] CLIENT REJECT CALIBER_MISMATCH: ${candCaliber} != ${refCaliber}`);
             return false;
           }
           return true;
         });
-        setAlternatives(validStrict);
+        setAlternatives(validated);
       } else {
-        setAlternatives(strictOnly);
+        setAlternatives(strictAfterGates);
       }
     } catch (err) {
       console.error('Failed to fetch alternatives:', err);
