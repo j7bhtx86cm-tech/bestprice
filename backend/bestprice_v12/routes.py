@@ -1758,6 +1758,19 @@ async def get_item_alternatives(
     source_npc_domain = get_item_npc_domain(source_item)
     use_npc = source_npc_domain is not None
     
+    # v12 ZERO-TRASH: Строим расширенную debug информацию для REF
+    ref_debug = build_ref_debug(source_item)
+    
+    # ZERO-TRASH: Если REF shrimp-like или имеет caliber pattern → ЗАПРЕЩАЕМ legacy
+    name_norm = source_item.get('name_raw', source_item.get('name', '')).lower()
+    is_shrimp_like = looks_like_shrimp(name_norm)
+    has_caliber = has_caliber_pattern(name_norm)
+    
+    if (is_shrimp_like or has_caliber) and not use_npc:
+        # ZERO-TRASH: REF выглядит как креветки, но domain не определён → НЕ fallback на legacy
+        logger.info(f"[{debug_id}] ZERO-TRASH: REF shrimp-like but no npc_domain, returning empty strict")
+        use_npc = True  # Принудительно используем NPC path (который вернёт пустой strict)
+    
     # Обогащаем данными поставщика (общая функция)
     supplier_cache = {}
     
