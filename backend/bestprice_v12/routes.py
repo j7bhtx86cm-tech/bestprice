@@ -2028,6 +2028,7 @@ async def get_item_alternatives(
     
     return make_response({
         'source': enriched_source,
+        'strict_after_gates': enriched_strict,  # P0 ZERO-TRASH
         'strict': enriched_strict,
         'similar': enriched_similar,
         'alternatives': all_alternatives,  # Backward compatible
