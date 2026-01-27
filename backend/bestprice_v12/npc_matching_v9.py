@@ -1279,12 +1279,22 @@ def apply_npc_filter(
     mode: str = 'strict'
 ) -> Tuple[List[Dict], List[Dict], Dict[str, int]]:
     """
-    Применяет NPC фильтрацию v10.
+    Применяет NPC фильтрацию v11 (SHRIMP Zero-Trash).
     
     mode='strict': только точные аналоги, Similar=[]
     mode='similar': Strict + Similar с лейблами
+    
+    РАНЖИРОВАНИЕ:
+    1. brand_match (тот же бренд выше)
+    2. country_match (та же страна выше)
+    3. text_similarity
+    4. ppu (не реализовано здесь, на уровне API)
     """
     source_sig = extract_npc_signature(source_item)
+    
+    # Blacklisted source
+    if source_sig.is_blacklisted:
+        return [], [], {'SOURCE_BLACKLISTED': 1}
     
     if source_sig.is_excluded:
         return [], [], {'SOURCE_EXCLUDED': 1}
@@ -1308,6 +1318,9 @@ def apply_npc_filter(
                 'item': cand,
                 'npc_result': strict_result,
                 'npc_signature': cand_sig,
+                # v11: Debug
+                'passed_gates': strict_result.passed_gates,
+                'rank_features': strict_result.rank_features,
             })
         else:
             reason = strict_result.block_reason or 'UNKNOWN'
@@ -1321,18 +1334,20 @@ def apply_npc_filter(
                         'item': cand,
                         'npc_result': similar_result,
                         'npc_signature': cand_sig,
+                        'rejected_reason': strict_result.rejected_reason,
                     })
     
-    # RANKING: size_score → country_score → brand_score → npc_score
-    def sort_key(x):
+    # v11: RANKING by brand_match → country_match → text_similarity → npc_score
+    def sort_key_strict(x):
         r = x['npc_result']
-        return (-r.size_score, -r.country_score, -r.brand_score, -r.npc_score)
+        # Higher brand_score first, then country_score, then similarity, then npc_score
+        return (-r.brand_score, -r.country_score, -r.similarity_score, -r.npc_score)
     
-    strict_results.sort(key=sort_key)
+    strict_results.sort(key=sort_key_strict)
     strict_results = strict_results[:limit]
     
     if mode == 'similar':
-        similar_results.sort(key=lambda x: (-x['npc_result'].country_score, -x['npc_result'].npc_score))
+        similar_results.sort(key=lambda x: (-x['npc_result'].brand_score, -x['npc_result'].country_score, -x['npc_result'].npc_score))
         similar_results = similar_results[:limit]
     else:
         similar_results = []
