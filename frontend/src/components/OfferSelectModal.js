@@ -76,14 +76,20 @@ const OfferSelectModal = ({
       const data = response.data;
       
       // P0 ZERO-TRASH: Сохраняем debug info для отображения в UI
+      const refDebug = data.ref_debug || {};
       setDebugInfo({
         source: `/api/v12/item/${sourceItem.id}/alternatives`,
         ruleset_version: data.ruleset_version || 'unknown',
         debug_id: data.debug_id || 'none',
-        ref_caliber: data.ref_parsed?.shrimp_caliber || 'null',
-        ref_domain: data.ref_parsed?.npc_domain || 'null',
+        ref_caliber: data.ref_parsed?.shrimp_caliber || refDebug.ref_caliber || 'null',
+        ref_domain: data.ref_parsed?.npc_domain || refDebug.npc_domain || 'null',
         strict_count: data.strict_after_gates?.length || 0,
         rejected_reasons: data.rejected_reasons || {},
+        // Расширенные поля ref_debug
+        looks_like_shrimp: refDebug.looks_like_shrimp,
+        has_caliber_pattern: refDebug.has_caliber_pattern,
+        caliber_pattern_match: refDebug.caliber_pattern_match,
+        why_legacy: refDebug.why_legacy,
       });
       
       // P0 ZERO-TRASH: DEBUG OUTPUT
