@@ -101,8 +101,8 @@ class TestIsBox:
 # =============================================================================
 
 class TestBrandGate:
-    def test_brand_mismatch_blocked(self, npc_data):
-        """Разные бренды блокируются если у REF есть brand."""
+    def test_brand_ranking_only_fish(self, npc_data):
+        """v11: Разные бренды НЕ блокируют для FISH, только ранжирование."""
         source = {'name_raw': 'Лосось SANGO филе с/м', 'brand_id': 'brand_sango'}
         candidate = {'name_raw': 'Лосось AGAMA филе с/м', 'brand_id': 'brand_agama'}
         
@@ -110,11 +110,12 @@ class TestBrandGate:
         sig_cand = extract_npc_signature(candidate)
         
         result = check_npc_strict(sig_src, sig_cand)
-        assert result.passed_strict == False
-        assert 'BRAND_MISMATCH' in result.block_reason
+        # v11: Brand не блокирует, только ranking
+        assert result.passed_strict == True
+        assert result.same_brand == False
     
     def test_same_brand_passes(self, npc_data):
-        """Тот же бренд проходит."""
+        """Тот же бренд проходит с выше rank."""
         source = {'name_raw': 'Лосось SANGO филе с/м', 'brand_id': 'brand_sango'}
         candidate = {'name_raw': 'Лосось SANGO филе с/м 600г', 'brand_id': 'brand_sango'}
         
@@ -124,6 +125,7 @@ class TestBrandGate:
         result = check_npc_strict(sig_src, sig_cand)
         assert result.passed_strict == True
         assert result.same_brand == True
+        assert result.brand_score > 0
 
 
 # =============================================================================
