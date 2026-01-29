@@ -513,11 +513,11 @@ def extract_species(name_norm: str, domain: str) -> Optional[str]:
     
     elif domain == 'SHRIMP':
         shrimp_map = {
-            'vannamei': ['ваннам', 'белоног'],
-            'tiger': ['тигр'],
-            'argentine': ['аргент'],
-            'north': ['северн', 'ботан'],
-            'king': ['королев'],
+            'vannamei': ['ваннам', 'белоног', 'vanam', 'vannam'],
+            'tiger': ['тигр', 'tiger'],
+            'argentine': ['аргент', 'argentin'],
+            'northern': ['северн', 'ботан', 'pandalus', 'coldwater', 'northern', 'норвеж', 'гренланд'],
+            'king': ['королев', 'king', 'royal'],
         }
         for species, tokens in shrimp_map.items():
             for token in tokens:
