@@ -5,6 +5,66 @@ E-commerce платформа для B2B заказов с оптимизаци�
 
 ## ✅ Выполненные задачи
 
+### Phase 29 - FISH_FILLET Domain (npc_fish_fillet_v1) — 29 января 2026
+
+**ЗАДАЧА:** Добавить новый ruleset `npc_fish_fillet_v1` для ZERO-TRASH strict matching "Рыба → Филе".
+
+**РЕШЕНИЕ:**
+
+1. **Новый модуль** (`/app/backend/bestprice_v12/npc_fish_fillet.py`):
+   - Полная архитектура по образцу SHRIMP
+   - FishFilletSignature dataclass с 15+ полями
+   - Hard Gates для strict режима
+
+2. **Fish Species Detection:**
+   - 25+ видов рыбы: salmon, cod, pollock, trout, tuna, halibut, etc.
+   - Поддержка склонений: треска/трески/трескового, лосось/лосося/лососев
+
+3. **Cut Type Detection (КРИТИЧНО!):**
+   - LIVER → FILLET → MINCED → STEAK → CARCASS → WHOLE
+   - FILLET имеет приоритет над WHOLE
+   - "филе трески потрошёная" → FILLET (не WHOLE)
+
+4. **Hard Gates:**
+   - FORBIDDEN_CLASS (blacklist)
+   - DOMAIN (FISH_FILLET)
+   - SPECIES (вид рыбы)
+   - CUT_TYPE (тушка ≠ филе ≠ стейк)
+   - BREADED_FLAG (панировка)
+   - SKIN_FLAG (на коже ≠ без кожи)
+   - STATE (с/м ≠ охл)
+   - UOM (кг ≠ шт)
+   - BOX (короб)
+   - WEIGHT_TOLERANCE (±20%)
+
+5. **Ранжирование:**
+   - species_exact → cut_exact → breaded_exact → skin_exact → state_exact
+   - weight_score → brand_match → country_match → text_similarity → price
+
+6. **API Response:**
+   - `ruleset_version: "npc_fish_fillet_v1"`
+   - `ref_debug` с полной информацией о парсинге
+   - `strict_after_gates` для UI
+
+7. **Blacklist (FORBIDDEN_CLASS):**
+   - Котлеты, наггетсы, гёдза, пельмени
+   - Консервы, пресервы, копчёное, солёное
+   - Супы, салаты, наборы, ассорти
+   - Икра, молоки, печень (в контексте)
+
+**Acceptance Criteria:**
+- ✅ REF: тушка → CAND: филе = REJECTED
+- ✅ REF: филе → CAND: тушка = REJECTED
+- ✅ REF: в панировке → CAND: без = REJECTED
+- ✅ REF: треска → CAND: минтай = REJECTED (SPECIES_MISMATCH)
+- ✅ REF: на коже → CAND: без кожи = REJECTED
+- ✅ REF: с/м → CAND: охл = REJECTED
+- ✅ Если нет аналогов → strict = [] (ZERO-TRASH)
+- ✅ 104 новых теста FISH_FILLET прошли
+- ✅ 61 тест SHRIMP не сломаны
+
+---
+
 ### Phase 28 - Панировка (breaded shrimp) — 28 января 2026
 
 **ЗАДАЧА:** Панировка исключалась из strict из-за `oos_frozen_semi_finished` и `UOM_MISMATCH`.
