@@ -69,6 +69,14 @@ from .npc_matching_v9 import (
     detect_shrimp_by_context, SHRIMP_TERMS, SHRIMP_ATTRS
 )
 
+# Import NPC FISH_FILLET matching v1 (ZERO-TRASH для рыбного филе)
+from .npc_fish_fillet import (
+    extract_fish_fillet_signature, apply_fish_fillet_filter,
+    build_fish_fillet_ref_debug, looks_like_fish_fillet,
+    detect_fish_fillet_domain, is_fish_fillet_item,
+    get_fish_fillet_domain, FishCutType
+)
+
 # Import modular routers
 from .routes_modules import (
     cart_router, orders_router, favorites_router,
