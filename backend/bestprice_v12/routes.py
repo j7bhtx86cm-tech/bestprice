@@ -1807,6 +1807,186 @@ async def get_item_alternatives(
             }
         return supplier_cache[supplier_id]
     
+    # === FISH_FILLET PATH (v1 ZERO-TRASH) ===
+    if use_fish_fillet:
+        logger.info(f"[{debug_id}] Using FISH_FILLET matching v1 for item {item_id}")
+        
+        # Применяем FISH_FILLET фильтр
+        ff_strict, ff_similar, ff_rejected = apply_fish_fillet_filter(
+            source_item=source_item,
+            candidates=raw_candidates,
+            limit=limit,
+            mode=mode
+        )
+        
+        # FISH_FILLET ref_debug
+        ff_ref_debug = build_fish_fillet_ref_debug(source_item)
+        
+        # ZERO-TRASH: Проверяем причины пустого strict
+        ff_zero_trash_reasons = [
+            'REF_NOT_CLASSIFIED',
+            'REF_FILLET_LIKE_NOT_CLASSIFIED',
+            'SOURCE_BLACKLISTED',
+            'SOURCE_EXCLUDED'
+        ]
+        
+        if ff_rejected and any(r in ff_rejected for r in ff_zero_trash_reasons):
+            reason = next((r for r in ff_zero_trash_reasons if r in ff_rejected), 'UNKNOWN')
+            logger.info(f"[{debug_id}] item_id={item_id} FISH_FILLET {reason} strict_count=0")
+            source_supplier_id = source_item.get('supplier_company_id')
+            source_sup_info = get_supplier_info(source_supplier_id)
+            return make_response({
+                'source': {
+                    'id': source_item.get('id'),
+                    'name': source_item.get('name_raw', ''),
+                    'name_raw': source_item.get('name_raw', ''),
+                    'price': source_item.get('price', 0),
+                    'pack_qty': source_item.get('pack_qty'),
+                    'unit_type': source_item.get('unit_type', 'PIECE'),
+                    'brand_id': source_item.get('brand_id'),
+                    'product_core_id': product_core_id,
+                    'supplier_id': source_supplier_id,
+                    'supplier_name': source_sup_info['name'],
+                    'supplier_min_order': source_sup_info['min_order'],
+                    'npc_domain': 'FISH_FILLET',
+                },
+                'strict_after_gates': [],
+                'strict': [],
+                'similar': [],
+                'alternatives': [],
+                'strict_count': 0,
+                'similar_count': 0,
+                'total': 0,
+                'total_candidates': len(raw_candidates),
+                'rejected_reasons': ff_rejected,
+                'matching_mode': 'npc',
+                'npc_domain': 'FISH_FILLET',
+                'ruleset_version': 'npc_fish_fillet_v1',
+                'ref_parsed': {'npc_domain': 'FISH_FILLET', 'reason': reason},
+                'ref_debug': ff_ref_debug,
+                'debug_id': debug_id
+            })
+        
+        # Извлекаем ref_parsed для FISH_FILLET
+        source_ff_sig = extract_fish_fillet_signature(source_item)
+        
+        ff_ref_parsed = {
+            'npc_domain': source_ff_sig.npc_domain,
+            'fish_species': source_ff_sig.fish_species,
+            'cut_type': source_ff_sig.cut_type.value if source_ff_sig.cut_type else None,
+            'skin_flag': source_ff_sig.skin_flag.value if source_ff_sig.skin_flag else None,
+            'breaded_flag': source_ff_sig.breaded_flag,
+            'state': source_ff_sig.state.value if source_ff_sig.state else None,
+            'uom': source_ff_sig.uom,
+            'net_weight_kg': source_ff_sig.net_weight_kg,
+            'is_box': source_ff_sig.is_box,
+            'is_blacklisted': source_ff_sig.is_blacklisted,
+        }
+        
+        # Enrich FISH_FILLET результаты
+        def enrich_ff_item(ff_data: dict, match_mode: str) -> dict:
+            item = ff_data['item']
+            ff_result = ff_data['npc_result']
+            ff_sig = ff_data['npc_signature']
+            supplier_id = item.get('supplier_company_id')
+            sup_info = get_supplier_info(supplier_id)
+            
+            # cand_parsed для debug
+            cand_parsed = {
+                'npc_domain': ff_sig.npc_domain,
+                'fish_species': ff_sig.fish_species,
+                'cut_type': ff_sig.cut_type.value if ff_sig.cut_type else None,
+                'skin_flag': ff_sig.skin_flag.value if ff_sig.skin_flag else None,
+                'breaded_flag': ff_sig.breaded_flag,
+                'state': ff_sig.state.value if ff_sig.state else None,
+                'uom': ff_sig.uom,
+                'net_weight_kg': ff_sig.net_weight_kg,
+                'is_box': ff_sig.is_box,
+                'is_blacklisted': ff_sig.is_blacklisted,
+            }
+            
+            # unit_price_per_kg
+            price = item.get('price', 0) or 0
+            net_weight = ff_sig.net_weight_kg
+            unit_price_per_kg = None
+            if net_weight and net_weight > 0 and price > 0:
+                unit_price_per_kg = price / net_weight
+            
+            return {
+                'id': item.get('id'),
+                'name': item.get('name_raw', ''),
+                'name_raw': item.get('name_raw', ''),
+                'price': item.get('price', 0),
+                'pack_qty': item.get('pack_qty'),
+                'unit_type': item.get('unit_type', 'PIECE'),
+                'brand_id': item.get('brand_id'),
+                'supplier_id': supplier_id,
+                'supplier_name': sup_info['name'],
+                'supplier_min_order': sup_info['min_order'],
+                'min_order_qty': item.get('min_order_qty', 1),
+                'match_score': ff_result.npc_score,
+                'weight_score': ff_result.weight_score,
+                'match_mode': match_mode,
+                'difference_labels': ff_result.difference_labels,
+                'unit_price_per_kg': unit_price_per_kg,
+                'net_weight_kg': ff_sig.net_weight_kg,
+                'npc_domain': ff_sig.npc_domain,
+                'fish_species': ff_sig.fish_species,
+                'cut_type': ff_sig.cut_type.value if ff_sig.cut_type else None,
+                'skin_flag': ff_sig.skin_flag.value if ff_sig.skin_flag else None,
+                'is_box': ff_sig.is_box,
+                'cand_parsed': cand_parsed,
+                'passed_gates': ff_data.get('passed_gates', ff_result.passed_gates),
+                'rank_features': ff_result.rank_features,
+            }
+        
+        enriched_ff_strict = [enrich_ff_item(x, 'strict') for x in ff_strict]
+        enriched_ff_similar = [enrich_ff_item(x, 'similar') for x in ff_similar]
+        
+        # Source enrichment
+        source_supplier_id = source_item.get('supplier_company_id')
+        source_sup_info = get_supplier_info(source_supplier_id)
+        
+        enriched_ff_source = {
+            'id': source_item.get('id'),
+            'name': source_item.get('name_raw', ''),
+            'name_raw': source_item.get('name_raw', ''),
+            'price': source_item.get('price', 0),
+            'pack_qty': source_item.get('pack_qty'),
+            'unit_type': source_item.get('unit_type', 'PIECE'),
+            'brand_id': source_item.get('brand_id'),
+            'product_core_id': product_core_id,
+            'supplier_id': source_supplier_id,
+            'supplier_name': source_sup_info['name'],
+            'supplier_min_order': source_sup_info['min_order'],
+            'npc_domain': source_ff_sig.npc_domain,
+            'fish_species': source_ff_sig.fish_species,
+            'cut_type': source_ff_sig.cut_type.value if source_ff_sig.cut_type else None,
+            'skin_flag': source_ff_sig.skin_flag.value if source_ff_sig.skin_flag else None,
+            'is_box': source_ff_sig.is_box,
+        }
+        
+        logger.info(f"[{debug_id}] FISH_FILLET item_id={item_id} species={ff_ref_parsed.get('fish_species')} cut={ff_ref_parsed.get('cut_type')} strict_count={len(enriched_ff_strict)} rejected={ff_rejected}")
+        
+        return make_response({
+            'source': enriched_ff_source,
+            'strict_after_gates': enriched_ff_strict,
+            'strict': enriched_ff_strict,
+            'similar': enriched_ff_similar,
+            'alternatives': enriched_ff_strict + enriched_ff_similar,
+            'strict_count': len(enriched_ff_strict),
+            'similar_count': len(enriched_ff_similar),
+            'total': len(enriched_ff_strict) + len(enriched_ff_similar),
+            'total_candidates': len(raw_candidates),
+            'rejected_reasons': ff_rejected,
+            'matching_mode': 'npc',
+            'npc_domain': 'FISH_FILLET',
+            'ruleset_version': 'npc_fish_fillet_v1',
+            'ref_parsed': ff_ref_parsed,
+            'ref_debug': ff_ref_debug,
+            'debug_id': debug_id
+        })
+    
     if use_npc:
         # === NPC PATH: применяем NPC фильтрацию НАПРЯМУЮ к raw_candidates ===
         logger.info(f"Using NPC matching v12 for item {item_id}, domain={source_npc_domain}")
