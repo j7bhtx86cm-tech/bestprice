@@ -915,6 +915,9 @@ def extract_npc_signature(item: Dict) -> NPCSignature:
     # v11: UOM и вес
     sig.uom, sig.weight_kg = extract_uom(name_norm, item)
     
+    # v12: net_weight_kg для расчёта ₽/кг (особенно для pcs с указанным весом)
+    sig.net_weight_kg = extract_net_weight_kg(name_norm, item)
+    
     patterns = get_exclusion_patterns()
     
     # HARD EXCLUSIONS (legacy)
