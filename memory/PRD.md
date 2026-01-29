@@ -5,6 +5,41 @@ E-commerce платформа для B2B заказов с оптимизаци�
 
 ## ✅ Выполненные задачи
 
+### Phase 28 - Панировка (breaded shrimp) — 28 января 2026
+
+**ЗАДАЧА:** Панировка исключалась из strict из-за `oos_frozen_semi_finished` и `UOM_MISMATCH`.
+
+**РЕШЕНИЕ:**
+
+1. **Breaded Flag расширен:**
+   - Маркеры: панир, панко, темпур, кляр, breaded, tempura, torpedo, торпедо, хрустящ
+   - `extract_shrimp_breaded()` возвращает `True` для этих паттернов
+
+2. **Exclusion bypass для breaded shrimp:**
+   - `is_breaded_shrimp = breaded + (shrimp_like OR has_caliber)`
+   - `oos_frozen_semi_finished` НЕ применяется к breaded shrimp
+   - `READY_SEMIFINISHED` НЕ применяется к breaded shrimp
+
+3. **UOM Gate с учётом веса:**
+   - Если REF=kg, CAND=pcs, но у обоих есть `net_weight_kg` → пропускаем как `UOM_BY_WEIGHT`
+   - `extract_net_weight_kg()` парсит: `(1,000 кг)`, `нетто 1кг`, `500г`
+
+4. **unit_price_per_kg в API Response:**
+   - `unit_price_per_kg = price / net_weight_kg`
+   - UI сортирует по этому полю
+
+5. **BREADED_FLAG hard gate:**
+   - REF breaded=true → только CAND breaded=true
+   - REF breaded=false → CAND breaded=true → BREADED_MISMATCH
+
+**Acceptance Criteria:**
+- ✅ Панировка + панировка → passed
+- ✅ Панировка + обычная → BREADED_MISMATCH
+- ✅ REF kg + CAND pcs (с весом) → passed (UOM_BY_WEIGHT)
+- ✅ 334 теста прошли
+
+---
+
 ### Phase 27 - 4 точечных исправления — 28 января 2026
 
 **ЗАДАЧА:** 4 ошибки без поломки работающей логики.
