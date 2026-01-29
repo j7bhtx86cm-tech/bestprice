@@ -920,27 +920,36 @@ def extract_npc_signature(item: Dict) -> NPCSignature:
     
     patterns = get_exclusion_patterns()
     
-    # HARD EXCLUSIONS (legacy)
-    for pattern_name, pattern in patterns.items():
-        if pattern_name.startswith('oos_'):
-            if pattern.search(name_norm):
-                sig.is_excluded = True
-                sig.exclude_reason = pattern_name
-                return sig
+    # Сначала проверяем breaded для креветок (НЕ исключать!)
+    is_breaded_shrimp = (
+        extract_shrimp_breaded(name_norm) and 
+        (looks_like_shrimp(name_norm) or has_caliber_pattern(name_norm))
+    )
+    
+    # HARD EXCLUSIONS (legacy) — НЕ применяется к breaded shrimp
+    if not is_breaded_shrimp:
+        for pattern_name, pattern in patterns.items():
+            if pattern_name.startswith('oos_'):
+                if pattern.search(name_norm):
+                    sig.is_excluded = True
+                    sig.exclude_reason = pattern_name
+                    return sig
     
     # PROCESSING FORM
     sig.processing_form = extract_processing_form(name_norm)
     
-    # Exclude SAUCE_MIX_OTHER and READY_SEMIFINISHED
+    # Exclude SAUCE_MIX_OTHER (но не READY_SEMIFINISHED для breaded shrimp)
     if sig.processing_form == ProcessingForm.SAUCE_MIX_OTHER:
         sig.is_excluded = True
         sig.exclude_reason = 'SAUCE_MIX_OTHER'
         return sig
     
     if sig.processing_form == ProcessingForm.READY_SEMIFINISHED:
-        sig.is_excluded = True
-        sig.exclude_reason = 'READY_SEMIFINISHED'
-        return sig
+        # НЕ исключаем breaded shrimp
+        if not is_breaded_shrimp:
+            sig.is_excluded = True
+            sig.exclude_reason = 'READY_SEMIFINISHED'
+            return sig
     
     # DOMAIN DETECTION
     sig.npc_domain = _detect_npc_domain(name_norm)
