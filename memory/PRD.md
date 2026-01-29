@@ -723,24 +723,26 @@ NPC (Node-based Product Classification) — дополнительный сло�
 }
 ```
 
----
-
 ## Архитектура
 
+### NPC Matching Domains
+1. **FISH_FILLET** (`npc_fish_fillet.py`) — филе рыбы, v1
+2. **SHRIMP** (`npc_matching_v9.py`) — креветки, v12
+3. **Legacy v3** — остальные категории
+
+### Приоритет обработки
 ```
-/app/backend/bestprice_v12/
-├── npc_matching_v9.py      # NPC matching layer (v9 - Финальное ТЗ)
-├── matching_engine_v3.py   # Core matching engine (v3.0 - ТЗ v12)
-├── matching_rules_v2.py    # Legacy (v2.0)
-├── matching_rules.py       # Legacy (v1.3 lexicon-based)
-├── routes.py               # API endpoints
-├── npc_schema_v9.xlsx      # NPC node schema
-├── lexicon_npc_v9.json     # NPC exclusion lexicon
-└── tests/
-    ├── test_npc_matching_v9.py       # 46 NPC unit tests
-    ├── test_matching_v3.py           # 23 unit tests
-    └── test_integration_alternatives.py  # 13 integration tests
+1. FISH_FILLET (если REF похож на fish fillet)
+2. SHRIMP (если REF похож на креветки)
+3. Legacy v3 (остальное)
 ```
+
+### Ключевые файлы
+- `/app/backend/bestprice_v12/npc_fish_fillet.py` — FISH_FILLET модуль
+- `/app/backend/bestprice_v12/npc_matching_v9.py` — SHRIMP модуль
+- `/app/backend/bestprice_v12/routes.py` — API роутер
+- `/app/memory/FISH_FILLET_RULES_SPEC_v1.md` — спецификация FISH_FILLET
+- `/app/memory/SHRIMP_RULES_SPEC_v1.md` — спецификация SHRIMP
 
 ---
 
