@@ -715,13 +715,13 @@ def extract_shrimp_tail_state(name_norm: str) -> Optional[str]:
     """v12: Состояние хвоста (tail_on / tail_off).
     
     Распознаёт варианты:
-    - tail_on: с/хв, с хв, с хвостом, хвост, tail-on, t-on
-    - tail_off: б/хв, без хв, без хвоста, tail-off, t-off
+    - tail_on: с/хв, с/х, с хв, с хвостом, на хвосте, tail-on, t-on
+    - tail_off: б/хв, б/х, без хв, без хвоста, безхв, tail-off, t-off
     """
     # Сначала проверяем "без хвоста" (должно быть ДО "с хвостом")
     tail_off_patterns = [
-        r'\bб/хв\b', r'\bбез\s*хв', r'\bбез\s*хвост', r'\btail[\s\-]?off\b', r'\bt[\s\-]?off\b',
-        r'\btailless\b',
+        r'\bб/хв\b', r'\bб/х\b', r'\bбез\s*хв', r'\bбез\s*хвост', r'\bбезхв',
+        r'\bбез\s*хв\.', r'\btail[\s\-]?off\b', r'\bt[\s\-]?off\b', r'\btailless\b',
     ]
     for pattern in tail_off_patterns:
         if re.search(pattern, name_norm, re.IGNORECASE):
@@ -729,7 +729,8 @@ def extract_shrimp_tail_state(name_norm: str) -> Optional[str]:
     
     # Затем проверяем "с хвостом"
     tail_on_patterns = [
-        r'\bс/хв\b', r'\bс\s+хв\b', r'\bс\s*хвост', r'\bхвостик', r'\btail[\s\-]?on\b', r'\bt[\s\-]?on\b',
+        r'\bс/хв\b', r'\bс/х\b', r'\bс\s+хв\b', r'\bс\s*хвост', r'\bна\s*хвост',
+        r'\bхвостик', r'\bс\s*хв\.', r'\btail[\s\-]?on\b', r'\bt[\s\-]?on\b',
     ]
     for pattern in tail_on_patterns:
         if re.search(pattern, name_norm, re.IGNORECASE):
