@@ -168,14 +168,60 @@ const OfferSelectModal = ({
     return null;
   }
 
-  // Все офферы включая исходный
+  // (4) DEBUG: показывать только если ?debug=1 или localStorage.DEBUG_NPC === "1"
+  const showDebug = typeof window !== 'undefined' && (
+    window.location.search.includes('debug=1') ||
+    localStorage.getItem('DEBUG_NPC') === '1'
+  );
+
+  // (1) СОРТИРОВКА: сначала тот же бренд, затем по цене
+  // Извлекаем бренд из sourceItem
+  const extractBrand = (item) => {
+    if (item.brand_name) return item.brand_name.toLowerCase();
+    if (item.brand) return item.brand.toLowerCase();
+    if (item.brand_norm) return item.brand_norm.toLowerCase();
+    // Fallback: извлекаем из кавычек в name_raw
+    const name = item.name_raw || item.name || '';
+    const match = name.match(/"([^"]+)"/);
+    return match ? match[1].toLowerCase() : null;
+  };
+  
+  const sourceBrand = extractBrand(sourceItem);
+  
+  // Сортируем альтернативы
+  const sortedAlternatives = [...alternatives].sort((a, b) => {
+    const brandA = extractBrand(a);
+    const brandB = extractBrand(b);
+    const priceA = a.unit_price || a.price_per_kg || a.price || 0;
+    const priceB = b.unit_price || b.price_per_kg || b.price || 0;
+    
+    // Если есть sourceBrand, сначала показываем совпадающий бренд
+    if (sourceBrand) {
+      const aMatchesBrand = brandA === sourceBrand;
+      const bMatchesBrand = brandB === sourceBrand;
+      if (aMatchesBrand && !bMatchesBrand) return -1;
+      if (!aMatchesBrand && bMatchesBrand) return 1;
+    }
+    
+    // Внутри группы — по цене
+    if (priceA !== priceB) return priceA - priceB;
+    
+    // Tie-breaker: supplier_name, затем id
+    const supA = (a.supplier_name || '').toLowerCase();
+    const supB = (b.supplier_name || '').toLowerCase();
+    if (supA !== supB) return supA.localeCompare(supB);
+    
+    return (a.id || '').localeCompare(b.id || '');
+  });
+
+  // Все офферы включая исходный (sourceItem всегда первый)
   const allOffers = [
     {
       ...sourceItem,
       supplier_name: sourceItem.supplier_name || 'Поставщик',
       isSource: true,
     },
-    ...alternatives.map(a => ({ ...a, isSource: false }))
+    ...sortedAlternatives.map(a => ({ ...a, isSource: false }))
   ];
 
   return (
@@ -189,8 +235,8 @@ const OfferSelectModal = ({
           <DialogDescription>
             {sourceItem.name ? `${sourceItem.name.slice(0, 60)}${sourceItem.name.length > 60 ? '...' : ''}` : 'Товар'}
           </DialogDescription>
-          {/* P0 DEBUG: Техническая плашка для отладки */}
-          {debugInfo && (
+          {/* DEBUG: показывать только по ?debug=1 или localStorage */}
+          {showDebug && debugInfo && (
             <div 
               className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono text-gray-600 break-all"
               data-testid="debug-banner"
