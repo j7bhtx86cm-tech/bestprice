@@ -1256,14 +1256,22 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
                             result.same_size_range = True
                             result.passed_gates.append('SIZE_RANGE')
     
-    # === 3. UOM GATE (шт vs кг) — жёсткий после нормализации ===
+    # === 3. UOM GATE (шт vs кг) — с учётом net_weight_kg ===
+    # Если UOM разные, но у обоих есть net_weight_kg → можно сравнивать по ₽/кг
     if source.uom and candidate.uom:
         if source.uom != candidate.uom:
-            result.block_reason = f"UOM_MISMATCH:{source.uom}!={candidate.uom}"
-            result.rejected_reason = result.block_reason
-            return result
-        result.same_uom = True
-        result.passed_gates.append('UOM')
+            # Проверяем можно ли сравнивать по весу
+            if source.net_weight_kg and candidate.net_weight_kg:
+                # Оба имеют вес — можно сравнивать по ₽/кг
+                result.same_uom = False  # UOM разные
+                result.passed_gates.append('UOM_BY_WEIGHT')  # Но прошли по весу
+            else:
+                result.block_reason = f"UOM_MISMATCH:{source.uom}!={candidate.uom}"
+                result.rejected_reason = result.block_reason
+                return result
+        else:
+            result.same_uom = True
+            result.passed_gates.append('UOM')
     
     # === 4. BOX GATE (в обе стороны) ===
     if source.is_box != candidate.is_box:
