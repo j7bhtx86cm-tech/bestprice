@@ -225,6 +225,7 @@ class NPCSignature:
     # v11: UOM (единица измерения)
     uom: Optional[str] = None  # 'kg' / 'pcs' / 'pack'
     weight_kg: Optional[float] = None  # нормализованный вес в кг
+    net_weight_kg: Optional[float] = None  # нетто вес для расчёта ₽/кг (для pcs+weight)
     
     # v10: Similarity tokens
     semantic_tokens: List[str] = field(default_factory=list)
