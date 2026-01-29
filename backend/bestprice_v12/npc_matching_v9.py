@@ -1098,13 +1098,20 @@ def check_npc_strict(source: NPCSignature, candidate: NPCSignature) -> NPCMatchR
             result.passed_gates.append('SHRIMP_FORM')
         
         # 2d. TAIL_STATE (с хвостом vs без хвоста)
-        if source.shrimp_tail_state and candidate.shrimp_tail_state:
-            if source.shrimp_tail_state != candidate.shrimp_tail_state:
-                result.block_reason = f"TAIL_STATE_MISMATCH:{source.shrimp_tail_state}!={candidate.shrimp_tail_state}"
+        # Gate применяется ТОЛЬКО если у REF есть tail_state
+        if source.shrimp_tail_state:
+            if candidate.shrimp_tail_state:
+                if source.shrimp_tail_state != candidate.shrimp_tail_state:
+                    result.block_reason = f"TAIL_STATE_MISMATCH:{source.shrimp_tail_state}!={candidate.shrimp_tail_state}"
+                    result.rejected_reason = result.block_reason
+                    return result
+                result.same_tail_state = True
+                result.passed_gates.append('TAIL_STATE')
+            else:
+                # REF имеет tail_state, кандидат нет → REJECT
+                result.block_reason = f"TAIL_STATE_UNKNOWN:ref={source.shrimp_tail_state},cand=null"
                 result.rejected_reason = result.block_reason
                 return result
-            result.same_tail_state = True
-            result.passed_gates.append('TAIL_STATE')
         
         # 2e. BREADED_FLAG (панировка/темпура/кляр)
         if source.shrimp_breaded != candidate.shrimp_breaded:
