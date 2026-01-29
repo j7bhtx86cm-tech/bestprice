@@ -161,7 +161,7 @@ SKIN_OFF_PATTERNS = [
 ]
 
 # State (состояние: frozen/chilled)
-FROZEN_PATTERNS = ['с/м', 'свежемороз', 'зам', 'замор', 'мороз', 'frozen']
+FROZEN_PATTERNS = ['с/м', 'свежеморож', 'свежемороз', 'зам', 'замор', 'мороз', 'frozen']
 CHILLED_PATTERNS = ['охл', 'охлажд', 'chilled', 'свеж']
 
 # Country patterns
