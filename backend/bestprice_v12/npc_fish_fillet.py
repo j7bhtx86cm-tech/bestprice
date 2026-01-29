@@ -315,6 +315,10 @@ def extract_fish_species(name_norm: str) -> Optional[str]:
 
 def extract_fish_cut_type(name_norm: str) -> Optional[FishCutType]:
     """Определяет тип разделки рыбы."""
+    # LIVER
+    if 'печень' in name_norm:
+        return FishCutType.LIVER
+    
     # Проверяем FILLET первым (приоритет)
     for pattern in FILLET_PATTERNS:
         if pattern in name_norm:
