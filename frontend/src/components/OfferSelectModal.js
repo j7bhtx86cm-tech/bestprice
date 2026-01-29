@@ -186,14 +186,22 @@ const OfferSelectModal = ({
     return match ? match[1].toLowerCase() : null;
   };
   
+  // Получаем цену за кг для сортировки
+  const getUnitPrice = (item) => {
+    // Приоритет: unit_price_per_kg (вычислено на backend) → price/net_weight → price
+    if (item.unit_price_per_kg) return item.unit_price_per_kg;
+    if (item.net_weight_kg && item.price) return item.price / item.net_weight_kg;
+    return item.unit_price || item.price_per_kg || item.price || 0;
+  };
+  
   const sourceBrand = extractBrand(sourceItem);
   
   // Сортируем альтернативы
   const sortedAlternatives = [...alternatives].sort((a, b) => {
     const brandA = extractBrand(a);
     const brandB = extractBrand(b);
-    const priceA = a.unit_price || a.price_per_kg || a.price || 0;
-    const priceB = b.unit_price || b.price_per_kg || b.price || 0;
+    const priceA = getUnitPrice(a);
+    const priceB = getUnitPrice(b);
     
     // Если есть sourceBrand, сначала показываем совпадающий бренд
     if (sourceBrand) {
@@ -203,7 +211,7 @@ const OfferSelectModal = ({
       if (!aMatchesBrand && bMatchesBrand) return 1;
     }
     
-    // Внутри группы — по цене
+    // Внутри группы — по unit_price (₽/кг)
     if (priceA !== priceB) return priceA - priceB;
     
     // Tie-breaker: supplier_name, затем id
