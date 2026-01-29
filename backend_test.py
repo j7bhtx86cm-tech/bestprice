@@ -9,7 +9,7 @@ import json
 from typing import Dict, Optional
 
 # Backend URL from environment
-BACKEND_URL = "https://zerojunkmatch.preview.emergentagent.com/api"
+BACKEND_URL = "https://smart-match-engine.preview.emergentagent.com/api"
 
 # Test credentials
 CREDENTIALS = {

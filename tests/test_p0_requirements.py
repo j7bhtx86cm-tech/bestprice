@@ -17,7 +17,7 @@ import io
 import math
 from datetime import datetime
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://zerojunkmatch.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://smart-match-engine.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 CUSTOMER_EMAIL = "customer@bestprice.ru"
