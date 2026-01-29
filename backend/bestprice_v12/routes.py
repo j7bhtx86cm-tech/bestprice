@@ -1780,6 +1780,16 @@ async def get_item_alternatives(
         logger.info(f"[{debug_id}] ZERO-TRASH: REF shrimp-like but no npc_domain, returning empty strict")
         use_npc = True  # Принудительно используем NPC path (который вернёт пустой strict)
     
+    # === FISH_FILLET DOMAIN CHECK (v1 ZERO-TRASH) ===
+    is_fish_fillet_like = looks_like_fish_fillet(name_norm)
+    source_fish_fillet_domain = get_fish_fillet_domain(source_item)
+    use_fish_fillet = source_fish_fillet_domain == "FISH_FILLET"
+    
+    # ZERO-TRASH: Если REF fish_fillet-like → принудительно NPC FISH_FILLET path
+    if is_fish_fillet_like and not use_fish_fillet:
+        logger.info(f"[{debug_id}] ZERO-TRASH: REF fish_fillet-like but not classified")
+        use_fish_fillet = True  # Принудительно FISH_FILLET path
+    
     # Обогащаем данными поставщика (общая функция)
     supplier_cache = {}
     
