@@ -741,12 +741,67 @@ def extract_shrimp_tail_state(name_norm: str) -> Optional[str]:
 
 
 def extract_shrimp_breaded(name_norm: str) -> bool:
-    """v11: Флаг панировки/темпуры/кляра."""
+    """v11: Флаг панировки/темпуры/кляра.
+    
+    Маркеры: панировк, панко, breaded, tempura, torpedo, кляр, темпур
+    """
     breaded_patterns = [
-        'панир', 'темпур', 'кляр', 'breaded', 'tempura', 'batter',
-        'в панир', 'в кляр', 'в темпур',
+        'панир', 'панко', 'темпур', 'кляр', 'breaded', 'tempura', 'batter',
+        'torpedo', 'торпедо', 'в панир', 'в кляр', 'в темпур', 'хрустящ',
     ]
     return any(x in name_norm for x in breaded_patterns)
+
+
+def extract_net_weight_kg(name_norm: str, item: Dict) -> Optional[float]:
+    """Извлекает нетто вес в кг из названия или полей item.
+    
+    Ищет паттерны:
+    - 1кг, 1.5 кг, 10кг
+    - 500г, 1000 г
+    - (1,000 кг), нетто 1кг
+    - Поля: net_weight_kg, weight_kg, pack_qty (если unit_type=kg)
+    """
+    weight_kg = None
+    
+    # Из полей item
+    if item.get('net_weight_kg'):
+        return float(item.get('net_weight_kg'))
+    if item.get('weight_kg'):
+        return float(item.get('weight_kg'))
+    
+    # pack_qty для kg unit_type
+    unit_type = str(item.get('unit_type', '')).lower()
+    pack_qty = item.get('pack_qty')
+    if pack_qty and unit_type in ('kg', 'кг'):
+        return float(pack_qty)
+    
+    # Из текста: ищем паттерны вида "(1,000 кг)" или "1кг" или "нетто 1 кг"
+    # Паттерн для скобок: (1,000 кг)
+    match_brackets = re.search(r'\((\d+(?:[.,]\d+)?)\s*кг\)', name_norm)
+    if match_brackets:
+        weight_kg = float(match_brackets.group(1).replace(',', '.'))
+        return weight_kg
+    
+    # Паттерн нетто: нетто 1кг
+    match_netto = re.search(r'нетто\s*(\d+(?:[.,]\d+)?)\s*кг', name_norm)
+    if match_netto:
+        weight_kg = float(match_netto.group(1).replace(',', '.'))
+        return weight_kg
+    
+    # Стандартный паттерн: 1кг, 1.5кг, 10 кг
+    match_kg = re.search(r'(\d+(?:[.,]\d+)?)\s*кг\b', name_norm)
+    if match_kg:
+        weight_kg = float(match_kg.group(1).replace(',', '.'))
+        return weight_kg
+    
+    # Граммы: 500г, 1000 г
+    match_g = re.search(r'(\d+)\s*г(?:р)?\b', name_norm)
+    if match_g:
+        grams = int(match_g.group(1))
+        if 50 <= grams <= 10000:  # разумный диапазон
+            return grams / 1000
+    
+    return None
 
 
 def extract_uom(name_norm: str, item: Dict) -> Tuple[Optional[str], Optional[float]]:
