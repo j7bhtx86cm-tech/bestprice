@@ -1888,9 +1888,17 @@ async def get_item_alternatives(
                 'shrimp_tail_state': npc_sig.shrimp_tail_state,
                 'shrimp_breaded': npc_sig.shrimp_breaded,
                 'uom': npc_sig.uom,
+                'net_weight_kg': npc_sig.net_weight_kg,
                 'is_box': npc_sig.is_box,
                 'is_blacklisted': npc_sig.is_blacklisted,
             }
+            
+            # Вычисляем unit_price_per_kg для сортировки
+            price = item.get('price', 0) or 0
+            net_weight = npc_sig.net_weight_kg
+            unit_price_per_kg = None
+            if net_weight and net_weight > 0 and price > 0:
+                unit_price_per_kg = price / net_weight
             
             return {
                 'id': item.get('id'),
@@ -1908,6 +1916,9 @@ async def get_item_alternatives(
                 'size_score': npc_result.size_score,
                 'match_mode': match_mode,
                 'difference_labels': npc_result.difference_labels,
+                # v12: unit_price_per_kg для сортировки
+                'unit_price_per_kg': unit_price_per_kg,
+                'net_weight_kg': npc_sig.net_weight_kg,
                 # NPC v9.1 fields
                 'npc_domain': npc_sig.npc_domain,
                 'npc_node_id': npc_sig.npc_node_id,
