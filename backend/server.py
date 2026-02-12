@@ -5,6 +5,8 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import asyncio
+import hashlib
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
@@ -24,28 +26,30 @@ from unit_normalizer import (
     format_pack_explanation,
     calculate_pack_penalty,
     UnitType,
-    PackInfo
+    PackInfo,
 )
 
 # P1: Rules Validation at startup
 from rules_validator import validate_all_rules, print_validation_report
 
 # Build info for debugging
-BUILD_SHA = os.popen("cd /app && git rev-parse --short HEAD 2>/dev/null").read().strip() or "unknown"
+ROOT_DIR = Path(__file__).parent
+BUILD_SHA = os.popen(f"cd {ROOT_DIR} && git rev-parse --short HEAD 2>/dev/null").read().strip() or "unknown"
 BUILD_TIME = datetime.now(timezone.utc).isoformat()
 
-ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+# MongoDB connection (env overrides .env; defaults for local dev only)
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+db_name = os.environ.get('DB_NAME', 'bestprice_local')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[db_name]
 
 # JWT Configuration
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+SKIP_RULES_VALIDATION = os.environ.get('BESTPRICE_SKIP_RULES_VALIDATION', '').strip().lower() in {'1', 'true', 'yes', 'on'}
 
 # Create the main app
 app = FastAPI(title="BestPrice API")
@@ -397,17 +401,20 @@ def decode_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
     token = credentials.credentials
     payload = decode_token(token)
+
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token")
-    
+
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
     return user
 
 # Mock INN lookup data
@@ -605,28 +612,18 @@ async def login(data: UserLogin):
         }
     )
 
-@api_router.get("/auth/me")
-async def get_me(current_user: dict = Depends(get_current_user)):
-    if current_user['role'] in ['responsible', 'chef', 'supplier']:
-        # These roles have companyId directly in user document
-        company_id = current_user.get('companyId')
-    else:
-        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
-        company_id = company['id'] if company else None
-    
-    return {
-        "id": current_user['id'],
-        "email": current_user['email'],
-        "role": current_user['role'],
-        "companyId": company_id
-    }
+
 
 @api_router.get("/auth/inn/{inn}")
 async def lookup_inn(inn: str):
     if inn in MOCK_INN_DATA:
         return MOCK_INN_DATA[inn]
-    return {"companyName": "", "legalAddress": "", "ogrn": ""}
 
+    return {
+        "companyName": "",
+        "legalAddress": "",
+        "ogrn": ""
+    }
 # ==================== COMPANY ROUTES ====================
 
 @api_router.get("/companies/my", response_model=Company)
@@ -682,141 +679,188 @@ async def get_my_supplier_settings(current_user: dict = Depends(get_current_user
 
 @api_router.put("/supplier-settings/my", response_model=SupplierSettings)
 async def update_my_supplier_settings(data: SupplierSettingsUpdate, current_user: dict = Depends(get_current_user)):
+    """Update supplier settings; create if missing (idempotent)."""
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
     company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
-    
+    sid = company['id']
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     update_data['updatedAt'] = datetime.now(timezone.utc).isoformat()
-    
-    result = await db.supplier_settings.update_one(
-        {"supplierCompanyId": company['id']},
+    existing = await db.supplier_settings.find_one({"supplierCompanyId": sid}, {"_id": 0})
+    if not existing:
+        settings = SupplierSettings(supplierCompanyId=sid)
+        settings_dict = settings.model_dump()
+        settings_dict['updatedAt'] = settings_dict['updatedAt'].isoformat()
+        for k, v in update_data.items():
+            if k in settings_dict:
+                settings_dict[k] = v
+        await db.supplier_settings.insert_one(settings_dict)
+        return await db.supplier_settings.find_one({"supplierCompanyId": sid}, {"_id": 0})
+    await db.supplier_settings.update_one(
+        {"supplierCompanyId": sid},
         {"$set": update_data}
     )
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Settings not found")
-    
-    settings = await db.supplier_settings.find_one({"supplierCompanyId": company['id']}, {"_id": 0})
-    return settings
+    return await db.supplier_settings.find_one({"supplierCompanyId": sid}, {"_id": 0})
 
 # ==================== PRICE LIST ROUTES ====================
 
 @api_router.get("/price-lists/my")
 async def get_my_price_lists(current_user: dict = Depends(get_current_user)):
-    if current_user['role'] != UserRole.supplier:
+    """Return supplier's price list items from supplier_items (single source of truth)."""
+    if current_user.get('role') not in (UserRole.supplier, UserRole.admin):
         raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # Get company ID from user
     company_id = current_user.get('companyId')
+    if not company_id and current_user.get('role') == UserRole.supplier:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+        company_id = company['id'] if company else None
     if not company_id:
         return []
-    
-    # Get pricelists for this supplier
-    pricelists = await db.pricelists.find({"supplierId": company_id}, {"_id": 0}).to_list(10000)
-    
-    # Get products and join data
-    product_ids = [pl['productId'] for pl in pricelists]
-    products = await db.products.find({"id": {"$in": product_ids}}, {"_id": 0}).to_list(10000)
-    products_map = {p['id']: p for p in products}
-    
-    # Format for frontend (PriceList format)
+    # Match how import/create write: supplier_company_id (snake_case); fallback supplierCompanyId (camelCase)
+    q = {"active": True, "$or": [{"supplier_company_id": company_id}, {"supplierCompanyId": company_id}]}
+    items = await db.supplier_items.find(q, {"_id": 0}).to_list(10000)
     result = []
-    for pl in pricelists:
-        product = products_map.get(pl['productId'])
-        if product:
-            result.append({
-                "id": pl['id'],
-                "supplierCompanyId": pl['supplierId'],
-                "productName": product['name'],
-                "article": pl.get('supplierItemCode', ''),
-                "price": pl['price'],
-                "unit": product['unit'],
-                "minQuantity": pl.get('minQuantity', 1),
-                "availability": pl.get('availability', True),
-                "active": pl.get('active', True),
-                "createdAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat()),
-                "updatedAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat())
-            })
-    
+    for si in items:
+        created = si.get("created_at") or si.get("updated_at")
+        updated = si.get("updated_at") or si.get("created_at")
+        result.append({
+            "id": si.get("id", si.get("unique_key", "")),
+            "supplierCompanyId": si.get("supplier_company_id", company_id),
+            "productName": si.get("name_raw", ""),
+            "article": si.get("supplier_item_code", ""),
+            "price": float(si.get("price", 0)),
+            "unit": si.get("unit_supplier", si.get("unit_norm", "шт")),
+            "minQuantity": int(si.get("min_order_qty", 1)),
+            "availability": True,
+            "active": si.get("active", True),
+            "createdAt": created.isoformat() if hasattr(created, "isoformat") else str(created),
+            "updatedAt": updated.isoformat() if hasattr(updated, "isoformat") else str(updated),
+        })
     return result
 
 @api_router.post("/price-lists", response_model=PriceList)
 async def create_price_list(data: PriceListCreate, current_user: dict = Depends(get_current_user)):
+    """Create one price list item: write to supplier_items + pricelists metadata (single source)."""
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
     company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
-    
-    price_list = PriceList(
-        supplierCompanyId=company['id'],
-        **data.model_dump()
+    company_id = company['id']
+    supplier_name = company.get('companyName', company.get('name', 'Unknown'))
+    pricelist_id = str(uuid.uuid4())
+    item_id = str(uuid.uuid4())
+    name_raw = (data.productName or "").strip()
+    name_norm = name_raw.lower().strip().replace("  ", " ") if name_raw else ""
+    unit_supplier = data.unit or "шт"
+    unit_norm = unit_supplier if unit_supplier in ("pcs", "kg", "l") else "pcs"
+    unique_key = f"{company_id}:{name_norm}:{unit_supplier}" if not data.article else f"{company_id}:{(data.article or '').strip()}"
+    now = datetime.now(timezone.utc)
+    item_data = {
+        "id": item_id,
+        "unique_key": unique_key,
+        "supplier_company_id": company_id,
+        "supplierCompanyId": company_id,
+        "price_list_id": pricelist_id,
+        "supplier_item_code": data.article or "",
+        "name_raw": name_raw,
+        "name_norm": name_norm,
+        "unit_supplier": unit_supplier,
+        "unit_norm": unit_norm,
+        "unit_type": "PIECE",
+        "price": float(data.price),
+        "pack_qty": 1,
+        "min_order_qty": int(data.minQuantity or 1),
+        "active": getattr(data, "active", True) and getattr(data, "availability", True),
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.supplier_items.insert_one(item_data)
+    pricelist_meta = {
+        "id": pricelist_id,
+        "supplierId": company_id,
+        "supplierName": supplier_name,
+        "fileName": "manual",
+        "itemsCount": 1,
+        "createdAt": now.isoformat(),
+        "active": True,
+    }
+    await db.pricelists.insert_one(pricelist_meta)
+    return PriceList(
+        id=item_id,
+        supplierCompanyId=company_id,
+        productName=name_raw,
+        article=data.article or "",
+        price=data.price,
+        unit=unit_supplier,
+        minQuantity=int(data.minQuantity or 1),
+        availability=getattr(data, "availability", True),
+        active=True,
+        createdAt=now,
+        updatedAt=now,
     )
-    price_dict = price_list.model_dump()
-    price_dict['createdAt'] = price_dict['createdAt'].isoformat()
-    price_dict['updatedAt'] = price_dict['updatedAt'].isoformat()
-    await db.price_lists.insert_one(price_dict)
-    return price_list
 
 @api_router.put("/price-lists/{price_id}")
 async def update_price_list(price_id: str, data: PriceListUpdate, current_user: dict = Depends(get_current_user)):
+    """Update one price list item in supplier_items."""
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # Get company ID from user
     company_id = current_user.get('companyId')
+    if not company_id and current_user.get('role') == UserRole.supplier:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+        company_id = company['id'] if company else None
     if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
-    
-    # Update pricelist
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    
-    result = await db.pricelists.update_one(
-        {"id": price_id, "supplierId": company_id},
-        {"$set": update_data}
-    )
-    
+    set_fields = {}
+    if data.price is not None:
+        set_fields["price"] = float(data.price)
+    if data.availability is not None:
+        set_fields["active"] = data.availability
+    if data.active is not None:
+        set_fields["active"] = data.active
+    set_fields["updated_at"] = datetime.now(timezone.utc)
+    if not set_fields:
+        set_fields["updated_at"] = datetime.now(timezone.utc)
+    match = {"id": price_id, "$or": [{"supplier_company_id": company_id}, {"supplierCompanyId": company_id}]}
+    result = await db.supplier_items.update_one(match, {"$set": set_fields})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Price list item not found")
-    
-    # Get updated pricelist and join with product
-    pricelist = await db.pricelists.find_one({"id": price_id}, {"_id": 0})
-    product = await db.products.find_one({"id": pricelist['productId']}, {"_id": 0})
-    
-    # Return in expected format with actual saved values
+    si = await db.supplier_items.find_one(match, {"_id": 0})
+    created = si.get("created_at") or si.get("updated_at")
+    updated = si.get("updated_at")
     return {
-        "id": pricelist['id'],
-        "supplierCompanyId": pricelist['supplierId'],
-        "productName": product['name'] if product else '',
-        "article": pricelist.get('supplierItemCode', ''),
-        "price": pricelist['price'],
-        "unit": product['unit'] if product else '',
-        "minQuantity": pricelist.get('minQuantity', 1),
-        "availability": pricelist.get('availability', True),
-        "active": pricelist.get('active', True),
-        "createdAt": pricelist.get('createdAt', datetime.now(timezone.utc).isoformat()),
-        "updatedAt": datetime.now(timezone.utc).isoformat()
+        "id": si.get("id", price_id),
+        "supplierCompanyId": si.get("supplier_company_id", company_id),
+        "productName": si.get("name_raw", ""),
+        "article": si.get("supplier_item_code", ""),
+        "price": float(si.get("price", 0)),
+        "unit": si.get("unit_supplier", si.get("unit_norm", "шт")),
+        "minQuantity": int(si.get("min_order_qty", 1)),
+        "availability": True,
+        "active": si.get("active", True),
+        "createdAt": created.isoformat() if hasattr(created, "isoformat") else str(created),
+        "updatedAt": updated.isoformat() if hasattr(updated, "isoformat") else str(updated),
     }
 
 @api_router.delete("/price-lists/{price_id}")
 async def delete_price_list(price_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete (deactivate) one price list item in supplier_items."""
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # Get company ID from user
     company_id = current_user.get('companyId')
+    if not company_id and current_user.get('role') == UserRole.supplier:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+        company_id = company['id'] if company else None
     if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
-    
-    result = await db.pricelists.delete_one({"id": price_id, "supplierId": company_id})
-    if result.deleted_count == 0:
+    match = {"id": price_id, "$or": [{"supplier_company_id": company_id}, {"supplierCompanyId": company_id}]}
+    result = await db.supplier_items.update_one(
+        match,
+        {"$set": {"active": False, "updated_at": datetime.now(timezone.utc)}}
+    )
+    if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Price list not found")
-    
     return {"message": "Price list deleted"}
 
 @api_router.post("/price-lists/upload")
@@ -829,25 +873,230 @@ async def upload_price_list(file: UploadFile = File(...), current_user: dict = D
         raise HTTPException(status_code=404, detail="Company not found")
     
     # Read file
-    contents = await file.read()
+    try:
+        contents = await file.read()
+    except Exception as e:
+        correlation_id = str(uuid.uuid4())
+        logger.exception(
+            "Failed to read uploaded file",
+            extra={
+                "correlation_id": correlation_id,
+                "supplier_id": company.get('id'),
+                "supplier_email": company.get('companyEmail'),
+                "filename": file.filename,
+            },
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "file_read_error",
+                "message": "Could not read uploaded file.",
+                "correlation_id": correlation_id,
+            },
+        )
+    
+    correlation_id = str(uuid.uuid4())
+    supplier_id = company.get("id")
+    supplier_email = company.get("companyEmail") or company.get("email")
+    file_size = len(contents)
+    checksum = hashlib.sha256(contents).hexdigest()
+    
+    existing_upload = await db.price_list_uploads.find_one(
+        {"supplierId": supplier_id, "checksum": checksum},
+        {"_id": 0},
+    )
+    if existing_upload:
+        logger.info(
+            "Price list upload skipped (duplicate checksum)",
+            extra={
+                "correlation_id": correlation_id,
+                "checksum": checksum,
+                "supplier_id": supplier_id,
+                "filename": file.filename,
+                "file_size": file_size,
+            },
+        )
+        return {
+            "status": "already_uploaded",
+            "message": "Identical price list already uploaded.",
+            "columns": existing_upload.get("columns", []),
+            "preview": existing_upload.get("preview", []),
+            "total_rows": existing_upload.get("totalRows", 0),
+            "checksum": checksum,
+            "correlation_id": existing_upload.get("correlationId", correlation_id),
+        }
+    
+    if file_size == 0:
+        logger.warning(
+            "Uploaded file is empty",
+            extra={
+                "correlation_id": correlation_id,
+                "supplier_id": supplier_id,
+                "filename": file.filename,
+            },
+        )
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "empty_file",
+                "message": "Uploaded file is empty.",
+                "correlation_id": correlation_id,
+            },
+        )
+    
+    async def parse_dataframe() -> pd.DataFrame:
+        buffer = io.BytesIO(contents)
+        if file.filename.lower().endswith(".csv"):
+            return await asyncio.to_thread(pd.read_csv, buffer)
+        if file.filename.lower().endswith((".xlsx", ".xls")):
+            return await asyncio.to_thread(pd.read_excel, buffer)
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "unsupported_format",
+                "message": "Only CSV and Excel files are supported.",
+                "correlation_id": correlation_id,
+            },
+        )
     
     try:
-        # Try to parse as CSV or Excel
-        if file.filename.endswith('.csv'):
-            df = pd.read_csv(io.BytesIO(contents))
-        elif file.filename.endswith(('.xlsx', '.xls')):
-            df = pd.read_excel(io.BytesIO(contents))
-        else:
-            raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
-        
-        # Return columns for mapping
-        return {
-            "columns": df.columns.tolist(),
-            "preview": df.head(5).to_dict('records'),
-            "total_rows": len(df)
-        }
+        df = await parse_dataframe()
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
+        logger.exception(
+            "Failed to parse price list file",
+            extra={
+                "correlation_id": correlation_id,
+                "supplier_id": supplier_id,
+                "supplier_email": supplier_email,
+                "filename": file.filename,
+                "file_size": file_size,
+            },
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "parse_failure",
+                "message": "Failed to parse price list file.",
+                "correlation_id": correlation_id,
+            },
+        )
+    
+    total_rows = int(df.shape[0])
+    total_columns = int(df.shape[1])
+    
+    def validation_error(error_code: str, message: str, **extra_details):
+        logger.warning(
+            message,
+            extra={
+                "correlation_id": correlation_id,
+                "supplier_id": supplier_id,
+                "filename": file.filename,
+                "error_code": error_code,
+                **extra_details,
+            },
+        )
+        detail = {
+            "error": error_code,
+            "message": message,
+            "correlation_id": correlation_id,
+        }
+        detail.update(extra_details)
+        raise HTTPException(status_code=422, detail=detail)
+    
+    if total_rows == 0:
+        validation_error("empty_data", "Price list has no data rows.")
+    
+    if total_rows > 100000:
+        validation_error(
+            "too_many_rows",
+            "Price list has too many rows.",
+            total_rows=total_rows,
+        )
+    
+    if total_columns == 0:
+        validation_error("no_columns", "Price list has no columns.")
+    
+    if total_columns > 200:
+        validation_error(
+            "too_many_columns",
+            "Price list has too many columns.",
+            total_columns=total_columns,
+        )
+    
+    duplicate_columns = [
+        str(col)
+        for col, is_dup in zip(df.columns, df.columns.duplicated())
+        if is_dup
+    ]
+    if duplicate_columns:
+        validation_error(
+            "duplicate_columns",
+            "Price list contains duplicate column names.",
+            duplicate_columns=duplicate_columns,
+        )
+    
+    unnamed_columns = [
+        str(col)
+        for col in df.columns
+        if str(col).strip() == "" or str(col).lower().startswith("unnamed")
+    ]
+    if unnamed_columns:
+        validation_error(
+            "unnamed_columns",
+            "Price list contains unnamed columns.",
+            unnamed_columns=unnamed_columns,
+        )
+    
+    preview_df = df.head(5).copy()
+    preview_records = (
+        preview_df.fillna("")
+        .astype(str)
+        .to_dict("records")
+    )
+    column_names = [str(col) for col in df.columns]
+    
+    logger.info(
+        "Price list parsed successfully",
+        extra={
+            "correlation_id": correlation_id,
+            "supplier_id": supplier_id,
+            "supplier_email": supplier_email,
+            "filename": file.filename,
+            "file_size": file_size,
+            "total_rows": total_rows,
+            "total_columns": total_columns,
+        },
+    )
+    
+    await db.price_list_uploads.update_one(
+        {"supplierId": supplier_id, "checksum": checksum},
+        {
+            "$set": {
+                "supplierId": supplier_id,
+                "supplierEmail": supplier_email,
+                "checksum": checksum,
+                "fileName": file.filename,
+                "fileSize": file_size,
+                "columns": column_names,
+                "preview": preview_records,
+                "totalRows": total_rows,
+                "correlationId": correlation_id,
+                "uploadedAt": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+        upsert=True,
+    )
+    
+    return {
+        "status": "ok",
+        "columns": column_names,
+        "preview": preview_records,
+        "total_rows": total_rows,
+        "checksum": checksum,
+        "correlation_id": correlation_id,
+    }
 
 @api_router.post("/price-lists/import")
 async def import_price_list(
@@ -975,10 +1224,11 @@ async def import_price_list(
                 # P0.1: Generate unique key
                 unique_key = generate_unique_key(article, product_name, unit_type)
                 
-                # Prepare item data
+                # Prepare item data (snake_case primary; camelCase for compatibility)
                 item_data = {
                     'unique_key': unique_key,
                     'supplier_company_id': supplier_id,
+                    'supplierCompanyId': supplier_id,
                     'price_list_id': new_pricelist_id,
                     'supplier_item_code': article or '',
                     'name_raw': product_name,
@@ -1428,99 +1678,46 @@ async def get_suppliers():
 
 @api_router.get("/suppliers/{supplier_id}/price-lists")
 async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = None):
-    """Get supplier price lists with enhanced fuzzy search"""
-    from enhanced_matching import normalize_with_synonyms, fuzzy_match
-    
-    query = {"supplierId": supplier_id, "productId": {"$exists": True}}
-    
-    # Get all pricelists for this supplier (only those with productId)
-    pricelists = await db.pricelists.find(query, {"_id": 0}).to_list(10000)
-    
-    # Get all products
-    product_ids = [pl['productId'] for pl in pricelists if 'productId' in pl]
-    products = await db.products.find({"id": {"$in": product_ids}}, {"_id": 0}).to_list(10000)
-    products_map = {p['id']: p for p in products}
-    
-    # Join and filter
+    """Get supplier price list items from supplier_items (catalog for customers)."""
+    query = {"supplier_company_id": supplier_id, "active": True}
+    items = await db.supplier_items.find(query, {"_id": 0}).to_list(10000)
     result = []
-    for pl in pricelists:
-        product = products_map.get(pl['productId'])
-        if product:
-            # Skip if price is 0 (category headers)
-            if pl.get('price', 0) <= 0:
-                continue
-            
-            # Enhanced search with fuzzy matching
-            if search:
-                # Normalize and expand search with synonyms
-                search_terms = [search.lower().strip()]
-                
-                # Add common typo corrections
+    for si in items:
+        price = float(si.get("price", 0))
+        if price <= 0:
+            continue
+        name = si.get("name_raw", "")
+        if search:
+            search_lower = search.lower().strip()
+            name_lower = name.lower()
+            if search_lower not in name_lower:
                 typo_map = {
-                    'ласось': 'лосось',
-                    'лососс': 'лосось',
-                    'лососк': 'лосось',
-                    'лосос': 'лосось',
-                    'сибасс': 'сибас',
-                    'сибаса': 'сибас',
-                    'дорада': 'дорадо',
-                    'креветка': 'креветки',
-                    'креветк': 'креветки'
+                    "ласось": "лосось", "лососс": "лосось", "лососк": "лосось", "лосос": "лосось",
+                    "сибасс": "сибас", "сибаса": "сибас", "дорада": "дорадо", "креветка": "креветки", "креветк": "креветки",
                 }
-                
-                search_normalized = search.lower().strip()
+                replaced = name_lower
                 for typo, correct in typo_map.items():
-                    if typo in search_normalized:
-                        search_terms.append(search_normalized.replace(typo, correct))
-                
-                # Check if any search term matches
-                product_name_lower = product['name'].lower()
-                match_found = any(term in product_name_lower for term in search_terms)
-                
-                # Also try fuzzy match on words
-                if not match_found:
-                    search_words = search_normalized.split()
-                    product_words = product_name_lower.split()
-                    
-                    for sw in search_words:
-                        for pw in product_words:
-                            # Simple fuzzy: allow 1-2 char difference
-                            if len(sw) > 3 and len(pw) > 3:
-                                if sw in pw or pw in sw:
-                                    match_found = True
-                                    break
-                                # Check edit distance (simple)
-                                if abs(len(sw) - len(pw)) <= 2:
-                                    diff = sum(1 for a, b in zip(sw, pw) if a != b)
-                                    if diff <= 2:
-                                        match_found = True
-                                        break
-                        if match_found:
-                            break
-                
-                if not match_found:
+                    if typo in search_lower:
+                        replaced = search_lower.replace(typo, correct)
+                        break
+                if replaced not in name_lower and search_lower not in name_lower:
                     continue
-            
-            # Sanitize price (handle nan/inf)
-            price = pl['price']
-            if price is None or (isinstance(price, float) and (price != price or price == float('inf') or price == float('-inf'))):
-                price = 0.0
-            
-            result.append({
-                "id": pl['id'],
-                "productId": pl['productId'],
-                "supplierCompanyId": pl['supplierId'],
-                "productName": product['name'],
-                "article": pl.get('supplierItemCode', ''),
-                "price": price,
-                "unit": product['unit'],
-                "minQuantity": pl.get('minQuantity', 1),
-                "availability": True,
-                "active": True,
-                "createdAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat()),
-                "updatedAt": pl.get('createdAt', datetime.now(timezone.utc).isoformat())
-            })
-    
+        created = si.get("created_at") or si.get("updated_at")
+        updated = si.get("updated_at") or created
+        result.append({
+            "id": si.get("id", si.get("unique_key", "")),
+            "productId": si.get("id", si.get("unique_key", "")),
+            "supplierCompanyId": si.get("supplier_company_id", supplier_id),
+            "productName": name,
+            "article": si.get("supplier_item_code", ""),
+            "price": price,
+            "unit": si.get("unit_supplier", si.get("unit_norm", "шт")),
+            "minQuantity": int(si.get("min_order_qty", 1)),
+            "availability": True,
+            "active": True,
+            "createdAt": created.isoformat() if hasattr(created, "isoformat") else str(created),
+            "updatedAt": updated.isoformat() if hasattr(updated, "isoformat") else str(updated),
+        })
     return result
 
 
@@ -5506,7 +5703,47 @@ except ImportError as e:
 
 # Include router
 app.include_router(api_router)
+# ================= AUTH HELPERS =================
 
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
+    payload = decode_token(token)
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
+    payload = decode_token(token)
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+@api_router.get("/auth/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return {
+        "id": current_user.get("id"),
+        "email": current_user.get("email"),
+        "role": current_user.get("role"),
+        "companyId": current_user.get("companyId"),
+    }
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -5526,11 +5763,15 @@ async def startup_validation():
     """Run rules validation at server startup"""
     global _validation_report
     logger.info("🔍 Running rules validation at startup...")
+    if SKIP_RULES_VALIDATION:
+        logger.warning("BESTPRICE_SKIP_RULES_VALIDATION enabled – critical validation issues will be downgraded.")
     try:
-        _validation_report = validate_all_rules(strict=False)
+        _validation_report = validate_all_rules(strict=not SKIP_RULES_VALIDATION)
         logger.info(f"✅ Validation complete: {_validation_report.summary}")
         if _validation_report.has_critical_errors:
             logger.error("⚠️ Critical validation errors detected! Check /api/debug/validation for details.")
+        elif SKIP_RULES_VALIDATION:
+            logger.warning("Validation completed with downgraded issues (dev mode).")
     except Exception as e:
         logger.error(f"❌ Validation failed with error: {e}")
 
