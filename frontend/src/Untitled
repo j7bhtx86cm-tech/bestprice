@@ -1,0 +1,1 @@
+BESTPRICE_SKIP_RULES_VALIDATION=1 uvicorn server:app --reload --host 127.0.0.1 --port 8000

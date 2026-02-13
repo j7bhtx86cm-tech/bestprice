@@ -16,29 +16,7 @@ export const SupplierDocuments = () => {
   const [expandedRestaurant, setExpandedRestaurant] = useState(null);
 
   // Mock data for demonstration - would come from backend
-  const [restaurantDocuments] = useState([
-    {
-      restaurantId: '1',
-      restaurantName: 'Ресторан BestPrice',
-      inn: '7701234567',
-      documents: [
-        { id: '1', type: 'Договор аренды', uploadedAt: '2025-12-10', status: 'uploaded' },
-        { id: '2', type: 'Устав', uploadedAt: '2025-12-09', status: 'uploaded' }
-      ],
-      contractStatus: 'pending' // pending, accepted, declined
-    },
-    {
-      restaurantId: '2',
-      restaurantName: 'Ресторан Вкусно',
-      inn: '7702345678',
-      documents: [
-        { id: '3', type: 'Договор аренды', uploadedAt: '2025-12-08', status: 'uploaded' }
-      ],
-      contractStatus: 'accepted'
-    }
-  ]);
-
-  const [contractStatuses, setContractStatuses] = useState({});
+  const [restaurantDocuments, setRestaurantDocuments] = useState([]);
 
   useEffect(() => {
     fetchDocuments();
@@ -48,9 +26,8 @@ export const SupplierDocuments = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      // In real app, fetch documents from backend
-      // const response = await axios.get(`${API}/supplier/restaurant-documents`, { headers });
-      // setDocuments(response.data);
+      const response = await axios.get(`${API}/supplier/restaurant-documents`, { headers });
+      setRestaurantDocuments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch documents:', error);
     } finally {
@@ -60,12 +37,12 @@ export const SupplierDocuments = () => {
 
   const handleAcceptContract = async (restaurantId) => {
     try {
-      // In real app, send to backend
-      // await axios.post(`${API}/supplier/accept-contract`, { restaurantId }, { headers });
-      
-      setContractStatuses({ ...contractStatuses, [restaurantId]: 'accepted' });
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.post(`${API}/supplier/accept-contract`, { restaurantId }, { headers });
       setMessage('success');
       setTimeout(() => setMessage(''), 3000);
+      fetchDocuments();
     } catch (error) {
       setMessage('error');
       setTimeout(() => setMessage(''), 3000);
@@ -78,7 +55,6 @@ export const SupplierDocuments = () => {
     }
     
     try {
-      setContractStatuses({ ...contractStatuses, [restaurantId]: 'declined' });
       setMessage('declined');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -88,7 +64,7 @@ export const SupplierDocuments = () => {
   };
 
   const getContractStatus = (restaurant) => {
-    return contractStatuses[restaurant.restaurantId] || restaurant.contractStatus;
+    return restaurant.contractStatus;
   };
 
   if (loading) {

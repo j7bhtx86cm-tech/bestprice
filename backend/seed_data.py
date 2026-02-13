@@ -24,28 +24,43 @@ def hash_password(password: str) -> str:
 async def seed_data():
     print("🌱 Starting seed data creation...")
     
-    # Clear existing data
+    # Clear existing data (оставляем supplier1/supplier2 — обновим пароль если есть)
     print("Clearing existing data...")
-    await db.users.delete_many({})
+    await db.users.delete_many({"email": {"$nin": ["supplier1@example.com", "supplier2@example.com"]}})
     await db.companies.delete_many({})
     await db.supplier_settings.delete_many({})
     await db.price_lists.delete_many({})
     await db.orders.delete_many({})
     await db.documents.delete_many({})
-    
-    # Create Supplier 1
+    await db.supplier_restaurant_settings.delete_many({})
+
+    pw_hash = hash_password("password123")  # тот же bcrypt, что и auth/login
+    supplier_created = 0
+    supplier_updated = 0
+
+    # Supplier 1
     print("Creating Supplier 1: ООО Поставщик Продуктов...")
-    supplier1_id = str(uuid.uuid4())
-    supplier1_user = {
-        "id": supplier1_id,
-        "email": "supplier1@example.com",
-        "passwordHash": hash_password("password123"),
-        "role": "supplier",
-        "createdAt": datetime.now(timezone.utc).isoformat(),
-        "updatedAt": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(supplier1_user)
-    
+    existing1 = await db.users.find_one({"email": "supplier1@example.com"}, {"_id": 0, "id": 1})
+    if existing1:
+        await db.users.update_one(
+            {"email": "supplier1@example.com"},
+            {"$set": {"passwordHash": pw_hash, "updatedAt": datetime.now(timezone.utc).isoformat()}}
+        )
+        supplier1_id = existing1["id"]
+        supplier_updated += 1
+    else:
+        supplier1_id = str(uuid.uuid4())
+        supplier1_user = {
+            "id": supplier1_id,
+            "email": "supplier1@example.com",
+            "passwordHash": pw_hash,
+            "role": "supplier",
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+            "updatedAt": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(supplier1_user)
+        supplier_created += 1
+
     supplier1_company_id = str(uuid.uuid4())
     supplier1_company = {
         "id": supplier1_company_id,
@@ -56,11 +71,11 @@ async def seed_data():
         "companyName": "ООО Поставщик Продуктов",
         "legalAddress": "г. Москва, ул. Ленина, д. 10",
         "actualAddress": "г. Москва, ул. Ленина, д. 10",
-        "phone": "+7 (495) 123-45-67",
+        "phone": "+7 921 364 34 75",
         "email": "info@supplier1.ru",
         "contactPersonName": "Иванов Иван Иванович",
         "contactPersonPosition": "Директор",
-        "contactPersonPhone": "+7 (495) 123-45-68",
+        "contactPersonPhone": "+7 921 364 34 75",
         "deliveryAddresses": [],
         "contractAccepted": True,
         "createdAt": datetime.now(timezone.utc).isoformat(),
@@ -81,18 +96,28 @@ async def seed_data():
     }
     await db.supplier_settings.insert_one(supplier1_settings)
     
-    # Create Supplier 2
-    print("Creating Supplier 2: ООО Свежие Продукты...")
-    supplier2_id = str(uuid.uuid4())
-    supplier2_user = {
-        "id": supplier2_id,
-        "email": "supplier2@example.com",
-        "passwordHash": hash_password("password123"),
-        "role": "supplier",
-        "createdAt": datetime.now(timezone.utc).isoformat(),
-        "updatedAt": datetime.now(timezone.utc).isoformat()
-    }
-    await db.users.insert_one(supplier2_user)
+    # Supplier 2
+    print("Creating/updating Supplier 2: ООО Свежие Продукты...")
+    existing2 = await db.users.find_one({"email": "supplier2@example.com"}, {"_id": 0, "id": 1})
+    if existing2:
+        await db.users.update_one(
+            {"email": "supplier2@example.com"},
+            {"$set": {"passwordHash": pw_hash, "updatedAt": datetime.now(timezone.utc).isoformat()}}
+        )
+        supplier2_id = existing2["id"]
+        supplier_updated += 1
+    else:
+        supplier2_id = str(uuid.uuid4())
+        supplier2_user = {
+            "id": supplier2_id,
+            "email": "supplier2@example.com",
+            "passwordHash": pw_hash,
+            "role": "supplier",
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+            "updatedAt": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(supplier2_user)
+        supplier_created += 1
     
     supplier2_company_id = str(uuid.uuid4())
     supplier2_company = {
@@ -283,22 +308,45 @@ async def seed_data():
     }
     await db.orders.insert_one(order2)
     
+    # Supplier-restaurant links: "Ресторан Вкусно" has contract accepted with Supplier 1
+    print("Creating supplier-restaurant links...")
+    await db.supplier_restaurant_settings.insert_one({
+        "id": str(uuid.uuid4()),
+        "supplierId": supplier1_company_id,
+        "restaurantId": customer1_company_id,
+        "contract_accepted": True,
+        "is_paused": False,
+        "ordersEnabled": True,
+        "updatedAt": datetime.now(timezone.utc).isoformat()
+    })
+    
     print("✅ Seed data created successfully!")
-    print("\n📝 Test Credentials:")
-    print("=" * 50)
-    print("Supplier 1:")
-    print("  Email: supplier1@example.com")
-    print("  Password: password123")
-    print("\nSupplier 2:")
-    print("  Email: supplier2@example.com")
-    print("  Password: password123")
-    print("\nRestaurant 1:")
-    print("  Email: restaurant1@example.com")
-    print("  Password: password123")
-    print("\nRestaurant 2:")
-    print("  Email: restaurant2@example.com")
-    print("  Password: password123")
-    print("=" * 50)
+    print("\nSeed completed.")
+    print("supplier1@example.com / password123")
+    print("supplier2@example.com / password123")
+    print(f"\nSuppliers: {supplier_created} created, {supplier_updated} updated.")
+
+    # Export Excel for verify_e2e
+    try:
+        from openpyxl import Workbook
+        exports_dir = ROOT_DIR.parent / "_exports"
+        exports_dir.mkdir(parents=True, exist_ok=True)
+        excel_path = exports_dir / "supplier_accesses.xlsx"
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Supplier accesses"
+        headers = ["supplier_email", "password_plain", "company_id", "user_id", "role", "login_url", "notes"]
+        ws.append(headers)
+        base_url = os.environ.get("VERIFY_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+        for email, pw, cid, uid, role, name in [
+            ("supplier1@example.com", "password123", supplier1_company_id, supplier1_id, "supplier", "ООО Поставщик Продуктов"),
+            ("supplier2@example.com", "password123", supplier2_company_id, supplier2_id, "supplier", "ООО Свежие Продукты"),
+        ]:
+            ws.append([email, pw, cid, uid, role, f"{base_url}/api/auth/login", name])
+        wb.save(excel_path)
+        print(f"\n📤 Exported {excel_path.name} for verify_e2e")
+    except ImportError:
+        print("\n⚠️ openpyxl not installed — run: pip install openpyxl (for verify_e2e Excel)")
 
 if __name__ == "__main__":
     asyncio.run(seed_data())

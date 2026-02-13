@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 export const SupplierProfile = () => {
+  const { user, fetchUser } = useAuth();
+  const isPaused = user?.is_paused ?? false;
+
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pausing, setPausing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [formData, setFormData] = useState({
@@ -63,9 +69,34 @@ export const SupplierProfile = () => {
     return <div className="text-center py-8">Загрузка...</div>;
   }
 
+  const handlePauseToggle = async () => {
+    try {
+      setPausing(true);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.patch(`${API}/supplier/pause`, { is_paused: !isPaused }, { headers });
+      if (fetchUser) fetchUser();
+    } catch (error) {
+      setMessage('Ошибка при переключении паузы');
+    } finally {
+      setPausing(false);
+    }
+  };
+
   return (
     <div data-testid="supplier-profile-page">
       <h2 className="text-2xl font-bold mb-6">Профиль компании</h2>
+
+      <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
+        <Label htmlFor="pause-toggle" className="font-medium">Поставщик на паузе</Label>
+        <Switch
+          id="pause-toggle"
+          checked={isPaused}
+          onCheckedChange={handlePauseToggle}
+          disabled={pausing}
+        />
+        <span className="text-sm text-muted-foreground">{isPaused ? 'На паузе' : 'Активен'}</span>
+      </div>
 
       {message && (
         <Alert className="mb-4" variant={message.includes('успешно') ? 'default' : 'destructive'}>

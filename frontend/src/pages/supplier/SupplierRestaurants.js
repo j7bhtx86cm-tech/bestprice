@@ -3,9 +3,11 @@ import axios from 'axios';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building2, Ban, CheckCircle, Package } from 'lucide-react';
+import { Building2, Ban, CheckCircle, Package, Pause } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -60,6 +62,24 @@ export const SupplierRestaurants = () => {
       fetchRestaurants();
     } catch (error) {
       console.error('Failed to enable orders:', error);
+      setMessage('error|Ошибка обновления');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  const handlePauseToggle = async (restaurantId, currentPaused) => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.patch(
+        `${API}/suppliers/me/restaurants/${restaurantId}`,
+        { is_paused: !currentPaused },
+        { headers }
+      );
+      setMessage('success|' + (!currentPaused ? 'Ресторан на паузе' : 'Ресторан снова активен'));
+      setTimeout(() => setMessage(''), 3000);
+      fetchRestaurants();
+    } catch (error) {
       setMessage('error|Ошибка обновления');
       setTimeout(() => setMessage(''), 3000);
     }
@@ -129,7 +149,7 @@ export const SupplierRestaurants = () => {
       {restaurants.length === 0 ? (
         <Card className="p-12 text-center">
           <Building2 className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-600">Пока нет ресторанов, сделавших заказы</p>
+          <p className="text-gray-600">Пока нет ресторанов с принятым договором</p>
         </Card>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -144,10 +164,29 @@ export const SupplierRestaurants = () => {
                   {restaurant.inn && (
                     <p className="text-sm text-gray-600">ИНН: {restaurant.inn}</p>
                   )}
+                  {restaurant.is_paused && (
+                    <Badge className="mt-2 bg-amber-100 text-amber-800">
+                      <Pause className="h-3 w-3 mr-1 inline" />
+                      На паузе
+                    </Badge>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-3">
+                <div className="flex items-center justify-between py-2 border-t">
+                  <span className="text-sm text-gray-600">Отгрузки:</span>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={`pause-${restaurant.id}`} className="text-sm">
+                      {restaurant.is_paused ? 'На паузе' : 'Активен'}
+                    </Label>
+                    <Switch
+                      id={`pause-${restaurant.id}`}
+                      checked={!restaurant.is_paused}
+                      onCheckedChange={() => handlePauseToggle(restaurant.id, restaurant.is_paused)}
+                    />
+                  </div>
+                </div>
                 <div className="flex items-center justify-between py-2 border-t">
                   <span className="text-sm text-gray-600">Заказов:</span>
                   <span className="font-medium">{restaurant.orderCount}</span>

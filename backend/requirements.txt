@@ -40,6 +40,7 @@ pyasn1==0.6.1
 pycodestyle==2.14.0
 pycparser==2.23
 pydantic==2.12.4
+rapidfuzz==3.10.1
 pydantic_core==2.41.5
 pyflakes==3.4.0
 Pygments==2.19.2

@@ -7,6 +7,8 @@ import os
 import logging
 import asyncio
 import hashlib
+import secrets
+import re
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
@@ -159,12 +161,14 @@ class MatrixOrderCreate(BaseModel):
     deliveryAddressId: Optional[str] = None
     items: List[dict]  # [{"rowNumber": 1, "quantity": 5}, ...]
 
-# Supplier-Restaurant Settings
+# Supplier-Restaurant Settings (link supplier↔restaurant, contract + pause)
 class SupplierRestaurantSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     supplierId: str
     restaurantId: str
+    contract_accepted: bool = False
+    is_paused: bool = False
     ordersEnabled: bool = True
     unavailabilityReason: Optional[str] = None
     updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -172,6 +176,9 @@ class SupplierRestaurantSettings(BaseModel):
 class UpdateRestaurantAvailability(BaseModel):
     ordersEnabled: bool
     unavailabilityReason: Optional[str] = None
+
+class RestaurantPauseBody(BaseModel):
+    is_paused: bool
 
 class LogisticsType(str, Enum):
     own = "own"
@@ -272,6 +279,7 @@ class SupplierSettings(BaseModel):
     deliveryTime: str = ""
     orderReceiveDeadline: str = ""
     logisticsType: LogisticsType = LogisticsType.own
+    is_paused: bool = False
     updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class SupplierSettingsUpdate(BaseModel):
@@ -280,6 +288,14 @@ class SupplierSettingsUpdate(BaseModel):
     deliveryTime: Optional[str] = None
     orderReceiveDeadline: Optional[str] = None
     logisticsType: Optional[LogisticsType] = None
+    is_paused: Optional[bool] = None
+
+class SupplierPauseBody(BaseModel):
+    is_paused: bool
+
+
+class BulkDeleteBody(BaseModel):
+    ids: List[str]
 
 # PriceList Models
 class PriceList(BaseModel):
@@ -298,15 +314,22 @@ class PriceList(BaseModel):
 
 class PriceListCreate(BaseModel):
     productName: str
-    article: str
+    article: Optional[str] = ""
     price: float
     unit: str
     minQuantity: Optional[int] = 1
+    pack_quantity: Optional[int] = 1
     availability: bool = True
     active: bool = True
 
 class PriceListUpdate(BaseModel):
-    price: Optional[float] = None
+    article: Optional[str] = None
+    name: Optional[str] = None
+    unit: Optional[str] = None
+    pack_quantity: Optional[int] = None
+    min_order: Optional[int] = None
+    unit_price: Optional[float] = None
+    price: Optional[float] = None  # legacy, maps to unit_price
     availability: Optional[bool] = None
     active: Optional[bool] = None
 
@@ -383,6 +406,9 @@ class CustomerRegistration(BaseModel):
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
 
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
@@ -586,6 +612,75 @@ async def register_customer(data: CustomerRegistration):
         }
     )
 
+# ==================== DEV AUTH BYPASS ====================
+DEV_AUTH_BYPASS = os.environ.get("DEV_AUTH_BYPASS", "").strip() == "1"
+
+class DevLoginRequest(BaseModel):
+    role: str  # "supplier" | "customer"
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+@api_router.post("/dev/login", response_model=TokenResponse)
+async def dev_login(data: DevLoginRequest):
+    """DEV-only: login without password. Returns 404 when DEV_AUTH_BYPASS != 1."""
+    if not DEV_AUTH_BYPASS:
+        raise HTTPException(status_code=404, detail="Not Found")
+    role = (data.role or "supplier").strip().lower()
+    if role not in ("supplier", "customer"):
+        raise HTTPException(status_code=400, detail="role must be supplier or customer")
+    user = None
+    company_id = None
+    if data.email:
+        user = await db.users.find_one({"email": data.email.strip(), "role": role}, {"_id": 0})
+    if not user and data.phone:
+        phone_norm = "".join(c for c in str(data.phone) if c.isdigit())[-10:]
+        async for c in db.companies.find({"type": role}, {"_id": 0, "id": 1, "userId": 1, "phone": 1, "contactPersonPhone": 1}):
+            cp = (c.get("phone") or c.get("contactPersonPhone") or "")
+            if phone_norm in "".join(x for x in cp if x.isdigit()):
+                user = await db.users.find_one({"id": c["userId"]}, {"_id": 0})
+                company_id = c["id"]
+                break
+    if not user:
+        user = await db.users.find_one({"role": role}, {"_id": 0})
+    if user:
+        if not company_id and user.get("role") != "responsible":
+            company = await db.companies.find_one({"userId": user["id"]}, {"_id": 0, "id": 1})
+            company_id = company["id"] if company else None
+        token = create_access_token({"sub": user["id"], "role": user["role"]})
+        return TokenResponse(
+            access_token=token,
+            user={"id": user["id"], "email": user.get("email", ""), "role": user["role"], "companyId": company_id}
+        )
+    user_id = str(uuid.uuid4())
+    company_id = str(uuid.uuid4())
+    email = data.email or f"dev-{role}@local.dev"
+    now = datetime.now(timezone.utc).isoformat()
+    user_doc = {
+        "id": user_id, "email": email, "passwordHash": hash_password("dev-no-password"),
+        "role": role, "createdAt": now, "updatedAt": now
+    }
+    company_doc = {
+        "id": company_id, "type": role, "userId": user_id,
+        "inn": "0000000000", "ogrn": "0000000000000",
+        "companyName": f"DEV {role.title()}",
+        "legalAddress": "DEV", "actualAddress": "DEV", "phone": "+70000000000",
+        "email": email, "contractAccepted": True, "createdAt": now, "updatedAt": now
+    }
+    await db.users.insert_one(user_doc)
+    await db.companies.insert_one(company_doc)
+    if role == "supplier":
+        await db.supplier_settings.insert_one({
+            "id": str(uuid.uuid4()), "supplierCompanyId": company_id,
+            "minOrderAmount": 0, "deliveryDays": [], "deliveryTime": "", "orderReceiveDeadline": "",
+            "logisticsType": "own", "updatedAt": now
+        })
+    token = create_access_token({"sub": user_id, "role": role})
+    return TokenResponse(
+        access_token=token,
+        user={"id": user_id, "email": email, "role": role, "companyId": company_id}
+    )
+
+
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(data: UserLogin):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
@@ -624,6 +719,295 @@ async def lookup_inn(inn: str):
         "legalAddress": "",
         "ogrn": ""
     }
+
+
+# ==================== PASSWORD RECOVERY ====================
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+    role: str = "supplier"
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    newPassword: str
+
+PASSWORD_RESET_EXPIRE_MINUTES = 30
+PASSWORD_RESET_COLLECTION = "password_reset_tokens"
+
+def _send_reset_email(to_email: str, reset_link: str) -> bool:
+    smtp_host = os.environ.get('SMTP_HOST', '').strip()
+    smtp_user = os.environ.get('SMTP_USER', '').strip()
+    smtp_pass = os.environ.get('SMTP_PASSWORD', '').strip()
+    smtp_port = int(os.environ.get('SMTP_PORT', '587'))
+    from_email = os.environ.get('SMTP_FROM', smtp_user or 'noreply@bestprice.local')
+    if not smtp_host or not smtp_user or not smtp_pass:
+        return False
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = "BestPrice: восстановление пароля"
+        msg['From'] = from_email
+        msg['To'] = to_email
+        text = f"Перейдите по ссылке для сброса пароля:\n{reset_link}\n\nСсылка действительна 30 минут."
+        msg.attach(MIMEText(text, 'plain', 'utf-8'))
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(from_email, to_email, msg.as_string())
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to send reset email: {e}")
+        return False
+
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest):
+    role = (data.role or "supplier").strip().lower()
+    if role != "supplier":
+        return {"message": "If email exists, we sent a reset link."}
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
+    user = await db.users.find_one({"email": data.email, "role": "supplier"}, {"_id": 0, "id": 1})
+    if user:
+        user_id = user["id"]
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hash_reset_token(raw_token)
+        expires_at = datetime.utcnow() + timedelta(minutes=PASSWORD_RESET_EXPIRE_MINUTES)
+        await db[PASSWORD_RESET_COLLECTION].delete_many({"user_id": user_id, "used_at": None})
+        await db[PASSWORD_RESET_COLLECTION].insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "token_hash": token_hash,
+            "expires_at": expires_at,
+            "used_at": None,
+            "created_at": datetime.utcnow(),
+        })
+        reset_link = f"{frontend_url}/supplier/reset-password?token={raw_token}"
+        print(f"RESET LINK: {reset_link}")
+        _send_reset_email(data.email, reset_link)
+    return {"message": "If email exists, we sent a reset link."}
+
+
+@api_router.post("/auth/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    token_hash = hash_reset_token(data.token)
+    rec = await db[PASSWORD_RESET_COLLECTION].find_one(
+        {"token_hash": token_hash},
+        {"_id": 0, "user_id": 1, "expires_at": 1, "used_at": 1}
+    )
+    if not rec:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    if rec.get("used_at"):
+        raise HTTPException(status_code=400, detail="Token already used")
+
+    now = datetime.utcnow()
+    expires = rec["expires_at"]
+    if expires is not None and hasattr(expires, 'tzinfo') and expires.tzinfo is not None:
+        expires = expires.replace(tzinfo=None)
+    if expires is not None and now > expires:
+        raise HTTPException(status_code=400, detail="Token expired")
+
+    new_hash = hash_password(data.newPassword)
+    await db.users.update_one(
+        {"id": rec["user_id"]},
+        {"$set": {"passwordHash": new_hash, "updatedAt": datetime.utcnow().isoformat()}}
+    )
+    await db[PASSWORD_RESET_COLLECTION].update_one(
+        {"token_hash": token_hash},
+        {"$set": {"used_at": datetime.utcnow()}}
+    )
+    return {"message": "Password updated."}
+
+
+# ==================== PHONE OTP ====================
+
+def _normalize_phone(phone: str) -> str:
+    s = re.sub(r'\D', '', str(phone).strip())
+    if not s:
+        return ""
+    if s.startswith('8') and len(s) == 11:
+        s = '7' + s[1:]
+    elif len(s) == 10:
+        s = '7' + s
+    elif s.startswith('7') and len(s) != 11:
+        pass
+    return '+' + s
+
+def _phone_matches(company_phone: str, normalized: str) -> bool:
+    n2 = _normalize_phone(company_phone or '')
+    return n2 == normalized and bool(normalized)
+
+PHONE_OTP_COLLECTION = "phone_otp"
+PHONE_OTP_EXPIRE_MINUTES = 5
+PHONE_OTP_MAX_ATTEMPTS = 5
+PHONE_REQUEST_COOLDOWN_SEC = 60
+
+def _hash_otp(otp: str) -> str:
+    return hashlib.sha256(otp.encode('utf-8')).hexdigest()
+
+def _send_sms(phone: str, text: str, otp: str = "") -> bool:
+    """
+    Dev fallback: если SMS не настроен — печатает OTP в лог и возвращает True.
+    Никаких return False в dev-сценариях.
+    """
+    def _dev_fallback(reason: str = ""):
+        code = otp or text
+        print(f"OTP CODE: {code} (to {phone}) {reason}".strip())
+        return True
+
+    provider = os.environ.get("SMS_PROVIDER", "").strip().lower()
+    if provider != "twilio":
+        return _dev_fallback("[dev: SMS_PROVIDER!=twilio]")
+
+    sid = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
+    token_env = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+    from_num = os.environ.get("TWILIO_PHONE_FROM", "").strip()
+
+    if not (sid and token_env and from_num):
+        return _dev_fallback("[dev: missing TWILIO* env]")
+
+    try:
+        from twilio.rest import Client
+        client = Client(sid, token_env)
+        client.messages.create(body=text, from_=from_num, to=phone)
+        return True
+    except Exception as e:
+        return _dev_fallback(f"[dev: twilio error: {e}]")
+
+class PhoneRequestOtpRequest(BaseModel):
+    phone: str
+    role: Optional[str] = "supplier"
+
+class PhoneResetPasswordRequest(BaseModel):
+    phone: str
+    otp: str
+    new_password: str
+    role: Optional[str] = "supplier"
+
+@api_router.post("/auth/phone/request-otp")
+async def phone_request_otp(data: PhoneRequestOtpRequest):
+    print("PHONE OTP: request-otp HIT")
+    role = (data.role or "supplier").strip().lower()
+    if role != "supplier":
+        print(f"PHONE OTP: role not supplier -> {role}")
+        return {"message": "If phone exists, code sent."}
+    phone_norm = _normalize_phone(data.phone)
+    print(f"PHONE OTP: normalized={phone_norm} raw={data.phone}")
+    if not phone_norm or len(phone_norm) < 11:
+        print("PHONE OTP: invalid normalized phone -> early return")
+        return {"message": "If phone exists, code sent."}
+
+    coll = db[PHONE_OTP_COLLECTION]
+    existing = await coll.find_one({"phone": phone_norm, "role": "supplier"})
+    if existing and existing.get("created_at"):
+        created = existing["created_at"]
+        if hasattr(created, "tzinfo") and created.tzinfo:
+            created = created.replace(tzinfo=None)
+
+        diff = (datetime.utcnow() - created).total_seconds()
+        print(f"PHONE OTP: cooldown check diff={diff} sec")
+
+        if diff < PHONE_REQUEST_COOLDOWN_SEC:
+            print("PHONE OTP: cooldown triggered -> early return")
+            return {"message": "If phone exists, code sent."}
+
+    # проверяем что телефон реально есть среди supplier компаний
+    found = False
+    async for c in db.companies.find({"type": "supplier"}):
+        if _phone_matches(c.get("phone") or c.get("contactPersonPhone") or "", phone_norm):
+            found = True
+            break
+    if not found:
+        print("PHONE OTP: supplier with this phone NOT FOUND -> early return")
+        return {"message": "If phone exists, code sent."}
+
+    otp = f"{secrets.randbelow(900000) + 100000}"
+    print(f"DEBUG OTP GENERATED: {otp}")
+    otp_hash = _hash_otp(otp)
+    expires_at = datetime.utcnow() + timedelta(minutes=PHONE_OTP_EXPIRE_MINUTES)
+    await coll.delete_many({"phone": phone_norm, "role": "supplier"})
+    await coll.insert_one({
+        "phone": phone_norm,
+        "role": "supplier",
+        "otp_hash": otp_hash,
+        "expires_at": expires_at,
+        "attempts": 0,
+        "created_at": datetime.utcnow(),
+    })
+    print("AFTER INSERT - CALLING SEND_SMS")
+    _send_sms(phone_norm, f"Your OTP is {otp}", otp=otp)
+    return {"message": "If phone exists, code sent."}
+
+@api_router.post("/auth/phone/reset-password")
+async def phone_reset_password(data: PhoneResetPasswordRequest):
+    role = (data.role or "supplier").strip().lower()
+    if role != "supplier":
+        raise HTTPException(status_code=400, detail="Invalid request")
+    phone_norm = _normalize_phone(data.phone)
+    coll = db[PHONE_OTP_COLLECTION]
+    rec = await coll.find_one({"phone": phone_norm, "role": "supplier"}, {"_id": 0, "otp_hash": 1, "expires_at": 1, "attempts": 1})
+    if not rec:
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    if rec.get("attempts", 0) >= PHONE_OTP_MAX_ATTEMPTS:
+        await coll.delete_one({"phone": phone_norm, "role": "supplier"})
+        raise HTTPException(status_code=400, detail="Too many attempts")
+    now = datetime.utcnow()
+    expires = rec.get("expires_at")
+    if expires:
+        if hasattr(expires, 'tzinfo') and expires.tzinfo:
+            expires = expires.replace(tzinfo=None)
+        if now > expires:
+            await coll.delete_one({"phone": phone_norm, "role": "supplier"})
+            raise HTTPException(status_code=400, detail="Code expired")
+    if _hash_otp(data.otp) != rec.get("otp_hash"):
+        await coll.update_one({"phone": phone_norm, "role": "supplier"}, {"$inc": {"attempts": 1}})
+        raise HTTPException(status_code=400, detail="Invalid code")
+    user_id = None
+    async for c in db.companies.find({"type": "supplier"}, {"_id": 0, "userId": 1, "phone": 1, "contactPersonPhone": 1}):
+        if _phone_matches(c.get("phone") or c.get("contactPersonPhone") or "", phone_norm):
+            user_id = c.get("userId")
+            break
+    if not user_id:
+        await coll.delete_one({"phone": phone_norm, "role": "supplier"})
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    new_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"passwordHash": new_hash, "updatedAt": datetime.utcnow().isoformat()}}
+    )
+    await coll.delete_one({"phone": phone_norm, "role": "supplier"})
+    return {"message": "Password updated."}
+
+
+async def _supplier_is_paused(company_id: str) -> bool:
+    """Check if supplier (company) is paused."""
+    if not company_id:
+        return False
+    settings = await db.supplier_settings.find_one(
+        {"supplierCompanyId": company_id},
+        {"_id": 0, "is_paused": 1}
+    )
+    return bool(settings and settings.get("is_paused"))
+
+
+@api_router.get("/auth/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    company_id = current_user.get("companyId")
+    if not company_id and current_user.get("role") in ("supplier", "customer"):
+        company = await db.companies.find_one({"userId": current_user["id"]}, {"_id": 0, "id": 1})
+        company_id = company["id"] if company else None
+    result = {
+        "id": current_user.get("id"),
+        "email": current_user.get("email"),
+        "role": current_user.get("role"),
+        "companyId": company_id,
+    }
+    if current_user.get("role") == UserRole.supplier and company_id:
+        result["is_paused"] = await _supplier_is_paused(company_id)
+    return result
+
+
 # ==================== COMPANY ROUTES ====================
 
 @api_router.get("/companies/my", response_model=Company)
@@ -704,8 +1088,55 @@ async def update_my_supplier_settings(data: SupplierSettingsUpdate, current_user
     )
     return await db.supplier_settings.find_one({"supplierCompanyId": sid}, {"_id": 0})
 
+
+@api_router.patch("/supplier/pause")
+async def supplier_pause(data: SupplierPauseBody, current_user: dict = Depends(get_current_user)):
+    """Toggle supplier pause: when paused, catalog is hidden from customers and editing is disabled."""
+    if current_user["role"] != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    company = await db.companies.find_one({"userId": current_user["id"]}, {"_id": 0, "id": 1})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    sid = company["id"]
+    existing = await db.supplier_settings.find_one({"supplierCompanyId": sid}, {"_id": 0})
+    update = {"is_paused": data.is_paused, "updatedAt": datetime.now(timezone.utc).isoformat()}
+    if not existing:
+        settings = SupplierSettings(supplierCompanyId=sid, is_paused=data.is_paused)
+        settings_dict = settings.model_dump()
+        settings_dict["updatedAt"] = settings_dict["updatedAt"].isoformat()
+        await db.supplier_settings.insert_one(settings_dict)
+    else:
+        await db.supplier_settings.update_one(
+            {"supplierCompanyId": sid},
+            {"$set": update}
+        )
+    return {"is_paused": data.is_paused}
+
+
+@api_router.get("/supplier/me")
+async def get_supplier_me(current_user: dict = Depends(get_current_user)):
+    """Supplier-specific profile with is_paused (alias for auth/me for supplier)."""
+    if current_user["role"] != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    company_id = current_user.get("companyId")
+    if not company_id:
+        company = await db.companies.find_one({"userId": current_user["id"]}, {"_id": 0, "id": 1})
+        company_id = company["id"] if company else None
+    return {
+        "id": current_user.get("id"),
+        "companyId": company_id,
+        "is_paused": await _supplier_is_paused(company_id) if company_id else False,
+    }
+
 # ==================== PRICE LIST ROUTES ====================
 
+async def _require_supplier_not_paused(company_id: str):
+    """Raise 403 if supplier is paused (blocks create/update/delete/import)."""
+    if await _supplier_is_paused(company_id):
+        raise HTTPException(status_code=403, detail="Поставщик на паузе. Редактирование отключено.")
+
+
+@api_router.get("/supplier/price-list")
 @api_router.get("/price-lists/my")
 async def get_my_price_lists(current_user: dict = Depends(get_current_user)):
     """Return supplier's price list items from supplier_items (single source of truth)."""
@@ -726,13 +1157,17 @@ async def get_my_price_lists(current_user: dict = Depends(get_current_user)):
         updated = si.get("updated_at") or si.get("created_at")
         result.append({
             "id": si.get("id", si.get("unique_key", "")),
-            "supplierCompanyId": si.get("supplier_company_id", company_id),
-            "productName": si.get("name_raw", ""),
             "article": si.get("supplier_item_code", ""),
-            "price": float(si.get("price", 0)),
+            "name": si.get("name_raw", ""),
             "unit": si.get("unit_supplier", si.get("unit_norm", "шт")),
+            "pack_quantity": int(si.get("pack_qty", 1)),
+            "min_order": int(si.get("min_order_qty", 1)),
+            "unit_price": float(si.get("price", 0)),
+            "availability": bool(si.get("active", True)),
+            "price": float(si.get("price", 0)),  # legacy
+            "productName": si.get("name_raw", ""),
+            "supplierCompanyId": si.get("supplier_company_id", company_id),
             "minQuantity": int(si.get("min_order_qty", 1)),
-            "availability": True,
             "active": si.get("active", True),
             "createdAt": created.isoformat() if hasattr(created, "isoformat") else str(created),
             "updatedAt": updated.isoformat() if hasattr(updated, "isoformat") else str(updated),
@@ -745,6 +1180,7 @@ async def create_price_list(data: PriceListCreate, current_user: dict = Depends(
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
     company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
+    await _require_supplier_not_paused(company['id'])
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     company_id = company['id']
@@ -770,8 +1206,8 @@ async def create_price_list(data: PriceListCreate, current_user: dict = Depends(
         "unit_norm": unit_norm,
         "unit_type": "PIECE",
         "price": float(data.price),
-        "pack_qty": 1,
-        "min_order_qty": int(data.minQuantity or 1),
+        "pack_qty": max(1, int(data.pack_quantity or 1)),
+        "min_order_qty": max(1, int(data.minQuantity or 1)),
         "active": getattr(data, "active", True) and getattr(data, "availability", True),
         "created_at": now,
         "updated_at": now,
@@ -803,7 +1239,7 @@ async def create_price_list(data: PriceListCreate, current_user: dict = Depends(
 
 @api_router.put("/price-lists/{price_id}")
 async def update_price_list(price_id: str, data: PriceListUpdate, current_user: dict = Depends(get_current_user)):
-    """Update one price list item in supplier_items."""
+    """Update one price list item in supplier_items. Accepts article, name, unit, pack_quantity, min_order, unit_price, availability."""
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
     company_id = current_user.get('companyId')
@@ -812,16 +1248,27 @@ async def update_price_list(price_id: str, data: PriceListUpdate, current_user: 
         company_id = company['id'] if company else None
     if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
-    set_fields = {}
-    if data.price is not None:
-        set_fields["price"] = float(data.price)
+    await _require_supplier_not_paused(company_id)
+    set_fields = {"updated_at": datetime.now(timezone.utc)}
+    price_val = data.unit_price if data.unit_price is not None else data.price
+    if price_val is not None:
+        set_fields["price"] = float(price_val)
+    if data.article is not None:
+        set_fields["supplier_item_code"] = str(data.article).strip()
+    if data.name is not None:
+        set_fields["name_raw"] = str(data.name).strip()
+        set_fields["name_norm"] = (str(data.name).lower().strip().replace("  ", " ") or "")
+    if data.unit is not None:
+        set_fields["unit_supplier"] = str(data.unit).strip() or "шт"
+        set_fields["unit_norm"] = set_fields["unit_supplier"] if set_fields["unit_supplier"] in ("pcs", "kg", "l") else "pcs"
+    if data.pack_quantity is not None:
+        set_fields["pack_qty"] = max(1, int(data.pack_quantity))
+    if data.min_order is not None:
+        set_fields["min_order_qty"] = max(1, int(data.min_order))
     if data.availability is not None:
         set_fields["active"] = data.availability
     if data.active is not None:
         set_fields["active"] = data.active
-    set_fields["updated_at"] = datetime.now(timezone.utc)
-    if not set_fields:
-        set_fields["updated_at"] = datetime.now(timezone.utc)
     match = {"id": price_id, "$or": [{"supplier_company_id": company_id}, {"supplierCompanyId": company_id}]}
     result = await db.supplier_items.update_one(match, {"$set": set_fields})
     if result.matched_count == 0:
@@ -831,13 +1278,17 @@ async def update_price_list(price_id: str, data: PriceListUpdate, current_user: 
     updated = si.get("updated_at")
     return {
         "id": si.get("id", price_id),
+        "article": si.get("supplier_item_code", ""),
+        "name": si.get("name_raw", ""),
+        "unit": si.get("unit_supplier", si.get("unit_norm", "шт")),
+        "pack_quantity": int(si.get("pack_qty", 1)),
+        "min_order": int(si.get("min_order_qty", 1)),
+        "unit_price": float(si.get("price", 0)),
+        "availability": bool(si.get("active", True)),
         "supplierCompanyId": si.get("supplier_company_id", company_id),
         "productName": si.get("name_raw", ""),
-        "article": si.get("supplier_item_code", ""),
         "price": float(si.get("price", 0)),
-        "unit": si.get("unit_supplier", si.get("unit_norm", "шт")),
         "minQuantity": int(si.get("min_order_qty", 1)),
-        "availability": True,
         "active": si.get("active", True),
         "createdAt": created.isoformat() if hasattr(created, "isoformat") else str(created),
         "updatedAt": updated.isoformat() if hasattr(updated, "isoformat") else str(updated),
@@ -854,6 +1305,7 @@ async def delete_price_list(price_id: str, current_user: dict = Depends(get_curr
         company_id = company['id'] if company else None
     if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
+    await _require_supplier_not_paused(company_id)
     match = {"id": price_id, "$or": [{"supplier_company_id": company_id}, {"supplierCompanyId": company_id}]}
     result = await db.supplier_items.update_one(
         match,
@@ -863,6 +1315,34 @@ async def delete_price_list(price_id: str, current_user: dict = Depends(get_curr
         raise HTTPException(status_code=404, detail="Price list not found")
     return {"message": "Price list deleted"}
 
+
+@api_router.post("/supplier/items/bulk-delete")
+@api_router.post("/price-lists/bulk-delete")
+async def bulk_delete_price_list_items(data: BulkDeleteBody, current_user: dict = Depends(get_current_user)):
+    """Soft-delete multiple price list items (supplier_items)."""
+    if current_user['role'] != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    company_id = current_user.get('companyId')
+    if not company_id and current_user.get('role') == UserRole.supplier:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+        company_id = company['id'] if company else None
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    await _require_supplier_not_paused(company_id)
+    ids = [x for x in (data.ids or []) if x]
+    if not ids:
+        return {"deletedCount": 0}
+    result = await db.supplier_items.update_many(
+        {
+            "id": {"$in": ids},
+            "$or": [{"supplier_company_id": company_id}, {"supplierCompanyId": company_id}],
+        },
+        {"$set": {"active": False, "updated_at": datetime.now(timezone.utc)}}
+    )
+    return {"deletedCount": result.modified_count}
+
+
+@api_router.post("/supplier/price-list")
 @api_router.post("/price-lists/upload")
 async def upload_price_list(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     if current_user['role'] != UserRole.supplier:
@@ -871,6 +1351,7 @@ async def upload_price_list(file: UploadFile = File(...), current_user: dict = D
     company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+    await _require_supplier_not_paused(company['id'])
     
     # Read file
     try:
@@ -1111,26 +1592,29 @@ async def import_price_list(
     - P0.3: Import min_order_qty
     - P0.4: Unit priority from file
     """
+    import json
+    import unicodedata
+    import re
+
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
     company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
-    
+
     supplier_id = company['id']
+    await _require_supplier_not_paused(supplier_id)
     supplier_name = company.get('companyName', company.get('name', 'Unknown'))
+    correlation_id = str(uuid.uuid4())
+
+    try:
+        mapping = json.loads(column_mapping)
+    except json.JSONDecodeError as e:
+        logger.warning(f"Import invalid mapping: {e}", extra={"correlation_id": correlation_id, "supplier_id": supplier_id})
+        raise HTTPException(status_code=422, detail={"error": "invalid_mapping", "message": "Invalid column_mapping JSON", "correlation_id": correlation_id})
     
-    # Parse column mapping
-    import json
-    import math
-    import unicodedata
-    import re
-    mapping = json.loads(column_mapping)
-    
-    # Read file
     contents = await file.read()
-    
     try:
         if file.filename.endswith('.csv'):
             df = pd.read_csv(io.BytesIO(contents))
@@ -1138,8 +1622,33 @@ async def import_price_list(
             df = pd.read_excel(io.BytesIO(contents))
         else:
             raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
-        
-        # Generate new pricelist ID
+
+        df_columns = [str(c).strip() for c in df.columns]
+        required_keys = ['productName', 'price', 'unit']
+        missing = []
+        for k in required_keys:
+            col = mapping.get(k)
+            if not col or str(col).strip() == '':
+                missing.append(k)
+            elif str(col).strip() not in df_columns:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "error": "invalid_mapping",
+                        "message": f"Column '{col}' for '{k}' not found in file. Available: {df_columns}",
+                        "correlation_id": correlation_id
+                    }
+                )
+        if missing:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "error": "missing_required_mapping",
+                    "message": f"Required mapping missing: {', '.join(missing)}. Map: productName, price, unit.",
+                    "correlation_id": correlation_id
+                }
+            )
+
         new_pricelist_id = str(uuid.uuid4())
         
         # Helper functions for P0.1 unique key
@@ -1181,11 +1690,13 @@ async def import_price_list(
         
         for _, row in df.iterrows():
             try:
-                # Extract fields
-                product_name = str(row[mapping.get('productName', 'productName')]).strip()
-                price_raw = row[mapping.get('price', 'price')]
-                unit_str = str(row[mapping.get('unit', 'unit')]).strip() if 'unit' in mapping else 'шт'
-                article = str(row[mapping.get('article', 'article')]).strip() if 'article' in mapping else None
+                col_name = mapping.get('productName')
+                product_name = str(row.get(col_name, '')).strip() if col_name else ''
+                price_raw = row.get(mapping.get('price'), 0)
+                unit_col = mapping.get('unit')
+                unit_str = str(row.get(unit_col, 'шт')).strip() if unit_col else 'шт'
+                article_col = mapping.get('article')
+                article = str(row.get(article_col, '')).strip() if (article_col and article_col in df_columns) else None
                 
                 # Skip invalid rows
                 if not product_name or product_name == 'nan':
@@ -1287,17 +1798,49 @@ async def import_price_list(
             'active': True,
         }
         await db.pricelists.insert_one(pricelist_meta)
-        
+
+        imported_count = created_count + updated_count
+        logger.info(
+            "Price list import completed",
+            extra={
+                "correlation_id": correlation_id,
+                "supplier_id": supplier_id,
+                "company_id": supplier_id,
+                "importedCount": imported_count,
+                "created": created_count,
+                "updated": updated_count,
+                "skipped": skipped_count,
+                "deactivated": deactivated_count,
+            }
+        )
+
+        if imported_count == 0:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "error": "no_rows_imported",
+                    "message": "No valid rows imported. Check column mapping (productName, price, unit) and file data.",
+                    "importedCount": 0,
+                    "skipped": skipped_count,
+                    "correlation_id": correlation_id
+                }
+            )
+
         return {
-            "message": f"Successfully imported {created_count + updated_count} products",
+            "message": f"Successfully imported {imported_count} products",
+            "importedCount": imported_count,
             "created": created_count,
             "updated": updated_count,
             "skipped": skipped_count,
             "deactivated": deactivated_count,
-            "pricelist_id": new_pricelist_id
+            "pricelist_id": new_pricelist_id,
+            "errors": []
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error importing file: {str(e)}")
+        logger.exception("Import failed", extra={"correlation_id": correlation_id, "supplier_id": supplier_id})
+        raise HTTPException(status_code=400, detail={"error": "import_failed", "message": str(e), "correlation_id": correlation_id})
 
 
 # P0.6: Safe pricelist deactivation/deletion endpoints
@@ -1470,6 +2013,12 @@ async def create_order(data: OrderCreate, current_user: dict = Depends(get_curre
     company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+    
+    if await _restaurant_is_paused(data.supplierCompanyId, company['id']):
+        raise HTTPException(
+            status_code=403,
+            detail="Поставщик поставил ваш ресторан на паузу. Отгрузка временно недоступна."
+        )
     
     order = Order(
         customerCompanyId=company['id'],
@@ -1679,6 +2228,8 @@ async def get_suppliers():
 @api_router.get("/suppliers/{supplier_id}/price-lists")
 async def get_supplier_price_lists(supplier_id: str, search: Optional[str] = None):
     """Get supplier price list items from supplier_items (catalog for customers)."""
+    if await _supplier_is_paused(supplier_id):
+        return []
     query = {"supplier_company_id": supplier_id, "active": True}
     items = await db.supplier_items.find(query, {"_id": 0}).to_list(10000)
     result = []
@@ -1882,6 +2433,12 @@ async def confirm_mobile_order(data: MobileOrderConfirmRequest, current_user: di
         })
     
     # Create orders (one per supplier)
+    for supplier_id in items_by_supplier:
+        if await _restaurant_is_paused(supplier_id, company_id):
+            raise HTTPException(
+                status_code=403,
+                detail="Поставщик поставил ваш ресторан на паузу. Отгрузка временно недоступна."
+            )
     created_orders = []
     
     for supplier_id, items in items_by_supplier.items():
@@ -2290,10 +2847,17 @@ async def create_matrix_order(
                     break
     
     # Create orders (one per supplier)
+    restaurant_id = matrix['restaurantCompanyId']
+    for supplier_id in orders_by_supplier:
+        if await _restaurant_is_paused(supplier_id, restaurant_id):
+            raise HTTPException(
+                status_code=403,
+                detail="Поставщик поставил ваш ресторан на паузу. Отгрузка временно недоступна."
+            )
     created_orders = []
     for supplier_id, order_data in orders_by_supplier.items():
         order = Order(
-            customerCompanyId=matrix['restaurantCompanyId'],
+            customerCompanyId=restaurant_id,
             supplierCompanyId=supplier_id,
             amount=order_data["total"],
             orderDetails=order_data["items"],
@@ -4802,6 +5366,12 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
                         break
     
     # Create orders (only for suppliers that passed minimum check)
+    for supplier_id in optimized_orders:
+        if await _restaurant_is_paused(supplier_id, company_id):
+            raise HTTPException(
+                status_code=403,
+                detail="Поставщик поставил ваш ресторан на паузу. Отгрузка временно недоступна."
+            )
     created_orders = []
     actual_total = 0
     
@@ -4843,46 +5413,145 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
 
 # ==================== SUPPLIER RESTAURANT MANAGEMENT ====================
 
-@api_router.get("/supplier/restaurants")
-async def get_supplier_restaurants(current_user: dict = Depends(get_current_user)):
-    """Get all restaurants that have ordered from this supplier"""
+async def _restaurant_is_paused(supplier_id: str, restaurant_id: str) -> bool:
+    """Check if supplier has paused this restaurant."""
+    s = await db.supplier_restaurant_settings.find_one(
+        {"supplierId": supplier_id, "restaurantId": restaurant_id},
+        {"_id": 0, "is_paused": 1}
+    )
+    return bool(s and s.get("is_paused"))
+
+
+@api_router.get("/supplier/restaurant-documents")
+async def get_supplier_restaurant_documents(current_user: dict = Depends(get_current_user)):
+    """List restaurants (customers) with their contract status for Documents page."""
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
     company_id = current_user.get('companyId')
     if not company_id:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+        company_id = company['id'] if company else None
+    if not company_id:
         return []
-    
-    # Get all orders for this supplier
-    orders = await db.orders.find({"supplierCompanyId": company_id}, {"_id": 0}).to_list(1000)
-    
-    # Get unique restaurant IDs
-    restaurant_ids = list(set([order['customerCompanyId'] for order in orders]))
-    
-    # Get restaurant details
+    customers = await db.companies.find({"type": "customer"}, {"_id": 0, "id": 1, "companyName": 1, "inn": 1}).to_list(500)
+    links = await db.supplier_restaurant_settings.find(
+        {"supplierId": company_id},
+        {"_id": 0, "restaurantId": 1, "contract_accepted": 1}
+    ).to_list(500)
+    link_map = {l['restaurantId']: l for l in links}
+    docs = await db.documents.find({"companyId": {"$in": [c['id'] for c in customers]}}, {"_id": 0}).to_list(2000)
+    docs_by_company = {}
+    for d in docs:
+        cid = d.get('companyId')
+        if cid not in docs_by_company:
+            docs_by_company[cid] = []
+        docs_by_company[cid].append({"id": d.get('id'), "type": d.get('type', 'Документ'), "uploadedAt": d.get('createdAt', ''), "status": d.get('status', 'uploaded')})
+    result = []
+    for c in customers:
+        link = link_map.get(c['id'])
+        contract_status = "accepted" if (link and link.get("contract_accepted")) else "pending"
+        result.append({
+            "restaurantId": c['id'],
+            "restaurantName": c.get('companyName', c.get('name', 'N/A')),
+            "inn": c.get('inn', ''),
+            "documents": docs_by_company.get(c['id'], []),
+            "contractStatus": contract_status
+        })
+    return result
+
+
+@api_router.post("/supplier/accept-contract")
+async def accept_contract(data: dict, current_user: dict = Depends(get_current_user)):
+    """Accept contract with restaurant: creates link with contract_accepted=true, is_paused=false."""
+    if current_user['role'] != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    restaurant_id = data.get('restaurantId')
+    if not restaurant_id:
+        raise HTTPException(status_code=400, detail="restaurantId required")
+    company_id = current_user.get('companyId')
+    if not company_id:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+        company_id = company['id'] if company else None
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    restaurant = await db.companies.find_one({"id": restaurant_id, "type": "customer"}, {"_id": 0})
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    now = datetime.now(timezone.utc).isoformat()
+    await db.supplier_restaurant_settings.update_one(
+        {"supplierId": company_id, "restaurantId": restaurant_id},
+        {"$set": {
+            "contract_accepted": True,
+            "is_paused": False,
+            "ordersEnabled": True,
+            "updatedAt": now
+        }},
+        upsert=True
+    )
+    return {"contractStatus": "accepted", "restaurantId": restaurant_id}
+
+
+@api_router.get("/supplier/restaurants")
+@api_router.get("/suppliers/me/restaurants")
+async def get_supplier_restaurants(current_user: dict = Depends(get_current_user)):
+    """Get restaurants with contract_accepted=true (source of truth: supplier_restaurant_settings)."""
+    if current_user['role'] != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    company_id = current_user.get('companyId')
+    if not company_id:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+        company_id = company['id'] if company else None
+    if not company_id:
+        return []
+    links = await db.supplier_restaurant_settings.find(
+        {"supplierId": company_id, "contract_accepted": True},
+        {"_id": 0}
+    ).to_list(500)
+    orders = await db.orders.find({"supplierCompanyId": company_id}, {"_id": 0, "customerCompanyId": 1}).to_list(1000)
+    order_counts = {}
+    for o in orders:
+        cid = o.get('customerCompanyId')
+        order_counts[cid] = order_counts.get(cid, 0) + 1
     restaurants = []
-    for rest_id in restaurant_ids:
+    for link in links:
+        rest_id = link.get('restaurantId')
         restaurant = await db.companies.find_one({"id": rest_id}, {"_id": 0})
         if restaurant:
-            # Get settings for this supplier-restaurant pair
-            settings = await db.supplier_restaurant_settings.find_one(
-                {"supplierId": company_id, "restaurantId": rest_id},
-                {"_id": 0}
-            )
-            
-            # Count orders
-            order_count = len([o for o in orders if o['customerCompanyId'] == rest_id])
-            
             restaurants.append({
                 "id": restaurant['id'],
                 "name": restaurant.get('companyName', restaurant.get('name', 'N/A')),
                 "inn": restaurant.get('inn', ''),
-                "orderCount": order_count,
-                "ordersEnabled": settings.get('ordersEnabled', True) if settings else True,
-                "unavailabilityReason": settings.get('unavailabilityReason') if settings else None
+                "contract_status": "accepted",
+                "is_paused": bool(link.get('is_paused')),
+                "orderCount": order_counts.get(rest_id, 0),
+                "ordersEnabled": link.get('ordersEnabled', True),
+                "unavailabilityReason": link.get('unavailabilityReason')
             })
-    
     return restaurants
+
+@api_router.patch("/suppliers/me/restaurants/{restaurant_id}")
+async def patch_restaurant_pause(
+    restaurant_id: str,
+    data: RestaurantPauseBody,
+    current_user: dict = Depends(get_current_user)
+):
+    """Toggle is_paused for a restaurant (supplier↔restaurant link must exist)."""
+    if current_user['role'] != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    company_id = current_user.get('companyId')
+    if not company_id:
+        company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+        company_id = company['id'] if company else None
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+    result = await db.supplier_restaurant_settings.update_one(
+        {"supplierId": company_id, "restaurantId": restaurant_id, "contract_accepted": True},
+        {"$set": {"is_paused": data.is_paused, "updatedAt": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Restaurant not found or contract not accepted")
+    return {"is_paused": data.is_paused}
+
 
 @api_router.put("/supplier/restaurants/{restaurant_id}/availability")
 async def update_restaurant_availability(
@@ -4898,20 +5567,26 @@ async def update_restaurant_availability(
     if not company_id:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    # Upsert settings
-    settings = {
-        "supplierId": company_id,
-        "restaurantId": restaurant_id,
+    # Upsert settings (preserve contract_accepted if exists)
+    update = {
         "ordersEnabled": data.ordersEnabled,
         "unavailabilityReason": data.unavailabilityReason,
         "updatedAt": datetime.now(timezone.utc).isoformat()
     }
-    
-    await db.supplier_restaurant_settings.update_one(
-        {"supplierId": company_id, "restaurantId": restaurant_id},
-        {"$set": settings},
-        upsert=True
+    existing = await db.supplier_restaurant_settings.find_one(
+        {"supplierId": company_id, "restaurantId": restaurant_id}, {"_id": 0}
     )
+    if not existing:
+        update["supplierId"] = company_id
+        update["restaurantId"] = restaurant_id
+        update["contract_accepted"] = True
+        update["is_paused"] = False
+        await db.supplier_restaurant_settings.insert_one(update)
+    else:
+        await db.supplier_restaurant_settings.update_one(
+            {"supplierId": company_id, "restaurantId": restaurant_id},
+            {"$set": update}
+        )
     
     return {
         "message": "Restaurant availability updated",
@@ -5703,47 +6378,7 @@ except ImportError as e:
 
 # Include router
 app.include_router(api_router)
-# ================= AUTH HELPERS =================
 
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    token = credentials.credentials
-    payload = decode_token(token)
-
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return user
-
-async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    token = credentials.credentials
-    payload = decode_token(token)
-
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return user
-@api_router.get("/auth/me")
-async def get_me(current_user: dict = Depends(get_current_user)):
-    return {
-        "id": current_user.get("id"),
-        "email": current_user.get("email"),
-        "role": current_user.get("role"),
-        "companyId": current_user.get("companyId"),
-    }
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # MongoDB connection
 MONGO_URL = os.environ.get('MONGO_URL')
 DB_NAME = os.environ.get('DB_NAME', 'test_database')
+SKIP_VALIDATION = os.environ.get('BESTPRICE_SKIP_RULES_VALIDATION', '').strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
 @dataclass
@@ -236,8 +237,9 @@ def validate_database_coverage() -> Tuple[List[ValidationIssue], Dict]:
         stats['total_active_items'] = total_active
         
         if total_active == 0:
+            severity = 'WARNING' if SKIP_VALIDATION else 'CRITICAL'
             issues.append(ValidationIssue(
-                severity='CRITICAL',
+                severity=severity,
                 category='coverage',
                 message='No active items in supplier_items collection!'
             ))
@@ -531,6 +533,11 @@ def validate_all_rules(strict: bool = False) -> ValidationReport:
     logger.info(f"VALIDATION COMPLETE: {report.summary}")
     logger.info("=" * 60)
     
+    if SKIP_VALIDATION and report.has_critical_errors:
+        logger.warning("BESTPRICE_SKIP_RULES_VALIDATION enabled – downgrading critical issues to warnings.")
+        for issue in report.critical_errors:
+            issue.severity = 'WARNING'
+
     if report.has_critical_errors:
         for error in report.critical_errors:
             logger.error(f"CRITICAL: {error.message}")

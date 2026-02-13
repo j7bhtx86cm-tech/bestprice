@@ -1,0 +1,20 @@
+# BestPrice — локальная разработка без Emergent
+# Запуск: docker compose up -d
+# Остановка: docker compose down
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: bestprice-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:

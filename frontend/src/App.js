@@ -7,6 +7,7 @@ import { Home } from '@/pages/Home';
 import { LegalPage } from '@/pages/LegalPage';
 import { AuthPage } from '@/pages/AuthPage';
 import { SupplierAuth } from '@/pages/SupplierAuth';
+import { SupplierResetPassword } from '@/pages/supplier/SupplierResetPassword';
 import { CustomerAuth } from '@/pages/CustomerAuth';
 import { SupplierDashboard } from '@/pages/supplier/SupplierDashboard';
 import { CustomerDashboard } from '@/pages/customer/CustomerDashboard';
@@ -29,6 +30,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/supplier/auth" element={<SupplierAuth />} />
+            <Route path="/supplier/reset-password" element={<SupplierResetPassword />} />
             <Route path="/customer/auth" element={<CustomerAuth />} />
             
             {/* Mobile App Routes */}

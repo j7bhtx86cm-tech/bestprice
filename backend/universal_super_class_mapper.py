@@ -319,7 +319,8 @@ def detect_super_class(product_name, min_confidence=0.3):
         'горох': 'staples.cereals',
         'чечевиц': 'staples.cereals',
         'фасоль': 'staples.cereals',
-        'нут': 'staples.cereals',
+        'нут': 'vegetables.chickpeas',
+        'chickpea': 'vegetables.chickpeas',
         'киноа': 'staples.cereals',
         
         # === BROTHS - БУЛЬОНЫ ===
@@ -436,6 +437,11 @@ def detect_super_class(product_name, min_confidence=0.3):
         'сухар': 'snacks.crackers',
         'крекер': 'snacks.crackers',
         'попкорн': 'snacks.popcorn',
+        
+        # === VENISON (ОЛЕНИНА) - ensure higher priority than generic fillet ===
+        'оленина филей': 'meat.venison.loin',
+        'оленина корейка': 'meat.venison.rack',
+        'оленина': 'meat.venison',
         
         # === MEAT - МЯСО (дополнения) ===
         'филе': 'meat',  # Generic meat filet
@@ -656,11 +662,6 @@ def detect_super_class(product_name, min_confidence=0.3):
         'ягнятина ребр': 'meat.lamb.ribs',
         'баранина': 'meat.lamb',
         'ягнятина': 'meat.lamb',
-        
-        # Venison (оленина)
-        'оленина': 'meat.venison',
-        'оленина филей': 'meat.venison.loin',
-        'оленина корейка': 'meat.venison.rack',
         
         # Duck (утка)
         'утка': 'meat.duck',

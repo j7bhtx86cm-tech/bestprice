@@ -7,9 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { PasswordInput } from '@/components/PasswordInput';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 const API = `${BACKEND_URL}/api`;
 
 export const SupplierAuth = () => {
@@ -25,6 +32,19 @@ export const SupplierAuth = () => {
     password: ''
   });
   
+  const [recoveryModal, setRecoveryModal] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(null); // null | 'email' | 'phone'
+  const [emailRecovery, setEmailRecovery] = useState({ email: '', loading: false, success: false });
+  const [phoneRecovery, setPhoneRecovery] = useState({
+    step: 1,
+    phone: '',
+    otp: '',
+    newPassword: '',
+    confirmPassword: '',
+    loading: false,
+    success: false,
+  });
+
   const [registerData, setRegisterData] = useState({
     email: '',
     password: '',
@@ -81,6 +101,64 @@ export const SupplierAuth = () => {
     }
   };
 
+  const handleForgotEmail = async (e) => {
+    e.preventDefault();
+    setEmailRecovery((p) => ({ ...p, loading: true, success: false }));
+    setError('');
+    try {
+      await axios.post(`${API}/auth/forgot-password`, { email: emailRecovery.email, role: 'supplier' });
+      setEmailRecovery((p) => ({ ...p, loading: false, success: true }));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ошибка запроса');
+      setEmailRecovery((p) => ({ ...p, loading: false }));
+    }
+  };
+
+  const handlePhoneRequestOtp = async (e) => {
+    e.preventDefault();
+    setPhoneRecovery((p) => ({ ...p, loading: true }));
+    setError('');
+    try {
+      await axios.post(`${API}/auth/phone/request-otp`, { phone: phoneRecovery.phone, role: 'supplier' });
+      setPhoneRecovery((p) => ({ ...p, step: 2, loading: false }));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ошибка запроса');
+      setPhoneRecovery((p) => ({ ...p, loading: false }));
+    }
+  };
+
+  const handlePhoneReset = async (e) => {
+    e.preventDefault();
+    if (phoneRecovery.newPassword !== phoneRecovery.confirmPassword) {
+      setError('Пароли не совпадают');
+      return;
+    }
+    if (phoneRecovery.newPassword.length < 6) {
+      setError('Пароль должен быть не менее 6 символов');
+      return;
+    }
+    setPhoneRecovery((p) => ({ ...p, loading: true }));
+    setError('');
+    try {
+      await axios.post(`${API}/auth/phone/reset-password`, {
+        phone: phoneRecovery.phone,
+        role: 'supplier',
+        otp: phoneRecovery.otp,
+        new_password: phoneRecovery.newPassword,
+      });
+      setPhoneRecovery((p) => ({ ...p, loading: false, success: true }));
+      setTimeout(() => {
+        setRecoveryModal(false);
+        setRecoveryMode(null);
+        setEmailRecovery({ email: '', loading: false, success: false });
+        setPhoneRecovery({ step: 1, phone: '', otp: '', newPassword: '', confirmPassword: '', loading: false, success: false });
+      }, 2000);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Ошибка сброса пароля');
+      setPhoneRecovery((p) => ({ ...p, loading: false }));
+    }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
@@ -133,9 +211,8 @@ export const SupplierAuth = () => {
             </div>
             <div>
               <Label htmlFor="password">Пароль</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 value={loginData.password}
                 onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                 required
@@ -145,7 +222,15 @@ export const SupplierAuth = () => {
             <Button type="submit" className="w-full" disabled={loading} data-testid="login-submit-btn">
               {loading ? 'Загрузка...' : 'Войти'}
             </Button>
-            <div className="text-center">
+            <div className="auth-links text-center space-y-1">
+              <button
+                type="button"
+                className="text-sm text-blue-600 hover:underline block mx-auto"
+                onClick={() => { setError(''); setRecoveryModal(true); setRecoveryMode(null); }}
+                data-testid="forgot-password-btn"
+              >
+                Забыли пароль?
+              </button>
               <button
                 type="button"
                 className="text-sm text-blue-600 hover:underline"
@@ -172,9 +257,8 @@ export const SupplierAuth = () => {
               </div>
               <div>
                 <Label htmlFor="password">Пароль *</Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   value={registerData.password}
                   onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                   required
@@ -328,6 +412,108 @@ export const SupplierAuth = () => {
           </Button>
         </div>
       </Card>
+
+      <Dialog open={recoveryModal} onOpenChange={(open) => {
+        if (!open) {
+          setRecoveryModal(false);
+          setRecoveryMode(null);
+          setEmailRecovery({ email: '', loading: false, success: false });
+          setPhoneRecovery({ step: 1, phone: '', otp: '', newPassword: '', confirmPassword: '', loading: false, success: false });
+          setError('');
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Восстановление пароля</DialogTitle>
+          </DialogHeader>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {recoveryMode === null && (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">Выберите способ восстановления:</p>
+              <Button className="w-full" variant="outline" onClick={() => setRecoveryMode('email')}>
+                По Email
+              </Button>
+              <Button className="w-full" variant="outline" onClick={() => setRecoveryMode('phone')}>
+                По телефону
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => setRecoveryModal(false)}>
+                Закрыть
+              </Button>
+            </div>
+          )}
+          {recoveryMode === 'email' && (
+            <div className="space-y-4">
+              <button type="button" className="text-sm text-blue-600 hover:underline" onClick={() => setRecoveryMode(null)}>
+                ← Назад к выбору
+              </button>
+              {emailRecovery.success ? (
+                <p className="text-sm text-gray-600">Если email существует — мы отправили ссылку для сброса пароля.</p>
+              ) : (
+                <form onSubmit={handleForgotEmail}>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="recovery-email">Email</Label>
+                      <Input id="recovery-email" type="email" value={emailRecovery.email} onChange={(e) => setEmailRecovery((p) => ({ ...p, email: e.target.value }))} required placeholder="supplier1@example.com" />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={emailRecovery.loading}>
+                      {emailRecovery.loading ? 'Отправка...' : 'Отправить ссылку'}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+          {recoveryMode === 'phone' && (
+            <div className="space-y-4">
+              <button type="button" className="text-sm text-blue-600 hover:underline" onClick={() => setRecoveryMode(null)}>
+                ← Назад к выбору
+              </button>
+              {phoneRecovery.success ? (
+                <p className="text-sm text-green-600">Пароль изменён. Войдите с новым паролем.</p>
+              ) : phoneRecovery.step === 1 ? (
+                <form onSubmit={handlePhoneRequestOtp}>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="recovery-phone">Телефон</Label>
+                      <Input id="recovery-phone" type="tel" value={phoneRecovery.phone} onChange={(e) => setPhoneRecovery((p) => ({ ...p, phone: e.target.value }))} required placeholder="+7 921 364 34 75" />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={phoneRecovery.loading}>
+                      {phoneRecovery.loading ? 'Отправка...' : 'Получить код'}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handlePhoneReset}>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="recovery-otp">Код из SMS</Label>
+                      <Input id="recovery-otp" type="text" inputMode="numeric" maxLength={6} value={phoneRecovery.otp} onChange={(e) => setPhoneRecovery((p) => ({ ...p, otp: e.target.value.replace(/\D/g, '') }))} required placeholder="123456" />
+                    </div>
+                    <div>
+                      <Label htmlFor="recovery-new-pwd">Новый пароль</Label>
+                      <PasswordInput id="recovery-new-pwd" value={phoneRecovery.newPassword} onChange={(e) => setPhoneRecovery((p) => ({ ...p, newPassword: e.target.value }))} required minLength={6} />
+                    </div>
+                    <div>
+                      <Label htmlFor="recovery-confirm-pwd">Подтверждение пароля</Label>
+                      <PasswordInput id="recovery-confirm-pwd" value={phoneRecovery.confirmPassword} onChange={(e) => setPhoneRecovery((p) => ({ ...p, confirmPassword: e.target.value }))} required minLength={6} />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={phoneRecovery.loading}>
+                      {phoneRecovery.loading ? 'Сохранение...' : 'Установить пароль'}
+                    </Button>
+                    <button type="button" className="text-sm text-blue-600 hover:underline block" onClick={() => setPhoneRecovery((p) => ({ ...p, step: 1 }))}>
+                      Изменить номер
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
