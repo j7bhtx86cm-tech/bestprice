@@ -1,0 +1,15 @@
+# Auto-link new supplier to all restaurants
+
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=test_database
+
+Final counts (before cleanup):
+  customers (companies type=customer): 2
+  suppliers (companies type=supplier): 1
+  supplier_restaurant_settings: 2
+  documents: 2
+
+Steps: clean slate -> 2 restaurants + docs -> 1 supplier -> auto-link created 2 records
+API: GET /api/supplier/restaurant-documents returned 2 restaurants with docs
+
+RESULT: PASS
