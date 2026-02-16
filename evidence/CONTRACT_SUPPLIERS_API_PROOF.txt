@@ -1,0 +1,11 @@
+# Contract suppliers API proof
+
+GET /api/customer/contract-suppliers (as restaurant)
+Source: companies(type=supplier) only. Status from supplier_restaurant_settings.
+
+Suppliers returned: 1
+companies(type=supplier) count: 1
+With contract accepted: 1
+Assert: endpoint ids ⊆ companies — no junk. Linked supplier visible.
+
+RESULT: PASS

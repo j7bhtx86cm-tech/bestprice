@@ -33,6 +33,20 @@ python scripts/init_suppliers.py
 - `--dry-run` — не писать в БД и файл (нужен доступ к Mongo для списка компаний)
 - `--base-url http://127.0.0.1:8000` — URL для колонки login_url в Excel
 
+### Эталонный сценарий (реквизиты + 1/1/1/1)
+
+Воспроизведение эталонного flow с полностью заполненными реквизитами:
+
+```bash
+ALLOW_DESTRUCTIVE=1 bash scripts/clean_slate_local.sh
+bash scripts/run_backend.sh
+bash scripts/run_frontend.sh
+bash scripts/prod_minimal_e2e.sh --no-junk
+```
+
+Результат: 1 supplier, 1 restaurant (полные реквизиты + ЭДО/GUID), 1 link, 1 document.  
+Доказательства: `evidence/REQUISITES_FLOW_PROOF.md`, `evidence/CONTRACT_SUPPLIERS_API_PROOF.txt`, `evidence/SUPPLIER_REQUISITES_API_PROOF.txt`.
+
 ### Проверка сценария (E2E)
 
 Скрипт проверяет: наличие Excel, логин, GET/PUT настроек, загрузку и импорт прайса, отображение в «мои прайсы» и в каталоге поставщика. Backend должен быть запущен, `init_suppliers.py` уже выполнен (в Excel есть валидные пароли).

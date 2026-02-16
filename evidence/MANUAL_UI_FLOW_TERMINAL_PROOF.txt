@@ -1,0 +1,23 @@
+MANUAL UI FLOW — TERMINAL PROOF
+===============================
+
+Clean slate:
+  ALLOW_DESTRUCTIVE=1 bash scripts/clean_slate_local.sh
+
+Output:
+  Clean slate: deleting test data...
+  users: 2, companies: 2, supplier_settings: 1, supplier_restaurant_settings: 1,
+  documents: 1, ... Done.
+
+Backend (Терминал A):
+  bash scripts/run_backend.sh
+  RUNNING backend on http://127.0.0.1:8001
+  Docs: http://127.0.0.1:8001/docs
+
+Frontend (Терминал B):
+  bash scripts/run_frontend.sh
+  RUNNING frontend on http://localhost:3000
+
+Терминал C — проверки:
+  python3 scripts/verify_no_junk.py
+  python3 scripts/collect_acl_proof.py --use-existing

@@ -1,0 +1,21 @@
+{
+  "status": "ok",
+  "message": "Создано 1 заказов",
+  "orders": [
+    {
+      "id": "dc42e78f-c040-41cb-8ec3-c7ea4aeb1c01",
+      "supplier_id": "56f4f279-95ec-41fe-9daf-46e1b95d20ce",
+      "supplier_name": "ООО Поставщик Продуктов",
+      "amount": 12440.0,
+      "items_count": 1
+    }
+  ],
+  "orders_created": [
+    {
+      "order_id": "dc42e78f-c040-41cb-8ec3-c7ea4aeb1c01",
+      "supplier_id": "56f4f279-95ec-41fe-9daf-46e1b95d20ce"
+    }
+  ],
+  "total": 12440.0,
+  "redirect": "/customer/orders"
+}

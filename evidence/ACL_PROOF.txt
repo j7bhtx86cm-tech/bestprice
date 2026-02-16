@@ -1,0 +1,16 @@
+# ACL Proof — Document Download (use-existing mode)
+
+## 1. 200 with linked supplier token
+
+GET /api/documents/b86b9fff-b6ed-4bfc-89f9-bc101317ece9/download with Authorization: Bearer $SUPPLIER_TOKEN
+Status: 200
+
+## 2. 403 without token
+
+GET /api/documents/b86b9fff-b6ed-4bfc-89f9-bc101317ece9/download (no Authorization)
+Status: 403
+
+## 3. 403 with unlinked supplier token
+
+GET /api/documents/b86b9fff-b6ed-4bfc-89f9-bc101317ece9/download with Authorization: Bearer $UNLINKED_TOKEN
+Status: 403

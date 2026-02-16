@@ -1,0 +1,9 @@
+RUNNING backend on http://127.0.0.1:8001
+Docs: http://127.0.0.1:8001/docs
+INFO:     Started server process [70723]
+INFO:     Waiting for application startup.
+ERROR:rules_validator:CRITICAL: No active items in supplier_items collection!
+ERROR:server:❌ Validation failed with error: Validation failed with 1 critical errors
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     127.0.0.1:61765 - "GET /docs HTTP/1.1" 200 OK

@@ -1,0 +1,22 @@
+=== New Restaurant Documents E2E Proof ===
+
+1. POST /api/auth/register/customer (production)
+   OK restaurantId=688b414b-e94... (auto-linked to all suppliers)
+
+2. POST /api/documents/upload (as restaurant)
+   OK document id=1ad6ad2a-294...
+
+3. Login as supplier1, GET /api/supplier/restaurant-documents
+   OK restaurant present, first, documents=1
+
+5. GET /api/documents/{id}/download (with token) -> 200
+   OK 200, Content-Type=application/pdf
+
+6. GET /api/documents/{id}/download (no token) -> 403
+   OK 403
+
+7. GET /api/documents/{id}/download (unlinked supplier) -> 403
+   OK 403 (unlinked supplier)
+
+========================================
+PASS — all assertions satisfied

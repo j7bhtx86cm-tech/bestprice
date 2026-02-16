@@ -1,0 +1,14 @@
+Bootstrap minimal requisites proof
+==================================
+
+1. Clean slate run
+2. Bootstrap: 1 supplier, 1 restaurant (full requisites), 1 link, 1 document
+
+Final counts:
+  suppliers: 1
+  restaurants: 1
+  links: 1
+  documents: 1
+  users: 2
+
+Expected: suppliers=1, restaurants=1, links=1, documents=1, users=2

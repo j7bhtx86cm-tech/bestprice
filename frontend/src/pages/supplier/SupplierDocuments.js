@@ -4,19 +4,47 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { FileText, Check, X, Eye, Building2 } from 'lucide-react';
+import { FileText, Check, X, Building2, ChevronDown, ChevronUp } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+async function handleViewDownload(docId, token) {
+  const url = `${API}/documents/${docId}/download`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('Сессия истекла. Войдите снова.');
+    if (res.status === 403) throw new Error('Нет доступа к документу.');
+    throw new Error(`Ошибка ${res.status}`);
+  }
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('pdf')) {
+    window.open(blobUrl, '_blank');
+  } else {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = res.headers.get('content-disposition')?.match(/filename="?([^";]+)"?/)?.[1] || `document-${docId}`;
+    a.click();
+    URL.revokeObjectURL(blobUrl);
+  }
+}
 
 export const SupplierDocuments = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [expandedRestaurant, setExpandedRestaurant] = useState(null);
-
-  // Mock data for demonstration - would come from backend
+  const [viewError, setViewError] = useState('');
+  const [expandedRequisites, setExpandedRequisites] = useState({});
   const [restaurantDocuments, setRestaurantDocuments] = useState([]);
+
+  const toggleRequisites = (restaurantId) => {
+    setExpandedRequisites(prev => ({ ...prev, [restaurantId]: !prev[restaurantId] }));
+  };
 
   useEffect(() => {
     fetchDocuments();
@@ -93,6 +121,11 @@ export const SupplierDocuments = () => {
           </AlertDescription>
         </Alert>
       )}
+      {viewError && (
+        <Alert className="mb-6 bg-red-50 border-red-200">
+          <AlertDescription className="text-red-800">{viewError}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-4">
         {restaurantDocuments.map((restaurant) => {
@@ -128,25 +161,96 @@ export const SupplierDocuments = () => {
                 )}
               </div>
 
-              {/* Documents List */}
+              {/* Restaurant requisites: 4-field preview always + expandable full */}
+              {(() => {
+                const preview = restaurant.restaurantRequisitesPreview || {};
+                const full = restaurant.restaurantRequisitesFull || {};
+                const previewKeys = ['companyName', 'inn', 'phone', 'email'];
+                const hasPreview = Object.keys(preview).length > 0;
+                const hasFull = full && Object.keys(full).length > 0;
+                const hasAny = hasPreview || hasFull;
+                const expanded = expandedRequisites[restaurant.restaurantId];
+
+                const val = (obj, k) => (obj && obj[k] != null && obj[k] !== '') ? obj[k] : '—';
+
+                if (!hasAny) {
+                  return <div className="mb-4 text-sm text-slate-500 italic">Реквизиты не заполнены</div>;
+                }
+                return (
+                  <div className="mb-4">
+                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-sm text-slate-700">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mb-2">
+                        {previewKeys.map(k => (
+                          <div key={k}>
+                            <span className="font-medium">{k === 'companyName' ? 'Название' : k === 'inn' ? 'ИНН' : k === 'phone' ? 'Телефон' : 'Email'}:</span>{' '}
+                            {val(preview, k)}
+                          </div>
+                        ))}
+                      </div>
+                      {hasFull && (
+                        <Button
+                          variant="link"
+                          className="text-blue-600 p-0 h-auto font-medium"
+                          onClick={() => toggleRequisites(restaurant.restaurantId)}
+                        >
+                          {expanded ? (
+                            <><ChevronUp className="h-4 w-4 inline mr-1" /> Скрыть реквизиты</>
+                          ) : (
+                            <><ChevronDown className="h-4 w-4 inline mr-1" /> Показать реквизиты</>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    {expanded && hasFull && (
+                      <div className="mt-2 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                          <div><span className="font-medium">Юр. название:</span> {val(full, 'companyName')}</div>
+                          <div><span className="font-medium">ИНН:</span> {val(full, 'inn')}</div>
+                          <div><span className="font-medium">ОГРН:</span> {val(full, 'ogrn')}</div>
+                          <div className="sm:col-span-2"><span className="font-medium">Юр. адрес:</span> {val(full, 'legalAddress')}</div>
+                          <div className="sm:col-span-2"><span className="font-medium">Факт. адрес:</span> {val(full, 'actualAddress')}</div>
+                          <div><span className="font-medium">Телефон:</span> {val(full, 'phone')}</div>
+                          <div><span className="font-medium">Email:</span> {val(full, 'email')}</div>
+                          <div><span className="font-medium">Номер ЭДО:</span> {val(full, 'edoNumber')}</div>
+                          <div><span className="font-medium">GUID:</span> {val(full, 'guid')}</div>
+                          <div><span className="font-medium">Контакт:</span> {val(full, 'contactPersonName')}</div>
+                          <div><span className="font-medium">Должность:</span> {val(full, 'contactPersonPosition')}</div>
+                          <div><span className="font-medium">Телефон контакта:</span> {val(full, 'contactPersonPhone')}</div>
+                          <div className="sm:col-span-2">
+                            <span className="font-medium">Адреса доставки:</span>{' '}
+                            {Array.isArray(full.deliveryAddresses) && full.deliveryAddresses.length > 0
+                              ? full.deliveryAddresses.map((a) => (a.address || a.name || '').trim()).filter(Boolean).join('; ') || '—'
+                              : '—'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Documents List — clickable buttons */}
               <div className="mb-4">
                 <p className="text-sm font-medium mb-2">Документы ({restaurant.documents.length}):</p>
                 <div className="space-y-2">
                   {restaurant.documents.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium">{doc.type}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-600">
-                          {new Date(doc.uploadedAt).toLocaleDateString('ru-RU')}
-                        </span>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                    <Button
+                      key={doc.id}
+                      variant="outline"
+                      className="w-full justify-start h-auto py-3 px-4 text-left font-normal"
+                      onClick={async () => {
+                        setViewError('');
+                        try {
+                          await handleViewDownload(doc.id, localStorage.getItem('token'));
+                        } catch (e) {
+                          setViewError(e?.message || 'Ошибка просмотра');
+                          setTimeout(() => setViewError(''), 4000);
+                        }
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2 flex-shrink-0 text-blue-600" />
+                      <span className="text-sm font-medium">{doc.type}</span>
+                    </Button>
                   ))}
                 </div>
               </div>

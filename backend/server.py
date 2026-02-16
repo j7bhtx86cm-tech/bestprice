@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Depends
+from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -233,6 +234,8 @@ class Company(BaseModel):
     contactPersonPosition: Optional[str] = None
     contactPersonPhone: Optional[str] = None
     deliveryAddresses: Optional[List[DeliveryAddress]] = []
+    edoNumber: Optional[str] = None  # Номер ЭДО (electronic document exchange)
+    guid: Optional[str] = None  # GUID for document exchange
     contractAccepted: bool = False
     createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -258,6 +261,8 @@ class CompanyUpdate(BaseModel):
     contactPersonName: Optional[str] = None
     contactPersonPhone: Optional[str] = None
     deliveryAddresses: Optional[List[DeliveryAddress]] = None
+    edoNumber: Optional[str] = None
+    guid: Optional[str] = None
 
 # Document Models
 class Document(BaseModel):
@@ -501,6 +506,22 @@ async def get_version():
 
 # ==================== AUTH ROUTES ====================
 
+async def _auto_link_supplier_to_all_restaurants(supplier_company_id: str) -> None:
+    """Create supplier_restaurant_settings for all restaurants (pending)."""
+    restaurants = await db.companies.find({"type": "customer"}, {"_id": 0, "id": 1}).to_list(500)
+    now = datetime.now(timezone.utc).isoformat()
+    for r in restaurants:
+        await db.supplier_restaurant_settings.update_one(
+            {"supplierId": supplier_company_id, "restaurantId": r["id"]},
+            {"$set": {
+                "contract_accepted": False,
+                "is_paused": False,
+                "updatedAt": now
+            }},
+            upsert=True
+        )
+
+
 @api_router.post("/auth/register/supplier", response_model=TokenResponse)
 async def register_supplier(data: SupplierRegistration):
     # Check if user exists
@@ -545,6 +566,9 @@ async def register_supplier(data: SupplierRegistration):
     settings_dict = settings.model_dump()
     settings_dict['updatedAt'] = settings_dict['updatedAt'].isoformat()
     await db.supplier_settings.insert_one(settings_dict)
+
+    # Auto-link new supplier to all existing restaurants (pending)
+    await _auto_link_supplier_to_all_restaurants(company.id)
     
     # Create token
     token = create_access_token({"sub": user.id, "role": user.role})
@@ -674,6 +698,7 @@ async def dev_login(data: DevLoginRequest):
             "minOrderAmount": 0, "deliveryDays": [], "deliveryTime": "", "orderReceiveDeadline": "",
             "logisticsType": "own", "updatedAt": now
         })
+        await _auto_link_supplier_to_all_restaurants(company_id)
     token = create_access_token({"sub": user_id, "role": role})
     return TokenResponse(
         access_token=token,
@@ -1939,6 +1964,41 @@ async def get_supplier_pricelists(
     
     return pricelists
 
+# ==================== CUSTOMER CONTRACT SUPPLIERS ====================
+
+@api_router.get("/customer/contract-suppliers")
+async def get_contract_suppliers(current_user: dict = Depends(get_current_user)):
+    """List suppliers for 'Статус договоров с поставщиками'. Source = companies(type=supplier) only.
+    Status from supplier_restaurant_settings. No junk — only real supplier companies."""
+    if current_user['role'] != UserRole.customer:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0, "id": 1})
+    if not company:
+        return []
+    restaurant_id = company['id']
+    # Source: ONLY companies with type=supplier (real suppliers in system)
+    suppliers = await db.companies.find(
+        {"type": "supplier"},
+        {"_id": 0, "id": 1, "companyName": 1, "inn": 1}
+    ).to_list(500)
+    links = await db.supplier_restaurant_settings.find(
+        {"restaurantId": restaurant_id},
+        {"_id": 0, "supplierId": 1, "contract_accepted": 1}
+    ).to_list(500)
+    link_map = {l['supplierId']: l for l in links}
+    result = []
+    for s in suppliers:
+        link = link_map.get(s['id'])
+        status = "accepted" if (link and link.get("contract_accepted")) else "pending"
+        result.append({
+            "supplierId": s['id'],
+            "supplierName": s.get('companyName', s.get('name', 'N/A')),
+            "inn": s.get('inn', ''),
+            "contractStatus": status
+        })
+    return result
+
+
 # ==================== DOCUMENT ROUTES ====================
 
 @api_router.get("/documents/my", response_model=List[Document])
@@ -1954,11 +2014,21 @@ async def get_my_documents(current_user: dict = Depends(get_current_user)):
 async def upload_document(
     file: UploadFile = File(...),
     document_type: str = Form(...),
+    edo: Optional[str] = Form(None),
+    guid: Optional[str] = Form(None),
     current_user: dict = Depends(get_current_user)
 ):
     company = await db.companies.find_one({"userId": current_user['id']}, {"_id": 0})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+    if edo or guid:
+        upd = {"updatedAt": datetime.now(timezone.utc).isoformat()}
+        if edo is not None:
+            upd["edoNumber"] = edo.strip() or None
+        if guid is not None:
+            upd["guid"] = guid.strip() or None
+        if len(upd) > 1:
+            await db.companies.update_one({"id": company["id"]}, {"$set": upd})
     
     # Save file
     file_id = str(uuid.uuid4())
@@ -1980,8 +2050,78 @@ async def upload_document(
     doc_dict = document.model_dump()
     doc_dict['createdAt'] = doc_dict['createdAt'].isoformat()
     await db.documents.insert_one(doc_dict)
-    
+
+    # Auto-accept contract (dev/local only, when flag is set)
+    auto_accept = os.environ.get('AUTO_ACCEPT_CONTRACTS', '').strip() == '1' or \
+                  os.environ.get('BESTPRICE_AUTO_ACCEPT_CONTRACTS', '').strip() == '1'
+    env_val = os.environ.get('ENV', 'production').lower()
+    is_dev = env_val in ('development', 'local', 'dev', '') or 'local' in db_name or 'test' in db_name
+    if auto_accept and is_dev:
+        suppliers = await db.companies.find({"type": "supplier"}, {"_id": 0, "id": 1}).to_list(500)
+        now = datetime.now(timezone.utc).isoformat()
+        for s in suppliers:
+            await db.supplier_restaurant_settings.update_one(
+                {"supplierId": s["id"], "restaurantId": company["id"]},
+                {"$set": {
+                    "contract_accepted": True,
+                    "is_paused": False,
+                    "ordersEnabled": True,
+                    "updatedAt": now
+                }},
+                upsert=True
+            )
+
     return document
+
+
+@api_router.get("/documents/{document_id}/download")
+async def download_document(
+    document_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Download document. ACL: restaurant's own doc OR supplier linked to restaurant (supplier_restaurant_settings)."""
+    doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    restaurant_id = doc.get("companyId")
+    if not restaurant_id:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # Restaurant (customer) can download own documents
+    if current_user.get("role") == UserRole.customer:
+        company = await db.companies.find_one({"userId": current_user["id"]}, {"_id": 0, "id": 1})
+        if company and company["id"] == restaurant_id:
+            file_url = doc.get("fileUrl", "")
+            if file_url.startswith("/uploads/"):
+                filename = file_url.split("/")[-1]
+                file_path = UPLOAD_DIR / filename
+                if file_path.exists():
+                    return FileResponse(path=str(file_path), filename=filename)
+        raise HTTPException(status_code=403, detail="No access to this document")
+
+    # Supplier can download only if linked to restaurant
+    if current_user.get("role") == UserRole.supplier:
+        supplier_id = current_user.get("companyId")
+        if not supplier_id:
+            company = await db.companies.find_one({"userId": current_user["id"]}, {"_id": 0, "id": 1})
+            supplier_id = company["id"] if company else None
+        if not supplier_id:
+            raise HTTPException(status_code=403, detail="No access to this document")
+        link = await db.supplier_restaurant_settings.find_one(
+            {"supplierId": supplier_id, "restaurantId": restaurant_id, "contract_accepted": True},
+            {"_id": 0}
+        )
+        if link:
+            file_url = doc.get("fileUrl", "")
+            if file_url.startswith("/uploads/"):
+                filename = file_url.split("/")[-1]
+                file_path = UPLOAD_DIR / filename
+                if file_path.exists():
+                    return FileResponse(path=str(file_path), filename=filename)
+        raise HTTPException(status_code=403, detail="No access to this document")
+
+    raise HTTPException(status_code=403, detail="Not authenticated")
+
 
 # ==================== ORDER ROUTES ====================
 
@@ -5413,6 +5553,15 @@ async def order_from_favorites(data: dict, current_user: dict = Depends(get_curr
 
 # ==================== SUPPLIER RESTAURANT MANAGEMENT ====================
 
+# Whitelist: fields of restaurant (customer) company visible to supplier (always, not link-dependent)
+REQUISITES_WHITELIST = {
+    "companyName", "inn", "ogrn", "legalAddress", "actualAddress",
+    "phone", "email", "contactPersonName", "contactPersonPosition", "contactPersonPhone",
+    "deliveryAddresses", "edoNumber", "guid"
+}
+REQUISITES_PREVIEW_FIELDS = ("companyName", "inn", "phone", "email")
+
+
 async def _restaurant_is_paused(supplier_id: str, restaurant_id: str) -> bool:
     """Check if supplier has paused this restaurant."""
     s = await db.supplier_restaurant_settings.find_one(
@@ -5422,9 +5571,29 @@ async def _restaurant_is_paused(supplier_id: str, restaurant_id: str) -> bool:
     return bool(s and s.get("is_paused"))
 
 
+def _build_requisites(company: dict) -> dict:
+    """Build requisites dict from company, whitelist only. No private/internal fields."""
+    out = {}
+    for k in REQUISITES_WHITELIST:
+        if k in company and company[k] is not None:
+            out[k] = company[k]
+    return out
+
+
+def _build_requisites_preview(company: dict) -> dict:
+    """Build 4-field preview: companyName, inn, phone, email."""
+    out = {}
+    for k in REQUISITES_PREVIEW_FIELDS:
+        if k in company and company[k] is not None:
+            out[k] = company[k]
+    return out
+
+
 @api_router.get("/supplier/restaurant-documents")
 async def get_supplier_restaurant_documents(current_user: dict = Depends(get_current_user)):
-    """List restaurants (customers) with their contract status for Documents page."""
+    """List restaurants (customers) with their contract status for Documents page.
+    restaurantRequisitesPreview: 4 fields (companyName, inn, phone, email) — always.
+    restaurantRequisitesFull: whitelist including edoNumber, guid — always. Not link-dependent."""
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
     company_id = current_user.get('companyId')
@@ -5433,7 +5602,10 @@ async def get_supplier_restaurant_documents(current_user: dict = Depends(get_cur
         company_id = company['id'] if company else None
     if not company_id:
         return []
-    customers = await db.companies.find({"type": "customer"}, {"_id": 0, "id": 1, "companyName": 1, "inn": 1}).to_list(500)
+    proj = {"_id": 0, "id": 1, "companyName": 1, "inn": 1}
+    for k in REQUISITES_WHITELIST:
+        proj[k] = 1
+    customers = await db.companies.find({"type": "customer"}, proj).to_list(500)
     links = await db.supplier_restaurant_settings.find(
         {"supplierId": company_id},
         {"_id": 0, "restaurantId": 1, "contract_accepted": 1}
@@ -5444,19 +5616,32 @@ async def get_supplier_restaurant_documents(current_user: dict = Depends(get_cur
     for d in docs:
         cid = d.get('companyId')
         if cid not in docs_by_company:
-            docs_by_company[cid] = []
-        docs_by_company[cid].append({"id": d.get('id'), "type": d.get('type', 'Документ'), "uploadedAt": d.get('createdAt', ''), "status": d.get('status', 'uploaded')})
+            docs_by_company[cid] = {}
+        # Dedupe by type: keep newest per (companyId, type)
+        doc_type = d.get('type', 'Документ')
+        entry = {"id": d.get('id'), "type": doc_type, "uploadedAt": d.get('createdAt', ''), "status": d.get('status', 'uploaded')}
+        existing = docs_by_company[cid].get(doc_type)
+        if not existing or (d.get('createdAt', '') or '') > (existing.get('uploadedAt', '') or ''):
+            docs_by_company[cid][doc_type] = entry
+    for cid in docs_by_company:
+        docs_by_company[cid] = list(docs_by_company[cid].values())
     result = []
     for c in customers:
         link = link_map.get(c['id'])
         contract_status = "accepted" if (link and link.get("contract_accepted")) else "pending"
-        result.append({
+        preview = _build_requisites_preview(c)
+        # Full requisites only for accepted (contract_accepted) restaurants
+        full = _build_requisites(c) if (link and link.get("contract_accepted")) else None
+        item = {
             "restaurantId": c['id'],
             "restaurantName": c.get('companyName', c.get('name', 'N/A')),
             "inn": c.get('inn', ''),
             "documents": docs_by_company.get(c['id'], []),
-            "contractStatus": contract_status
-        })
+            "contractStatus": contract_status,
+            "restaurantRequisitesPreview": preview if preview else None,
+            "restaurantRequisitesFull": full if full else None
+        }
+        result.append(item)
     return result
 
 

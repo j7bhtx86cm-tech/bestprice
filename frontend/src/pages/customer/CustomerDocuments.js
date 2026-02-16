@@ -33,6 +33,7 @@ const documentTypes = [
 
 export const CustomerDocuments = () => {
   const [documents, setDocuments] = useState([]);
+  const [contractSuppliers, setContractSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
@@ -48,14 +49,32 @@ export const CustomerDocuments = () => {
   useEffect(() => {
     fetchDocuments();
     fetchCompany();
+    fetchContractSuppliers();
   }, []);
+
+  const fetchContractSuppliers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await axios.get(`${API}/customer/contract-suppliers`, { headers });
+      setContractSuppliers(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch contract suppliers:', error);
+    }
+  };
 
   const fetchCompany = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await axios.get(`${API}/companies/my`, { headers });
-      setCompany(response.data);
+      const c = response.data;
+      setCompany(c);
+      setFormData(prev => ({
+        ...prev,
+        edo: c?.edoNumber || prev.edo,
+        guid: c?.guid || prev.guid
+      }));
     } catch (error) {
       console.error('Failed to fetch company:', error);
     }
@@ -102,6 +121,8 @@ export const CustomerDocuments = () => {
         const uploadFormData = new FormData();
         uploadFormData.append('file', file);
         uploadFormData.append('document_type', formData.documentType);
+        if (formData.edo) uploadFormData.append('edo', formData.edo);
+        if (formData.guid) uploadFormData.append('guid', formData.guid);
 
         await axios.post(`${API}/documents/upload`, uploadFormData, {
           headers: {
@@ -210,26 +231,20 @@ export const CustomerDocuments = () => {
         </p>
         
         <div className="space-y-2">
-          {[
-            { name: 'Алиди', status: 'accepted' },
-            { name: 'Айфрут', status: 'accepted' },
-            { name: 'Фаворит', status: 'pending' },
-            { name: 'ТД ДУНАЙ', status: 'accepted' },
-            { name: 'Интегрита', status: 'accepted' },
-            { name: 'Ромакс', status: 'pending' },
-            { name: 'Прайфуд', status: 'accepted' },
-            { name: 'Vici', status: 'accepted' },
-            { name: 'В-З', status: 'accepted' }
-          ].map((supplier) => (
-            <div key={supplier.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="font-medium">{supplier.name}</span>
-              {supplier.status === 'accepted' ? (
-                <Badge className="bg-green-100 text-green-800">✓ Принят</Badge>
-              ) : (
-                <Badge className="bg-yellow-100 text-yellow-800">⏳ Ожидание</Badge>
-              )}
-            </div>
-          ))}
+          {contractSuppliers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Нет поставщиков в системе</p>
+          ) : (
+            contractSuppliers.map((supplier) => (
+              <div key={supplier.supplierId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="font-medium">{supplier.supplierName}</span>
+                {supplier.contractStatus === 'accepted' ? (
+                  <Badge className="bg-green-100 text-green-800">✓ Принят</Badge>
+                ) : (
+                  <Badge className="bg-yellow-100 text-yellow-800">⏳ Ожидание</Badge>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </Card>
 

@@ -1,0 +1,14 @@
+{
+  "detail": {
+    "error": "SUPPLIER_APPROVAL_REQUIRED",
+    "suppliers": [
+      {
+        "supplier_id": "6d74ef28-6456-4c7e-9fcf-e42998b4dfdc",
+        "status": "MISSING_LINK",
+        "failed_reason": "MISSING_LINK",
+        "block_reason_ui": "Нет связи с поставщиком",
+        "supplier_name": "Поставщик"
+      }
+    ]
+  }
+}

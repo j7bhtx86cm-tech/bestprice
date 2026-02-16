@@ -1,0 +1,11 @@
+# PRUNE_PROOF — after prune, E2E still passes
+# Removed: dev_pipeline, dev_reset_data, init_suppliers, bulk_create_suppliers, verify_e2e
+
+=== Prod Minimal E2E ===
+1. Backend OK
+2. Running prove_new_restaurant_docs_e2e.py...
+E2E: register + link + upload + supplier sees + download OK
+3. Running collect_acl_proof.py...
+ACL proof written to /Users/mg/bestprice/evidence/ACL_PROOF.txt
+
+E2E PASSED

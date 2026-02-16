@@ -1,0 +1,25 @@
+Clean slate: deleting test data...
+  users: 2
+  companies: 2
+  supplier_settings: 1
+  supplier_restaurant_settings: 1
+  documents: 4
+  orders: 0
+  price_lists: 0
+  supplier_items: 0
+  price_list_uploads: 0
+  orders_v12: 0
+  cart_intents: 0
+  cart_items_v12: 0
+  cart_plans_v12: 0
+  favorites_v12: 0
+  catalog_references: 0
+  pricelists: 0
+  products: 0
+  supplier_restaurant_links: 0
+  uploads: removed 9fc3258e-943d-4c29-80e2-69db31a207ae.pdf
+  uploads: removed 5d312d96-ab4f-4873-95fe-6e43bdd37fa0.pdf
+  uploads: removed e6e14fbe-61f2-4ab5-8732-8af8e35f3bfb.pdf
+  uploads: removed _e2e_sample.pdf
+  uploads: removed daad6caf-cf0e-49cc-a5ac-b9a4b9ff5795.pdf
+Done.

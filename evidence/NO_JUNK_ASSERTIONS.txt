@@ -1,0 +1,9 @@
+NO JUNK ASSERTIONS
+==================
+suppliers (companies type=supplier): 1 (expected 1)
+restaurants (companies type=customer): 1 (expected 1)
+links (supplier_restaurant_settings): 1 (expected 1)
+documents: 1 (expected 1)
+users: 2 (expected 2: 1 supplier + 1 restaurant)
+
+RESULT: PASS - exactly 1/1/1/1

@@ -1,0 +1,14 @@
+# Supplier requisites API proof
+
+GET http://127.0.0.1:8001/api/supplier/restaurant-documents
+Status: 200
+
+## restaurantRequisitesPreview (4 fields, always)
+Keys: ['companyName', 'inn', 'phone', 'email']
+
+## restaurantRequisitesFull (linked only, whitelist + edoNumber, guid)
+Keys: ['guid', 'phone', 'contactPersonPosition', 'edoNumber', 'deliveryAddresses', 'inn', 'email', 'companyName', 'actualAddress', 'legalAddress', 'ogrn', 'contactPersonName', 'contactPersonPhone']
+edoNumber: EDO-REF-001
+guid: guid-reference-flow-001
+
+RESULT: PASS

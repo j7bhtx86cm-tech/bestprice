@@ -1,0 +1,15 @@
+[1/5] Python deps: playwright, Pillow, requests
+  OK playwright
+  OK Pillow
+  OK requests
+  All deps OK
+[2/5] Chromium (Playwright)
+  OK Chromium launches
+[3/5] Backend
+  OK http://127.0.0.1:8001/docs
+[4/5] Frontend
+  OK http://localhost:3000
+[5/5] Smoke screenshot (GET /)
+  OK SMOKE.png (495722 bytes)
+
+PREFLIGHT: PASS

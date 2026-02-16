@@ -95,7 +95,16 @@ export const CustomerAuth = () => {
     setLoading(true);
     
     try {
-      await register(registerData, 'customer');
+      const payload = {
+        ...registerData,
+        deliveryAddresses: registerData.deliveryAddresses
+          .filter((a) => a && String(a).trim())
+          .map((addr) => ({ address: String(addr).trim(), phone: '', additionalPhone: null }))
+      };
+      if (payload.deliveryAddresses.length === 0) {
+        payload.deliveryAddresses = [{ address: registerData.actualAddress || 'Не указан', phone: '', additionalPhone: null }];
+      }
+      await register(payload, 'customer');
       navigate('/customer');
     } catch (err) {
       setError(err.response?.data?.detail || 'Ошибка регистрации');

@@ -1,0 +1,20 @@
+Playwright blocked — React app not rendering in headless browser
+
+Error: Page.wait_for_selector: Timeout 15000ms exceeded.
+Call log: waiting for locator("[data-testid=login-email-input], input[type=email], form") to be visible
+
+Cause: Navigate to http://127.0.0.1:3000/supplier/auth succeeds (commit), but form/inputs never appear.
+Debug screenshot _debug_supplier_auth.png: mostly white/blank page.
+
+Possible causes:
+- React app JS bundle fails in headless Chromium
+- CORS/network restrictions in sandbox
+- React needs longer hydration
+
+Fix attempted:
+- PLAYWRIGHT_BROWSERS_PATH=$HOME/Library/Caches/ms-playwright
+- wait_until="commit" (networkidle times out)
+- 127.0.0.1 instead of localhost
+
+Screenshot 01_ports_ok.png was captured successfully (home page).
+Screenshots 02-04 require manual capture in browser.

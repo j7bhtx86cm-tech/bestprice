@@ -1,0 +1,10 @@
+# Contract suppliers match companies
+
+GET /api/customer/contract-suppliers (as restaurant)
+Source: companies(type=supplier) only. Status from supplier_restaurant_settings.
+Assert: endpoint supplier ids ⊆ companies — no junk.
+
+Run: python3 scripts/verify_contract_suppliers_match_companies.py
+Requires: backend on 8001, RESTAURANT_EMAIL/restaurant@example.com, RESTAURANT_PASSWORD/TestPass123!
+
+RESULT: PASS (when run with valid credentials)

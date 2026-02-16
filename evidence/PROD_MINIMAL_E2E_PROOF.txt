@@ -1,0 +1,20 @@
+Fresh minimal state run
+======================
+
+1. Clean slate: ALLOW_DESTRUCTIVE=1 bash scripts/clean_slate_local.sh
+2. Backend on :8001: OK
+3. Programmatic create:
+   - 1 supplier (e2e_supplier@example.com)
+   - 1 restaurant (e2e_restaurant@example.com)
+   - Link (accept-contract)
+   - 1 document upload
+4. Supplier download: 200 OK
+5. verify_no_junk.py: PASS
+
+Final counts:
+- users: 2
+- companies: 2
+- supplier_restaurant_settings: 1
+- documents: 1
+
+E2E PASSED

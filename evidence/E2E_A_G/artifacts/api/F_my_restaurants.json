@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "supplier_company_id_from_auth": "56f4f279-95ec-41fe-9daf-46e1b95d20ce",
+    "mongo_filter": {
+      "supplierId": "56f4f279-95ec-41fe-9daf-46e1b95d20ce",
+      "contract_accepted": true
+    },
+    "settings_count": 21
+  },
+  "restaurants": [
+    {
+      "id": "0239b309-49f3-4bd0-80de-81c180409484",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "051b22fa-0124-4285-ac5b-e7720caedb70",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "1c007532-a0e0-4554-ab29-80a538e4e426",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "1c35e261-b8d0-49b9-b577-590bb33c0f5f",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "2272c958-0cb5-4c7a-b936-ee09d0bd5dba",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "2ddf2ab4-71e1-413a-98aa-410ee018d5f5",
+      "name": "ООО Кафе Столовая",
+      "inn": "7703456789",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "3ad96b1d-a2cd-4654-bbb9-dd91474851ea",
+      "name": "ООО АвтоРесторан 4a27db83",
+      "inn": "7519472278",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "419467b2-dca7-4aa2-9306-b52c98b1121d",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "4bb2728a-5494-4f06-8ef6-33654079c351",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "4d94a9a1-1bdf-499a-80e7-c91f68e6aea5",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "4dcacad9-6fb9-46e6-bfd0-afb8c4c24bca",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "57598f7b-1e64-4658-aa7c-464f1b9e2cea",
+      "name": "ООО АвтоРесторан 6af89818",
+      "inn": "7311385245",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "652fa43c-533b-4776-9bfa-3c83ddc2efd0",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "6bddf630-b6fd-4426-88e2-bacfecfec749",
+      "name": "ООО Ресторан Вкусно",
+      "inn": "7701234567",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 1,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "80433b16-9d20-446e-b319-d26ae9ef378d",
+      "name": "ООО АвтоРесторан baf9e6ba",
+      "inn": "7387166100",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "9a4b95d7-07a3-4c8d-b903-75b5449e7c83",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "b21f7758-f539-46ae-9f8c-b832437bcbf5",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "d1a79473-f670-46cf-adf6-904498bdc2d7",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "d239d123-9a57-4f39-ae25-f6bdab1889bb",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "dbd0afd0-3fcd-4117-8d05-379ceb1e4295",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    },
+    {
+      "id": "edf91c0d-1c73-41ca-bba2-6e726f549d57",
+      "name": "ООО E2E Тест",
+      "inn": "7707083893",
+      "contract_status": "accepted",
+      "is_paused": false,
+      "orderCount": 0,
+      "ordersEnabled": true,
+      "unavailabilityReason": null
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+# Auto-Accept Contract Proof
+
+## Setup
+- Backend: AUTO_ACCEPT_CONTRACTS=1 (or BESTPRICE_AUTO_ACCEPT_CONTRACTS=1)
+- Env: dev/local (ENV not production, or DB_NAME contains local/test)
+
+## Flow
+1. Clean slate (1 supplier, 1 restaurant)
+2. Start backend + frontend
+3. Restaurant: upload document(s)
+4. Supplier: refresh "Документы от ресторанов"
+5. Result: "Договор принят" without manual accept
+
+## What happens
+- On documents/upload, if flag set and is_dev: upsert supplier_restaurant_settings with contract_accepted=true for all suppliers × this restaurant
+
+## Evidence
+- API: scripts/prove_auto_accept_e2e.py
+- Script: scripts/dev_auto_accept_e2e.sh
+- Proof: evidence/AUTO_ACCEPT_E2E_PROOF.txt

@@ -1,0 +1,277 @@
+{
+  "data": [
+    {
+      "restaurantId": "6bddf630-b6fd-4426-88e2-bacfecfec749",
+      "restaurantName": "ООО Ресторан Вкусно",
+      "inn": "7701234567",
+      "documents": [],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "2ddf2ab4-71e1-413a-98aa-410ee018d5f5",
+      "restaurantName": "ООО Кафе Столовая",
+      "inn": "7703456789",
+      "documents": [],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "80433b16-9d20-446e-b319-d26ae9ef378d",
+      "restaurantName": "ООО АвтоРесторан baf9e6ba",
+      "inn": "7387166100",
+      "documents": [],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "57598f7b-1e64-4658-aa7c-464f1b9e2cea",
+      "restaurantName": "ООО АвтоРесторан 6af89818",
+      "inn": "7311385245",
+      "documents": [],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "3ad96b1d-a2cd-4654-bbb9-dd91474851ea",
+      "restaurantName": "ООО АвтоРесторан 4a27db83",
+      "inn": "7519472278",
+      "documents": [],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "5dc49918-3cad-47ff-85dd-1073fb8eac53",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "3898d794-529e-4877-aa05-ae164ec97095",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T08:52:32.488772+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "pending"
+    },
+    {
+      "restaurantId": "0239b309-49f3-4bd0-80de-81c180409484",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "5c4eeb81-f6a6-4004-9cfb-4cdf4f42dbb3",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T08:53:13.379902+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "2272c958-0cb5-4c7a-b936-ee09d0bd5dba",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "3c9f2cad-3ec4-4b99-9811-3fcd4ff16e29",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T08:55:35.813686+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "b21f7758-f539-46ae-9f8c-b832437bcbf5",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "e1d68443-32bc-4469-a7b4-00dbaa8b4e88",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T08:59:33.528884+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "1c35e261-b8d0-49b9-b577-590bb33c0f5f",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "1b1803a5-4574-479c-9f1b-67d50fdd38ed",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T09:00:13.616859+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "1c007532-a0e0-4554-ab29-80a538e4e426",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "dc370bba-10fe-43fa-b766-0ee818122b29",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T09:28:02.789094+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "dbd0afd0-3fcd-4117-8d05-379ceb1e4295",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "905f5286-d265-432f-92cf-38aa1ea4fd2a",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T09:29:22.394880+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "652fa43c-533b-4776-9bfa-3c83ddc2efd0",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "09ecfc20-8759-465c-9dca-c02c4b415b1e",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T09:47:32.108406+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "051b22fa-0124-4285-ac5b-e7720caedb70",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "a66bb1b4-fc87-42f4-a2ce-cf9df7be594a",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T10:21:44.263978+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "4d94a9a1-1bdf-499a-80e7-c91f68e6aea5",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "81f77a12-334e-4180-96c1-1da2696a8524",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T10:22:04.693607+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "9a4b95d7-07a3-4c8d-b903-75b5449e7c83",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "15114a1e-d7da-4d29-88c2-fd8b2542b789",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T10:33:20.531809+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "edf91c0d-1c73-41ca-bba2-6e726f549d57",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "597bbdb8-a7c7-4f70-aeb0-9cf31f4d3b0d",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T10:38:55.176242+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "d1a79473-f670-46cf-adf6-904498bdc2d7",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "32664363-3efb-4ff9-924c-bdda368519ef",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T10:48:27.720393+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "419467b2-dca7-4aa2-9306-b52c98b1121d",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "a620c3c4-c624-4a1d-b3e3-eeb3743bce1f",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T11:12:35.561436+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "4dcacad9-6fb9-46e6-bfd0-afb8c4c24bca",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "8551d31f-4840-4d5d-a900-65e9f2080ffc",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T11:14:19.097925+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "d239d123-9a57-4f39-ae25-f6bdab1889bb",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "4af19110-fe17-4776-a55f-b14a5c30a83c",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T11:14:54.480996+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "accepted"
+    },
+    {
+      "restaurantId": "4bb2728a-5494-4f06-8ef6-33654079c351",
+      "restaurantName": "ООО E2E Тест",
+      "inn": "7707083893",
+      "documents": [
+        {
+          "id": "9014650c-981a-497d-a692-006b55fadf78",
+          "type": "Свидетельство о регистрации",
+          "uploadedAt": "2026-02-15T11:15:48.618255+00:00",
+          "status": "uploaded"
+        }
+      ],
+      "contractStatus": "pending"
+    }
+  ]
+}

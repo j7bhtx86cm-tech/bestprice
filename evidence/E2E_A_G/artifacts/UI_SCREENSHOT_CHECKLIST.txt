@@ -1,0 +1,11 @@
+
+UI SCREENSHOT CHECKLIST (capture manually if needed):
+  A1.png  — Registration page + success landing in restaurant cabinet
+  B1.png  — Company profile page showing auto-filled fields
+  C1.png  — Documents page with uploaded doc + status "На модерации"
+  D1.png  — Supplier "Документы от ресторанов" showing restaurant + doc
+  E1.png  — Supplier approval result (status → Принят)
+  F1.png  — Supplier "Мои рестораны" with restaurant card
+  G1.png  — Successful order creation / orders list
+  G2.png  — Blocked order with reason (unapproved supplier)
+  G3.png  — Mixed cart blocked, per-supplier reasons

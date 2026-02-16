@@ -1,0 +1,71 @@
+=== E2E Evidence Generator ===
+
+API: http://127.0.0.1:8001/api
+
+OK A: restaurant registered
+OK B: auth/me
+OK C: document uploaded
+OK D: restaurant visible to supplier
+OK E: contract accepted
+OK F: restaurant in My restaurants
+OK G1: order created
+OK G2: blocked as expected
+OK G3: blocked with per-supplier reasons
+
+UI SCREENSHOT CHECKLIST (capture manually if needed):
+  A1.png  — Registration page + success landing in restaurant cabinet
+  B1.png  — Company profile page showing auto-filled fields
+  C1.png  — Documents page with uploaded doc + status "На модерации"
+  D1.png  — Supplier "Документы от ресторанов" showing restaurant + doc
+  E1.png  — Supplier approval result (status → Принят)
+  F1.png  — Supplier "Мои рестораны" with restaurant card
+  G1.png  — Successful order creation / orders list
+  G2.png  — Blocked order with reason (unapproved supplier)
+  G3.png  — Mixed cart blocked, per-supplier reasons
+
+
+API: PASS (run_task will continue with UI + validator)
+OK A1
+OK B1
+OK C1
+OK D1, E1
+OK F1
+OK G1
+OK G2
+OK G3
+e2e_ui_playwright: PASS
+evidence_validator: PASS
+=== run_task: E2E_A_G ===
+
+=== Preflight (Environment Readiness Gate) ===
+
+[1/5] Python deps: playwright, Pillow, requests
+  OK playwright
+  OK Pillow
+  OK requests
+  All deps OK
+[2/5] Chromium (Playwright)
+  OK Chromium launches
+[3/5] Backend
+  OK http://127.0.0.1:8001/docs
+[4/5] Frontend
+  OK http://localhost:3000
+[5/5] Smoke screenshot (GET /)
+  OK SMOKE.png (495935 bytes)
+
+PREFLIGHT: PASS
+Preflight: PASS
+
+=== Step 0: E2E_SKIP_START=1, using existing backend/frontend ===
+
+
+=== Step 1: API evidence ===
+
+
+=== Step 2: UI evidence (Playwright) ===
+
+
+=== Step 3: Evidence validator ===
+
+
+FINAL: PASS
