@@ -1,0 +1,21 @@
+# Auto-link prod-like verification
+timestamp=2026-02-19T12:23:31.486864+00:00
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=test_database
+API_BASE_URL=http://127.0.0.1:8001
+
+customers count: 1
+suppliers count: 2
+
+Integrita: chosen_email=integrita.supplier@example.com
+Integrita: links_count=1
+Integrita: api_restaurants_count=1
+Integrita: found_krevetochna=true
+
+Romax: chosen_email=romax.supplier@example.com
+Romax: links_count=1
+Romax: api_restaurants_count=1
+Romax: found_krevetochna=true
+
+
+RESULT: PASS

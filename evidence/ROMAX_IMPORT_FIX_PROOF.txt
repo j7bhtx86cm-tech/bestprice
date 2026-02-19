@@ -1,0 +1,6 @@
+timestamp=2026-02-19T17:43:37.088916+00:00
+API_BASE_URL=http://127.0.0.1:8001
+total=1310
+first_item.article=2001
+first_item.name=Говядина вырезка 3/4 без цепи с/м в/у 1,6-2,3 кг ~30 кг/кор. №4238 PUL BR
+RESULT: PASS

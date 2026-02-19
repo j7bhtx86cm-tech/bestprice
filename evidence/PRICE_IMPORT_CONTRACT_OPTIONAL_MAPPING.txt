@@ -1,0 +1,11 @@
+# Price import contract: column_mapping optional
+timestamp=2026-02-19T16:16:47.480262+00:00
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=test_database
+API_BASE_URL=http://127.0.0.1:8001
+sent fields: file, replace (no column_mapping)
+
+response_status=422
+response_shape_ok=true
+error_code=no_rows_imported
+RESULT: PASS

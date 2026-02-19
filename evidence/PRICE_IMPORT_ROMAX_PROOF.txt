@@ -1,0 +1,5 @@
+timestamp=2026-02-19T14:53:03.234516+00:00
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=test_database
+ROMAX_PRICE_FILE= (not set, file not found)
+RESULT: SKIP (no test file). Put test file at import_data/romax_price.xlsx or set env ROMAX_PRICE_FILE.

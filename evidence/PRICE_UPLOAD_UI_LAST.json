@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-02-19T17:23:39.097Z",
+  "supplier_email": "romax.supplier@example.com",
+  "endpoint": "http://localhost:8001/api/price-lists/import",
+  "request": {
+    "filename": "Ромакс (2) (1).xlsx",
+    "size": 93886,
+    "replace": false,
+    "mapping_used": false
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "message": "Successfully imported 1310 products",
+      "importedCount": 1310,
+      "created": 1305,
+      "updated": 5,
+      "skipped": 183,
+      "skipped_reasons": {
+        "empty_name": 183,
+        "price_parse_failed": 0,
+        "price_le_zero": 0,
+        "empty_or_invalid_unit": 0,
+        "other": 0
+      },
+      "total_rows_read": 1493,
+      "deactivated": 0,
+      "pricelist_id": "adce474a-c21b-4713-bc26-8c0cfd23b5c8",
+      "errors": []
+    }
+  },
+  "ui_result": "success",
+  "message": "Импортировано: 1310 / Ошибок: 183"
+}

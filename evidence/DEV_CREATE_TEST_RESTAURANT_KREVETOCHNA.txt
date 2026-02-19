@@ -1,0 +1,26 @@
+# DEV: test restaurant Креветочная
+timestamp=2026-02-19T12:23:29.642328+00:00
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=test_database
+
+## Creds
+EMAIL=gmfuel@gmail.com
+PASSWORD=Krevetochna#2026
+
+## Final restaurant fields
+name (companyName)=Креветочная
+address (actualAddress/legalAddress)=Рубинштейна 38
+phone=+79213643475
+email=gmfuel@gmail.com
+
+## DB checks
+companies (type=customer) count: 1 (>=1)
+customer with email gmfuel@gmail.com: OK
+
+## API checks
+customer login: OK
+GET /auth/me: OK
+
+RESULT: PASS
+
+После создания ресторана перезапусти bash scripts/dev_create_2_test_suppliers.sh (он idempotent) — чтобы достроились supplier_restaurant_settings и поставщики увидели новый ресторан.

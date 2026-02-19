@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Depends
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Depends, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -12,7 +13,7 @@ import secrets
 import re
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Annotated, Union
 import uuid
 from datetime import datetime, timezone, timedelta
 import bcrypt
@@ -643,6 +644,27 @@ class DevLoginRequest(BaseModel):
     role: str  # "supplier" | "customer"
     email: Optional[str] = None
     phone: Optional[str] = None
+
+DEV_EVIDENCE_ENABLED = os.environ.get("BESTPRICE_DEV_EVIDENCE", "1").strip().lower() not in ("0", "false", "off")
+
+
+@api_router.post("/dev/evidence")
+async def dev_evidence(payload: dict):
+    """DEV-only: save UI evidence (e.g. price upload last attempt) to evidence/PRICE_UPLOAD_UI_LAST.json. Disabled in prod (set BESTPRICE_DEV_EVIDENCE=0)."""
+    if not DEV_EVIDENCE_ENABLED:
+        raise HTTPException(status_code=404, detail="Not Found")
+    evidence_dir = ROOT_DIR.parent / "evidence"
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    path = evidence_dir / "PRICE_UPLOAD_UI_LAST.json"
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            import json
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.warning("Failed to write dev evidence: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to write evidence file")
+    return {"ok": True, "path": str(path)}
+
 
 @api_router.post("/dev/login", response_model=TokenResponse)
 async def dev_login(data: DevLoginRequest):
@@ -1450,23 +1472,11 @@ async def upload_price_list(file: UploadFile = File(...), current_user: dict = D
             },
         )
     
-    async def parse_dataframe() -> pd.DataFrame:
-        buffer = io.BytesIO(contents)
-        if file.filename.lower().endswith(".csv"):
-            return await asyncio.to_thread(pd.read_csv, buffer)
-        if file.filename.lower().endswith((".xlsx", ".xls")):
-            return await asyncio.to_thread(pd.read_excel, buffer)
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "error": "unsupported_format",
-                "message": "Only CSV and Excel files are supported.",
-                "correlation_id": correlation_id,
-            },
-        )
-    
+    def parse_dataframe_sync():
+        return _parse_price_list_dataframe(contents, file.filename or "")
+
     try:
-        df = await parse_dataframe()
+        df = await asyncio.to_thread(parse_dataframe_sync)
     except HTTPException:
         raise
     except Exception as e:
@@ -1604,22 +1614,239 @@ async def upload_price_list(file: UploadFile = File(...), current_user: dict = D
         "correlation_id": correlation_id,
     }
 
+# --- Price list import: auto-detect column mapping (RU/EN) ---
+# Rule for default unit when missing: use pack/фасовка text; if contains "кг" -> "кг", else "шт" (documented).
+
+# Headers that must NOT be chosen as productName (code/supplier columns)
+_NAME_EXCLUDE_HEADER_PARTS = ('код', 'артикул', 'поставщик', 'sku', 'id товара', 'код товара', 'товара поставщика')
+
+# Column "Поставщик" (supplier name) must NEVER be used as article or name
+_ARTICLE_EXCLUDE_HEADER_EXACT = ('поставщик', 'организация', 'company', 'companyname', 'supplier', 'наименование поставщика', 'код поставщика')
+# Article must contain code-like keyword (so "Поставщик" alone does not match)
+_ARTICLE_REQUIRE_IN_HEADER = ('код', 'артикул', 'sku', 'article')
+# Headers that are supplier/company name only — exclude from article even if they substring-match an alias
+_ARTICLE_EXCLUDE_HEADER_CONTAINS = ('поставщик',)  # "Поставщик" matches alias "код товара поставщика" via "c_lower in a"; exclude when header is only this
+
+# productName: prefer "название"/"наименование"; exclude columns containing code/supplier keywords
+_PRODUCT_NAME_PREFERRED = ('название', 'наименование', 'наименование товара')
+_PRODUCT_NAME_ALSO = ('товар', 'позиция', 'product', 'productname', 'name')
+
+
+def _price_list_column_aliases():
+    return {
+        'price': ['price', 'cost', 'цена', 'стоимость', 'цена за единицу', 'цена за ед'],
+        'unit': ['unit', 'uom', 'ед', 'ед.', 'единица', 'единиц', 'измерение', 'ед. изм', 'единица измерения', 'ед.изм'],
+        'article': ['код товара поставщика', 'код товара', 'код', 'артикул', 'sku', 'article'],
+        'packQty': ['количество в упаковке', 'упаков', 'в упаковке', 'кол-во в упаковке', 'pack', 'packqty', 'pack_quantity', 'упаковка', 'фасовка', 'кратность'],
+        'minOrderQty': ['минимальный заказ', 'мин', 'минимальный', 'min order', 'мин. заказ', 'мин заказ', 'minorder', 'minorderqty'],
+    }
+
+
+def _header_looks_like_code(col_lower: str) -> bool:
+    """True if header should not be used as product name (code/supplier column)."""
+    return any(part in col_lower for part in _NAME_EXCLUDE_HEADER_PARTS)
+
+
+def _score_name_column(df, col: str, n_sample: int = 10) -> float:
+    """Higher = better candidate for name: string-like, long text, few numeric-looking values."""
+    if df is None or col not in df.columns:
+        return 0.0
+    import re
+    numeric_re = re.compile(r'^\s*\d+(\.0)?\s*$')
+    sample = df[col].dropna().head(n_sample)
+    if len(sample) == 0:
+        return 0.0
+    lengths = [len(str(v).strip()) for v in sample]
+    avg_len = sum(lengths) / len(lengths)
+    num_like = sum(1 for v in sample if numeric_re.match(str(v).strip()))
+    pct_numeric = num_like / len(sample)
+    if pct_numeric > 0.9:
+        return 0.0
+    return avg_len * (1 - pct_numeric)
+
+
+def _auto_detect_column_mapping(columns: List[str], df: Any = None) -> Dict[str, str]:
+    """
+    Match column headers to productName/price/unit/article/packQty/minOrderQty.
+    productName: prefer "Название"/"Наименование", exclude code/supplier columns (Код товара поставщика, Поставщик).
+    When df provided, use data heuristic for name: prefer column with long text and few numeric values.
+    """
+    aliases = _price_list_column_aliases()
+    result = {}
+
+    # 1) Map non-name columns by aliases
+    for col in columns:
+        c = str(col).strip()
+        c_lower = c.lower()
+        for key in ('price', 'unit', 'packQty', 'minOrderQty'):
+            if key in result:
+                continue
+            for a in (_price_list_column_aliases()[key]):
+                if a in c_lower or c_lower in a or (a.replace(' ', '') in c_lower.replace(' ', '')):
+                    result[key] = col
+                    break
+        # article: only columns that look like code (код/артикул/sku); NEVER "Поставщик"
+        # Match only when alias is contained IN column name (a in c_lower), not the reverse — else "Поставщик" would match alias "код товара поставщика"
+        if 'article' not in result:
+            if c_lower.strip() in _ARTICLE_EXCLUDE_HEADER_EXACT:
+                continue
+            if any(ex in c_lower for ex in _ARTICLE_EXCLUDE_HEADER_CONTAINS) and not any(part in c_lower for part in _ARTICLE_REQUIRE_IN_HEADER):
+                continue
+            if not any(part in c_lower for part in _ARTICLE_REQUIRE_IN_HEADER):
+                continue
+            for a in (_price_list_column_aliases()['article']):
+                # Only match when alias is contained in column name (not column in alias), so "Поставщик" does not match alias "код товара поставщика"
+                if a in c_lower or (a.replace(' ', '') in c_lower.replace(' ', '')):
+                    result['article'] = col
+                    break
+
+    # 2) productName: only from columns that look like name AND not like code/supplier
+    name_candidates = []
+    for col in columns:
+        c = str(col).strip()
+        c_lower = c.lower()
+        if _header_looks_like_code(c_lower):
+            continue
+        for a in _PRODUCT_NAME_PREFERRED:
+            if a in c_lower or c_lower in a:
+                name_candidates.append((col, 2))
+                break
+        else:
+            for a in _PRODUCT_NAME_ALSO:
+                if a in c_lower or c_lower in a:
+                    name_candidates.append((col, 1))
+                    break
+
+    if name_candidates:
+        if df is not None:
+            scored = [(col, prio + _score_name_column(df, col) * 0.1) for col, prio in name_candidates]
+            scored.sort(key=lambda x: -x[1])
+            result['productName'] = scored[0][0]
+        else:
+            preferred = [c for c, p in name_candidates if p == 2]
+            result['productName'] = preferred[0] if preferred else name_candidates[0][0]
+    return result
+
+
+def _parse_price_list_dataframe(contents: bytes, filename: str):
+    """Parse CSV (UTF-8/cp1251, ; or ,) or Excel. Returns DataFrame."""
+    fn = (filename or '').lower()
+    if fn.endswith(('.xlsx', '.xls')):
+        return pd.read_excel(io.BytesIO(contents))
+    if fn.endswith('.csv'):
+        for enc in ('utf-8', 'cp1251', 'latin1'):
+            for sep in (';', ','):
+                try:
+                    return pd.read_csv(io.BytesIO(contents), sep=sep, encoding=enc)
+                except Exception:
+                    continue
+        return pd.read_csv(io.BytesIO(contents))
+    raise ValueError("Unsupported format")
+
+
+def _normalize_price_value(price_raw: Any) -> Optional[float]:
+    """Accept 2005, 2005.0, '2 005,00', '2005,00', '2005 ₽', '2005.0' etc. CSV-style numbers."""
+    if price_raw is None or (isinstance(price_raw, float) and pd.isna(price_raw)):
+        return None
+    s = str(price_raw).strip().replace('\xa0', ' ').replace('\u202f', ' ')
+    # Allow comma as decimal separator (e.g. 2005,00 or 2 005,00)
+    s = s.replace(' ', '').replace(',', '.')
+    s = re.sub(r'[^\d.]', '', s)
+    if not s:
+        return None
+    try:
+        v = float(s)
+        return v if v > 0 else None
+    except ValueError:
+        return None
+
+
+def _normalize_name_value(raw: Any) -> str:
+    """Trim, collapse spaces, remove nbsp. For display as product name."""
+    if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+        return ''
+    s = str(raw).strip().replace('\xa0', ' ').replace('\u202f', ' ')
+    s = re.sub(r'\s+', ' ', s)
+    return s
+
+
+def _normalize_supplier_code(raw: Any) -> str:
+    """If value is 2001.0 or '2001.0' -> '2001'. Otherwise trim string."""
+    if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+        return ''
+    s = str(raw).strip()
+    if re.match(r'^\d+\.0$', s):
+        return s[:-2]
+    if re.match(r'^\d+(\.0+)?$', s):
+        return str(int(float(s)))
+    return s
+
+
+# Default unit rule (fixed, documented): when unit column is empty or invalid, infer from pack/фасовка
+# (if text contains "кг" -> "кг"), else "шт". Normalize кг/kg, шт/pcs, л/l, г/гр.
+_UNIT_NORMALIZE = {
+    'шт': 'шт', 'шт.': 'шт', 'штук': 'шт', 'pcs': 'шт',
+    'кг': 'кг', 'кг.': 'кг', 'kg': 'кг', 'г': 'г', 'гр': 'г',
+    'л': 'л', 'л.': 'л', 'l': 'л', 'мл': 'л',
+}
+
+
+def _normalize_unit_value(raw: str) -> Optional[str]:
+    """Return normalized unit (шт/кг/л/г) or None if invalid/empty."""
+    if not raw or str(raw).strip() == '' or str(raw).lower() == 'nan':
+        return None
+    u = str(raw).strip().lower()
+    return _UNIT_NORMALIZE.get(u, u) if u in _UNIT_NORMALIZE else u
+
+
+def _default_unit_from_row(row: dict, df_columns: List[str], mapping: dict) -> str:
+    """If unit column empty/invalid: use pack/фасовка (if contains 'кг' -> 'кг'), else 'шт'. Rule is fixed."""
+    unit_col = mapping.get('unit')
+    unit_val = ''
+    if unit_col and unit_col in df_columns:
+        unit_val = str(row.get(unit_col, '')).strip()
+    if unit_val and unit_val != 'nan':
+        normalized = _normalize_unit_value(unit_val)
+        if normalized:
+            return normalized
+    pack_aliases = ['упаковка', 'фасовка', 'кратность', 'pack', 'packqty', 'в упаковке', 'кол-во в упаковке']
+    for col in df_columns:
+        col_lower = col.lower()
+        if any(a in col_lower for a in pack_aliases):
+            cell = str(row.get(col, '')).strip()
+            if cell and 'кг' in cell.lower():
+                return 'кг'
+            break
+    return 'шт'
+
+
 @api_router.post("/price-lists/import")
 async def import_price_list(
-    file: UploadFile = File(...),
-    column_mapping: str = Form(...),
+    request: Request,
     current_user: dict = Depends(get_current_user)
 ):
     """
-    P0-Compliant Price List Import
-    - P0.1: Upsert on import (no duplicates)
-    - P0.2: Deactivate old items
-    - P0.3: Import min_order_qty
-    - P0.4: Unit priority from file
+    P0-Compliant Price List Import.
+    Form fields: file (required), replace (optional), column_mapping (optional).
+    column_mapping is read from form so it is never required by validation; auto-detect when omitted.
     """
+    form = await request.form()
+    file = form.get("file")
+    if not file or not hasattr(file, "read"):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error_code": "validation_error",
+                "message": "Не выбран файл. Выберите файл (xlsx или csv) и нажмите «Загрузить».",
+                "endpoint": "/api/price-lists/import",
+                "hint": "Отправьте multipart/form-data с полем file.",
+            },
+        )
+    column_mapping = form.get("column_mapping")
+    if column_mapping is not None and (not isinstance(column_mapping, str) or not column_mapping.strip()):
+        column_mapping = None
     import json
     import unicodedata
-    import re
 
     if current_user['role'] != UserRole.supplier:
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -1633,22 +1860,59 @@ async def import_price_list(
     supplier_name = company.get('companyName', company.get('name', 'Unknown'))
     correlation_id = str(uuid.uuid4())
 
-    try:
-        mapping = json.loads(column_mapping)
-    except json.JSONDecodeError as e:
-        logger.warning(f"Import invalid mapping: {e}", extra={"correlation_id": correlation_id, "supplier_id": supplier_id})
-        raise HTTPException(status_code=422, detail={"error": "invalid_mapping", "message": "Invalid column_mapping JSON", "correlation_id": correlation_id})
-    
     contents = await file.read()
+    _MAX_IMPORT_FILE_BYTES = 50 * 1024 * 1024  # 50 MB
+    if len(contents) > _MAX_IMPORT_FILE_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail={
+                "error": "file_too_large",
+                "message": f"Файл слишком большой (макс. {_MAX_IMPORT_FILE_BYTES // (1024*1024)} МБ). Уменьшите файл или разбейте на части.",
+                "max_bytes": _MAX_IMPORT_FILE_BYTES,
+                "received_bytes": len(contents),
+            },
+        )
     try:
-        if file.filename.endswith('.csv'):
-            df = pd.read_csv(io.BytesIO(contents))
-        elif file.filename.endswith(('.xlsx', '.xls')):
-            df = pd.read_excel(io.BytesIO(contents))
-        else:
-            raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
+        df = _parse_price_list_dataframe(contents, file.filename or '')
+    except Exception as e:
+        logger.warning(f"Parse price list file failed: {e}", extra={"correlation_id": correlation_id})
+        raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
 
+    try:
         df_columns = [str(c).strip() for c in df.columns]
+
+        mapping = None
+        if column_mapping and column_mapping.strip():
+            try:
+                mapping = json.loads(column_mapping)
+            except json.JSONDecodeError:
+                pass
+        if not mapping:
+            mapping = _auto_detect_column_mapping(df_columns, df)
+        if not mapping:
+            mapping = {}
+
+        # Debug/evidence: chosen mapping + preview first 5 rows (name, supplier_code)
+        try:
+            evidence_dir = ROOT_DIR.parent / "evidence"
+            evidence_dir.mkdir(parents=True, exist_ok=True)
+            name_col = mapping.get("productName")
+            code_col = mapping.get("article")
+            preview_rows = []
+            for idx, row in df.head(5).iterrows():
+                row_d = row.to_dict() if hasattr(row, "to_dict") else dict(row)
+                name_val = str(row_d.get(name_col, "")).strip() if name_col else ""
+                code_val = str(row_d.get(code_col, "")).strip() if code_col else ""
+                preview_rows.append({"name": name_val[:80], "supplier_code": code_val[:30]})
+            with open(evidence_dir / "PRICE_IMPORT_MAPPING_DEBUG.txt", "w", encoding="utf-8") as f:
+                f.write(f"timestamp={datetime.now(timezone.utc).isoformat()}\n")
+                f.write(f"mapping={mapping}\n")
+                f.write("preview_first_5:\n")
+                for i, r in enumerate(preview_rows):
+                    f.write(f"  row{i}: name={r['name']!r} supplier_code={r['supplier_code']!r}\n")
+        except Exception as e:
+            logger.warning("Could not write import mapping evidence: %s", e)
+
         required_keys = ['productName', 'price', 'unit']
         missing = []
         for k in required_keys:
@@ -1659,23 +1923,28 @@ async def import_price_list(
                 raise HTTPException(
                     status_code=422,
                     detail={
+                        "error_code": "invalid_mapping",
                         "error": "invalid_mapping",
-                        "message": f"Column '{col}' for '{k}' not found in file. Available: {df_columns}",
-                        "correlation_id": correlation_id
+                        "message": f"Колонка «{col}» для «{k}» не найдена в файле.",
+                        "correlation_id": correlation_id,
+                        "columns": df_columns,
                     }
                 )
         if missing:
             raise HTTPException(
                 status_code=422,
                 detail={
+                    "error_code": "missing_required_mapping",
                     "error": "missing_required_mapping",
-                    "message": f"Required mapping missing: {', '.join(missing)}. Map: productName, price, unit.",
-                    "correlation_id": correlation_id
+                    "missing_fields": missing,
+                    "columns": df_columns,
+                    "message": "Не удалось определить колонки автоматически. Откройте «Расширенные настройки» и укажите Название/Цена/Единица.",
+                    "correlation_id": correlation_id,
                 }
             )
 
         new_pricelist_id = str(uuid.uuid4())
-        
+
         # Helper functions for P0.1 unique key
         def normalize_text(text: str) -> str:
             if not text or pd.isna(text):
@@ -1684,7 +1953,7 @@ async def import_price_list(
             text = re.sub(r'\s+', ' ', text)
             text = unicodedata.normalize('NFKC', text)
             return text
-        
+
         def get_unit_type(unit_str: str) -> str:
             unit_map = {
                 'шт': 'PIECE', 'шт.': 'PIECE', 'штук': 'PIECE', 'pcs': 'PIECE',
@@ -1692,7 +1961,7 @@ async def import_price_list(
                 'л': 'VOLUME', 'л.': 'VOLUME', 'мл': 'VOLUME', 'l': 'VOLUME', 'ml': 'VOLUME',
             }
             return unit_map.get(str(unit_str).lower().strip(), 'PIECE')
-        
+
         def get_unit_norm(unit_str: str) -> str:
             norm_map = {
                 'шт': 'pcs', 'шт.': 'pcs', 'штук': 'pcs', 'pcs': 'pcs',
@@ -1700,67 +1969,77 @@ async def import_price_list(
                 'л': 'l', 'л.': 'l', 'мл': 'l', 'l': 'l', 'ml': 'l',
             }
             return norm_map.get(str(unit_str).lower().strip(), 'pcs')
-        
+
         def generate_unique_key(article, product_name, unit_type):
             if article and str(article).strip() and str(article).strip() != 'nan':
                 return f"{supplier_id}:{str(article).strip()}"
-            else:
-                norm_name = normalize_text(product_name)
-                return f"{supplier_id}:{norm_name}:{unit_type}"
-        
-        # Import products with upsert (P0.1)
+            norm_name = normalize_text(product_name)
+            return f"{supplier_id}:{norm_name}:{unit_type}"
+
+        # Import products with upsert (P0.1). Diagnostics: why rows were skipped.
         created_count = 0
         updated_count = 0
         skipped_count = 0
-        
+        skipped_reasons = {
+            "empty_name": 0,
+            "price_parse_failed": 0,
+            "price_le_zero": 0,
+            "empty_or_invalid_unit": 0,
+            "other": 0,
+        }
+        total_rows_read = len(df)
+
         for _, row in df.iterrows():
             try:
+                row_dict = row.to_dict() if hasattr(row, 'to_dict') else dict(row)
                 col_name = mapping.get('productName')
-                product_name = str(row.get(col_name, '')).strip() if col_name else ''
-                price_raw = row.get(mapping.get('price'), 0)
-                unit_col = mapping.get('unit')
-                unit_str = str(row.get(unit_col, 'шт')).strip() if unit_col else 'шт'
+                product_name = _normalize_name_value(row_dict.get(col_name, '')) if col_name else ''
+                price_raw = row_dict.get(mapping.get('price'), 0)
+                unit_str = _default_unit_from_row(row_dict, df_columns, mapping)
                 article_col = mapping.get('article')
-                article = str(row.get(article_col, '')).strip() if (article_col and article_col in df_columns) else None
-                
-                # Skip invalid rows
+                article_raw = str(row_dict.get(article_col, '')).strip() if (article_col and article_col in df_columns) else None
+                article = _normalize_supplier_code(article_raw) if article_raw and article_raw != 'nan' else None
+
                 if not product_name or product_name == 'nan':
                     skipped_count += 1
+                    skipped_reasons["empty_name"] += 1
                     continue
-                
-                try:
-                    price = float(price_raw)
-                except (ValueError, TypeError):
+
+                price = _normalize_price_value(price_raw)
+                if price is None:
                     skipped_count += 1
+                    skipped_reasons["price_parse_failed"] += 1
                     continue
-                
                 if price <= 0:
                     skipped_count += 1
+                    skipped_reasons["price_le_zero"] += 1
                     continue
-                
-                # P0.3: Import min_order_qty and pack_qty
+
                 min_order_qty = 1
-                if 'minOrderQty' in mapping:
+                if mapping.get('minOrderQty') and mapping['minOrderQty'] in df_columns:
                     try:
-                        min_order_qty = max(1, int(float(row[mapping['minOrderQty']])))
-                    except:
+                        min_order_qty = max(1, int(float(row_dict.get(mapping['minOrderQty'], 1))))
+                    except (ValueError, TypeError):
                         pass
-                
+
                 pack_qty = 1
-                if 'packQty' in mapping:
+                if mapping.get('packQty') and mapping['packQty'] in df_columns:
                     try:
-                        pack_qty = max(1, int(float(row[mapping['packQty']])))
-                    except:
+                        pack_qty = max(1, int(float(row_dict.get(mapping['packQty'], 1))))
+                    except (ValueError, TypeError):
                         pass
-                
-                # P0.4: Unit priority (file > parsed)
+
                 unit_type = get_unit_type(unit_str)
                 unit_norm = get_unit_norm(unit_str)
-                
-                # P0.1: Generate unique key
+                if unit_norm == 'pcs':
+                    unit_norm = 'шт'
+                elif unit_norm == 'kg':
+                    unit_norm = 'кг'
+                elif unit_norm == 'l':
+                    unit_norm = 'л'
+
                 unique_key = generate_unique_key(article, product_name, unit_type)
-                
-                # Prepare item data (snake_case primary; camelCase for compatibility)
+
                 item_data = {
                     'unique_key': unique_key,
                     'supplier_company_id': supplier_id,
@@ -1778,29 +2057,24 @@ async def import_price_list(
                     'active': True,
                     'updated_at': datetime.now(timezone.utc),
                 }
-                
-                # P0.1: Upsert logic
+
                 existing = await db.supplier_items.find_one({'unique_key': unique_key})
-                
                 if existing:
-                    # Update existing
                     await db.supplier_items.update_one(
                         {'unique_key': unique_key},
                         {'$set': item_data}
                     )
                     updated_count += 1
                 else:
-                    # Insert new
                     item_data['id'] = str(uuid.uuid4())
                     item_data['created_at'] = datetime.now(timezone.utc)
                     await db.supplier_items.insert_one(item_data)
                     created_count += 1
-                    
             except Exception as e:
                 logger.warning(f"Error importing row: {e}")
                 skipped_count += 1
-                continue
-        
+                skipped_reasons["other"] += 1
+
         # P0.2: Deactivate old items from this supplier (not in new pricelist)
         deactivate_result = await db.supplier_items.update_many(
             {
@@ -1811,8 +2085,7 @@ async def import_price_list(
             {'$set': {'active': False, 'deactivated_at': datetime.now(timezone.utc)}}
         )
         deactivated_count = deactivate_result.modified_count
-        
-        # Create pricelist metadata
+
         pricelist_meta = {
             'id': new_pricelist_id,
             'supplierId': supplier_id,
@@ -1830,24 +2103,38 @@ async def import_price_list(
             extra={
                 "correlation_id": correlation_id,
                 "supplier_id": supplier_id,
-                "company_id": supplier_id,
                 "importedCount": imported_count,
                 "created": created_count,
                 "updated": updated_count,
                 "skipped": skipped_count,
+                "skipped_reasons": skipped_reasons,
                 "deactivated": deactivated_count,
             }
         )
 
         if imported_count == 0:
+            # User-friendly diagnostic: why rows were rejected
+            parts = [
+                f"Прочитано строк: {total_rows_read}.",
+                f"Импортировано: 0.",
+                f"Отброшено: {skipped_count} — пустое название: {skipped_reasons.get('empty_name', 0)}, не распарсилась цена: {skipped_reasons.get('price_parse_failed', 0)}, цена ≤ 0: {skipped_reasons.get('price_le_zero', 0)}, единица: {skipped_reasons.get('empty_or_invalid_unit', 0)}, прочее: {skipped_reasons.get('other', 0)}.",
+            ]
             raise HTTPException(
                 status_code=422,
                 detail={
+                    "error_code": "no_rows_imported",
                     "error": "no_rows_imported",
-                    "message": "No valid rows imported. Check column mapping (productName, price, unit) and file data.",
+                    "message": "Не удалось импортировать ни одной строки. Откройте «Расширенные настройки» и уточните колонки.",
+                    "diagnostic_summary": " ".join(parts),
+                    "rows_read": total_rows_read,
+                    "rows_imported": 0,
+                    "rows_skipped_total": skipped_count,
+                    "skipped_reasons": skipped_reasons,
                     "importedCount": 0,
+                    "total_rows_read": total_rows_read,
                     "skipped": skipped_count,
-                    "correlation_id": correlation_id
+                    "correlation_id": correlation_id,
+                    "columns": df_columns,
                 }
             )
 
@@ -1857,9 +2144,11 @@ async def import_price_list(
             "created": created_count,
             "updated": updated_count,
             "skipped": skipped_count,
+            "skipped_reasons": skipped_reasons,
+            "total_rows_read": total_rows_read,
             "deactivated": deactivated_count,
             "pricelist_id": new_pricelist_id,
-            "errors": []
+            "errors": [],
         }
     except HTTPException:
         raise
@@ -6560,6 +6849,37 @@ try:
     logging.info("✅ BestPrice v12 router loaded")
 except ImportError as e:
     logging.warning(f"⚠️ BestPrice v12 router not available: {e}")
+
+# Deterministic 422 for validation errors: never return raw Pydantic arrays to UI
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    path = getattr(request, "url", None) and getattr(request.url, "path", "") or ""
+    endpoint = path or "/api/price-lists/import"
+    if "/price-lists/import" in path:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": {
+                    "error_code": "validation_error",
+                    "message": "Неверные параметры запроса. Убедитесь, что выбран файл (xlsx или csv) и нажмите «Загрузить».",
+                    "endpoint": endpoint,
+                    "hint": "Отправьте multipart/form-data: file (обязательно), replace (опционально). column_mapping не обязателен.",
+                    "columns": [],
+                }
+            },
+        )
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": {
+                "error_code": "validation_error",
+                "message": "Ошибка валидации запроса. Проверьте передаваемые данные.",
+                "endpoint": endpoint,
+                "hint": "Проверьте формат и обязательные поля.",
+            }
+        },
+    )
+
 
 # Include router
 app.include_router(api_router)

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, Plus, Pencil, Trash2, Check, X, Search } from 'lucide-react';
+import { Upload, Plus, Pencil, Trash2, Check, X, Search, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
@@ -41,7 +41,11 @@ const T = {
   replaceMode: 'Заменить прайс полностью (деактивировать товары, отсутствующие в файле)',
   importBtn: 'Импортировать',
   importing: 'Импортирую...',
+  importingLabel: 'Импортируем…',
   cancel: 'Отмена',
+  showDetails: 'Показать детали',
+  failTitle: 'Ошибка загрузки',
+  successSummary: 'Импортировано: {imported} / Ошибок: {errors}',
   addProductTitle: 'Добавить товар',
   add: 'Добавить',
   searchPlaceholder: 'Поиск по названию, артикулу, единице...',
@@ -68,7 +72,12 @@ const T = {
   active: 'Активен',
   paused: 'На паузе',
   tip: 'Загрузите полный прайс-лист из файла Excel или CSV для быстрого добавления товаров.',
-  tipFormats: 'Поддерживаются форматы: .csv, .xlsx, .xls',
+  tipFormats: 'Форматы: xlsx, csv',
+  selectFileBtn: 'Выбрать файл',
+  uploadBtn: 'Загрузить',
+  progressStatus: 'Прочитано {total} / Импортировано: {imported} / Ошибок: {errors}',
+  advancedMappingLabel: 'Расширенные настройки (сопоставление колонок)',
+  needMappingHint: 'Нужно уточнить колонки',
   loading: 'Загрузка...',
   requiredFields: 'Укажите обязательные поля: Название товара, Цена, Единица',
   unitPlaceholder: 'кг, шт, л',
@@ -85,11 +94,11 @@ const T = {
   minOrderHint: 'Минимум упаковок к заказу (по умолчанию 1)',
 };
 
-// Auto-detect column mapping by header names (RU/EN aliases)
+// Auto-detect column mapping by header names (RU/EN aliases) — same as backend
 const COLUMN_ALIASES_REQUIRED = {
-  productName: ['название', 'наименование', 'product', 'товар', 'name', 'productname'],
-  price: ['цена', 'price', 'цена за единицу', 'цена за ед', 'стоимость'],
-  unit: ['ед', 'единица', 'unit', 'ед. изм', 'единица измерения', 'ед.изм'],
+  productName: ['name', 'product', 'productname', 'название', 'наименование', 'товар', 'позиция'],
+  price: ['price', 'cost', 'цена', 'стоимость', 'цена за единицу', 'цена за ед'],
+  unit: ['unit', 'uom', 'ед', 'ед.', 'единица', 'измерение', 'ед. изм', 'единица измерения', 'ед.изм'],
 };
 const COLUMN_ALIASES_ADDITIONAL = {
   article: ['код', 'артикул', 'sku', 'id товара'],
@@ -137,6 +146,9 @@ export const SupplierPriceList = () => {
   const [replaceMode, setReplaceMode] = useState(false);
   const [importErrors, setImportErrors] = useState([]);
   const [showAdditionalMapping, setShowAdditionalMapping] = useState(false);
+  const [needMapping, setNeedMapping] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [uploadErrorDetail, setUploadErrorDetail] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [pausing, setPausing] = useState(false);
 
@@ -304,78 +316,143 @@ export const SupplierPriceList = () => {
     });
   };
 
-  const handleFileUpload = async (e) => {
-    e.preventDefault();
+  const writeEvidence = async (payload) => {
+    try {
+      await axios.post(`${API}/dev/evidence`, payload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 5000,
+      });
+    } catch (e) {
+      console.warn('Evidence write failed:', e?.message || e);
+    }
+  };
+
+  const handleImportSubmit = async () => {
     if (!uploadFile) return;
+    const endpoint = `${API}/price-lists/import`;
+    setImportErrors([]);
+    setImportResult(null);
+    setMessage('');
+    setUploadErrorDetail(null);
+    setImporting(true);
+
+    const requestMeta = {
+      filename: uploadFile.name,
+      size: uploadFile.size,
+      replace: replaceMode,
+      mapping_used: needMapping && isMappingValid(columnMapping),
+    };
 
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const formData = new FormData();
       formData.append('file', uploadFile);
+      formData.append('replace', replaceMode ? 'true' : 'false');
+      if (needMapping && isMappingValid(columnMapping)) {
+        const cleaned = { productName: columnMapping.productName, price: columnMapping.price, unit: columnMapping.unit };
+        if (columnMapping.article) cleaned.article = columnMapping.article;
+        if (columnMapping.packQty) cleaned.packQty = columnMapping.packQty;
+        if (columnMapping.minOrderQty) cleaned.minOrderQty = columnMapping.minOrderQty;
+        formData.append('column_mapping', JSON.stringify(cleaned));
+      }
 
-      const response = await axios.post(`${API}/price-lists/upload`, formData, { headers });
-      setFilePreview(response.data);
-      const detected = detectColumnMapping(response.data.columns || []);
-      setColumnMapping(detected);
-      setShowAdditionalMapping(false);
+      const res = await axios.post(endpoint, formData, { headers });
+      const total = res.data?.total_rows_read ?? 0;
+      const imported = res.data?.importedCount ?? (res.data?.created ?? 0) + (res.data?.updated ?? 0);
+      const skipped = res.data?.skipped ?? 0;
+      setImportResult({ total, imported, errors: skipped, skipped_reasons: res.data?.skipped_reasons });
+      const successMsg = T.successSummary.replace('{imported}', imported).replace('{errors}', skipped);
+      setMessage(successMsg);
+      toast.success(successMsg);
+      setNeedMapping(false);
+      setFilePreview(null);
+      await fetchProducts();
+
+      await writeEvidence({
+        timestamp: new Date().toISOString(),
+        supplier_email: user?.email ?? null,
+        endpoint,
+        request: requestMeta,
+        response: { status: res.status, body: res.data },
+        ui_result: 'success',
+        message: successMsg,
+      });
+
+      setTimeout(() => {
+        setIsUploadDialogOpen(false);
+        setUploadFile(null);
+        setColumnMapping(null);
+        setImportResult(null);
+      }, 2000);
     } catch (error) {
-      setMessage('Ошибка при загрузке файла');
+      const status = error.response?.status;
+      const detail = error.response?.data?.detail;
+      const body = error.response?.data;
+      const errorCode = typeof detail === 'object' ? (detail?.error_code ?? detail?.error) : null;
+      const diagnostic = typeof detail === 'object' ? detail?.diagnostic_summary : null;
+      let msg;
+      if (Array.isArray(detail)) {
+        msg = 'Неверные параметры запроса. Убедитесь, что выбран файл (xlsx или csv) и попробуйте снова.';
+      } else {
+        msg =
+          diagnostic ||
+          (typeof detail === 'object' ? (detail?.message || detail?.error || 'Ошибка при импорте') : (detail || error?.message || 'Ошибка при импорте'));
+      }
+      setMessage(msg);
+      setUploadErrorDetail({
+        status,
+        endpoint,
+        message: typeof detail === 'object' ? detail?.message || detail?.error : Array.isArray(detail) ? msg : String(detail ?? error?.message ?? ''),
+        body,
+        diagnostic_summary: diagnostic ?? (typeof detail === 'object' ? detail?.diagnostic_summary : null),
+        skipped_reasons: typeof detail === 'object' ? detail?.skipped_reasons : null,
+      });
+      if (status === 422 && (typeof detail === 'object' || Array.isArray(detail))) {
+        const d = typeof detail === 'object' && !Array.isArray(detail) ? detail : {};
+        const needMapping = d.error_code === 'missing_required_mapping' || d.error === 'missing_required_mapping' ||
+          d.error_code === 'no_rows_imported' || d.error === 'no_rows_imported';
+        if (d.columns && needMapping) {
+          setFilePreview({ columns: d.columns, total_rows: d.total_rows_read ?? 0 });
+          setColumnMapping(detectColumnMapping(d.columns) || {});
+          setNeedMapping(true);
+          setShowAdditionalMapping(true);
+        }
+        if (d.skipped_reasons) {
+          setImportResult({
+            total: d.total_rows_read ?? 0,
+            imported: 0,
+            errors: d.skipped ?? 0,
+            skipped_reasons: d.skipped_reasons,
+          });
+        }
+      }
+      const errs = typeof detail === 'object' ? (detail?.errors || []) : [];
+      setImportErrors(Array.isArray(errs) ? errs.slice(0, 10) : []);
+      toast.error(T.failTitle);
+      console.error('Price list import failed', { status, endpoint, detail, error: error?.message });
+
+      await writeEvidence({
+        timestamp: new Date().toISOString(),
+        supplier_email: user?.email ?? null,
+        endpoint,
+        request: requestMeta,
+        response: { status: status ?? null, body },
+        ui_result: 'fail',
+        message: msg,
+      });
+    } finally {
+      setImporting(false);
     }
   };
 
-  const handleImport = async () => {
-    if (!isMappingValid(columnMapping)) {
+  const handleImport = () => {
+    if (needMapping && !isMappingValid(columnMapping)) {
       setMessage(T.requiredFields);
       setImportErrors([]);
       return;
     }
-    setImportErrors([]);
-    try {
-      setImporting(true);
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const formData = new FormData();
-      formData.append('file', uploadFile);
-      const cleanedMapping = { ...columnMapping };
-      if (!cleanedMapping.packQty) delete cleanedMapping.packQty;
-      if (!cleanedMapping.minOrderQty) delete cleanedMapping.minOrderQty;
-      formData.append('column_mapping', JSON.stringify(cleanedMapping));
-      formData.append('replace', replaceMode ? 'true' : 'false');
-
-      const res = await axios.post(`${API}/price-lists/import`, formData, { headers });
-      const n = res.data?.importedCount ?? (res.data?.created ?? 0) + (res.data?.updated ?? 0);
-      const totalRows = res.data?.totalRows ?? filePreview?.total_rows ?? 0;
-      const errors = res.data?.errors ?? [];
-
-      const hasErrors = errors.length > 0;
-      const partialSuccess = n > 0 && n < totalRows && hasErrors;
-      const fullSuccess = n > 0 && !hasErrors;
-
-      if (fullSuccess) {
-        setMessage(`Импортировано: ${n} товаров`);
-      } else if (partialSuccess) {
-        setMessage(`Импортировано: ${n} из ${totalRows} (${errors.length} строк с ошибками)`);
-      } else if (n > 0) {
-        setMessage(`Импортировано: ${n} товаров`);
-      } else {
-        setMessage('Ни одна строка не импортирована');
-      }
-      setImportErrors(errors.slice(0, 10));
-      setIsUploadDialogOpen(false);
-      setUploadFile(null);
-      setFilePreview(null);
-      setColumnMapping(null);
-      await fetchProducts();
-    } catch (error) {
-      const detail = error.response?.data?.detail;
-      const msg = typeof detail === 'object' ? (detail?.message || detail?.error || 'Ошибка при импорте') : (detail || 'Ошибка при импорте');
-      setMessage(msg);
-      const errs = typeof detail === 'object' ? (detail?.errors || []) : [];
-      setImportErrors(errs.slice(0, 10));
-    } finally {
-      setImporting(false);
-    }
+    handleImportSubmit();
   };
 
   if (loading) {
@@ -406,7 +483,17 @@ export const SupplierPriceList = () => {
               disabled={pausing}
             />
           </div>
-          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+          <Dialog open={isUploadDialogOpen} onOpenChange={(open) => {
+            setIsUploadDialogOpen(open);
+            if (!open) {
+              setNeedMapping(false);
+              setFilePreview(null);
+              setUploadFile(null);
+              setImportResult(null);
+              setUploadErrorDetail(null);
+              setColumnMapping(null);
+            }
+          }}>
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="upload-pricelist-btn" disabled={isPaused}>
                 <Upload className="h-4 w-4 mr-2" />
@@ -418,31 +505,110 @@ export const SupplierPriceList = () => {
                 <DialogTitle>{T.modalTitle}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                {!filePreview ? (
-                  <form onSubmit={handleFileUpload} className="space-y-4">
-                    <div>
-                      <Label>{T.selectFile}</Label>
-                      <Input
-                        type="file"
-                        accept=".csv,.xlsx,.xls"
-                        onChange={(e) => setUploadFile(e.target.files[0])}
-                        required
-                      />
+                <form onSubmit={(e) => { e.preventDefault(); handleImport(); }} className="space-y-4">
+                  <div>
+                    <Label>{T.selectFileBtn}</Label>
+                    <Input
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={(e) => setUploadFile(e.target.files?.[0])}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">{T.tipFormats}</p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="replace-mode"
+                      checked={replaceMode}
+                      onChange={(e) => setReplaceMode(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="replace-mode" className="cursor-pointer text-sm">{T.replaceMode}</Label>
+                  </div>
+
+                  {importing && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {T.importingLabel}
                     </div>
-                    <Button type="submit">{T.uploadAndReview}</Button>
-                  </form>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">{T.columnMapping}</h4>
-                      <div className="space-y-3">
+                  )}
+                  {uploadErrorDetail && !importing && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertDescription>
+                        <p className="font-medium">{T.failTitle}</p>
+                        <p className="mt-1">{message || uploadErrorDetail.message}</p>
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-sm underline">{T.showDetails}</summary>
+                          <pre className="mt-2 p-2 bg-black/5 rounded text-xs overflow-auto max-h-48">
+                            {[
+                              `HTTP: ${uploadErrorDetail.status ?? '—'}`,
+                              `Endpoint: ${uploadErrorDetail.endpoint ?? '—'}`,
+                              uploadErrorDetail.diagnostic_summary ? `Диагностика: ${uploadErrorDetail.diagnostic_summary}` : null,
+                              uploadErrorDetail.skipped_reasons
+                                ? `Причины отбраковки: ${JSON.stringify(uploadErrorDetail.skipped_reasons)}`
+                                : null,
+                              typeof uploadErrorDetail.body === 'object'
+                                ? JSON.stringify(uploadErrorDetail.body, null, 2)
+                                : String(uploadErrorDetail.body ?? ''),
+                            ]
+                              .filter(Boolean)
+                              .join('\n')}
+                          </pre>
+                        </details>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  {importResult && !importing && !uploadErrorDetail && (
+                    <div className="rounded-md bg-muted p-3 text-sm">
+                      <p className="font-medium">
+                        {T.progressStatus
+                          .replace('{total}', String(importResult.total))
+                          .replace('{imported}', String(importResult.imported))
+                          .replace('{errors}', String(importResult.errors ?? 0))}
+                      </p>
+                      {importResult.skipped_reasons && (importResult.imported === 0 || (importResult.errors ?? 0) > 0) && (
+                        <p className="mt-1 text-muted-foreground">
+                          Пустое название: {importResult.skipped_reasons.empty_name ?? 0}, не распарсилась цена: {importResult.skipped_reasons.price_parse_failed ?? 0}, цена ≤ 0: {importResult.skipped_reasons.price_le_zero ?? 0}, прочее: {importResult.skipped_reasons.other ?? 0}.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={!uploadFile || importing}>
+                      {importing ? T.importing : T.uploadBtn}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setFilePreview(null);
+                        setColumnMapping(null);
+                        setUploadFile(null);
+                        setImportResult(null);
+                        setNeedMapping(false);
+                      }}
+                    >
+                      {T.cancel}
+                    </Button>
+                  </div>
+                </form>
+
+                <details className="border rounded-md p-2" open={needMapping}>
+                  <summary className="cursor-pointer text-sm text-muted-foreground">{T.advancedMappingLabel}</summary>
+                  <div className="pt-3 space-y-3">
+                    {needMapping && filePreview?.columns?.length > 0 && (
+                      <p className="text-sm font-medium text-amber-700">{T.needMappingHint}</p>
+                    )}
+                    {filePreview?.columns?.length > 0 && (
+                      <>
                         <p className="text-sm text-muted-foreground">{T.mandatoryFields}</p>
                         <div className="grid grid-cols-3 gap-3">
                           <div>
                             <Label>{T.productName}</Label>
                             <select
-                              value={columnMapping.productName}
-                              onChange={(e) => setColumnMapping({...columnMapping, productName: e.target.value})}
+                              value={columnMapping?.productName ?? ''}
+                              onChange={(e) => setColumnMapping(prev => ({ ...prev, productName: e.target.value }))}
                               className="w-full px-3 py-2 border rounded-md"
                             >
                               {filePreview.columns.map(col => (
@@ -453,8 +619,8 @@ export const SupplierPriceList = () => {
                           <div>
                             <Label>{T.price}</Label>
                             <select
-                              value={columnMapping.price}
-                              onChange={(e) => setColumnMapping({...columnMapping, price: e.target.value})}
+                              value={columnMapping?.price ?? ''}
+                              onChange={(e) => setColumnMapping(prev => ({ ...prev, price: e.target.value }))}
                               className="w-full px-3 py-2 border rounded-md"
                             >
                               {filePreview.columns.map(col => (
@@ -465,8 +631,8 @@ export const SupplierPriceList = () => {
                           <div>
                             <Label>{T.unit}</Label>
                             <select
-                              value={columnMapping.unit}
-                              onChange={(e) => setColumnMapping({...columnMapping, unit: e.target.value})}
+                              value={columnMapping?.unit ?? ''}
+                              onChange={(e) => setColumnMapping(prev => ({ ...prev, unit: e.target.value }))}
                               className="w-full px-3 py-2 border rounded-md"
                             >
                               {filePreview.columns.map(col => (
@@ -476,119 +642,64 @@ export const SupplierPriceList = () => {
                           </div>
                         </div>
                         {hasAdditionalMappings(columnMapping) && (
-                          <>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-muted-foreground -ml-1"
-                              onClick={() => setShowAdditionalMapping(!showAdditionalMapping)}
-                            >
-                              {showAdditionalMapping ? T.hideAdditional : T.showAdditional}
-                            </Button>
-                            {showAdditionalMapping && (
-                              <div className="grid grid-cols-3 gap-3 pt-2 border-t">
-                                <div>
-                                  <Label>{T.article}</Label>
-                                  <select
-                                    value={columnMapping.article || ''}
-                                    onChange={(e) => setColumnMapping({...columnMapping, article: e.target.value || ''})}
-                                    className="w-full px-3 py-2 border rounded-md"
-                                  >
-                                    <option value="">{T.doNotSelect}</option>
-                                    {filePreview.columns.map(col => (
-                                      <option key={col} value={col}>{col}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div>
-                                  <Label>{T.packQty}</Label>
-                                  <select
-                                    value={columnMapping.packQty || ''}
-                                    onChange={(e) => setColumnMapping({...columnMapping, packQty: e.target.value || ''})}
-                                    className="w-full px-3 py-2 border rounded-md"
-                                  >
-                                    <option value="">{T.doNotSelect} (1)</option>
-                                    {filePreview.columns.map(col => (
-                                      <option key={col} value={col}>{col}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div>
-                                  <Label>{T.minOrder}</Label>
-                                  <select
-                                    value={columnMapping.minOrderQty || ''}
-                                    onChange={(e) => setColumnMapping({...columnMapping, minOrderQty: e.target.value || ''})}
-                                    className="w-full px-3 py-2 border rounded-md"
-                                  >
-                                    <option value="">{T.doNotSelect} (1)</option>
-                                    {filePreview.columns.map(col => (
-                                      <option key={col} value={col}>{col}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">{T.preview}</h4>
-                      <div className="overflow-x-auto max-h-60 border rounded-md">
-                        <table className="w-full text-sm">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              {filePreview.columns.map(col => (
-                                <th key={col} className="px-3 py-2 text-left">{col}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filePreview.preview.map((row, idx) => (
-                              <tr key={idx} className="border-t">
+                          <div className="grid grid-cols-3 gap-3 pt-2 border-t">
+                            <div>
+                              <Label>{T.article}</Label>
+                              <select
+                                value={columnMapping?.article || ''}
+                                onChange={(e) => setColumnMapping(prev => ({ ...prev, article: e.target.value || '' }))}
+                                className="w-full px-3 py-2 border rounded-md"
+                              >
+                                <option value="">{T.doNotSelect}</option>
                                 {filePreview.columns.map(col => (
-                                  <td key={col} className="px-3 py-2">{row[col]}</td>
+                                  <option key={col} value={col}>{col}</option>
                                 ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2">
-                        {T.totalRows}: {filePreview.total_rows}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="replace-mode"
-                        checked={replaceMode}
-                        onChange={(e) => setReplaceMode(e.target.checked)}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor="replace-mode" className="cursor-pointer text-sm">
-                        {T.replaceMode}
-                      </Label>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleImport}
-                        disabled={!isMappingValid(columnMapping) || importing}
-                        title={!isMappingValid(columnMapping) ? T.requiredFields : ''}
-                      >
-                        {importing ? T.importing : `${T.importBtn} ${filePreview.total_rows} ${T.items}`}
-                      </Button>
-                      <Button variant="outline" onClick={() => {
-                        setFilePreview(null);
-                        setColumnMapping(null);
-                        setUploadFile(null);
-                      }}>
-                        {T.cancel}
-                      </Button>
-                    </div>
+                              </select>
+                            </div>
+                            <div>
+                              <Label>{T.packQty}</Label>
+                              <select
+                                value={columnMapping?.packQty || ''}
+                                onChange={(e) => setColumnMapping(prev => ({ ...prev, packQty: e.target.value || '' }))}
+                                className="w-full px-3 py-2 border rounded-md"
+                              >
+                                <option value="">{T.doNotSelect} (1)</option>
+                                {filePreview.columns.map(col => (
+                                  <option key={col} value={col}>{col}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <Label>{T.minOrder}</Label>
+                              <select
+                                value={columnMapping?.minOrderQty || ''}
+                                onChange={(e) => setColumnMapping(prev => ({ ...prev, minOrderQty: e.target.value || '' }))}
+                                className="w-full px-3 py-2 border rounded-md"
+                              >
+                                <option value="">{T.doNotSelect} (1)</option>
+                                {filePreview.columns.map(col => (
+                                  <option key={col} value={col}>{col}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleImport()}
+                          disabled={!isMappingValid(columnMapping) || importing}
+                        >
+                          {importing ? T.importing : T.uploadBtn}
+                        </Button>
+                      </>
+                    )}
+                    {(!filePreview?.columns?.length) && !needMapping && (
+                      <p className="text-sm text-muted-foreground">Выберите файл и нажмите «Загрузить». Маппинг понадобится только если колонки не определились автоматически.</p>
+                    )}
                   </div>
-                )}
+                </details>
               </div>
             </DialogContent>
           </Dialog>

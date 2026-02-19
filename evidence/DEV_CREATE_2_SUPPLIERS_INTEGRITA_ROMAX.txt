@@ -1,0 +1,36 @@
+# DEV: 2 test suppliers (Integrita, Romax)
+timestamp=2026-02-19T12:23:30.823072+00:00
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=test_database
+
+## Integrita
+SUPPLIER_NAME=Integrita
+EMAIL=integrita.supplier@example.com
+PASSWORD=Integrita#2026
+LOGIN_URL=http://localhost:3000/supplier/auth
+
+## Romax
+SUPPLIER_NAME=Romax
+EMAIL=romax.supplier@example.com
+PASSWORD=Romax#2026
+LOGIN_URL=http://localhost:3000/supplier/auth
+
+## DB checks
+companies (supplier): Integrita, Romax — OK (>=2)
+users: 2 with above emails — OK
+customers (restaurants) in DB: 1
+supplier_restaurant_settings links for Integrita: 1
+supplier_restaurant_settings links for Romax: 1
+supplier_restaurant_settings: each supplier linked to all customers — OK
+
+## API checks
+Integrita: login OK, GET /api/supplier/restaurant-documents OK, restaurants=1, includes Креветочная
+Romax: login OK, GET /api/supplier/restaurant-documents OK, restaurants=1, includes Креветочная
+
+## UI smoke (how to log in)
+1. Open in browser: http://localhost:3000/supplier/auth
+2. Enter EMAIL and PASSWORD from above for Integrita or Romax.
+3. After login, open section 'Документы' / 'Документы от ресторанов'.
+4. If a test restaurant exists in DB, you should see it (pending contract).
+
+RESULT: PASS

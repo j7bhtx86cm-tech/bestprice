@@ -1,0 +1,29 @@
+# Prod-like dev init
+timestamp=2026-02-19T12:23:29Z
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=test_database
+
+## Evidence files
+  - evidence/DEV_CREATE_TEST_RESTAURANT_KREVETOCHNA.txt
+  - evidence/DEV_CREATE_2_SUPPLIERS_INTEGRITA_ROMAX.txt
+  - evidence/AUTO_LINK_PRODLIKE.txt
+  - evidence/AUTO_LINK_NEW_SUPPLIER_PROOF.txt (from prod_auto_link_check if run)
+
+## UI smoke checklist (step-by-step)
+
+Supplier Integrita:
+  1. Open http://localhost:3000/supplier/auth
+  2. Log in with credentials from evidence/DEV_CREATE_2_SUPPLIERS_INTEGRITA_ROMAX.txt
+  3. Open section "Документы" / "Документы от ресторанов"
+  4. Must see restaurant "Креветочная"
+
+Supplier Romax: same steps (same URL, Romax creds from DEV_CREATE_2_SUPPLIERS_INTEGRITA_ROMAX.txt).
+
+Customer "Креветочная":
+  1. Open http://localhost:3000/customer/auth
+  2. Log in gmfuel@gmail.com / Krevetochna#2026
+  3. Cabinet main page must open
+
+Optional screenshots: evidence/screens/prodlike_smoke_*.png
+
+RESULT: PASS

@@ -60,6 +60,9 @@ python scripts/verify_e2e.py
 
 Зависимости для verify: `pip install openpyxl requests` (обычно уже есть в проекте).
 
+**Проверка Romax прайс-листа (supplier price-list API):**  
+`API_BASE_URL=http://127.0.0.1:8001 python scripts/verify_romax_import.py` — результат в `evidence/ROMAX_IMPORT_FIX_PROOF.txt`, exit 0/1.
+
 **Восстановление пароля (без ручной настройки):**
 - **Email:** ссылка `RESET LINK:` печатается в backend-логах
 - **OTP по телефону:** по умолчанию SMS не нужен — OTP печатается в backend-логах как `OTP CODE: ###### (to +79213643475)`
