@@ -1,0 +1,60 @@
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
+POST http://localhost:8001/api/auth/login → 200
+GET http://localhost:8001/api/auth/me → 200
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+GET http://localhost:8001/api/v12/catalog?skip=0&limit=20 → 200 total=3294 returned=20
+✅ SMOKE_CUSTOMER_CATALOG_OK
