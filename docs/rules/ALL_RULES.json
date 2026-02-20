@@ -1,0 +1,6968 @@
+{
+  "rulesets": [
+    {
+      "id": "6997f2fe3bac31cefafecdef",
+      "name": "v1",
+      "created_at": "2026-02-20T05:37:02.162000",
+      "active": true
+    },
+    {
+      "id": "6997f1fffd5b4b179fa49d65",
+      "name": "Archived_block_all",
+      "created_at": "2026-02-20T05:32:47.555000",
+      "active": false
+    },
+    {
+      "id": "6997f04c247d93b0af8ca1ad",
+      "name": "Ruleset v1",
+      "created_at": "2026-02-20T05:25:32.133000",
+      "active": true
+    }
+  ],
+  "global_rules": [
+    {
+      "rule_code": "INVALID_RANGE",
+      "severity": "INVALID",
+      "payload": {
+        "min_must_be_less_than_max": true
+      }
+    },
+    {
+      "rule_code": "JUNK_NAME",
+      "severity": "HIDDEN",
+      "payload": {
+        "min_len": 3,
+        "digits_ratio_gt": 0.7,
+        "min_letters": 1,
+        "pure_number": true,
+        "min_word_tokens": 1
+      }
+    },
+    {
+      "rule_code": "LOW_CATEGORY_CONFIDENCE",
+      "severity": "HIDDEN",
+      "payload": {
+        "ok_threshold": 0.85,
+        "hidden_threshold": 0.6
+      }
+    },
+    {
+      "rule_code": "LOW_PARSE_CONFIDENCE",
+      "severity": "HIDDEN",
+      "payload": {
+        "threshold": 0.6
+      }
+    },
+    {
+      "rule_code": "MISSING_MUST_FIELDS",
+      "severity": "HIDDEN",
+      "payload": {}
+    },
+    {
+      "rule_code": "NEGATIVE_OR_ZERO_VALUES",
+      "severity": "INVALID",
+      "payload": {
+        "fields": [
+          "weight_kg",
+          "volume_ml",
+          "pack_weight_kg",
+          "piece_weight_g"
+        ]
+      }
+    },
+    {
+      "rule_code": "PIT_CONFLICT",
+      "severity": "INVALID",
+      "payload": {
+        "field": "pit_flag",
+        "values": [
+          "with_pit",
+          "without_pit"
+        ]
+      }
+    },
+    {
+      "rule_code": "PRICE_NORMALIZATION_REQUIRED",
+      "severity": "INVALID",
+      "payload": {}
+    },
+    {
+      "rule_code": "PRICE_REQUIRED",
+      "severity": "INVALID",
+      "payload": {}
+    },
+    {
+      "rule_code": "RAW_BOILED_CONFLICT",
+      "severity": "INVALID",
+      "payload": {
+        "field": "processing_state",
+        "values": [
+          "raw",
+          "boiled"
+        ]
+      }
+    },
+    {
+      "rule_code": "SKIN_CONFLICT",
+      "severity": "INVALID",
+      "payload": {
+        "field": "skin_flag",
+        "values": [
+          "skin_on",
+          "skinless"
+        ]
+      }
+    },
+    {
+      "rule_code": "STATE_CONFLICT",
+      "severity": "INVALID",
+      "payload": {
+        "field": "state",
+        "values": [
+          "fresh",
+          "chilled",
+          "frozen"
+        ]
+      }
+    }
+  ],
+  "dictionaries": {
+    "category_dictionary_entries": {
+      "count": 412,
+      "items": [
+        {
+          "category_code": "bakery",
+          "keyword": "хлеб",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "хлеб"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "багет",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "багет"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "булочка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "булочка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "лаваш",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лаваш"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "чиабатта",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "чиабатта"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "круассан",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "круассан"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "слойка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "слойка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "батон",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "батон"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "лепешка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лепешка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "булка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "булка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "каравай",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "каравай"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "сухарь",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сухарь"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "белый",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "белый"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "ржаной",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "ржаной"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "зерновой",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "зерновой"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "нарезка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "нарезка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "свежий",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "свежий"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "консервы",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "консервы"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "банка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "банка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "консервированный",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "консервированный"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "паштет",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "паштет"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "тушенка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "тушенка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "шпроты",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "шпроты"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "сардины",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сардины"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "томаты в собственном соку",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "томаты в собственном соку"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "кукуруза",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кукуруза"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "горошек",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "горошек"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "огурцы маринованные",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "огурцы маринованные"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "оливки",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "оливки"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "каперсы",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "каперсы"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "икра",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "икра"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "ж/б",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "ж/б"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "жестяная",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "жестяная"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "ключ",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "ключ"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "стекло",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "стекло"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "торт",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "торт"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пирожное",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "пирожное"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "чизкейк",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "чизкейк"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "мусс",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "мусс"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "мороженое",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "мороженое"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "десерт",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "десерт"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "крем",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "крем"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "эклер",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "эклер"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "тирамису",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "тирамису"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пирог",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "пирог"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "кекс",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кекс"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "печенье",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "печенье"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "вафли",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "вафли"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "зефир",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "зефир"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пастила",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "пастила"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "сладкий",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "сладкий"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "шоколад",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "шоколад"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "ягод",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "ягод"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "фруктовый",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "фруктовый"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "вода",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "вода"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "сок",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сок"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "лимонад",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лимонад"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "кола",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кола"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "напиток",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "напиток"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "чай",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "чай"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "кофе",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кофе"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "молоко",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "молоко"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "кефир",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кефир"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "йогурт питьевой",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "йогурт питьевой"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "энергетик",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "энергетик"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "газировка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "газировка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "квас",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "квас"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "морс",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "морс"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "компот",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "компот"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "0.5л",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "0.5л"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "1л",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "1л"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "газ",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "газ"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "негаз",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "негаз"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "бутылк",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "бутылк"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "упак",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "упак"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "тетра",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "тетра"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "лосось",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лосось"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "семга",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "семга"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "форель",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "форель"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "треска",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "треска"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "хек",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "хек"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "минтай",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "минтай"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "тунец",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "тунец"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "палтус",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "палтус"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "судак",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "судак"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "кета",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кета"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "горбуша",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "горбуша"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "скумбрия",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "скумбрия"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "сельдь",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сельдь"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "сардина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сардина"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "анчоус",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "анчоус"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "филе",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "филе"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "стейк",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "стейк"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "тушка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "тушка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "дорадо мороженая",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "дорадо мороженая"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "дорадо мороженая непотрошеная",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "дорадо мороженая непотрошеная"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "сибас целый",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сибас целый"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "сибас целый непотрошеный",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сибас целый непотрошеный"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "помидор",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "помидор"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "огурец",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "огурец"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "картофель",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "картофель"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "лук",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лук"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "чеснок",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "чеснок"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "морковь",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "морковь"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "капуста",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "капуста"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "перец",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "перец"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салат",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "салат"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "яблоко",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "яблоко"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "лимон",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лимон"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "зелень",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "зелень"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "банан",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "банан"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "апельсин",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "апельсин"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "груша",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "груша"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "свекла",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "свекла"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "редис",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "редис"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "редиска",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "редиска"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "петрушка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "петрушка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "укроп",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "укроп"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "кинза",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кинза"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "свежий",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "свежий"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "охлажд",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "охлажд"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "кг",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "кг"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "сетка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "сетка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "мешок",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "мешок"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "томаты черри",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "томаты черри"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "ягода",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "ягода"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "черника",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "черника"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "малина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "малина"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "клубника",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "клубника"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "брокколи",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "брокколи"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "цветная капуста",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "цветная капуста"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "смесь овощная",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "смесь овощная"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "замороженные овощи",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "замороженные овощи"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "горошек зеленый",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "горошек зеленый"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "фасоль стручковая",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "фасоль стручковая"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "шпинат",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "шпинат"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "вишня",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "вишня"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "смородина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "смородина"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "голубика",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "голубика"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "зам",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "зам"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "замороженные",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "замороженные"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "с/м",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "с/м"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "пакет",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "кг",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "кг"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "пельмени",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "пельмени"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "вареники",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "вареники"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "котлеты",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "котлеты"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "наггетсы",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "наггетсы"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "фрикадельки",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "фрикадельки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "тесто",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "тесто"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "хинкали",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "хинкали"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "блины",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "блины"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "полуфабрикат",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "полуфабрикат"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "чебуреки",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "чебуреки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "пицца",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "пицца"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "замороженная пицца",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "замороженная пицца"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "тесто слоеное",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "тесто слоеное"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "тесто дрожжевое",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "тесто дрожжевое"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "зам",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "зам"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "упак",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "упак"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "кг",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "кг"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "шт",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "шт"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "рис",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "рис"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "гречка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "гречка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "макароны",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "макароны"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "мука",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "мука"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "сахар",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сахар"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "соль",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "соль"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "масло растительное",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "масло растительное"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "уксус",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "уксус"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "соус",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "соус"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "специи",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "специи"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "крупа",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "крупа"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "фасоль",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "фасоль"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "чечевица",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "чечевица"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "нут",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "нут"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "масло подсолнечное",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "масло подсолнечное"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "оливковое масло",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "оливковое масло"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пачка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "пачка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "упаковка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "кг",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "кг"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "мешок",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "мешок"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "масло",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "масло"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "сливки",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сливки"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "продукт",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "продукт"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "майонез ведро",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "CATEGORY_ONLY",
+          "_key": "майонез ведро"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "майонез ведро провансаль",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "CATEGORY_ONLY",
+          "_key": "майонез ведро провансаль"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "горчица зернистая",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "горчица зернистая"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "кетчуп томатный",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кетчуп томатный"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "майонез оливковый",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "майонез оливковый"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "горчица дижонская",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "горчица дижонская"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "горчица зернистая пл",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "горчица зернистая пл"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "соус сырный",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "соус сырный"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "яйцо куриное",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "яйцо куриное"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "сухари панировочные",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сухари панировочные"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "сухари панировочные панко",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сухари панировочные панко"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "яйцо куриное кат",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "яйцо куриное кат"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "овсяные хлопья",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "овсяные хлопья"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "овсяные хлопья геркулес",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "овсяные хлопья геркулес"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "желатин пищевой",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "желатин пищевой"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "греча ядрица",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "греча ядрица"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "смесь панировочная",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "смесь панировочная"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "грибы сушеные",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "грибы сушеные"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "какао порошок",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "какао порошок"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "яйцо куриное мытое",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "яйцо куриное мытое"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "томатная паста",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "томатная паста"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "томатная паста пл",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "томатная паста пл"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "томаты вяленые",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "томаты вяленые"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "томаты вяленые масле",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "томаты вяленые масле"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "базилик сушеный",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "базилик сушеный"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "кориандр молотый",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кориандр молотый"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "корица молотая",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "корица молотая"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "корица молотая пл",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "корица молотая пл"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "лавровый лист",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лавровый лист"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "лук жареный",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лук жареный"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "лук жареный пакет",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "CATEGORY_ONLY",
+          "_key": "лук жареный пакет"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "концентрат пищевой",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "концентрат пищевой"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "концентрат пищевой сухой",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "концентрат пищевой сухой"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "томаты сушеные",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "томаты сушеные"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "томаты сушеные масле",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "томаты сушеные масле"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "хлопья овсяные",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "хлопья овсяные"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "хлопья овсяные ясно",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "хлопья овсяные ясно"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "куриный концентрат пищевой",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "куриный концентрат пищевой"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "желатин пищевой гранулированный",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "желатин пищевой гранулированный"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "макаронные изделия",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "макаронные изделия"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пищевой сухой",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "пищевой сухой"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "смесь специй",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "смесь специй"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "макаронные изделия яиц",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "макаронные изделия яиц"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "макаронные изделия фигурные",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "макаронные изделия фигурные"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "макаронные изделия яичные",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "макаронные изделия яичные"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "говядина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "говядина"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "свинина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "свинина"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "телятина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "телятина"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "баранина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "баранина"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "ягненок",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "ягненок"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "кролик",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кролик"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "вырезка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "вырезка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "стейк",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "стейк"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "ребра",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "ребра"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "фарш",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "фарш"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "сало шпик",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сало шпик"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "говяжьи хвосты",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "говяжьи хвосты"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "сало шпик копченый",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сало шпик копченый"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "сало шпик соленое",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сало шпик соленое"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "курица",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "курица"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "цыпленок",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "цыпленок"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "индейка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "индейка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "утка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "утка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "гусь",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "гусь"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "бедро",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "бедро"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "голень",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "голень"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "крыло",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "крыло"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "филе грудки",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "филе грудки"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "грудка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "грудка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "окороч",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "окороч"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "бройлер",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "бройлер"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "тушка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "тушка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "полутушка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "полутушка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "охлажд",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "охлажд"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "колбаса",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "колбаса"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "сосиски",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сосиски"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "сардельки",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сардельки"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "ветчина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "ветчина"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "бекон",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "бекон"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "карбонад",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "карбонад"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "буженина",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "буженина"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "сервелат",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сервелат"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "салями",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "салями"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "прошутто",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "прошутто"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "бастурма",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "бастурма"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "шпикачка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "шпикачка"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "сарделька",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "сарделька"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "колбаска",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "колбаска"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "вареная",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "вареная"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "копченая",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "копченая"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "сырокопченая",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "сырокопченая"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "нарезка",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "нарезка"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "ломтик",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "ломтик"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "sausages",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "креветка",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "креветка"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "кальмар",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "кальмар"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "мидии",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "мидии"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "гребешок",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "гребешок"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "осьминог",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "осьминог"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "лангустин",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "лангустин"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "краб",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "краб"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "раки",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "раки"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "устрица",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "устрица"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "очищ",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "очищ"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "вар",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "вар"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "сыр",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "сыр"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "кольца",
+          "type": "POSITIVE",
+          "weight": 2,
+          "scope": "CONTEXT",
+          "_key": "кольца"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "weight": -5,
+          "scope": "BASE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "seafood",
+          "keyword": "креветки",
+          "type": "POSITIVE",
+          "weight": 5,
+          "scope": "BASE",
+          "_key": "креветки"
+        }
+      ],
+      "sample_cap": 500
+    },
+    "base_product_dictionary_entries": {
+      "count": 606,
+      "items": [
+        {
+          "category_code": "bakery",
+          "keyword": "багет",
+          "type": "POSITIVE",
+          "_key": "багет"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "баранка",
+          "type": "POSITIVE",
+          "_key": "баранка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "батон",
+          "type": "POSITIVE",
+          "_key": "батон"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "белый",
+          "type": "POSITIVE",
+          "_key": "белый"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "бублик",
+          "type": "POSITIVE",
+          "_key": "бублик"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "булка",
+          "type": "POSITIVE",
+          "_key": "булка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "булочка",
+          "type": "POSITIVE",
+          "_key": "булочка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "зерновой",
+          "type": "POSITIVE",
+          "_key": "зерновой"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "каравай",
+          "type": "POSITIVE",
+          "_key": "каравай"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "кекс",
+          "type": "POSITIVE",
+          "_key": "кекс"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "крендель",
+          "type": "POSITIVE",
+          "_key": "крендель"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "круассан",
+          "type": "POSITIVE",
+          "_key": "круассан"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "лаваш",
+          "type": "POSITIVE",
+          "_key": "лаваш"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "лепешка",
+          "type": "POSITIVE",
+          "_key": "лепешка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "нарез",
+          "type": "POSITIVE",
+          "_key": "нарез"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "нарезка",
+          "type": "POSITIVE",
+          "_key": "нарезка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "пита",
+          "type": "POSITIVE",
+          "_key": "пита"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "плюшка",
+          "type": "POSITIVE",
+          "_key": "плюшка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "ржаной",
+          "type": "POSITIVE",
+          "_key": "ржаной"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "рулет",
+          "type": "POSITIVE",
+          "_key": "рулет"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "свежий",
+          "type": "POSITIVE",
+          "_key": "свежий"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "сдоба",
+          "type": "POSITIVE",
+          "_key": "сдоба"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "слойка",
+          "type": "POSITIVE",
+          "_key": "слойка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "сухарь",
+          "type": "POSITIVE",
+          "_key": "сухарь"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "тортилья",
+          "type": "POSITIVE",
+          "_key": "тортилья"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "тост",
+          "type": "POSITIVE",
+          "_key": "тост"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "хлеб",
+          "type": "POSITIVE",
+          "_key": "хлеб"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "хлебцы",
+          "type": "POSITIVE",
+          "_key": "хлебцы"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "цельнозерновой",
+          "type": "POSITIVE",
+          "_key": "цельнозерновой"
+        },
+        {
+          "category_code": "bakery",
+          "keyword": "чиабатта",
+          "type": "POSITIVE",
+          "_key": "чиабатта"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "аджика",
+          "type": "POSITIVE",
+          "_key": "аджика"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "ананасы",
+          "type": "POSITIVE",
+          "_key": "ананасы"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "банка",
+          "type": "POSITIVE",
+          "_key": "банка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "в собственном соку",
+          "type": "POSITIVE",
+          "_key": "в собственном соку"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "горох",
+          "type": "POSITIVE",
+          "_key": "горох"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "горошек",
+          "type": "POSITIVE",
+          "_key": "горошек"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "грибы",
+          "type": "POSITIVE",
+          "_key": "грибы"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "ж/б",
+          "type": "POSITIVE",
+          "_key": "ж/б"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "жестяная",
+          "type": "POSITIVE",
+          "_key": "жестяная"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "икра",
+          "type": "POSITIVE",
+          "_key": "икра"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "каперсы",
+          "type": "POSITIVE",
+          "_key": "каперсы"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "ключ",
+          "type": "POSITIVE",
+          "_key": "ключ"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "консерв",
+          "type": "POSITIVE",
+          "_key": "консерв"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "консервы",
+          "type": "POSITIVE",
+          "_key": "консервы"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "кукуруза",
+          "type": "POSITIVE",
+          "_key": "кукуруза"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "кукуруза консервированная",
+          "type": "POSITIVE",
+          "_key": "кукуруза консервированная"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "лечо",
+          "type": "POSITIVE",
+          "_key": "лечо"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "мясные консервы",
+          "type": "POSITIVE",
+          "_key": "мясные консервы"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "овощная икра",
+          "type": "POSITIVE",
+          "_key": "овощная икра"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "огурцы маринованные",
+          "type": "POSITIVE",
+          "_key": "огурцы маринованные"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "оливки",
+          "type": "POSITIVE",
+          "_key": "оливки"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "паштет",
+          "type": "POSITIVE",
+          "_key": "паштет"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "персики",
+          "type": "POSITIVE",
+          "_key": "персики"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "помидоры в собственном соку",
+          "type": "POSITIVE",
+          "_key": "помидоры в собственном соку"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "рыбные консервы",
+          "type": "POSITIVE",
+          "_key": "рыбные консервы"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "сардины",
+          "type": "POSITIVE",
+          "_key": "сардины"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "стекло",
+          "type": "POSITIVE",
+          "_key": "стекло"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "томаты",
+          "type": "POSITIVE",
+          "_key": "томаты"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "тунец",
+          "type": "POSITIVE",
+          "_key": "тунец"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "тушенка",
+          "type": "POSITIVE",
+          "_key": "тушенка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "фасоль",
+          "type": "POSITIVE",
+          "_key": "фасоль"
+        },
+        {
+          "category_code": "canned",
+          "keyword": "шпроты",
+          "type": "POSITIVE",
+          "_key": "шпроты"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "брауни",
+          "type": "POSITIVE",
+          "_key": "брауни"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "ваниль",
+          "type": "POSITIVE",
+          "_key": "ваниль"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "вафли",
+          "type": "POSITIVE",
+          "_key": "вафли"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "десерт",
+          "type": "POSITIVE",
+          "_key": "десерт"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "донат",
+          "type": "POSITIVE",
+          "_key": "донат"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "зефир",
+          "type": "POSITIVE",
+          "_key": "зефир"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "карамель",
+          "type": "POSITIVE",
+          "_key": "карамель"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "кекс",
+          "type": "POSITIVE",
+          "_key": "кекс"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "конфеты",
+          "type": "POSITIVE",
+          "_key": "конфеты"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "крем",
+          "type": "POSITIVE",
+          "_key": "крем"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "мармелад",
+          "type": "POSITIVE",
+          "_key": "мармелад"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "маффин",
+          "type": "POSITIVE",
+          "_key": "маффин"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "мороженое",
+          "type": "POSITIVE",
+          "_key": "мороженое"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "мусс",
+          "type": "POSITIVE",
+          "_key": "мусс"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пастила",
+          "type": "POSITIVE",
+          "_key": "пастила"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "печенье",
+          "type": "POSITIVE",
+          "_key": "печенье"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пирог",
+          "type": "POSITIVE",
+          "_key": "пирог"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пирожное",
+          "type": "POSITIVE",
+          "_key": "пирожное"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пончик",
+          "type": "POSITIVE",
+          "_key": "пончик"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пряник",
+          "type": "POSITIVE",
+          "_key": "пряник"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "пудинг",
+          "type": "POSITIVE",
+          "_key": "пудинг"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "сладкий",
+          "type": "POSITIVE",
+          "_key": "сладкий"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "суфле",
+          "type": "POSITIVE",
+          "_key": "суфле"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "тирамису",
+          "type": "POSITIVE",
+          "_key": "тирамису"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "торт",
+          "type": "POSITIVE",
+          "_key": "торт"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "тортик",
+          "type": "POSITIVE",
+          "_key": "тортик"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "фруктовый",
+          "type": "POSITIVE",
+          "_key": "фруктовый"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "чизкейк",
+          "type": "POSITIVE",
+          "_key": "чизкейк"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "шоколад",
+          "type": "POSITIVE",
+          "_key": "шоколад"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "шоколадный",
+          "type": "POSITIVE",
+          "_key": "шоколадный"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "эклер",
+          "type": "POSITIVE",
+          "_key": "эклер"
+        },
+        {
+          "category_code": "desserts",
+          "keyword": "ягод",
+          "type": "POSITIVE",
+          "_key": "ягод"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "0.5л",
+          "type": "POSITIVE",
+          "_key": "0.5л"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "1.5л",
+          "type": "POSITIVE",
+          "_key": "1.5л"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "1л",
+          "type": "POSITIVE",
+          "_key": "1л"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "ацидофилин",
+          "type": "POSITIVE",
+          "_key": "ацидофилин"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "бутылк",
+          "type": "POSITIVE",
+          "_key": "бутылк"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "вино",
+          "type": "POSITIVE",
+          "_key": "вино"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "вода",
+          "type": "POSITIVE",
+          "_key": "вода"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "газ",
+          "type": "POSITIVE",
+          "_key": "газ"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "газировка",
+          "type": "POSITIVE",
+          "_key": "газировка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "горячий шоколад",
+          "type": "POSITIVE",
+          "_key": "горячий шоколад"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "йогурт",
+          "type": "POSITIVE",
+          "_key": "йогурт"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "какао",
+          "type": "POSITIVE",
+          "_key": "какао"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "квас",
+          "type": "POSITIVE",
+          "_key": "квас"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "кефир",
+          "type": "POSITIVE",
+          "_key": "кефир"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "кола",
+          "type": "POSITIVE",
+          "_key": "кола"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "компот",
+          "type": "POSITIVE",
+          "_key": "компот"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "кофе",
+          "type": "POSITIVE",
+          "_key": "кофе"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "лимонад",
+          "type": "POSITIVE",
+          "_key": "лимонад"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "литр",
+          "type": "POSITIVE",
+          "_key": "литр"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "минеральная",
+          "type": "POSITIVE",
+          "_key": "минеральная"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "мл",
+          "type": "POSITIVE",
+          "_key": "мл"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "молоко",
+          "type": "POSITIVE",
+          "_key": "молоко"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "морс",
+          "type": "POSITIVE",
+          "_key": "морс"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "напиток",
+          "type": "POSITIVE",
+          "_key": "напиток"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "негаз",
+          "type": "POSITIVE",
+          "_key": "негаз"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "нектары",
+          "type": "POSITIVE",
+          "_key": "нектары"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "пиво",
+          "type": "POSITIVE",
+          "_key": "пиво"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "ряженка",
+          "type": "POSITIVE",
+          "_key": "ряженка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "смузи",
+          "type": "POSITIVE",
+          "_key": "смузи"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "снежок",
+          "type": "POSITIVE",
+          "_key": "снежок"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "сок",
+          "type": "POSITIVE",
+          "_key": "сок"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "тетра",
+          "type": "POSITIVE",
+          "_key": "тетра"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "упак",
+          "type": "POSITIVE",
+          "_key": "упак"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "чай",
+          "type": "POSITIVE",
+          "_key": "чай"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "шампанское",
+          "type": "POSITIVE",
+          "_key": "шампанское"
+        },
+        {
+          "category_code": "drinks",
+          "keyword": "энергетик",
+          "type": "POSITIVE",
+          "_key": "энергетик"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "анчоус",
+          "type": "POSITIVE",
+          "_key": "анчоус"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "анчоусы",
+          "type": "POSITIVE",
+          "_key": "анчоусы"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "анчоусы килька",
+          "type": "POSITIVE",
+          "_key": "анчоусы килька"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "анчоусы филе",
+          "type": "POSITIVE",
+          "_key": "анчоусы филе"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "б/ш",
+          "type": "POSITIVE",
+          "_key": "б/ш"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "горбуша",
+          "type": "POSITIVE",
+          "_key": "горбуша"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "дорадо",
+          "type": "POSITIVE",
+          "_key": "дорадо"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "замороженн",
+          "type": "POSITIVE",
+          "_key": "замороженн"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "икра",
+          "type": "POSITIVE",
+          "_key": "икра"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "камбала",
+          "type": "POSITIVE",
+          "_key": "камбала"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "карп",
+          "type": "POSITIVE",
+          "_key": "карп"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "кета",
+          "type": "POSITIVE",
+          "_key": "кета"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "лосось",
+          "type": "POSITIVE",
+          "_key": "лосось"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "масляная филе",
+          "type": "POSITIVE",
+          "_key": "масляная филе"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "минтай",
+          "type": "POSITIVE",
+          "_key": "минтай"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "н/ш",
+          "type": "POSITIVE",
+          "_key": "н/ш"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "навага",
+          "type": "POSITIVE",
+          "_key": "навага"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "навага тушка",
+          "type": "POSITIVE",
+          "_key": "навага тушка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "налим",
+          "type": "POSITIVE",
+          "_key": "налим"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "окунь",
+          "type": "POSITIVE",
+          "_key": "окунь"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "оленина филе",
+          "type": "POSITIVE",
+          "_key": "оленина филе"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "осетр",
+          "type": "POSITIVE",
+          "_key": "осетр"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "охлажд",
+          "type": "POSITIVE",
+          "_key": "охлажд"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "охлажденн",
+          "type": "POSITIVE",
+          "_key": "охлажденн"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "палтус",
+          "type": "POSITIVE",
+          "_key": "палтус"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "перепелка тушка",
+          "type": "POSITIVE",
+          "_key": "перепелка тушка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "породы филе",
+          "type": "POSITIVE",
+          "_key": "породы филе"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "рыба",
+          "type": "POSITIVE",
+          "_key": "рыба"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "с/м",
+          "type": "POSITIVE",
+          "_key": "с/м"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "сайра",
+          "type": "POSITIVE",
+          "_key": "сайра"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "сардина",
+          "type": "POSITIVE",
+          "_key": "сардина"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "сельдь",
+          "type": "POSITIVE",
+          "_key": "сельдь"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "семга",
+          "type": "POSITIVE",
+          "_key": "семга"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "сибас",
+          "type": "POSITIVE",
+          "_key": "сибас"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "скумбрия",
+          "type": "POSITIVE",
+          "_key": "скумбрия"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "стейк",
+          "type": "POSITIVE",
+          "_key": "стейк"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "стерлядь",
+          "type": "POSITIVE",
+          "_key": "стерлядь"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "судак",
+          "type": "POSITIVE",
+          "_key": "судак"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "тилапия",
+          "type": "POSITIVE",
+          "_key": "тилапия"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "тилапия филе",
+          "type": "POSITIVE",
+          "_key": "тилапия филе"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "треска",
+          "type": "POSITIVE",
+          "_key": "треска"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "тунец",
+          "type": "POSITIVE",
+          "_key": "тунец"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "тушка",
+          "type": "POSITIVE",
+          "_key": "тушка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "тушка крупная",
+          "type": "POSITIVE",
+          "_key": "тушка крупная"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "тушка сорт",
+          "type": "POSITIVE",
+          "_key": "тушка сорт"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "филе",
+          "type": "POSITIVE",
+          "_key": "филе"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "филе анчоуса",
+          "type": "POSITIVE",
+          "_key": "филе анчоуса"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "филе бедра",
+          "type": "POSITIVE",
+          "_key": "филе бедра"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "филе маринованое",
+          "type": "POSITIVE",
+          "_key": "филе маринованое"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "филе масле",
+          "type": "POSITIVE",
+          "_key": "филе масле"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "филе порционное",
+          "type": "POSITIVE",
+          "_key": "филе порционное"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "филе сельди",
+          "type": "POSITIVE",
+          "_key": "филе сельди"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "форель",
+          "type": "POSITIVE",
+          "_key": "форель"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "хек",
+          "type": "POSITIVE",
+          "_key": "хек"
+        },
+        {
+          "category_code": "fish",
+          "keyword": "щука",
+          "type": "POSITIVE",
+          "_key": "щука"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "апельсин",
+          "type": "POSITIVE",
+          "_key": "апельсин"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "апельсины",
+          "type": "POSITIVE",
+          "_key": "апельсины"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "ароматом лимона",
+          "type": "POSITIVE",
+          "_key": "ароматом лимона"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "баклажан",
+          "type": "POSITIVE",
+          "_key": "баклажан"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "банан",
+          "type": "POSITIVE",
+          "_key": "банан"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "бананы",
+          "type": "POSITIVE",
+          "_key": "бананы"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "виноград",
+          "type": "POSITIVE",
+          "_key": "виноград"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "вкусом лайма",
+          "type": "POSITIVE",
+          "_key": "вкусом лайма"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "вкусом паприки",
+          "type": "POSITIVE",
+          "_key": "вкусом паприки"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "вкусом томата",
+          "type": "POSITIVE",
+          "_key": "вкусом томата"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "греческого салата",
+          "type": "POSITIVE",
+          "_key": "греческого салата"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "груша",
+          "type": "POSITIVE",
+          "_key": "груша"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "зелень",
+          "type": "POSITIVE",
+          "_key": "зелень"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "кабачок",
+          "type": "POSITIVE",
+          "_key": "кабачок"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "капуста",
+          "type": "POSITIVE",
+          "_key": "капуста"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "картофель",
+          "type": "POSITIVE",
+          "_key": "картофель"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "кг",
+          "type": "POSITIVE",
+          "_key": "кг"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "кинза",
+          "type": "POSITIVE",
+          "_key": "кинза"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "лайма",
+          "type": "POSITIVE",
+          "_key": "лайма"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "лайма розового",
+          "type": "POSITIVE",
+          "_key": "лайма розового"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "лимон",
+          "type": "POSITIVE",
+          "_key": "лимон"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "лимона",
+          "type": "POSITIVE",
+          "_key": "лимона"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "лимона falcone",
+          "type": "POSITIVE",
+          "_key": "лимона falcone"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "лук",
+          "type": "POSITIVE",
+          "_key": "лук"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "мешок",
+          "type": "POSITIVE",
+          "_key": "мешок"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "морковь",
+          "type": "POSITIVE",
+          "_key": "морковь"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "огурец",
+          "type": "POSITIVE",
+          "_key": "огурец"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "острого перца",
+          "type": "POSITIVE",
+          "_key": "острого перца"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "охлажд",
+          "type": "POSITIVE",
+          "_key": "охлажд"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "охлажденн",
+          "type": "POSITIVE",
+          "_key": "охлажденн"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "паприки",
+          "type": "POSITIVE",
+          "_key": "паприки"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "перец",
+          "type": "POSITIVE",
+          "_key": "перец"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "перца",
+          "type": "POSITIVE",
+          "_key": "перца"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "петрушка",
+          "type": "POSITIVE",
+          "_key": "петрушка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "помидор",
+          "type": "POSITIVE",
+          "_key": "помидор"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "пучок",
+          "type": "POSITIVE",
+          "_key": "пучок"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "редис",
+          "type": "POSITIVE",
+          "_key": "редис"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "редиска",
+          "type": "POSITIVE",
+          "_key": "редиска"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "розового перца",
+          "type": "POSITIVE",
+          "_key": "розового перца"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салат",
+          "type": "POSITIVE",
+          "_key": "салат"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салата",
+          "type": "POSITIVE",
+          "_key": "салата"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салата балк",
+          "type": "POSITIVE",
+          "_key": "салата балк"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салата блок",
+          "type": "POSITIVE",
+          "_key": "салата блок"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салата основе",
+          "type": "POSITIVE",
+          "_key": "салата основе"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салата сlassic",
+          "type": "POSITIVE",
+          "_key": "салата сlassic"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "свежие",
+          "type": "POSITIVE",
+          "_key": "свежие"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "свежий",
+          "type": "POSITIVE",
+          "_key": "свежий"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "свекла",
+          "type": "POSITIVE",
+          "_key": "свекла"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "сетка",
+          "type": "POSITIVE",
+          "_key": "сетка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "тарталетки салата",
+          "type": "POSITIVE",
+          "_key": "тарталетки салата"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "томата",
+          "type": "POSITIVE",
+          "_key": "томата"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "тыква",
+          "type": "POSITIVE",
+          "_key": "тыква"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "укроп",
+          "type": "POSITIVE",
+          "_key": "укроп"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "цедрой лимона",
+          "type": "POSITIVE",
+          "_key": "цедрой лимона"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "цезарь салата",
+          "type": "POSITIVE",
+          "_key": "цезарь салата"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "черного перца",
+          "type": "POSITIVE",
+          "_key": "черного перца"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "чеснок",
+          "type": "POSITIVE",
+          "_key": "чеснок"
+        },
+        {
+          "category_code": "fresh_produce",
+          "keyword": "яблоко",
+          "type": "POSITIVE",
+          "_key": "яблоко"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "брокколи",
+          "type": "POSITIVE",
+          "_key": "брокколи"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "брокколи замороженная",
+          "type": "POSITIVE",
+          "_key": "брокколи замороженная"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "брюссельская",
+          "type": "POSITIVE",
+          "_key": "брюссельская"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "вишня",
+          "type": "POSITIVE",
+          "_key": "вишня"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "вишня замороженная",
+          "type": "POSITIVE",
+          "_key": "вишня замороженная"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "голубика",
+          "type": "POSITIVE",
+          "_key": "голубика"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "горошек зеленый",
+          "type": "POSITIVE",
+          "_key": "горошек зеленый"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "ежевика",
+          "type": "POSITIVE",
+          "_key": "ежевика"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "зам",
+          "type": "POSITIVE",
+          "_key": "зам"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "замороженн",
+          "type": "POSITIVE",
+          "_key": "замороженн"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "капуста цветная",
+          "type": "POSITIVE",
+          "_key": "капуста цветная"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "кг",
+          "type": "POSITIVE",
+          "_key": "кг"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "клубника",
+          "type": "POSITIVE",
+          "_key": "клубника"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "клюква",
+          "type": "POSITIVE",
+          "_key": "клюква"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "крыжовник",
+          "type": "POSITIVE",
+          "_key": "крыжовник"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "малина",
+          "type": "POSITIVE",
+          "_key": "малина"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "облепиха",
+          "type": "POSITIVE",
+          "_key": "облепиха"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "овощи замороженные",
+          "type": "POSITIVE",
+          "_key": "овощи замороженные"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "овощная смесь",
+          "type": "POSITIVE",
+          "_key": "овощная смесь"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "пакет",
+          "type": "POSITIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "с/м",
+          "type": "POSITIVE",
+          "_key": "с/м"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "смесь",
+          "type": "POSITIVE",
+          "_key": "смесь"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "смесь овощная",
+          "type": "POSITIVE",
+          "_key": "смесь овощная"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "смесь ягод",
+          "type": "POSITIVE",
+          "_key": "смесь ягод"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "смородина",
+          "type": "POSITIVE",
+          "_key": "смородина"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "фасоль стручковая",
+          "type": "POSITIVE",
+          "_key": "фасоль стручковая"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "цветная капуста",
+          "type": "POSITIVE",
+          "_key": "цветная капуста"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "черника",
+          "type": "POSITIVE",
+          "_key": "черника"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "шпинат",
+          "type": "POSITIVE",
+          "_key": "шпинат"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "ягодная смесь",
+          "type": "POSITIVE",
+          "_key": "ягодная смесь"
+        },
+        {
+          "category_code": "frozen_produce",
+          "keyword": "ягоды",
+          "type": "POSITIVE",
+          "_key": "ягоды"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "блин",
+          "type": "POSITIVE",
+          "_key": "блин"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "блины",
+          "type": "POSITIVE",
+          "_key": "блины"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "вареники",
+          "type": "POSITIVE",
+          "_key": "вареники"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "галушки",
+          "type": "POSITIVE",
+          "_key": "галушки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "зам",
+          "type": "POSITIVE",
+          "_key": "зам"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "замороженн",
+          "type": "POSITIVE",
+          "_key": "замороженн"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "замороженные полуфабрикаты",
+          "type": "POSITIVE",
+          "_key": "замороженные полуфабрикаты"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "кг",
+          "type": "POSITIVE",
+          "_key": "кг"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "котлета",
+          "type": "POSITIVE",
+          "_key": "котлета"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "котлеты",
+          "type": "POSITIVE",
+          "_key": "котлеты"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "манты",
+          "type": "POSITIVE",
+          "_key": "манты"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "наггетс",
+          "type": "POSITIVE",
+          "_key": "наггетс"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "наггетсы",
+          "type": "POSITIVE",
+          "_key": "наггетсы"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "паста",
+          "type": "POSITIVE",
+          "_key": "паста"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "пельмени",
+          "type": "POSITIVE",
+          "_key": "пельмени"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "пицца",
+          "type": "POSITIVE",
+          "_key": "пицца"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "полуфабрикат",
+          "type": "POSITIVE",
+          "_key": "полуфабрикат"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "полуфабрикаты",
+          "type": "POSITIVE",
+          "_key": "полуфабрикаты"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "равиоли",
+          "type": "POSITIVE",
+          "_key": "равиоли"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "сырник",
+          "type": "POSITIVE",
+          "_key": "сырник"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "сырники",
+          "type": "POSITIVE",
+          "_key": "сырники"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "тесто",
+          "type": "POSITIVE",
+          "_key": "тесто"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "тесто дрожжевое",
+          "type": "POSITIVE",
+          "_key": "тесто дрожжевое"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "тесто слоеное",
+          "type": "POSITIVE",
+          "_key": "тесто слоеное"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "упак",
+          "type": "POSITIVE",
+          "_key": "упак"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "фрикадельки",
+          "type": "POSITIVE",
+          "_key": "фрикадельки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "хинкали",
+          "type": "POSITIVE",
+          "_key": "хинкали"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "чебурек",
+          "type": "POSITIVE",
+          "_key": "чебурек"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "чебуреки",
+          "type": "POSITIVE",
+          "_key": "чебуреки"
+        },
+        {
+          "category_code": "frozen_semi",
+          "keyword": "шт",
+          "type": "POSITIVE",
+          "_key": "шт"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "банка",
+          "type": "POSITIVE",
+          "_key": "банка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "булгур",
+          "type": "POSITIVE",
+          "_key": "булгур"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "бутылка",
+          "type": "POSITIVE",
+          "_key": "бутылка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "горчица",
+          "type": "POSITIVE",
+          "_key": "горчица"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "гречка",
+          "type": "POSITIVE",
+          "_key": "гречка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "кг",
+          "type": "POSITIVE",
+          "_key": "кг"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "кетчуп",
+          "type": "POSITIVE",
+          "_key": "кетчуп"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "крахмал",
+          "type": "POSITIVE",
+          "_key": "крахмал"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "крупа",
+          "type": "POSITIVE",
+          "_key": "крупа"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "майонез",
+          "type": "POSITIVE",
+          "_key": "майонез"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "макароны",
+          "type": "POSITIVE",
+          "_key": "макароны"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "манка",
+          "type": "POSITIVE",
+          "_key": "манка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "масло подсолнечное",
+          "type": "POSITIVE",
+          "_key": "масло подсолнечное"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "масло растительное",
+          "type": "POSITIVE",
+          "_key": "масло растительное"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "мешок",
+          "type": "POSITIVE",
+          "_key": "мешок"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "мука",
+          "type": "POSITIVE",
+          "_key": "мука"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "нут",
+          "type": "POSITIVE",
+          "_key": "нут"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "овсянка",
+          "type": "POSITIVE",
+          "_key": "овсянка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "оливковое масло",
+          "type": "POSITIVE",
+          "_key": "оливковое масло"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пакет",
+          "type": "POSITIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "панировочные сухари",
+          "type": "POSITIVE",
+          "_key": "панировочные сухари"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пачка",
+          "type": "POSITIVE",
+          "_key": "пачка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "пшено",
+          "type": "POSITIVE",
+          "_key": "пшено"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "рис",
+          "type": "POSITIVE",
+          "_key": "рис"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "сахар",
+          "type": "POSITIVE",
+          "_key": "сахар"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "соль",
+          "type": "POSITIVE",
+          "_key": "соль"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "соус",
+          "type": "POSITIVE",
+          "_key": "соус"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "специи",
+          "type": "POSITIVE",
+          "_key": "специи"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "уксус",
+          "type": "POSITIVE",
+          "_key": "уксус"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "упаковка",
+          "type": "POSITIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "фасоль",
+          "type": "POSITIVE",
+          "_key": "фасоль"
+        },
+        {
+          "category_code": "grocery",
+          "keyword": "чечевица",
+          "type": "POSITIVE",
+          "_key": "чечевица"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "антрекот",
+          "type": "POSITIVE",
+          "_key": "антрекот"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "баранина",
+          "type": "POSITIVE",
+          "_key": "баранина"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "бефстроганов",
+          "type": "POSITIVE",
+          "_key": "бефстроганов"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "вырезка",
+          "type": "POSITIVE",
+          "_key": "вырезка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "говядина",
+          "type": "POSITIVE",
+          "_key": "говядина"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "грудинка",
+          "type": "POSITIVE",
+          "_key": "грудинка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "гуляш",
+          "type": "POSITIVE",
+          "_key": "гуляш"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "зам",
+          "type": "POSITIVE",
+          "_key": "зам"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "замороженн",
+          "type": "POSITIVE",
+          "_key": "замороженн"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "корейка",
+          "type": "POSITIVE",
+          "_key": "корейка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "кролик",
+          "type": "POSITIVE",
+          "_key": "кролик"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "лопатка",
+          "type": "POSITIVE",
+          "_key": "лопатка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "мясо",
+          "type": "POSITIVE",
+          "_key": "мясо"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "окорок",
+          "type": "POSITIVE",
+          "_key": "окорок"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "охлажд",
+          "type": "POSITIVE",
+          "_key": "охлажд"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "охлажденн",
+          "type": "POSITIVE",
+          "_key": "охлажденн"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "печень",
+          "type": "POSITIVE",
+          "_key": "печень"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "почки",
+          "type": "POSITIVE",
+          "_key": "почки"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "ребра",
+          "type": "POSITIVE",
+          "_key": "ребра"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "рубец",
+          "type": "POSITIVE",
+          "_key": "рубец"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "с/м",
+          "type": "POSITIVE",
+          "_key": "с/м"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "салфетки",
+          "type": "NEGATIVE",
+          "_key": "салфетки"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "свинина",
+          "type": "POSITIVE",
+          "_key": "свинина"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "сердце",
+          "type": "POSITIVE",
+          "_key": "сердце"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "стакан",
+          "type": "NEGATIVE",
+          "_key": "стакан"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "стейк",
+          "type": "POSITIVE",
+          "_key": "стейк"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "субпродукты",
+          "type": "POSITIVE",
+          "_key": "субпродукты"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "телятина",
+          "type": "POSITIVE",
+          "_key": "телятина"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "тушка",
+          "type": "POSITIVE",
+          "_key": "тушка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "упаковка",
+          "type": "NEGATIVE",
+          "_key": "упаковка"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "фарш",
+          "type": "POSITIVE",
+          "_key": "фарш"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "ягненок",
+          "type": "POSITIVE",
+          "_key": "ягненок"
+        },
+        {
+          "category_code": "meat",
+          "keyword": "язык",
+          "type": "POSITIVE",
+          "_key": "язык"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "бедро",
+          "type": "POSITIVE",
+          "_key": "бедро"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "бройлер",
+          "type": "POSITIVE",
+          "_key": "бройлер"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "голень",
+          "type": "POSITIVE",
+          "_key": "голень"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "грудка",
+          "type": "POSITIVE",
+          "_key": "грудка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "гусь",
+          "type": "POSITIVE",
+          "_key": "гусь"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "гусятина",
+          "type": "POSITIVE",
+          "_key": "гусятина"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "зам",
+          "type": "POSITIVE",
+          "_key": "зам"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "заморож",
+          "type": "POSITIVE",
+          "_key": "заморож"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "замороженн",
+          "type": "POSITIVE",
+          "_key": "замороженн"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "индейка",
+          "type": "POSITIVE",
+          "_key": "индейка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "индейка филе",
+          "type": "POSITIVE",
+          "_key": "индейка филе"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "индюшатина",
+          "type": "POSITIVE",
+          "_key": "индюшатина"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "контейнер",
+          "type": "NEGATIVE",
+          "_key": "контейнер"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "коробка",
+          "type": "NEGATIVE",
+          "_key": "коробка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "крыло",
+          "type": "POSITIVE",
+          "_key": "крыло"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "крышка",
+          "type": "NEGATIVE",
+          "_key": "крышка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "куриное филе",
+          "type": "POSITIVE",
+          "_key": "куриное филе"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "куриный",
+          "type": "POSITIVE",
+          "_key": "куриный"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "курица",
+          "type": "POSITIVE",
+          "_key": "курица"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "мясо птицы",
+          "type": "POSITIVE",
+          "_key": "мясо птицы"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "одноразовый",
+          "type": "NEGATIVE",
+          "_key": "одноразовый"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "окороч",
+          "type": "POSITIVE",
+          "_key": "окороч"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "охлажд",
+          "type": "POSITIVE",
+          "_key": "охлажд"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "охлажденн",
+          "type": "POSITIVE",
+          "_key": "охлажденн"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "пакет",
+          "type": "NEGATIVE",
+          "_key": "пакет"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "перепел",
+          "type": "POSITIVE",
+          "_key": "перепел"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "перепелка",
+          "type": "POSITIVE",
+          "_key": "перепелка"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "перчатки",
+          "type": "NEGATIVE",
+          "_key": "перчатки"
+        },
+        {
+          "category_code": "poultry",
+          "keyword": "пленка",
+          "type": "NEGATIVE",
+          "_key": "пленка"
+        }
+      ],
+      "sample_cap": 500
+    },
+    "token_aliases": {
+      "count": 46,
+      "items": [
+        {
+          "field": "cut",
+          "raw": "филе",
+          "canonical": "fillet",
+          "_key": "филе"
+        },
+        {
+          "field": "cut",
+          "raw": "fillet",
+          "canonical": "fillet",
+          "_key": "fillet"
+        },
+        {
+          "field": "cut",
+          "raw": "стейк",
+          "canonical": "steak",
+          "_key": "стейк"
+        },
+        {
+          "field": "cut",
+          "raw": "steak",
+          "canonical": "steak",
+          "_key": "steak"
+        },
+        {
+          "field": "cut",
+          "raw": "тушка",
+          "canonical": "whole",
+          "_key": "тушка"
+        },
+        {
+          "field": "cut",
+          "raw": "цел",
+          "canonical": "whole",
+          "_key": "цел"
+        },
+        {
+          "field": "cut",
+          "raw": "whole",
+          "canonical": "whole",
+          "_key": "whole"
+        },
+        {
+          "field": "pit_flag",
+          "raw": "без кост",
+          "canonical": "without_pit",
+          "_key": "без кост"
+        },
+        {
+          "field": "pit_flag",
+          "raw": "без кости",
+          "canonical": "without_pit",
+          "_key": "без кости"
+        },
+        {
+          "field": "pit_flag",
+          "raw": "without pit",
+          "canonical": "without_pit",
+          "_key": "without pit"
+        },
+        {
+          "field": "pit_flag",
+          "raw": "с кост",
+          "canonical": "with_pit",
+          "_key": "с кост"
+        },
+        {
+          "field": "pit_flag",
+          "raw": "с костью",
+          "canonical": "with_pit",
+          "_key": "с костью"
+        },
+        {
+          "field": "pit_flag",
+          "raw": "with pit",
+          "canonical": "with_pit",
+          "_key": "with pit"
+        },
+        {
+          "field": "processing_state",
+          "raw": "вар",
+          "canonical": "boiled",
+          "_key": "вар"
+        },
+        {
+          "field": "processing_state",
+          "raw": "варен",
+          "canonical": "boiled",
+          "_key": "варен"
+        },
+        {
+          "field": "processing_state",
+          "raw": "boiled",
+          "canonical": "boiled",
+          "_key": "boiled"
+        },
+        {
+          "field": "processing_state",
+          "raw": "сыр",
+          "canonical": "raw",
+          "_key": "сыр"
+        },
+        {
+          "field": "processing_state",
+          "raw": "сырой",
+          "canonical": "raw",
+          "_key": "сырой"
+        },
+        {
+          "field": "processing_state",
+          "raw": "raw",
+          "canonical": "raw",
+          "_key": "raw"
+        },
+        {
+          "field": "processing_state",
+          "raw": "очищ",
+          "canonical": "cleaned",
+          "_key": "очищ"
+        },
+        {
+          "field": "processing_state",
+          "raw": "чищ",
+          "canonical": "cleaned",
+          "_key": "чищ"
+        },
+        {
+          "field": "processing_state",
+          "raw": "cleaned",
+          "canonical": "cleaned",
+          "_key": "cleaned"
+        },
+        {
+          "field": "processing_state",
+          "raw": "копч",
+          "canonical": "smoked",
+          "_key": "копч"
+        },
+        {
+          "field": "processing_state",
+          "raw": "smoked",
+          "canonical": "smoked",
+          "_key": "smoked"
+        },
+        {
+          "field": "processing_state",
+          "raw": "солен",
+          "canonical": "salted",
+          "_key": "солен"
+        },
+        {
+          "field": "processing_state",
+          "raw": "salted",
+          "canonical": "salted",
+          "_key": "salted"
+        },
+        {
+          "field": "processing_state",
+          "raw": "марин",
+          "canonical": "marinated",
+          "_key": "марин"
+        },
+        {
+          "field": "processing_state",
+          "raw": "marinated",
+          "canonical": "marinated",
+          "_key": "marinated"
+        },
+        {
+          "field": "skin_flag",
+          "raw": "без кожи",
+          "canonical": "skinless",
+          "_key": "без кожи"
+        },
+        {
+          "field": "skin_flag",
+          "raw": "skinless",
+          "canonical": "skinless",
+          "_key": "skinless"
+        },
+        {
+          "field": "skin_flag",
+          "raw": "с кожей",
+          "canonical": "skin_on",
+          "_key": "с кожей"
+        },
+        {
+          "field": "skin_flag",
+          "raw": "skin on",
+          "canonical": "skin_on",
+          "_key": "skin on"
+        },
+        {
+          "field": "state",
+          "raw": "охл",
+          "canonical": "chilled",
+          "_key": "охл"
+        },
+        {
+          "field": "state",
+          "raw": "охлажд",
+          "canonical": "chilled",
+          "_key": "охлажд"
+        },
+        {
+          "field": "state",
+          "raw": "охлажденн",
+          "canonical": "chilled",
+          "_key": "охлажденн"
+        },
+        {
+          "field": "state",
+          "raw": "охл.",
+          "canonical": "chilled",
+          "_key": "охл."
+        },
+        {
+          "field": "state",
+          "raw": "зам",
+          "canonical": "frozen",
+          "_key": "зам"
+        },
+        {
+          "field": "state",
+          "raw": "замор",
+          "canonical": "frozen",
+          "_key": "замор"
+        },
+        {
+          "field": "state",
+          "raw": "заморож",
+          "canonical": "frozen",
+          "_key": "заморож"
+        },
+        {
+          "field": "state",
+          "raw": "с/м",
+          "canonical": "frozen",
+          "_key": "с/м"
+        },
+        {
+          "field": "state",
+          "raw": "см",
+          "canonical": "frozen",
+          "_key": "см"
+        },
+        {
+          "field": "state",
+          "raw": "морож",
+          "canonical": "frozen",
+          "_key": "морож"
+        },
+        {
+          "field": "state",
+          "raw": "мор.",
+          "canonical": "frozen",
+          "_key": "мор."
+        },
+        {
+          "field": "state",
+          "raw": "свеж",
+          "canonical": "fresh",
+          "_key": "свеж"
+        },
+        {
+          "field": "state",
+          "raw": "свежий",
+          "canonical": "fresh",
+          "_key": "свежий"
+        },
+        {
+          "field": "state",
+          "raw": "fresh",
+          "canonical": "fresh",
+          "_key": "fresh"
+        }
+      ],
+      "sample_cap": 500
+    }
+  },
+  "category_summary": {
+    "strict_categories": [
+      "fish",
+      "fresh_produce",
+      "frozen_produce",
+      "meat",
+      "poultry",
+      "seafood"
+    ],
+    "soft_categories": [
+      "grocery",
+      "canned",
+      "drinks",
+      "bakery",
+      "desserts",
+      "sausages",
+      "frozen_semi"
+    ],
+    "must_matrix": [
+      {
+        "category_code": "bakery",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          }
+        ]
+      },
+      {
+        "category_code": "canned",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          }
+        ]
+      },
+      {
+        "category_code": "desserts",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          }
+        ]
+      },
+      {
+        "category_code": "drinks",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          }
+        ]
+      },
+      {
+        "category_code": "fish",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          },
+          {
+            "attribute_code": "brand",
+            "must_mode": "NO",
+            "role": "HYBRID"
+          },
+          {
+            "attribute_code": "country",
+            "must_mode": "NO",
+            "role": "HYBRID"
+          },
+          {
+            "attribute_code": "cut",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          },
+          {
+            "attribute_code": "glaze_percent",
+            "must_mode": "CONDITIONAL",
+            "role": "DETAIL"
+          },
+          {
+            "attribute_code": "processing_state",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          },
+          {
+            "attribute_code": "size_range_kg",
+            "must_mode": "CONDITIONAL",
+            "role": "CRITICAL"
+          },
+          {
+            "attribute_code": "state",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          }
+        ]
+      },
+      {
+        "category_code": "fresh_produce",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          }
+        ]
+      },
+      {
+        "category_code": "frozen_produce",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          }
+        ]
+      },
+      {
+        "category_code": "frozen_semi",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          }
+        ]
+      },
+      {
+        "category_code": "grocery",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          }
+        ]
+      },
+      {
+        "category_code": "meat",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          },
+          {
+            "attribute_code": "brand",
+            "must_mode": "NO",
+            "role": "HYBRID"
+          },
+          {
+            "attribute_code": "country",
+            "must_mode": "NO",
+            "role": "HYBRID"
+          },
+          {
+            "attribute_code": "cut",
+            "must_mode": "CONDITIONAL",
+            "role": "CRITICAL"
+          },
+          {
+            "attribute_code": "processing_state",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          },
+          {
+            "attribute_code": "size_range_kg",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          },
+          {
+            "attribute_code": "state",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          }
+        ]
+      },
+      {
+        "category_code": "poultry",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          }
+        ]
+      },
+      {
+        "category_code": "sausages",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "NO",
+            "role": "DETAIL"
+          }
+        ]
+      },
+      {
+        "category_code": "seafood",
+        "rules": [
+          {
+            "attribute_code": "base_product",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          },
+          {
+            "attribute_code": "brand",
+            "must_mode": "NO",
+            "role": "HYBRID"
+          },
+          {
+            "attribute_code": "caliber",
+            "must_mode": "CONDITIONAL",
+            "role": "CRITICAL"
+          },
+          {
+            "attribute_code": "country",
+            "must_mode": "NO",
+            "role": "HYBRID"
+          },
+          {
+            "attribute_code": "glaze_percent",
+            "must_mode": "CONDITIONAL",
+            "role": "DETAIL"
+          },
+          {
+            "attribute_code": "processing_state",
+            "must_mode": "CONDITIONAL",
+            "role": "CRITICAL"
+          },
+          {
+            "attribute_code": "state",
+            "must_mode": "ALWAYS",
+            "role": "CRITICAL"
+          }
+        ]
+      }
+    ],
+    "why": "STRICT: item hidden if required attributes missing. SOFT: unknown allowed, no hide for missing base_product."
+  }
+}
