@@ -473,6 +473,14 @@ MOCK_INN_DATA = {
     }
 }
 
+# ==================== HEALTH (for smoke/repro: backend version, no secrets) ====================
+
+@api_router.get("/health")
+async def health():
+    """Health check; returns build_sha so smoke can confirm backend version."""
+    return {"status": "ok", "build_sha": BUILD_SHA}
+
+
 # ==================== DEBUG/VERSION ROUTES ====================
 
 @api_router.get("/debug/version")
@@ -6850,6 +6858,30 @@ try:
 except ImportError as e:
     logging.warning(f"⚠️ BestPrice v12 router not available: {e}")
 
+# 500 handler: log trace_id, method, path, query, user, full traceback; response with trace_id only (no stack in body)
+@app.exception_handler(Exception)
+async def internal_error_handler(request: Request, exc: Exception):
+    trace_id = str(uuid.uuid4())
+    path = getattr(request.url, "path", "") if getattr(request, "url", None) else ""
+    method = getattr(request, "method", "?")
+    query = str(getattr(request.url, "query", "") or "") if getattr(request, "url", None) else ""
+    user_id = getattr(request.state, "user_id", None) if hasattr(request, "state") else None
+    role = getattr(request.state, "role", None) if hasattr(request, "state") else None
+    import traceback
+    tb = traceback.format_exc()
+    logging.error(
+        f"[500] trace_id={trace_id} method={method} path={path} query={query} user_id={user_id} role={role}\n{tb}"
+    )
+    is_dev = os.environ.get("ENV", "production").lower() in ("dev", "development", "local")
+    detail = "Internal server error"
+    if is_dev:
+        detail = str(exc)[:500]
+    return JSONResponse(
+        status_code=500,
+        content={"detail": detail, "trace_id": trace_id},
+    )
+
+
 # Deterministic 422 for validation errors: never return raw Pydantic arrays to UI
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
@@ -6902,6 +6934,8 @@ logger = logging.getLogger(__name__)
 async def startup_validation():
     """Run rules validation at server startup"""
     global _validation_report
+    cwd = os.getcwd()
+    logger.info("startup: commit=%s cwd=%s", BUILD_SHA, cwd)
     logger.info("🔍 Running rules validation at startup...")
     if SKIP_RULES_VALIDATION:
         logger.warning("BESTPRICE_SKIP_RULES_VALIDATION enabled – critical validation issues will be downgraded.")

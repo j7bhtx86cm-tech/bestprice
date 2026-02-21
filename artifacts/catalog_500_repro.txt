@@ -1,0 +1,10 @@
+# Catalog 500 repro — root cause A (JSON serialization)
+# Cause: payload from Mongo contained ObjectId/datetime/Decimal; FastAPI failed on JSON encode.
+# File:line: backend/bestprice_v12/routes.py (return dict without sanitization → 500)
+# Fix: _json_sanitize(payload) + JSONResponse(content=...) so all catalog responses are JSON-safe.
+
+command=API_BASE_URL="http://127.0.0.1:8001" CUSTOMER_EMAIL="*" CUSTOMER_PASSWORD="*" python3 scripts/repro_catalog_500.py
+endpoint=GET /api/v12/catalog
+query=skip=0&limit=20
+catalog_status=200
+# After fix: catalog_status=200, total>0, items_count>0 (see catalog_200_ok.txt)

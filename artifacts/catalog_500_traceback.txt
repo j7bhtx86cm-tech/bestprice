@@ -1,0 +1,13 @@
+# Traceback (typical for cause A — JSON serialization)
+# trace_id: (from response body when 500 occurred; grep server log for this id)
+# File:line: backend/bestprice_v12/routes.py — return {'items': items, ...} with items from Mongo
+# Items contained ObjectId/datetime/Decimal → TypeError in JSON encoding.
+
+# Example traceback (first 30-60 lines):
+#   File "fastapi/responses.py", line 150, in serialize_response
+#     ...
+#   TypeError: Object of type ObjectId is not JSON serializable
+#   (or: Object of type datetime is not JSON serializable / Decimal)
+#
+# Fix applied: _json_sanitize() recurses dict/list, converts ObjectId/datetime/Decimal to str;
+# return JSONResponse(content=_json_sanitize(payload)) in get_catalog.

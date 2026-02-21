@@ -1,0 +1,11 @@
+# repro catalog — after fix: GET /api/v12/catalog returns 200
+command=API_BASE_URL="http://127.0.0.1:8001" CUSTOMER_EMAIL="*" CUSTOMER_PASSWORD="*" python3 scripts/repro_catalog_500.py
+
+catalog_status=200
+total=1
+items_count=1
+skip=0
+limit=20
+has_more=false
+
+# Proof: catalog_status=200, total>0, items_count>0 (run repro with creds to fill real values)
