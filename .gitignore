@@ -56,6 +56,8 @@ venv/
 artifacts/*.log
 artifacts/*.pid
 artifacts/dev_backend_8001.*
+artifacts/core_engine_v1_locator.md
+artifacts/yesterday_locator_report.md
 
 # Development tools
 chainlit.md
