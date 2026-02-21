@@ -3,12 +3,12 @@ DB_NAME=test_database
 MONGO_URL=mongodb://localhost:27017
 SUPPLIER_EMAIL=su***@example.com
 MASTERS_INDEX_OK
-pipeline_run_id=b7171eda-b105-4c8b-8d09-1dc2f015a0dc
+pipeline_run_id=8540078e-b13a-4fd3-99ec-37be3eedb1c3
 status=OK
 items_flagged=3
 masters=3
-master_links=3
-master_market_snapshot_current=1
-sku_price_history=1
-master_market_history_daily=1
+master_links=6
+master_market_snapshot_current=2
+sku_price_history=2
+master_market_history_daily=2
 ✅ E2E_PIPELINE_OK
