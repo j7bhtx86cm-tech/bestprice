@@ -232,18 +232,16 @@ def main():
     print("sku_price_history=" + str(history_count))
     print("master_market_history_daily=" + str(daily_count))
 
-    # sku_price_history: 0 docs with sku_id null in scope
-    sku_id_null_count = db.sku_price_history.count_documents({
-        "ruleset_version_id": ruleset_version_id,
-        "supplier_id": supplier_id,
-        "sku_id": None,
-    })
-    sku_id_null_count += db.sku_price_history.count_documents({
-        "ruleset_version_id": ruleset_version_id,
-        "supplier_id": supplier_id,
-        "sku_id": {"$exists": False},
+    # sku_price_history: 0 docs with sku_id null or not ObjectId in scope
+    scope_filter = {"ruleset_version_id": ruleset_version_id, "supplier_id": supplier_id}
+    sku_id_null_count = db.sku_price_history.count_documents({**scope_filter, "sku_id": None})
+    sku_id_null_count += db.sku_price_history.count_documents({**scope_filter, "sku_id": {"$exists": False}})
+    sku_id_not_objectid_count = db.sku_price_history.count_documents({
+        **scope_filter,
+        "sku_id": {"$not": {"$type": "objectId"}},
     })
     print("sku_price_history_sku_id_null_count=%s" % sku_id_null_count)
+    print("sku_price_history_sku_id_not_objectid_count=%s" % sku_id_not_objectid_count)
 
     if masters_count == 0 or links_count == 0 or snapshot_count == 0:
         print("E2E_PIPELINE_FAIL: missing masters/links/snapshot")
@@ -253,6 +251,9 @@ def main():
         sys.exit(1)
     if sku_id_null_count != 0:
         print("E2E_PIPELINE_FAIL: sku_price_history has sku_id null in scope")
+        sys.exit(1)
+    if sku_id_not_objectid_count != 0:
+        print("E2E_PIPELINE_FAIL: sku_price_history has sku_id not ObjectId in scope")
         sys.exit(1)
 
     print("✅ E2E_PIPELINE_OK")

@@ -4,13 +4,14 @@ MONGO_URL=mongodb://localhost:27017
 SUPPLIER_EMAIL=su***@example.com
 MASTERS_INDEX_OK
 SKU_PRICE_HISTORY_INDEX_OK
-pipeline_run_id=97382407-c731-4348-8305-da5fbcc71c9a
+pipeline_run_id=bc5bf51c-8e42-420c-84b4-912725236fa8
 status=OK
 items_flagged=3
 masters=3
 master_links=6
 master_market_snapshot_current=2
-sku_price_history=1
+sku_price_history=3
 master_market_history_daily=2
 sku_price_history_sku_id_null_count=0
+sku_price_history_sku_id_not_objectid_count=0
 ✅ E2E_PIPELINE_OK

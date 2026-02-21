@@ -9,6 +9,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+try:
+    from bson import ObjectId
+except ImportError:
+    ObjectId = None
+
 logger = logging.getLogger(__name__)
 
 COLLECTION_RUNS = "pipeline_runs"
@@ -121,25 +126,34 @@ async def _step_market_snapshot(db, scope: Dict[str, Any], ruleset_version_id: A
 
 
 async def _step_history_rollup(db, scope: Dict[str, Any], ruleset_version_id: Any, trace_id: str) -> Dict[str, Any]:
-    """Write sku_price_history and master_market_history_daily. Idempotent per ruleset+supplier+date. sku_id never null."""
+    """Write sku_price_history (one per supplier_item, sku_id=supplier_item._id ObjectId) and master_market_history_daily. Idempotent per ruleset+supplier+date."""
     supplier_id = scope.get("supplier_company_id")
     if not supplier_id:
         return {"history": 0, "daily": 0, "error": "missing supplier_company_id"}
-    sku_id = supplier_id  # use supplier_id as sku_id for aggregate history; must never be null
-    if not sku_id:
-        logger.warning("history_skip_missing_sku_id supplier_id=%s", supplier_id)
-        return {"history": 0, "daily": 0, "skipped": "missing_sku_id"}
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     await db.sku_price_history.delete_many({"ruleset_version_id": ruleset_version_id, "supplier_id": supplier_id, "date": today})
     await db.master_market_history_daily.delete_many({"ruleset_version_id": ruleset_version_id, "supplier_id": supplier_id, "date": today})
-    await db.sku_price_history.insert_one({
-        "supplier_id": supplier_id,
-        "sku_id": sku_id,
-        "date": today,
-        "ruleset_version_id": ruleset_version_id,
-        "trace_id": trace_id,
-        "created_at": datetime.now(timezone.utc),
-    })
+
+    q = {"supplier_company_id": supplier_id, "active": True}
+    if scope.get("pricelist_id"):
+        q["price_list_id"] = scope["pricelist_id"]
+    cursor = db.supplier_items.find(q, {"_id": 1})
+    items = await cursor.to_list(length=10000)
+    history_inserted = 0
+    for it in items:
+        sku_id = it.get("_id")
+        if not sku_id or (ObjectId is not None and not isinstance(sku_id, ObjectId)):
+            logger.warning("history_skip_missing_sku_id supplier_id=%s item_id=%s", supplier_id, it.get("_id"))
+            continue
+        await db.sku_price_history.insert_one({
+            "supplier_id": supplier_id,
+            "sku_id": sku_id,
+            "date": today,
+            "ruleset_version_id": ruleset_version_id,
+            "trace_id": trace_id,
+            "created_at": datetime.now(timezone.utc),
+        })
+        history_inserted += 1
     await db.master_market_history_daily.insert_one({
         "ruleset_version_id": ruleset_version_id,
         "master_id": supplier_id,  # avoid unique index (ruleset_version_id, master_id, date) dup on null
