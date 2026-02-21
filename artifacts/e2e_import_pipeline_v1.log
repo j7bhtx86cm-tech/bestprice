@@ -1,0 +1,14 @@
+API_BASE_URL=http://127.0.0.1:8001
+DB_NAME=test_database
+MONGO_URL=mongodb://localhost:27017
+SUPPLIER_EMAIL=su***@example.com
+MASTERS_INDEX_OK
+pipeline_run_id=b7171eda-b105-4c8b-8d09-1dc2f015a0dc
+status=OK
+items_flagged=3
+masters=3
+master_links=3
+master_market_snapshot_current=1
+sku_price_history=1
+master_market_history_daily=1
+✅ E2E_PIPELINE_OK
