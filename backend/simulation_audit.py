@@ -12,12 +12,14 @@ from pathlib import Path
 from collections import Counter
 import sys
 
-# Add backend to path
-sys.path.insert(0, '/app/backend')
+# Ensure repo root on path so backend package resolves
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
-from universal_super_class_mapper import detect_super_class
-from product_core_classifier import detect_product_core
-from unit_normalizer import parse_pack_from_text, calculate_packs_needed, UnitType
+from backend.universal_super_class_mapper import detect_super_class
+from backend.product_core_classifier import detect_product_core
+from backend.pipeline.unit_normalizer import parse_pack_from_text, calculate_packs_needed, UnitType
 
 DB_NAME = os.environ.get('DB_NAME', 'test_database')
 db = MongoClient(os.environ.get('MONGO_URL'))[DB_NAME]

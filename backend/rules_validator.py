@@ -448,7 +448,7 @@ def validate_unit_normalizer() -> List[ValidationIssue]:
     issues = []
     
     try:
-        from unit_normalizer import parse_pack_from_text, UnitType
+        from backend.pipeline.unit_normalizer import parse_pack_from_text, UnitType
         
         # Test cases
         test_cases = [
@@ -478,7 +478,7 @@ def validate_unit_normalizer() -> List[ValidationIssue]:
         issues.append(ValidationIssue(
             severity='WARNING',
             category='unit_parser',
-            message=f'Cannot import unit_normalizer: {e}'
+            message=f'Cannot import backend.pipeline.unit_normalizer: {e}'
         ))
     except Exception as e:
         issues.append(ValidationIssue(

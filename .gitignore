@@ -52,6 +52,11 @@ __pycache__/
 venv/
 .venv/
 
+# Artifacts (selfcheck/uvicorn logs and PIDs)
+artifacts/*.log
+artifacts/*.pid
+artifacts/dev_backend_8001.*
+
 # Development tools
 chainlit.md
 .chainlit

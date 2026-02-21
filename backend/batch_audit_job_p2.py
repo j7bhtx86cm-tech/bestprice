@@ -4,11 +4,17 @@ P2 Batch Audit: Comprehensive system quality check
 Генерирует отчёты о качестве данных и matching
 """
 import os
+import sys
 import csv
 import json
 from pymongo import MongoClient
 from datetime import datetime
 from pathlib import Path
+
+# Ensure repo root on path so backend package resolves
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 DB_NAME = os.environ.get('DB_NAME', 'test_database')
 db = MongoClient(os.environ.get('MONGO_URL'))[DB_NAME]
@@ -64,7 +70,7 @@ for i, item in enumerate(items, 1):
     core_conf = item.get('product_core_conf', 0.0)
     
     # Pack info from unit_normalizer
-    from unit_normalizer import parse_pack_from_text
+    from backend.pipeline.unit_normalizer import parse_pack_from_text
     pack_info = parse_pack_from_text(name_raw)
     
     # Stats
@@ -147,7 +153,7 @@ with open(audit_dir / 'supplier_items_audit.csv', 'w', newline='', encoding='utf
     writer.writerow(['id', 'name_raw', 'super_class', 'product_core_id', 'core_conf', 'brand_id', 'pack_base_qty', 'unit_type', 'issue_codes'])
     
     for item in items:
-        from unit_normalizer import parse_pack_from_text
+        from backend.pipeline.unit_normalizer import parse_pack_from_text
         pack_info = parse_pack_from_text(item.get('name_raw', ''))
         
         issue_codes = []
@@ -183,7 +189,7 @@ with open(audit_dir / 'pack_outlier_report.csv', 'w', newline='', encoding='utf-
     writer = csv.writer(f)
     writer.writerow(['item_id', 'name_raw', 'pack_base_qty', 'unit_type', 'potential_packs_needed_for_1kg', 'issue'])
     
-    from unit_normalizer import parse_pack_from_text
+    from backend.pipeline.unit_normalizer import parse_pack_from_text
     outliers = []
     
     for item in items:

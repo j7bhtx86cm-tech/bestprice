@@ -30,7 +30,10 @@ API = f"{API_BASE_URL}/api"
 # Defaults match backend/seed_data.py (supplier1@example.com / password123)
 SUPPLIER_EMAIL = os.environ.get("SUPPLIER_EMAIL", "supplier1@example.com").strip()
 SUPPLIER_PASSWORD = os.environ.get("SUPPLIER_PASSWORD", "password123")
-PIPELINE_WAIT_TIMEOUT = int(os.environ.get("PIPELINE_WAIT_TIMEOUT", "120"))
+PIPELINE_WAIT_TIMEOUT = int(os.environ.get("PIPELINE_WAIT_TIMEOUT", "300"))
+PIPELINE_APPEAR_TIMEOUT = 60  # seconds to see at least one run doc (else PIPELINE_NOT_SCHEDULED)
+PIPELINE_EVENTS_TAIL_LINES = 50
+RECENT_RUNS_LIMIT = 5
 
 FIXTURE_CSV = """артикул;Наименование;цена;ед. изм
 e2ep1;E2E pipeline тест 1;100;шт
@@ -155,23 +158,114 @@ def main():
         print("import response missing pricelist_id")
         sys.exit(1)
 
+    raw = os.environ.get("AUTO_PIPELINE_AFTER_IMPORT")
+    if raw is None or str(raw).strip() == "":
+        enabled, raw_str = True, "missing"
+    else:
+        raw_str = str(raw).strip()
+        raw_lower = raw_str.lower()
+        enabled = raw_lower in ("1", "true", "yes", "on")
+        if raw_lower not in ("0", "false", "no", "off"):
+            pass  # keep enabled as computed
+    print("AUTO_PIPELINE_AFTER_IMPORT=%s (raw=%s)" % (str(enabled).lower(), raw_str or "missing"))
+
     client = MongoClient(get_mongo_url())
     db = client[get_db_name()]
-    deadline = time.monotonic() + PIPELINE_WAIT_TIMEOUT
     run_doc = None
+    query_run = {"$or": [{"import_id": pricelist_id}, {"batch_id": pricelist_id}]}
+
+    # Wait for pipeline run doc to appear (scheduled)
+    appear_deadline = time.monotonic() + PIPELINE_APPEAR_TIMEOUT
+    while time.monotonic() < appear_deadline:
+        run_doc = db.pipeline_runs.find_one(query_run)
+        if run_doc:
+            break
+        time.sleep(1)
+
+    def _recent_runs_line(cursor, label):
+        parts = []
+        for r in cursor:
+            parts.append("%s,%s,%s,%s" % (r.get("_id"), r.get("status"), r.get("created_at"), r.get("import_id") or r.get("batch_id") or ""))
+        print("%s=%s" % (label, ";".join(parts) if parts else ""))
+
+    def _pipeline_events_tail():
+        events_path = ROOT / "artifacts" / "pipeline_events.log"
+        if not events_path.exists():
+            print("pipeline_events_tail=(file not found)")
+            return
+        try:
+            with open(events_path, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+            tail = lines[-PIPELINE_EVENTS_TAIL_LINES:] if len(lines) > PIPELINE_EVENTS_TAIL_LINES else lines
+            print("pipeline_events_tail=%s" % "|".join(l.strip().replace("|", " ") for l in tail if l.strip()))
+        except Exception as e:
+            print("pipeline_events_tail=(read error: %s)" % e)
+
+    if not run_doc:
+        print("E2E_FAIL: PIPELINE_NOT_SCHEDULED")
+        _pipeline_events_tail()
+        count = db.pipeline_runs.count_documents(query_run)
+        print("pipeline_runs_found_count=%s" % count)
+        si = db.supplier_items.find_one({"price_list_id": pricelist_id}, {"supplier_company_id": 1})
+        sid = (si or {}).get("supplier_company_id")
+        if sid:
+            _recent_runs_line(db.pipeline_runs.find({"supplier_id": sid}).sort("created_at", -1).limit(RECENT_RUNS_LIMIT), "recent_runs_by_supplier")
+        _recent_runs_line(db.pipeline_runs.find({}).sort("created_at", -1).limit(RECENT_RUNS_LIMIT), "recent_runs_global")
+        sys.exit(1)
+
+    # If already FAIL, fail fast with details
+    if run_doc.get("status") == "FAIL":
+        steps = run_doc.get("steps") or []
+        failed_step = None
+        error_excerpt = ""
+        for s in steps:
+            if s.get("status") == "FAIL":
+                failed_step = s.get("name", "?")
+                error_excerpt = (s.get("error") or "")[:200]
+                break
+        print("pipeline_run_id=%s" % run_doc.get("_id"))
+        print("status=FAIL")
+        print("failed_step=%s" % (failed_step or "?"))
+        print("error_excerpt=%s" % error_excerpt)
+        print("E2E_FAIL: PIPELINE_FAIL step=%s error_excerpt=%s" % (failed_step or "?", error_excerpt[:100]))
+        sys.exit(1)
+
+    # Wait for status OK
+    deadline = time.monotonic() + PIPELINE_WAIT_TIMEOUT
     while time.monotonic() < deadline:
-        run_doc = db.pipeline_runs.find_one({"$or": [{"import_id": pricelist_id}, {"batch_id": pricelist_id}]})
+        run_doc = db.pipeline_runs.find_one(query_run)
         if run_doc:
             status = run_doc.get("status")
             if status == "OK":
                 break
             if status == "FAIL":
-                print("pipeline run status=FAIL", run_doc.get("steps", [])[-1:] if run_doc.get("steps") else "")
+                steps = run_doc.get("steps") or []
+                failed_step = None
+                error_excerpt = ""
+                for s in steps:
+                    if s.get("status") == "FAIL":
+                        failed_step = s.get("name", "?")
+                        error_excerpt = (s.get("error") or "")[:200]
+                        break
+                print("pipeline_run_id=%s" % run_doc.get("_id"))
+                print("status=FAIL")
+                print("failed_step=%s" % (failed_step or "?"))
+                print("error_excerpt=%s" % error_excerpt)
+                print("E2E_FAIL: PIPELINE_FAIL step=%s error_excerpt=%s" % (failed_step or "?", error_excerpt[:100]))
                 sys.exit(1)
         time.sleep(2)
 
     if not run_doc or run_doc.get("status") != "OK":
-        print("pipeline run not found or not OK within timeout")
+        # Timeout: diagnostics
+        print("E2E_FAIL: PIPELINE_TIMEOUT")
+        _pipeline_events_tail()
+        count = db.pipeline_runs.count_documents(query_run)
+        print("pipeline_runs_found_count=%s" % count)
+        si = db.supplier_items.find_one({"price_list_id": pricelist_id}, {"supplier_company_id": 1})
+        sid = (si or {}).get("supplier_company_id")
+        if sid:
+            _recent_runs_line(db.pipeline_runs.find({"supplier_id": sid}).sort("created_at", -1).limit(RECENT_RUNS_LIMIT), "recent_runs_by_supplier")
+        _recent_runs_line(db.pipeline_runs.find({}).sort("created_at", -1).limit(RECENT_RUNS_LIMIT), "recent_runs_global")
         sys.exit(1)
 
     run_id = run_doc.get("_id")

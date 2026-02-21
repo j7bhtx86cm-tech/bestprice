@@ -1,8 +1,6 @@
-timestamp=2026-02-19T17:23:33.361113+00:00
-mapping={'article': 'Код товара поставщика', 'unit': 'Единица', 'packQty': 'Количество в упаковки', 'minOrderQty': 'Минимальный заказ', 'price': 'Цена за единицу', 'productName': 'Название'}
+timestamp=2026-02-21T13:18:50.285107+00:00
+mapping={'article': 'артикул', 'price': 'цена', 'unit': 'ед. изм', 'productName': 'Наименование'}
 preview_first_5:
-  row0: name='Говядина вырезка 3/4 без цепи с/м в/у 1,6-2,3 кг ~30 кг/кор. №4238 PUL BR' supplier_code='2001.0'
-  row1: name='Говядина вырезка из лопатки из мр. гов. Black Angus б/к с/м инд. уп. ~1,2 кг ~5 ' supplier_code='2002.0'
-  row2: name='Говядина вырезка с/м в/у 1+ кг 11-15 кг/кор. ГОСТ 31797 Слуцкий МК РБ' supplier_code='2003.0'
-  row3: name='Говядина вырезка с/м инд. уп. 1,2+ кг 13-30 кг/кор. ГОСТ 31797-2012 Ижевск Этало' supplier_code='2004.0'
-  row4: name='Говядина глазной мускул зерн. откорм Black Angus с/м в/у ~2 кг ~22 кг/кор. Мират' supplier_code='2005.0'
+  row0: name='E2E pipeline тест 1' supplier_code='e2ep1'
+  row1: name='E2E pipeline тест 2' supplier_code='e2ep2'
+  row2: name='E2E pipeline тест 3' supplier_code='e2ep3'

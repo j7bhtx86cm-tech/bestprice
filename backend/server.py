@@ -22,9 +22,10 @@ import pandas as pd
 import io
 from enum import Enum
 import os
+import sys
 
-# P0: Unit normalization
-from unit_normalizer import (
+# P0: Unit normalization (canonical: backend.pipeline.unit_normalizer)
+from backend.pipeline.unit_normalizer import (
     parse_pack_from_text,
     calculate_packs_needed,
     format_pack_explanation,
@@ -34,10 +35,13 @@ from unit_normalizer import (
 )
 
 # P1: Rules Validation at startup
-from rules_validator import validate_all_rules, print_validation_report
+from backend.rules_validator import validate_all_rules, print_validation_report
 
 # Build info for debugging
 ROOT_DIR = Path(__file__).parent
+# Ensure backend dir on path so bestprice_v12 (pipeline_runner) is importable when running from repo root
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 BUILD_SHA = os.popen(f"cd {ROOT_DIR} && git rev-parse --short HEAD 2>/dev/null").read().strip() or "unknown"
 BUILD_TIME = datetime.now(timezone.utc).isoformat()
 
@@ -1820,6 +1824,86 @@ def _default_unit_from_row(row: dict, df_columns: List[str], mapping: dict) -> s
     return 'шт'
 
 
+async def _get_or_create_active_ruleset_version():
+    """Return active ruleset version doc with _id (ObjectId); create default if none."""
+    rv = await db.ruleset_versions.find_one({"is_active": True})
+    if rv:
+        return rv
+    now = datetime.now(timezone.utc)
+    ins = await db.ruleset_versions.insert_one({
+        "version_name": "v1",
+        "is_active": True,
+        "created_at": now,
+    })
+    return {"_id": ins.inserted_id, "version_name": "v1"}
+
+
+def _append_pipeline_event(line: str):
+    """Append one line to artifacts/pipeline_events.log for selfcheck to include in its log."""
+    try:
+        artifacts = ROOT_DIR.parent / "artifacts"
+        artifacts.mkdir(parents=True, exist_ok=True)
+        with open(artifacts / "pipeline_events.log", "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
+
+
+def _auto_pipeline_after_import_enabled() -> tuple:
+    """Return (enabled, raw_value). Missing/empty -> True. 1/true/yes/on -> True, 0/false/no/off -> False."""
+    raw = os.environ.get("AUTO_PIPELINE_AFTER_IMPORT")
+    if raw is None or str(raw).strip() == "":
+        return (True, "missing")
+    raw = str(raw).strip().lower()
+    if raw in ("1", "true", "yes", "on"):
+        return (True, raw)
+    if raw in ("0", "false", "no", "off"):
+        return (False, raw)
+    return (True, raw)  # unknown value -> treat as true
+
+
+async def _run_core_pipeline_background(supplier_id: str, pricelist_id: str):
+    """Background: run core pipeline after import. Log only; do not fail request."""
+    try:
+        from bestprice_v12.pipeline_runner import run_core_pipeline
+        rv = await _get_or_create_active_ruleset_version()
+        ruleset_version_id = rv["_id"]
+        version_name = rv.get("version_name") or "v1"
+        result = await run_core_pipeline(
+            db, ruleset_version_id,
+            {"supplier_company_id": supplier_id, "pricelist_id": pricelist_id},
+            import_id=pricelist_id,
+            version_name=version_name,
+        )
+        run_id = result.get("run_id")
+        logging.info("AUTO_PIPELINE_AFTER_IMPORT=1 pipeline_run_id=%s started status=%s version_name=%s", run_id, result.get("status"), version_name)
+        _append_pipeline_event(
+            "PIPELINE_RUN_CREATED run_id=%s import_id=%s supplier_id=%s ruleset_version_id=%s"
+            % (run_id, pricelist_id, supplier_id, ruleset_version_id)
+        )
+    except Exception as e:
+        logging.exception("pipeline after import failed: %s", e)
+
+
+async def _schedule_core_pipeline_after_import(supplier_id: str, pricelist_id: str):
+    """Schedule core pipeline (apply_rules → masters → snapshot → history) in background."""
+    enabled, raw = _auto_pipeline_after_import_enabled()
+    logging.info("AUTO_PIPELINE_AFTER_IMPORT=%s (raw=%s)", str(enabled).lower(), raw)
+    if not enabled:
+        logging.info("AUTO_PIPELINE_AFTER_IMPORT disabled, skipping pipeline schedule")
+        return
+    try:
+        rv = await _get_or_create_active_ruleset_version()
+        ruleset_version_id = rv["_id"]
+        trace_id = str(uuid.uuid4())
+        line = "PIPELINE_SCHEDULED import_id=%s supplier_id=%s ruleset_version_id=%s trace_id=%s" % (pricelist_id, supplier_id, ruleset_version_id, trace_id)
+        logging.info("%s", line)
+        _append_pipeline_event(line)
+        asyncio.create_task(_run_core_pipeline_background(supplier_id, pricelist_id))
+    except Exception as e:
+        logging.error("PIPELINE_SCHEDULE_FAILED import_id=%s reason=%s", pricelist_id, e)
+
+
 @api_router.post("/price-lists/import")
 async def import_price_list(
     request: Request,
@@ -2137,6 +2221,9 @@ async def import_price_list(
                     "columns": df_columns,
                 }
             )
+
+        # Auto pipeline after import (background)
+        await _schedule_core_pipeline_after_import(supplier_id, new_pricelist_id)
 
         return {
             "message": f"Successfully imported {imported_count} products",

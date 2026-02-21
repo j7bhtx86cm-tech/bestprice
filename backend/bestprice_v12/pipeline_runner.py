@@ -7,7 +7,11 @@ import hashlib
 import logging
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+# Repo root for pipeline_events.log (backend/bestprice_v12/pipeline_runner.py -> parent.parent.parent)
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 try:
     from bson import ObjectId
@@ -183,12 +187,14 @@ async def run_core_pipeline(
     run_id = str(uuid.uuid4())
     trace_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
+    supplier_id = scope.get("supplier_company_id")
     steps: List[Dict[str, Any]] = []
     doc = {
         "_id": run_id,
         "import_id": import_id or scope.get("pricelist_id"),
         "batch_id": import_id or scope.get("pricelist_id"),
         "ruleset_version_id": ruleset_version_id,
+        "supplier_id": supplier_id,
         "status": STATUS_RUNNING,
         "steps": steps,
         "created_at": now,
@@ -196,7 +202,20 @@ async def run_core_pipeline(
         "trace_id": trace_id,
     }
     await db[COLLECTION_RUNS].insert_one(doc)
-    logger.info("pipeline start run_id=%s trace_id=%s scope=%s version_name=%s", run_id, trace_id, scope, version_name or "")
+    logger.info(
+        "PIPELINE_RUN_CREATED run_id=%s import_id=%s supplier_id=%s ruleset_version_id=%s",
+        run_id, doc.get("import_id"), supplier_id, ruleset_version_id,
+    )
+    try:
+        events_file = _REPO_ROOT / "artifacts" / "pipeline_events.log"
+        events_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(events_file, "a", encoding="utf-8") as ef:
+            ef.write(
+                "PIPELINE_RUN_CREATED run_id=%s import_id=%s supplier_id=%s ruleset_version_id=%s\n"
+                % (run_id, doc.get("import_id"), supplier_id, ruleset_version_id)
+            )
+    except Exception:
+        pass
 
     step_names = [
         ("apply_rules_v1", _step_apply_rules),
