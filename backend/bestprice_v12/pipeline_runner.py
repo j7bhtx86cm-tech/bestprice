@@ -114,10 +114,19 @@ async def _step_build_masters(db, scope: Dict[str, Any], ruleset_version_id: Any
 
 
 async def _step_market_snapshot(db, scope: Dict[str, Any], ruleset_version_id: Any, trace_id: str) -> Dict[str, Any]:
-    """Write master_market_snapshot_current for scope."""
+    """Write master_market_snapshot_current for scope. Idempotent: delete existing for this ruleset+supplier then insert."""
     supplier_id = scope.get("supplier_company_id")
     if not supplier_id:
         return {"count": 0, "error": "missing supplier_company_id"}
+    # Unique index is (ruleset_version_id, master_id). We insert without master_id (null). Remove any existing doc for this ruleset+supplier or with null master_id.
+    await db.master_market_snapshot_current.delete_many({
+        "ruleset_version_id": ruleset_version_id,
+        "$or": [
+            {"supplier_id": supplier_id},
+            {"master_id": None},
+            {"master_id": {"$exists": False}},
+        ],
+    })
     snap_id = str(uuid.uuid4())
     await db.master_market_snapshot_current.insert_one({
         "id": snap_id,

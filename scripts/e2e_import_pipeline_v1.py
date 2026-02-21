@@ -126,6 +126,30 @@ def main():
         sys.exit(1)
     print("SKU_PRICE_HISTORY_INDEX_OK")
 
+    # Preflight: supplier user must have company (type=supplier) so import does not get 404 Company not found
+    try:
+        client = MongoClient(get_mongo_url())
+        db_pre = client[get_db_name()]
+        user = db_pre.users.find_one({"email": SUPPLIER_EMAIL}, {"_id": 0, "id": 1})
+        has_user = user is not None
+        company_id = user.get("companyId") if user else None
+        company = db_pre.companies.find_one({"userId": user["id"]}, {"_id": 0, "id": 1, "type": 1}) if user else None
+        has_company = company is not None
+        company_type = company.get("type") if company else None
+        if not user or not company or company_type != "supplier":
+            diag = "email=%s user_found=%s company_id=%s company_found=%s company_type=%s" % (
+                _mask_email(SUPPLIER_EMAIL), has_user, bool(company_id), has_company, company_type)
+            log_path = ROOT / "artifacts" / "e2e_import_pipeline_v1.log"
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(log_path, "a", encoding="utf-8") as lf:
+                lf.write("E2E_FAIL: SUPPLIER_COMPANY_NOT_FOUND %s\n" % diag)
+            print("E2E_FAIL: SUPPLIER_COMPANY_NOT_FOUND")
+            print(diag)
+            sys.exit(1)
+    except Exception as e:
+        print("E2E_FAIL: SUPPLIER_COMPANY_PREFLIGHT_ERROR %s" % str(e)[:100])
+        sys.exit(1)
+
     if not SUPPLIER_EMAIL or not SUPPLIER_PASSWORD:
         print("Set SUPPLIER_EMAIL and SUPPLIER_PASSWORD (e.g. in backend/.env or .env)")
         sys.exit(1)

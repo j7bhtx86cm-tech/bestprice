@@ -107,6 +107,7 @@ def main():
                     pass
             except Exception:
                 pass
+        LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(LOG_FILE, "w", encoding="utf-8") as logf:
             # --- Backend ready ---
             if wait_backend_ready(BACKEND_URL, timeout_s=BACKEND_READY_TIMEOUT):
@@ -162,7 +163,13 @@ def main():
             if E2E_OK_MARKER in content:
                 final_result = (None, 0)
             else:
-                final_result = ("E2E_NOT_OK", 1)
+                reason = "E2E_NOT_OK"
+                for line in reversed(content.splitlines()):
+                    line = line.strip()
+                    if line.startswith("E2E_FAIL:"):
+                        reason = line[:200]
+                        break
+                final_result = (reason, 1)
 
     except Exception as e:
         final_result = (str(e)[:200], 1)
@@ -206,7 +213,10 @@ def main():
     if code == 0:
         print("✅ CORE_ENGINE_OK")
     else:
-        print("❌ CORE_ENGINE_FAIL: %s" % (msg or "E2E_NOT_OK"))
+        out_msg = (msg or "E2E_NOT_OK").strip()
+        if not out_msg.startswith("E2E_FAIL:"):
+            out_msg = "E2E_FAIL: %s" % out_msg
+        print("❌ CORE_ENGINE_FAIL: %s" % out_msg)
     sys.exit(code)
 
 
