@@ -86,6 +86,20 @@ from .routes_modules import (
 router = APIRouter(prefix="/v12", tags=["BestPrice v12"])
 
 
+def _json_sanitize(obj):
+    """Mongo docs → JSON-safe: ObjectId/datetime/Decimal → str (recursive dict/list)."""
+    if isinstance(obj, dict):
+        return {k: _json_sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_json_sanitize(x) for x in obj]
+    if hasattr(obj, "isoformat") and callable(getattr(obj, "isoformat")):
+        return obj.isoformat()
+    tname = type(obj).__name__
+    if tname in ("ObjectId", "Decimal"):
+        return str(obj)
+    return obj
+
+
 # === INITIALIZE MODULAR ROUTERS ===
 # Note: DB initialization happens in get_db() on first call
 # The modular routers will be included after main router setup
@@ -422,13 +436,14 @@ async def get_catalog(
         sid = item.get('supplier_company_id')
         item['supplier_name'] = companies.get(sid, sid[:8] + '...' if sid else 'Unknown')
     
-    return {
+    payload = {
         'items': items,
         'total': total,
         'skip': skip,
         'limit': limit,
         'has_more': skip + len(items) < total
     }
+    return JSONResponse(content=_json_sanitize(payload))
 
 
 @router.get("/search/quick", summary="Быстрый поиск по lemma_tokens")
