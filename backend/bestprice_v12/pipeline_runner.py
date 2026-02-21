@@ -42,14 +42,14 @@ async def _step_apply_rules(db, scope: Dict[str, Any], trace_id: str) -> Dict[st
     return {"ok": update.modified_count, "matched": update.matched_count}
 
 
-def _master_fingerprint(supplier_id: str, supplier_item_id: str, ruleset_version_id: str, name_raw: Optional[str] = None) -> str:
-    """Stable fingerprint for master; never null. Fallback from stable fields."""
+def _master_fingerprint(supplier_id: str, supplier_item_id: str, ruleset_version_id: Any, name_raw: Optional[str] = None) -> str:
+    """Stable fingerprint for master; never null. Fallback from stable fields. ruleset_version_id can be ObjectId or str."""
     raw = f"{ruleset_version_id}|{supplier_id}|{supplier_item_id}|{(name_raw or '')}"
     h = hashlib.sha1(raw.encode("utf-8")).hexdigest()
     return f"fallback|{h}"
 
 
-async def _step_build_masters(db, scope: Dict[str, Any], ruleset_version_id: str, trace_id: str) -> Dict[str, Any]:
+async def _step_build_masters(db, scope: Dict[str, Any], ruleset_version_id: Any, trace_id: str) -> Dict[str, Any]:
     """Create masters and master_links for supplier items in scope. Idempotent per supplier+ruleset."""
     supplier_id = scope.get("supplier_company_id")
     pricelist_id = scope.get("pricelist_id")
@@ -76,8 +76,8 @@ async def _step_build_masters(db, scope: Dict[str, Any], ruleset_version_id: str
             continue
         name_raw = (it.get("name_raw") or "").strip()
         fingerprint = _master_fingerprint(supplier_id, si_id, ruleset_version_id, name_raw)
-        if not fingerprint or not isinstance(fingerprint, str):
-            logger.warning("skipped master due to missing fingerprint fields supplier_item_id=%s", si_id)
+        if not fingerprint or not isinstance(fingerprint, str) or fingerprint.strip() == "":
+            logger.warning("skipped master: fingerprint missing supplier_item_id=%s", si_id)
             skipped += 1
             continue
         master_id = str(uuid.uuid4())
@@ -104,7 +104,7 @@ async def _step_build_masters(db, scope: Dict[str, Any], ruleset_version_id: str
     return {"masters": masters_created, "links": links_created, "skipped": skipped}
 
 
-async def _step_market_snapshot(db, scope: Dict[str, Any], ruleset_version_id: str, trace_id: str) -> Dict[str, Any]:
+async def _step_market_snapshot(db, scope: Dict[str, Any], ruleset_version_id: Any, trace_id: str) -> Dict[str, Any]:
     """Write master_market_snapshot_current for scope."""
     supplier_id = scope.get("supplier_company_id")
     if not supplier_id:
@@ -120,14 +120,21 @@ async def _step_market_snapshot(db, scope: Dict[str, Any], ruleset_version_id: s
     return {"count": 1}
 
 
-async def _step_history_rollup(db, scope: Dict[str, Any], ruleset_version_id: str, trace_id: str) -> Dict[str, Any]:
-    """Write sku_price_history and master_market_history_daily."""
+async def _step_history_rollup(db, scope: Dict[str, Any], ruleset_version_id: Any, trace_id: str) -> Dict[str, Any]:
+    """Write sku_price_history and master_market_history_daily. Idempotent per ruleset+supplier+date. sku_id never null."""
     supplier_id = scope.get("supplier_company_id")
     if not supplier_id:
         return {"history": 0, "daily": 0, "error": "missing supplier_company_id"}
+    sku_id = supplier_id  # use supplier_id as sku_id for aggregate history; must never be null
+    if not sku_id:
+        logger.warning("history_skip_missing_sku_id supplier_id=%s", supplier_id)
+        return {"history": 0, "daily": 0, "skipped": "missing_sku_id"}
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    await db.sku_price_history.delete_many({"ruleset_version_id": ruleset_version_id, "supplier_id": supplier_id, "date": today})
+    await db.master_market_history_daily.delete_many({"ruleset_version_id": ruleset_version_id, "supplier_id": supplier_id, "date": today})
     await db.sku_price_history.insert_one({
         "supplier_id": supplier_id,
+        "sku_id": sku_id,
         "date": today,
         "ruleset_version_id": ruleset_version_id,
         "trace_id": trace_id,
@@ -135,6 +142,7 @@ async def _step_history_rollup(db, scope: Dict[str, Any], ruleset_version_id: st
     })
     await db.master_market_history_daily.insert_one({
         "ruleset_version_id": ruleset_version_id,
+        "master_id": supplier_id,  # avoid unique index (ruleset_version_id, master_id, date) dup on null
         "supplier_id": supplier_id,
         "date": today,
         "trace_id": trace_id,
@@ -147,12 +155,14 @@ async def _step_history_rollup(db, scope: Dict[str, Any], ruleset_version_id: st
 
 async def run_core_pipeline(
     db,
-    ruleset_version_id: str,
+    ruleset_version_id: Any,
     scope: Dict[str, Any],
     import_id: Optional[str] = None,
+    version_name: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Run: apply_rules → build_masters → market_snapshot → history_rollup.
+    ruleset_version_id must be ObjectId (_id from ruleset_versions).
     scope: { supplier_company_id, pricelist_id? }
     Creates pipeline_runs doc; returns run_id and status.
     """
@@ -172,7 +182,7 @@ async def run_core_pipeline(
         "trace_id": trace_id,
     }
     await db[COLLECTION_RUNS].insert_one(doc)
-    logger.info("pipeline start run_id=%s trace_id=%s scope=%s", run_id, trace_id, scope)
+    logger.info("pipeline start run_id=%s trace_id=%s scope=%s version_name=%s", run_id, trace_id, scope, version_name or "")
 
     step_names = [
         ("apply_rules_v1", _step_apply_rules),
@@ -216,5 +226,5 @@ async def run_core_pipeline(
         {"_id": run_id},
         {"$set": {"status": STATUS_OK, "steps": steps, "updated_at": datetime.now(timezone.utc)}},
     )
-    logger.info("pipeline ok run_id=%s trace_id=%s", run_id, trace_id)
+    logger.info("pipeline ok run_id=%s trace_id=%s version_name=%s", run_id, trace_id, version_name or "")
     return {"run_id": run_id, "status": STATUS_OK, "trace_id": trace_id}

@@ -84,6 +84,27 @@ def _ensure_masters_index() -> bool:
         return False
 
 
+def _ensure_sku_price_history_index() -> bool:
+    """Run ensure_sku_price_history_unique_index.py; return True if SKU_PRICE_HISTORY_INDEX_OK seen."""
+    script = ROOT / "scripts" / "ensure_sku_price_history_unique_index.py"
+    try:
+        out = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        combined = (out.stdout or "") + (out.stderr or "")
+        if "SKU_PRICE_HISTORY_INDEX_OK" in combined:
+            return True
+        print("ensure_sku_price_history_index output:", combined[:500])
+        return False
+    except Exception as e:
+        print("ensure_sku_price_history_index failed:", e)
+        return False
+
+
 def main():
     db_name = get_db_name()
     mongo_url = get_mongo_url()
@@ -92,11 +113,15 @@ def main():
     print("MONGO_URL=" + _mask_url(mongo_url))
     print("SUPPLIER_EMAIL=" + _mask_email(SUPPLIER_EMAIL))
 
-    # 1) Ensure partial unique index before import
+    # 1) Ensure partial unique indexes before import
     if not _ensure_masters_index():
         print("E2E_FAIL: MASTERS_INDEX_OK not found (run scripts/ensure_masters_partial_unique_index.py)")
         sys.exit(1)
     print("MASTERS_INDEX_OK")
+    if not _ensure_sku_price_history_index():
+        print("E2E_FAIL: SKU_PRICE_HISTORY_INDEX_OK not found (run scripts/ensure_sku_price_history_unique_index.py)")
+        sys.exit(1)
+    print("SKU_PRICE_HISTORY_INDEX_OK")
 
     if not SUPPLIER_EMAIL or not SUPPLIER_PASSWORD:
         print("Set SUPPLIER_EMAIL and SUPPLIER_PASSWORD (e.g. in backend/.env or .env)")
@@ -150,7 +175,10 @@ def main():
         sys.exit(1)
 
     run_id = run_doc.get("_id")
-    ruleset_version_id = run_doc.get("ruleset_version_id") or "v1"
+    ruleset_version_id = run_doc.get("ruleset_version_id")
+    if not ruleset_version_id:
+        print("E2E_PIPELINE_FAIL: no ruleset_version_id in pipeline run")
+        sys.exit(1)
     si = db.supplier_items.find_one({"price_list_id": pricelist_id}, {"supplier_company_id": 1})
     supplier_id = (si or {}).get("supplier_company_id")
     if not supplier_id:
@@ -204,11 +232,27 @@ def main():
     print("sku_price_history=" + str(history_count))
     print("master_market_history_daily=" + str(daily_count))
 
+    # sku_price_history: 0 docs with sku_id null in scope
+    sku_id_null_count = db.sku_price_history.count_documents({
+        "ruleset_version_id": ruleset_version_id,
+        "supplier_id": supplier_id,
+        "sku_id": None,
+    })
+    sku_id_null_count += db.sku_price_history.count_documents({
+        "ruleset_version_id": ruleset_version_id,
+        "supplier_id": supplier_id,
+        "sku_id": {"$exists": False},
+    })
+    print("sku_price_history_sku_id_null_count=%s" % sku_id_null_count)
+
     if masters_count == 0 or links_count == 0 or snapshot_count == 0:
         print("E2E_PIPELINE_FAIL: missing masters/links/snapshot")
         sys.exit(1)
     if history_count == 0 and daily_count == 0:
         print("E2E_PIPELINE_FAIL: no history/daily")
+        sys.exit(1)
+    if sku_id_null_count != 0:
+        print("E2E_PIPELINE_FAIL: sku_price_history has sku_id null in scope")
         sys.exit(1)
 
     print("✅ E2E_PIPELINE_OK")
