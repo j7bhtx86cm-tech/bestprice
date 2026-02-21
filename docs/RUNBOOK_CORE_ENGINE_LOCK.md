@@ -64,6 +64,16 @@ python3 scripts/dev/stop_backend_8001.py
 
 ---
 
+## Восстановление dev-логинов
+
+Чтобы логин в UI работал для Integrita / Romax / Restaurant (и smoke печатал SUPPLIER_LOGIN_OK и RESTAURANT_LOGIN_OK):
+
+1. `python3 scripts/dev/ensure_auth_fixtures.py`
+2. `python3 scripts/dev/auth_smoke_v2.py`
+3. UI: `/supplier/auth` и обычный логин (или страница входа ресторана).
+
+---
+
 ## AUTO_PIPELINE_AFTER_IMPORT
 
 - **Как выключить:** `AUTO_PIPELINE_AFTER_IMPORT=false`
