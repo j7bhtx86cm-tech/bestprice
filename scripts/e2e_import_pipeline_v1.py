@@ -27,9 +27,9 @@ except Exception:
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8001").rstrip("/")
 API = f"{API_BASE_URL}/api"
-# Defaults match backend/seed_data.py (supplier1@example.com / password123)
-SUPPLIER_EMAIL = os.environ.get("SUPPLIER_EMAIL", "supplier1@example.com").strip()
-SUPPLIER_PASSWORD = os.environ.get("SUPPLIER_PASSWORD", "password123")
+# Default: Integrita baseline (integrita.supplier@example.com / Integrita#2026)
+SUPPLIER_EMAIL = os.environ.get("SUPPLIER_EMAIL", "integrita.supplier@example.com").strip()
+SUPPLIER_PASSWORD = os.environ.get("SUPPLIER_PASSWORD", "Integrita#2026")
 PIPELINE_WAIT_TIMEOUT = int(os.environ.get("PIPELINE_WAIT_TIMEOUT", "300"))
 PIPELINE_APPEAR_TIMEOUT = 60  # seconds to see at least one run doc (else PIPELINE_NOT_SCHEDULED)
 PIPELINE_EVENTS_TAIL_LINES = 50

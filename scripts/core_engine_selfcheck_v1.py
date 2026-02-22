@@ -6,6 +6,7 @@ Core Engine v1 — one-command selfcheck (self-contained).
 - Always stops backend in finally (stop_backend_8001.py).
 - Stdout: exactly one line — ✅ CORE_ENGINE_OK or ❌ CORE_ENGINE_FAIL: <reason>.
 """
+import json
 import os
 import subprocess
 import sys
@@ -25,6 +26,35 @@ BACKEND_URL = "http://127.0.0.1:8001"
 BACKEND_READY_TIMEOUT = 20
 E2E_POLL_INTERVAL = 0.5
 TERM_WAIT_SEC = 5
+
+# Baseline supplier for selfcheck (never use supplier1@example.com)
+DEFAULT_SUPPLIER_EMAIL = "integrita.supplier@example.com"
+DEFAULT_SUPPLIER_PASSWORD = "Integrita#2026"
+
+
+def supplier_auth_precheck(logf, email: str, password: str) -> bool:
+    """POST /api/auth/login; return True if 200, else log reason and return False."""
+    try:
+        req = urllib.request.Request(
+            BACKEND_URL.rstrip("/") + "/api/auth/login",
+            data=json.dumps({"email": email, "password": password}).encode("utf-8"),
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as r:
+            if r.status == 200:
+                return True
+            logf.write("SUPPLIER_AUTH_PRECHECK status=%s\n" % r.status)
+            logf.flush()
+            return False
+    except urllib.error.HTTPError as e:
+        logf.write("SUPPLIER_AUTH_PRECHECK fail status=%s body=%s\n" % (e.code, (e.read().decode(errors="replace")[:200])))
+        logf.flush()
+        return False
+    except Exception as e:
+        logf.write("SUPPLIER_AUTH_PRECHECK error %s\n" % str(e)[:200])
+        logf.flush()
+        return False
 
 
 def wait_backend_ready(url: str, timeout_s: int = 20) -> bool:
@@ -125,6 +155,28 @@ def main():
                     final_result = ("BACKEND_NOT_READY", 1)
 
             if final_result is None:
+                # Resolve supplier credentials: default Integrita (never supplier1@example.com)
+                supplier_email = os.environ.get("SUPPLIER_EMAIL", "").strip()
+                supplier_password = os.environ.get("SUPPLIER_PASSWORD", "")
+                if not supplier_email:
+                    supplier_email = DEFAULT_SUPPLIER_EMAIL
+                    supplier_password = DEFAULT_SUPPLIER_PASSWORD
+                    os.environ["SUPPLIER_EMAIL"] = supplier_email
+                    os.environ["SUPPLIER_PASSWORD"] = supplier_password
+                    logf.write("SELFCHK_SUPPLIER_EMAIL=integrita.supplier@example.com (default)\n")
+                else:
+                    if not supplier_password:
+                        supplier_password = os.environ.get("SUPPLIER_PASSWORD", DEFAULT_SUPPLIER_PASSWORD)
+                    logf.write("SELFCHK_SUPPLIER_EMAIL=<from env>\n")
+                logf.flush()
+
+                # Pre-check: supplier auth must succeed before long E2E
+                if not supplier_auth_precheck(logf, supplier_email, supplier_password):
+                    logf.write("SUPPLIER_AUTH_FAIL\n")
+                    logf.flush()
+                    final_result = ("SUPPLIER_AUTH_FAIL", 1)
+
+            if final_result is None:
                 logf.write("E2E_STARTED\n")
                 logf.flush()
 
@@ -214,9 +266,12 @@ def main():
         print("✅ CORE_ENGINE_OK")
     else:
         out_msg = (msg or "E2E_NOT_OK").strip()
-        if not out_msg.startswith("E2E_FAIL:"):
-            out_msg = "E2E_FAIL: %s" % out_msg
-        print("❌ CORE_ENGINE_FAIL: %s" % out_msg)
+        if out_msg == "SUPPLIER_AUTH_FAIL":
+            print("❌ CORE_ENGINE_FAIL: SUPPLIER_AUTH_FAIL")
+        elif not out_msg.startswith("E2E_FAIL:"):
+            print("❌ CORE_ENGINE_FAIL: E2E_FAIL: %s" % out_msg)
+        else:
+            print("❌ CORE_ENGINE_FAIL: %s" % out_msg)
     sys.exit(code)
 
 
