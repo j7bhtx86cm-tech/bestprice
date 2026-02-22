@@ -11,7 +11,7 @@ FastAPI роутер для v12 функционала
 
 import logging
 import re
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -1224,7 +1224,7 @@ class CheckoutRequest(BaseModel):
 @router.post("/cart/checkout", summary="Подтвердить и создать заказы")
 async def checkout_cart(
     request: CheckoutRequest,
-    user_id: str = Query(..., description="ID пользователя")
+    user_id: str = Query(None, description="ID пользователя"),
 ):
     """
     Финализирует корзину и создаёт заказы.
@@ -1239,9 +1239,15 @@ async def checkout_cart(
     """
     import uuid as uuid_module
     
+    if not (user_id or "").strip():
+        raise HTTPException(status_code=400, detail="user_id required")
+    plan_id_val = (request.plan_id or "").strip()
+    if not plan_id_val:
+        raise HTTPException(status_code=400, detail="plan_id required")
+    
     db = get_db()
     
-    logger.info(f"=== CHECKOUT START for user {user_id}, plan_id={request.plan_id} ===")
+    logger.info(f"=== CHECKOUT START for user {user_id}, plan_id={plan_id_val} ===")
     
     from .plan_snapshot import (
         load_plan_snapshot, validate_cart_unchanged, 
@@ -1249,15 +1255,11 @@ async def checkout_cart(
     )
     
     # 1. Загружаем snapshot плана
-    plan_data, error = load_plan_snapshot(db, request.plan_id, user_id)
+    plan_data, error = load_plan_snapshot(db, plan_id_val, user_id)
     
     if error:
         logger.warning(f"Plan snapshot load failed: {error}")
-        return {
-            'status': 'error',
-            'code': 'PLAN_NOT_FOUND',
-            'message': error
-        }
+        raise HTTPException(status_code=404, detail="plan not found")
     
     # 2. Проверяем что корзина не изменилась
     saved_hash = plan_data.get('cart_hash', '')
@@ -1294,76 +1296,84 @@ async def checkout_cart(
             'message': 'План пуст. Добавьте товары в корзину.'
         }
     
-    # 4. Создаём заказы из сохранённого плана
-    created_orders = []
-    total_amount = 0
+    # Customer company for order (Restaurant)
+    company = db.companies.find_one({'userId': user_id}, {'_id': 0, 'id': 1})
+    if not company:
+        user_doc = db.users.find_one({'id': user_id}, {'_id': 0, 'companyId': 1})
+        if user_doc and user_doc.get('companyId'):
+            company = {'id': user_doc['companyId']}
+    if not company or not company.get('id'):
+        raise HTTPException(status_code=404, detail="customer company not found")
+    customer_company_id = company['id']
+
+    # 4. Create order via orders_service (DRAFT → add items → submit → SENT_TO_SUPPLIER)
+    try:
+        from .orders_service import (
+            create_order,
+            add_order_item,
+            submit_order,
+        )
+        order = create_order(db, customer_company_id, user_id)
+        order_id = order['id']
+        total_amount = 0
+        for supplier_data in suppliers:
+            supplier_id = supplier_data.get('supplier_id')
+            if not supplier_id:
+                continue
+            supplier_subtotal = supplier_data.get('subtotal', 0)
+            total_amount += supplier_subtotal
+            for item in supplier_data.get('items', []):
+                name_snapshot = item.get('product_name', '') or 'Товар'
+                qty = float(item.get('final_qty', 0) or 0)
+                if qty <= 0:
+                    continue
+                unit = 'кг' if item.get('unit_type') == 'WEIGHT' else 'л' if item.get('unit_type') == 'VOLUME' else 'шт'
+                supplier_item_id = item.get('supplier_item_id') or None
+                add_order_item(db, order_id, supplier_id, name_snapshot, qty, unit=unit, supplier_item_id=supplier_item_id)
+        submit_result = submit_order(db, order_id, user_id)
+        suppliers_count = submit_result.get('suppliers_count', 0)
+        items_count = submit_result.get('items_count', 0)
+    except Exception as e:
+        logger.exception("Orders service checkout failed: %s", e)
+        return {
+            'status': 'error',
+            'code': 'CHECKOUT_FAILED',
+            'message': str(e)[:200]
+        }
     
     try:
+        created_orders = []
         for supplier_data in suppliers:
-            order_items = []
-            
-            for item in supplier_data.get('items', []):
-                order_items.append({
-                    'productName': item.get('product_name', ''),
-                    'article': item.get('supplier_item_id', ''),
-                    'quantity': item.get('final_qty', 0),
-                    'price': item.get('price', 0),
-                    'unit': 'кг' if item.get('unit_type') == 'WEIGHT' else 'л' if item.get('unit_type') == 'VOLUME' else 'шт',
-                    'flags': item.get('flags', []),
-                    'requested_qty': item.get('requested_qty', 0),
-                    'supplier_changed': item.get('supplier_changed', False),
-                    'brand_changed': item.get('brand_changed', False),
-                    'qty_changed_by_topup': item.get('qty_changed_by_topup', False),
-                })
-            
-            order_id = str(uuid_module.uuid4())
-            supplier_subtotal = supplier_data.get('subtotal', 0)
-            
-            order_data = {
-                'id': order_id,
-                'supplier_company_id': supplier_data.get('supplier_id'),
-                'customer_user_id': user_id,
-                'amount': supplier_subtotal,
-                'items': order_items,
-                'status': 'pending',
-                'delivery_address_id': request.delivery_address_id,
-                'plan_id': request.plan_id,  # Ссылка на план
-                'created_at': datetime.now(timezone.utc).isoformat(),
-            }
-            
-            # Сохраняем в orders_v12 (основная коллекция заказов)
-            db.orders_v12.insert_one(order_data)
-            logger.info(f"Created order {order_id} for supplier {supplier_data.get('supplier_name')}, amount={supplier_subtotal}")
-            
-            total_amount += supplier_subtotal
-            
             created_orders.append({
                 'id': order_id,
                 'supplier_id': supplier_data.get('supplier_id'),
                 'supplier_name': supplier_data.get('supplier_name'),
-                'amount': supplier_subtotal,
-                'items_count': len(order_items),
+                'amount': supplier_data.get('subtotal', 0),
+                'items_count': len(supplier_data.get('items', [])),
             })
         
-        # 5. Очищаем корзину ТОЛЬКО после успешного создания заказов
+        # 5. Очищаем корзину ТОЛЬКО после успешного создания заказа
         db.cart_intents.delete_many({'user_id': user_id})
         db.cart_items_v12.delete_many({'user_id': user_id})
         
         # 6. Удаляем использованный план
         delete_plan_snapshot(db, request.plan_id, user_id)
         
-        logger.info(f"=== CHECKOUT COMPLETE: {len(created_orders)} orders created, total={total_amount} ===")
+        logger.info(f"=== CHECKOUT COMPLETE: order_id={order_id}, suppliers={suppliers_count}, items={items_count}, total={total_amount} ===")
         
         return {
             'status': 'ok',
-            'message': f'Создано {len(created_orders)} заказов',
+            'message': 'Заказ отправлен поставщику(ам).',
+            'order_id': order_id,
+            'order_status': submit_result.get('order_status', 'SENT_TO_SUPPLIER'),
+            'suppliers_count': suppliers_count,
+            'items_count': items_count,
             'orders': created_orders,
             'total': total_amount
         }
         
     except Exception as e:
-        logger.error(f"Checkout failed: {str(e)}")
-        # НЕ очищаем корзину при ошибке!
+        logger.error(f"Checkout cleanup failed: {str(e)}")
         return {
             'status': 'error',
             'code': 'CHECKOUT_FAILED',
@@ -1414,6 +1424,413 @@ async def set_supplier_minimum(
         'status': 'ok',
         'supplier_id': supplier_id,
         'min_order_amount': min_order_amount
+    }
+
+
+# === SUPPLIER INBOX (входящие заказы) ===
+
+@router.get("/supplier/orders/inbox-count", summary="Количество входящих (PENDING) заявок")
+async def get_supplier_orders_inbox_count(
+    user_id: str = Query(..., description="ID пользователя (поставщика)"),
+):
+    """Возвращает pending_count для бейджа в сайдбаре."""
+    db = get_db()
+    company = db.companies.find_one({'userId': user_id}, {'_id': 0, 'id': 1})
+    if not company:
+        user_doc = db.users.find_one({'id': user_id}, {'_id': 0, 'companyId': 1})
+        if user_doc and user_doc.get('companyId'):
+            company = db.companies.find_one({'id': user_doc['companyId']}, {'_id': 0, 'id': 1})
+    if not company or not company.get('id'):
+        raise HTTPException(status_code=404, detail="Поставщик не найден для данного user_id")
+    supplier_company_id = company['id']
+    pending_count = db.order_supplier_requests.count_documents(
+        {'supplier_company_id': supplier_company_id, 'status': 'PENDING'}
+    )
+    return {'status': 'ok', 'pending_count': pending_count}
+
+
+@router.get("/supplier/orders/inbox", summary="Входящие заказы поставщика")
+async def get_supplier_orders_inbox(
+    user_id: str = Query(..., description="ID пользователя (поставщика)"),
+    status: str = Query("PENDING", description="Статус запросов"),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    """
+    Список order_supplier_requests со статусом PENDING для supplier_company_id этого user_id.
+    Сортировка: submitted_at desc. Пагинация limit/offset.
+    """
+    db = get_db()
+    company = db.companies.find_one({'userId': user_id}, {'_id': 0, 'id': 1})
+    if not company:
+        user_doc = db.users.find_one({'id': user_id}, {'_id': 0, 'companyId': 1})
+        if user_doc and user_doc.get('companyId'):
+            company = db.companies.find_one({'id': user_doc['companyId']}, {'_id': 0, 'id': 1})
+    if not company or not company.get('id'):
+        raise HTTPException(status_code=404, detail="Поставщик не найден для данного user_id")
+    supplier_company_id = company['id']
+
+    total = db.order_supplier_requests.count_documents(
+        {'supplier_company_id': supplier_company_id, 'status': status}
+    )
+    requests_cursor = (
+        db.order_supplier_requests.find(
+            {'supplier_company_id': supplier_company_id, 'status': status},
+            {'_id': 0, 'order_id': 1, 'status': 1, 'submitted_at': 1},
+        )
+        .sort('submitted_at', -1)
+        .skip(offset)
+        .limit(limit)
+    )
+    requests_list = list(requests_cursor)
+
+    items = []
+    for req in requests_list:
+        order_id = req.get('order_id')
+        order = db.orders.find_one({'id': order_id}, {'_id': 0, 'status': 1, 'customer_company_id': 1}) if order_id else None
+        customer_company_id = (order or {}).get('customer_company_id') or ''
+        customer_company_name = '—'
+        if customer_company_id:
+            cust = db.companies.find_one({'id': customer_company_id}, {'_id': 0, 'companyName': 1, 'name': 1})
+            customer_company_name = (cust or {}).get('companyName') or (cust or {}).get('name') or '—'
+        supplier_items = list(
+            db.order_items.find(
+                {'order_id': order_id, 'target_supplier_company_id': supplier_company_id},
+                {'_id': 0, 'qty': 1},
+            )
+        )
+        supplier_items_count = len(supplier_items)
+        supplier_total_qty = sum(float(i.get('qty') or 0) for i in supplier_items)
+        submitted_at = req.get('submitted_at')
+        submitted_str = submitted_at.isoformat() if hasattr(submitted_at, 'isoformat') else str(submitted_at or '')
+        items.append({
+            'order_id': order_id,
+            'order_status': (order or {}).get('status', ''),
+            'request_status': req.get('status', 'PENDING'),
+            'submitted_at': submitted_str,
+            'customer_company_id': customer_company_id,
+            'customer_company_name': customer_company_name,
+            'supplier_items_count': supplier_items_count,
+            'supplier_total_qty': supplier_total_qty,
+        })
+
+    return {
+        'status': 'ok',
+        'supplier_company_id': supplier_company_id,
+        'total': total,
+        'items': items,
+    }
+
+
+@router.get("/supplier/orders/{order_id}", summary="Детали заказа для поставщика")
+async def get_supplier_order_detail(
+    order_id: str,
+    user_id: str = Query(..., description="ID пользователя (поставщика)"),
+):
+    """Возвращает заказ и только свои items (target_supplier_company_id == supplier_company_id)."""
+    db = get_db()
+    company = db.companies.find_one({'userId': user_id}, {'_id': 0, 'id': 1})
+    if not company:
+        user_doc = db.users.find_one({'id': user_id}, {'_id': 0, 'companyId': 1})
+        if user_doc and user_doc.get('companyId'):
+            company = db.companies.find_one({'id': user_doc['companyId']}, {'_id': 0, 'id': 1})
+    if not company or not company.get('id'):
+        raise HTTPException(status_code=404, detail="Поставщик не найден")
+    supplier_company_id = company['id']
+
+    order = db.orders.find_one({'id': order_id}, {'_id': 0, 'id': 1, 'status': 1, 'created_at': 1, 'customer_company_id': 1})
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+    req = db.order_supplier_requests.find_one(
+        {'order_id': order_id, 'supplier_company_id': supplier_company_id},
+        {'_id': 0, 'status': 1, 'submitted_at': 1, 'responded_at': 1},
+    )
+    if not req:
+        raise HTTPException(status_code=404, detail="Заявка по этому заказу для вашей компании не найдена")
+
+    customer_company_id = order.get('customer_company_id') or ''
+    customer_name = '—'
+    if customer_company_id:
+        cust = db.companies.find_one({'id': customer_company_id}, {'_id': 0, 'companyName': 1, 'name': 1})
+        customer_name = (cust or {}).get('companyName') or (cust or {}).get('name') or '—'
+
+    supplier_items = list(
+        db.order_items.find(
+            {'order_id': order_id, 'target_supplier_company_id': supplier_company_id},
+            {'_id': 0, 'id': 1, 'name_snapshot': 1, 'qty': 1, 'unit': 1, 'status': 1},
+        )
+    )
+    created_at = order.get('created_at')
+    created_str = created_at.isoformat() if hasattr(created_at, 'isoformat') else str(created_at or '')
+    submitted_at = req.get('submitted_at')
+    submitted_str = submitted_at.isoformat() if hasattr(submitted_at, 'isoformat') else str(submitted_at or '')
+    responded_at = req.get('responded_at')
+
+    return {
+        'status': 'ok',
+        'supplier_company_id': supplier_company_id,
+        'order': {
+            'id': order['id'],
+            'status': order.get('status', ''),
+            'created_at': created_str,
+        },
+        'request': {
+            'status': req.get('status', 'PENDING'),
+            'submitted_at': submitted_str,
+            'responded_at': responded_at.isoformat() if hasattr(responded_at, 'isoformat') else (str(responded_at) if responded_at else None),
+        },
+        'customer': {'company_id': customer_company_id, 'name': customer_name},
+        'items': [
+            {
+                'id': it.get('id'),
+                'name_snapshot': it.get('name_snapshot', ''),
+                'qty': it.get('qty', 0),
+                'unit': it.get('unit', 'шт'),
+                'status': it.get('status', 'PENDING'),
+            }
+            for it in supplier_items
+        ],
+    }
+
+
+class SupplierRespondBody(BaseModel):
+    """Тело ответа поставщика на заказ."""
+    decision: str = Field(..., description="CONFIRM_ALL или CUSTOM")
+    comment: Optional[str] = Field(None, description="Комментарий")
+    items: Optional[List[Dict[str, Any]]] = Field(None, description="Для CUSTOM: список { item_id, decision, reason_code?, reason_text? }")
+
+
+@router.post("/supplier/orders/{order_id}/respond", summary="Ответ поставщика (confirm/reject)")
+async def post_supplier_order_respond(
+    order_id: str,
+    request: SupplierRespondBody,
+    user_id: str = Query(..., description="ID пользователя (поставщика)"),
+):
+    """
+    CONFIRM_ALL: подтвердить все свои позиции.
+    CUSTOM: передать items с decision CONFIRM/REJECT по каждой позиции.
+    """
+    db = get_db()
+    company = db.companies.find_one({'userId': user_id}, {'_id': 0, 'id': 1})
+    if not company:
+        user_doc = db.users.find_one({'id': user_id}, {'_id': 0, 'companyId': 1})
+        if user_doc and user_doc.get('companyId'):
+            company = db.companies.find_one({'id': user_doc['companyId']}, {'_id': 0, 'id': 1})
+    if not company or not company.get('id'):
+        raise HTTPException(status_code=404, detail="Поставщик не найден")
+    supplier_company_id = company['id']
+
+    supplier_items = list(
+        db.order_items.find(
+            {'order_id': order_id, 'target_supplier_company_id': supplier_company_id},
+            {'_id': 0, 'id': 1},
+        )
+    )
+    if not supplier_items:
+        raise HTTPException(status_code=404, detail="Нет позиций этого поставщика в заказе")
+    supplier_item_ids = {it['id'] for it in supplier_items}
+
+    if request.decision == "CONFIRM_ALL":
+        items_payload = None
+    elif request.decision == "CUSTOM":
+        if not request.items:
+            raise HTTPException(status_code=400, detail="Для CUSTOM нужен список items")
+        for row in request.items:
+            iid = row.get("item_id")
+            if iid and iid not in supplier_item_ids:
+                raise HTTPException(status_code=403, detail="forbidden item")
+            if (row.get("decision") or "").upper() == "REJECT":
+                if not (row.get("reason_text") or "").strip():
+                    raise HTTPException(status_code=400, detail="reason_text required")
+        items_payload = request.items
+    else:
+        raise HTTPException(status_code=400, detail="decision должен быть CONFIRM_ALL или CUSTOM")
+
+    from .orders_service import supplier_respond
+    decision_enum = "CONFIRM"
+    try:
+        result = supplier_respond(
+            db,
+            order_id=order_id,
+            supplier_company_id=supplier_company_id,
+            responded_by_user_id=user_id,
+            decision=decision_enum,
+            items=items_payload,
+            comment=request.comment,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)[:200])
+
+    counts = result.get("counts", {})
+    return {
+        "status": "ok",
+        "order_id": order_id,
+        "request_status": result.get("supplier_request_status", ""),
+        "order_status": result.get("order_status", ""),
+        "confirmed": counts.get("confirmed", 0),
+        "rejected": counts.get("rejected", 0),
+        "updated": counts.get("updated", 0),
+    }
+
+
+# === CUSTOMER ORDERS (v12) ===
+
+@router.get("/customer/orders", summary="Список заказов ресторана")
+async def get_customer_orders_list(
+    user_id: str = Query(..., description="ID пользователя (ресторан)"),
+    status: str = Query("ANY", description="Фильтр по статусу заказа"),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    """Список заказов по customer_company_id из orders (orders_service)."""
+    db = get_db()
+    company = db.companies.find_one({'userId': user_id}, {'_id': 0, 'id': 1})
+    if not company:
+        user_doc = db.users.find_one({'id': user_id}, {'_id': 0, 'companyId': 1})
+        if user_doc and user_doc.get('companyId'):
+            company = db.companies.find_one({'id': user_doc['companyId']}, {'_id': 0, 'id': 1})
+    if not company or not company.get('id'):
+        raise HTTPException(status_code=404, detail="Компания заказчика не найдена")
+    customer_company_id = company['id']
+
+    q = {'customer_company_id': customer_company_id}
+    if status and status != 'ANY':
+        q['status'] = status
+    total = db.orders.count_documents(q)
+    orders_cursor = (
+        db.orders.find(q, {'_id': 0, 'id': 1, 'status': 1, 'created_at': 1})
+        .sort('created_at', -1)
+        .skip(offset)
+        .limit(limit)
+    )
+    orders_list = list(orders_cursor)
+
+    items_out = []
+    for order in orders_list:
+        order_id = order.get('id')
+        reqs = list(db.order_supplier_requests.find({'order_id': order_id}, {'_id': 0, 'status': 1}))
+        suppliers_total = len(reqs)
+        breakdown = {'PENDING': 0, 'CONFIRMED': 0, 'PARTIALLY_CONFIRMED': 0, 'REJECTED': 0}
+        for r in reqs:
+            st = r.get('status', 'PENDING')
+            if st in breakdown:
+                breakdown[st] += 1
+        items_total = db.order_items.count_documents({'order_id': order_id})
+        created_at = order.get('created_at')
+        created_str = created_at.isoformat() if hasattr(created_at, 'isoformat') else str(created_at or '')
+        items_out.append({
+            'order_id': order_id,
+            'order_status': order.get('status', ''),
+            'created_at': created_str,
+            'suppliers_total': suppliers_total,
+            'suppliers_breakdown': breakdown,
+            'items_total': items_total,
+        })
+
+    return {
+        'status': 'ok',
+        'customer_company_id': customer_company_id,
+        'total': total,
+        'items': items_out,
+    }
+
+
+@router.get("/customer/orders/active-count", summary="Количество активных заказов (не финальных)")
+async def get_customer_orders_active_count(
+    user_id: str = Query(..., description="ID пользователя (ресторан)"),
+):
+    """Заказы со статусом SENT_TO_SUPPLIER или PARTIALLY_CONFIRMED (ожидают/частично подтверждены)."""
+    db = get_db()
+    company = db.companies.find_one({'userId': user_id}, {'_id': 0, 'id': 1})
+    if not company:
+        user_doc = db.users.find_one({'id': user_id}, {'_id': 0, 'companyId': 1})
+        if user_doc and user_doc.get('companyId'):
+            company = db.companies.find_one({'id': user_doc['companyId']}, {'_id': 0, 'id': 1})
+    if not company or not company.get('id'):
+        raise HTTPException(status_code=404, detail="Компания заказчика не найдена")
+    customer_company_id = company['id']
+    active_count = db.orders.count_documents({
+        'customer_company_id': customer_company_id,
+        'status': {'$in': ['SENT_TO_SUPPLIER', 'PARTIALLY_CONFIRMED']},
+    })
+    return {'status': 'ok', 'active_count': active_count}
+
+
+@router.get("/customer/orders/{order_id}", summary="Детали заказа ресторана")
+async def get_customer_order_detail(
+    order_id: str,
+    user_id: str = Query(..., description="ID пользователя (ресторан)"),
+):
+    """Детали заказа: order, suppliers (request status), items по поставщикам."""
+    db = get_db()
+    company = db.companies.find_one({'userId': user_id}, {'_id': 0, 'id': 1})
+    if not company:
+        user_doc = db.users.find_one({'id': user_id}, {'_id': 0, 'companyId': 1})
+        if user_doc and user_doc.get('companyId'):
+            company = db.companies.find_one({'id': user_doc['companyId']}, {'_id': 0, 'id': 1})
+    if not company or not company.get('id'):
+        raise HTTPException(status_code=404, detail="Компания заказчика не найдена")
+    customer_company_id = company['id']
+
+    order = db.orders.find_one({'id': order_id}, {'_id': 0, 'id': 1, 'status': 1, 'created_at': 1, 'customer_company_id': 1})
+    if not order or order.get('customer_company_id') != customer_company_id:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+    created_at = order.get('created_at')
+    created_str = created_at.isoformat() if hasattr(created_at, 'isoformat') else str(created_at or '')
+
+    customer_company_id_val = order.get('customer_company_id') or ''
+    customer_name = '—'
+    if customer_company_id_val:
+        cust = db.companies.find_one({'id': customer_company_id_val}, {'_id': 0, 'companyName': 1, 'name': 1})
+        customer_name = (cust or {}).get('companyName') or (cust or {}).get('name') or '—'
+
+    reqs = list(db.order_supplier_requests.find({'order_id': order_id}, {'_id': 0, 'supplier_company_id': 1, 'status': 1, 'submitted_at': 1, 'responded_at': 1}))
+    suppliers_out = []
+    for r in reqs:
+        sid = r.get('supplier_company_id')
+        comp = db.companies.find_one({'id': sid}, {'_id': 0, 'companyName': 1, 'name': 1}) if sid else None
+        name = (comp or {}).get('companyName') or (comp or {}).get('name') or '—'
+        sub_at = r.get('submitted_at')
+        resp_at = r.get('responded_at')
+        suppliers_out.append({
+            'supplier_company_id': sid,
+            'supplier_name': name,
+            'request_status': r.get('status', 'PENDING'),
+            'submitted_at': sub_at.isoformat() if hasattr(sub_at, 'isoformat') else str(sub_at or ''),
+            'responded_at': resp_at.isoformat() if hasattr(resp_at, 'isoformat') else (str(resp_at) if resp_at else None),
+        })
+
+    all_items = list(db.order_items.find({'order_id': order_id}, {'_id': 0, 'id': 1, 'name_snapshot': 1, 'qty': 1, 'unit': 1, 'status': 1, 'target_supplier_company_id': 1, 'supplier_decision': 1, 'confirmed_qty': 1}))
+    supplier_ids = sorted(set(it.get('target_supplier_company_id') for it in all_items if it.get('target_supplier_company_id')))
+    items_by_supplier = []
+    for sid in supplier_ids:
+        comp = db.companies.find_one({'id': sid}, {'_id': 0, 'companyName': 1, 'name': 1})
+        name = (comp or {}).get('companyName') or (comp or {}).get('name') or '—'
+        supp_items = [it for it in all_items if it.get('target_supplier_company_id') == sid]
+        decision_list = []
+        for it in supp_items:
+            dec = it.get('supplier_decision') or {}
+            decision_list.append({
+                'id': it.get('id'),
+                'name_snapshot': it.get('name_snapshot', ''),
+                'qty': it.get('qty', 0),
+                'unit': it.get('unit', 'шт'),
+                'status': it.get('status', 'PENDING'),
+                'reason_text': dec.get('reason_text', '') if it.get('status') == 'REJECTED' else '',
+                'confirmed_qty': it.get('confirmed_qty') if it.get('status') == 'UPDATED' else None,
+            })
+        items_by_supplier.append({
+            'supplier_company_id': sid,
+            'supplier_name': name,
+            'items': decision_list,
+        })
+
+    return {
+        'status': 'ok',
+        'order': {'id': order['id'], 'status': order.get('status', ''), 'created_at': created_str},
+        'customer': {'company_id': customer_company_id_val, 'name': customer_name},
+        'suppliers': suppliers_out,
+        'items_by_supplier': items_by_supplier,
     }
 
 

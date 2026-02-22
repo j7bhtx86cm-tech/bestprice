@@ -6,6 +6,7 @@ import { CustomerProfile } from './CustomerProfile';
 import { CustomerTeam } from './CustomerTeam';
 import { CustomerDocuments } from './CustomerDocuments';
 import { CustomerOrders } from './CustomerOrders';
+import { CustomerOrderDetail } from './CustomerOrderDetail';
 import { CustomerAnalytics } from './CustomerAnalytics';
 import { CustomerRatings } from './CustomerRatings';
 import { CustomerMatrix } from './CustomerMatrix';
@@ -26,6 +27,7 @@ export const CustomerDashboard = () => {
         <Route path="/team" element={<CustomerTeam />} />
         <Route path="/documents" element={<CustomerDocuments />} />
         <Route path="/orders" element={<CustomerOrders />} />
+        <Route path="/orders/:orderId" element={<CustomerOrderDetail />} />
         <Route path="/analytics" element={<CustomerAnalytics />} />
         <Route path="/ratings" element={<CustomerRatings />} />
         <Route path="/matrix/:matrixId" element={<CustomerMatrix />} />

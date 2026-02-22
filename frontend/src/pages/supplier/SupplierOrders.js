@@ -1,88 +1,112 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Package, MapPin, Phone } from 'lucide-react';
+import { Package, Eye, Copy } from 'lucide-react';
+import { toast } from 'sonner';
+import { translateRequestStatus, getStatusBadgeClass } from '@/utils/statusTranslations';
+import { shortId, formatRuDate } from '@/utils/formatUtils';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://127.0.0.1:8001';
 const API = `${BACKEND_URL}/api`;
 
-const statusColors = {
-  new: 'bg-blue-100 text-blue-800',
-  confirmed: 'bg-green-100 text-green-800',
-  declined: 'bg-red-100 text-red-800',
-  partial: 'bg-yellow-100 text-yellow-800'
-};
-
-const statusLabels = {
-  new: 'Новый',
-  confirmed: 'Подтвержден',
-  declined: 'Отклонен',
-  partial: 'Частичный'
-};
-
 export const SupplierOrders = () => {
-  const [orders, setOrders] = useState([]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [items, setItems] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [customers, setCustomers] = useState({});
+  const [error, setError] = useState(null);
+
+  const userId = user?.id;
+  const prevTotalRef = useRef(0);
+
+  const fetchInbox = async (isPoll = false) => {
+    if (!userId) return;
+    if (!isPoll) {
+      setLoading(true);
+      setError(null);
+    }
+    try {
+      const response = await axios.get(
+        `${API}/v12/supplier/orders/inbox`,
+        {
+          params: { user_id: userId, status: 'PENDING', limit: 50, offset: 0 },
+          headers: localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {},
+        }
+      );
+      if (response.data?.status === 'ok') {
+        const newTotal = response.data.total ?? 0;
+        if (isPoll && newTotal > prevTotalRef.current && prevTotalRef.current > 0) {
+          const delta = newTotal - prevTotalRef.current;
+          toast.info(`Появился новый заказ${delta > 1 ? ` (+${delta})` : ''}`);
+        }
+        prevTotalRef.current = newTotal;
+        setItems(response.data.items || []);
+        setTotal(newTotal);
+      } else {
+        setItems([]);
+        setTotal(0);
+      }
+    } catch (err) {
+      if (!isPoll) {
+        setError(err.response?.data?.detail || err.message || 'Ошибка загрузки');
+        setItems([]);
+        setTotal(0);
+      }
+    } finally {
+      if (!isPoll) setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchOrders();
-    fetchCustomers();
-  }, []);
-
-  const fetchOrders = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/orders/my`, { headers });
-      setOrders(response.data);
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
-    } finally {
+    if (!userId) {
       setLoading(false);
+      return;
     }
-  };
+    fetchInbox(false);
+  }, [userId]);
 
-  const fetchCustomers = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
-      // Get all customer companies
-      const response = await axios.get(`${API}/suppliers`, { headers });
-      // Note: We'd need a customers endpoint, but for now use what we have
-    } catch (error) {
-      console.error('Failed to fetch customers:', error);
-    }
-  };
+  useEffect(() => {
+    if (!userId) return;
+    const timer = setInterval(() => fetchInbox(true), 12000);
+    return () => clearInterval(timer);
+  }, [userId]);
 
-  const fetchOrderDetails = async (orderId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/orders/${orderId}`, { headers });
-      setSelectedOrder(response.data);
-    } catch (error) {
-      console.error('Failed to fetch order details:', error);
-    }
+  const openOrder = (orderId) => {
+    navigate(`/supplier/orders/${orderId || 'detail'}`, { state: { orderId } });
   };
 
   if (loading) {
-    return <div className="text-center py-8">Загрузка...</div>;
+    return (
+      <div data-testid="supplier-orders-page" className="text-center py-8">
+        Загрузка...
+      </div>
+    );
   }
 
   return (
     <div data-testid="supplier-orders-page">
-      <h2 className="text-4xl font-bold mb-2">Полученные заказы</h2>
-      <p className="text-base text-muted-foreground mb-6">Управление заказами от ресторанов</p>
+      <h2 className="text-4xl font-bold mb-2">Входящие заказы</h2>
+      <p className="text-base text-muted-foreground mb-6">Заказы от ресторанов, ожидающие ответа</p>
 
-      {orders.length === 0 ? (
+      {error && (
+        <Card className="p-4 mb-4 border-red-200 bg-red-50 text-red-800">
+          {error}
+        </Card>
+      )}
+
+      {!userId ? (
+        <Card className="p-8 text-center">
+          <p className="text-gray-600">Войдите в аккаунт поставщика</p>
+        </Card>
+      ) : items.length === 0 ? (
         <Card className="p-8 text-center">
           <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-600">Пока нет заказов</p>
+          <p className="text-gray-600">Входящих заказов нет</p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -90,143 +114,48 @@ export const SupplierOrders = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Дата и время</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Клиент</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Товаров</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Сумма</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Заказ</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Дата</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Ресторан</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Позиций</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Qty</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Статус</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Действия</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {orders.map((order) => (
-                  <React.Fragment key={order.id}>
-                    <tr className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm">
-                        {new Date(order.orderDate).toLocaleDateString('ru-RU')}
-                        {' '}
-                        <span className="text-gray-500">
-                          {new Date(order.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium">
-                        {customers[order.customerCompanyId]?.companyName || 'Клиент'}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {order.orderDetails?.length || 0} позиций
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium">
-                        {order.amount.toLocaleString('ru-RU')} ₽
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <Badge className={statusColors[order.status] || 'bg-gray-100 text-gray-800'}>
-                          {statusLabels[order.status] || order.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (selectedOrder?.id === order.id) {
-                              setSelectedOrder(null);
-                            } else {
-                              fetchOrderDetails(order.id);
-                            }
-                          }}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          {selectedOrder?.id === order.id ? 'Скрыть' : 'Подробнее'}
-                        </Button>
-                      </td>
-                    </tr>
-                    
-                    {/* Inline Order Details */}
-                    {selectedOrder?.id === order.id && (
-                      <tr>
-                        <td colSpan="6" className="px-4 py-4 bg-gray-50">
-                          <Card className="p-6">
-                            <div className="flex justify-between items-start mb-4">
-                              <h3 className="text-xl font-semibold">Детали заказа</h3>
-                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(null)}>
-                                Закрыть
-                              </Button>
-                            </div>
-                            
-                            <div className="space-y-4">
-                              {/* Order Info */}
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm text-gray-600">Дата и время заказа</p>
-                                  <p className="font-medium">
-                                    {new Date(selectedOrder.orderDate).toLocaleDateString('ru-RU')}
-                                    {' '}
-                                    {new Date(selectedOrder.orderDate).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-gray-600">Статус</p>
-                                  <Badge className={statusColors[selectedOrder.status]}>
-                                    {statusLabels[selectedOrder.status]}
-                                  </Badge>
-                                </div>
-                              </div>
-
-                              {/* Delivery Address */}
-                              {selectedOrder.deliveryAddress && (
-                                <Card className="p-4 bg-blue-50 border-blue-200">
-                                  <div className="flex items-start gap-3">
-                                    <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
-                                    <div>
-                                      <p className="font-medium text-blue-900">Адрес доставки</p>
-                                      <p className="text-sm text-blue-800 mt-1">{selectedOrder.deliveryAddress.address}</p>
-                                      {selectedOrder.deliveryAddress.phone && (
-                                        <div className="flex items-center gap-2 mt-2 text-sm text-blue-700">
-                                          <Phone className="h-3 w-3" />
-                                          <span>{selectedOrder.deliveryAddress.phone}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </Card>
-                              )}
-
-                              {/* Order Items */}
-                              <div>
-                                <p className="text-sm text-gray-600 mb-3 font-medium">Состав заказа</p>
-                                <div className="space-y-2">
-                                  {selectedOrder.orderDetails?.map((item, index) => (
-                                    <div key={index} className="p-4 bg-white rounded-lg border">
-                                      <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                          <p className="font-medium text-base">{item.productName}</p>
-                                          <p className="text-sm text-gray-500">Артикул: {item.article || 'Н/Д'}</p>
-                                          <p className="text-sm text-gray-600 mt-1">
-                                            {item.quantity} {item.unit} × {item.price.toLocaleString('ru-RU')} ₽
-                                          </p>
-                                        </div>
-                                        <div className="text-right">
-                                          <p className="text-lg font-semibold text-blue-600">
-                                            {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Total */}
-                              <div className="pt-4 border-t flex justify-between items-center">
-                                <p className="text-lg font-semibold">Итого к поставке:</p>
-                                <p className="text-2xl font-bold text-blue-600">{selectedOrder.amount.toLocaleString('ru-RU')} ₽</p>
-                              </div>
-                            </div>
-                          </Card>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
+                {items.map((row) => (
+                  <tr key={row.order_id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm">
+                      <span className="font-mono">{shortId(row.order_id)}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 ml-1 inline"
+                        onClick={() => {
+                          if (row.order_id && navigator.clipboard?.writeText) {
+                            navigator.clipboard.writeText(row.order_id);
+                            toast.success('ID скопирован');
+                          }
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                    <td className="px-4 py-3 text-sm">{formatRuDate(row.submitted_at)}</td>
+                    <td className="px-4 py-3 text-sm font-medium">{row.customer_company_name || '—'}</td>
+                    <td className="px-4 py-3 text-sm">{row.supplier_items_count ?? 0}</td>
+                    <td className="px-4 py-3 text-sm">{row.supplier_total_qty ?? 0}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <Badge className={getStatusBadgeClass(row.request_status)}>{translateRequestStatus(row.request_status)}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <Button variant="outline" size="sm" onClick={() => openOrder(row.order_id)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Открыть
+                      </Button>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>

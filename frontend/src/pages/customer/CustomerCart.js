@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://127.0.0.1:8001';
 const API = `${BACKEND_URL}/api`;
 
 // Порог для индикатора изменения цены (25%)
@@ -294,58 +294,70 @@ export const CustomerCart = () => {
   };
 
   // Handle checkout (P0.1: использует plan_id из snapshot)
-  const handleCheckout = async () => {
+  const handleCheckout = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof console !== 'undefined' && console.log) console.log('UI_CHECKOUT_CLICK');
+
     // First run optimization if not done
     if (!showOptimized || !optimizedPlan) {
       await runOptimization();
-      return; // Show optimization result first, user confirms again
+      return;
     }
-    
+
     if (!optimizedPlan.success) {
       toast.error(optimizedPlan.blocked_reason || 'Невозможно оформить заказ');
       return;
     }
 
-    if (!selectedAddress) {
-      toast.error('Выберите адрес доставки');
+    const userId = user?.id || getUserId();
+    const planId = optimizedPlan.plan_id;
+    if (!userId || userId === 'anonymous') {
+      toast.error('Войдите в аккаунт для оформления заказа');
       return;
     }
-    
-    // P0.1: Проверяем наличие plan_id
-    if (!optimizedPlan.plan_id) {
-      toast.error('План устарел. Пожалуйста, нажмите "Оформить заказ" снова.');
+    if (!planId) {
+      toast.error('План устарел. Нажмите «Оформить заказ» снова.');
       setShowOptimized(false);
       setOptimizedPlan(null);
       return;
     }
 
+    const apiBase = BACKEND_URL || process.env.REACT_APP_BACKEND_URL || '';
+    if (typeof console !== 'undefined' && console.log) {
+      console.log('UI_CHECKOUT_START', { userId, planId, apiBase });
+    }
+
     setProcessingOrder(true);
+    const deliveryAddressId = selectedAddress
+      ? (typeof selectedAddress === 'string' ? selectedAddress : selectedAddress?.id ?? selectedAddress?.address ?? null)
+      : null;
+
     try {
-      const userId = getUserId();
-      
-      // Определяем delivery_address_id
-      const deliveryAddressId = typeof selectedAddress === 'string' 
-        ? selectedAddress 
-        : selectedAddress?.id || selectedAddress?.address || null;
-      
-      // P0.1: Отправляем plan_id в body запроса
       const response = await axios.post(
-        `${API}/v12/cart/checkout?user_id=${userId}`,
-        { 
-          plan_id: optimizedPlan.plan_id,
-          delivery_address_id: deliveryAddressId
-        },
+        `${BACKEND_URL}/api/v12/cart/checkout?user_id=${encodeURIComponent(userId)}`,
+        { plan_id: planId, delivery_address_id: deliveryAddressId ?? null },
         { headers: getHeaders() }
       );
-      
+
+      if (typeof console !== 'undefined' && console.log) {
+        console.log('UI_CHECKOUT_OK', response?.data);
+      }
+
       if (response.data.status === 'ok') {
-        toast.success(`✓ Создано ${response.data.orders?.length || 0} заказов на сумму ${response.data.total?.toLocaleString('ru-RU')}₽`);
+        const orderId = response.data.order_id;
+        const suppliersCount = response.data.suppliers_count ?? response.data.orders?.length ?? 0;
+        const total = response.data.total;
+        const shortId = orderId ? String(orderId).slice(0, 8) : '';
+        toast.success(shortId ? `Заказ отправлен… № ${shortId}` : `Заказ отправлен. Поставщиков: ${suppliersCount}`);
         navigate('/customer/orders', {
           state: {
             fromCheckout: true,
             checkoutInfo: {
+              order_id: orderId,
+              order_status: response.data.order_status || 'SENT_TO_SUPPLIER',
+              suppliers_count: suppliersCount,
               ordersCount: response.data.orders?.length || 0,
-              total: response.data.total,
+              total: total,
               orders: response.data.orders
             }
           }
@@ -366,9 +378,13 @@ export const CustomerCart = () => {
         toast.error(response.data.message || 'Ошибка создания заказа');
       }
     } catch (error) {
-      console.error('Checkout error:', error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.detail || 'Ошибка создания заказа';
-      toast.error(errorMessage);
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+      if (typeof console !== 'undefined' && console.log) {
+        console.log('UI_CHECKOUT_FAIL', { status, data });
+      }
+      const msg = (data && (data.detail ?? data.message)) || error?.message || 'Checkout failed';
+      toast.error(typeof msg === 'string' ? msg : (msg?.message || 'Checkout failed'));
     } finally {
       setProcessingOrder(false);
     }
@@ -411,14 +427,15 @@ export const CustomerCart = () => {
             <Button variant="outline" onClick={cancelOptimization}>
               ← Назад в корзину
             </Button>
-            <Button 
-              onClick={handleCheckout} 
-              disabled={processingOrder || !optimizedPlan.success || !selectedAddress} 
+            <Button
+              type="button"
+              onClick={handleCheckout}
+              disabled={processingOrder || !optimizedPlan.success}
               size="lg"
               data-testid="confirm-checkout-btn"
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              {processingOrder ? 'Оформление...' : 'Подтвердить заказ'}
+              {processingOrder ? 'Отправка…' : 'Подтвердить заказ'}
             </Button>
           </div>
         </div>

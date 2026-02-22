@@ -55,9 +55,13 @@ venv/
 # Artifacts (selfcheck/uvicorn logs and PIDs)
 artifacts/*.log
 artifacts/*.pid
+artifacts/*.md
 artifacts/dev_backend_8001.*
 artifacts/core_engine_v1_locator.md
 artifacts/yesterday_locator_report.md
+artifacts/test_import_errors.csv
+# Evidence (debug/upload dumps)
+evidence/
 
 # Development tools
 chainlit.md
@@ -70,6 +74,12 @@ chainlit.md
 
 # Data and databases
 agenthub/agents/youtube/db
+
+# Playwright browsers (local install)
+.playwright-browsers/
+
+# Uploaded temp files
+backend/uploads/
 
 # Archive files and large assets
 **/*.zip

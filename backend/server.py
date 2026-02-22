@@ -1,10 +1,11 @@
 from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Depends, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from bson import ObjectId
 import os
 import logging
 import asyncio
@@ -2060,7 +2061,20 @@ async def import_price_list(
             norm_name = normalize_text(product_name)
             return f"{supplier_id}:{norm_name}:{unit_type}"
 
-        # Import products with upsert (P0.1). Diagnostics: why rows were skipped.
+        # Import products with upsert (P0.1). Diagnostics: why rows were skipped. Per-row errors for report.
+        REASON_CODES = {
+            "empty_name": ("EMPTY_NAME", "Пустое название"),
+            "price_parse_failed": ("PRICE_PARSE", "Цена не распарсилась"),
+            "price_le_zero": ("PRICE_ZERO", "Цена ≤ 0"),
+            "empty_or_invalid_unit": ("EMPTY_OR_INVALID_UNIT", "Пустая или неверная единица"),
+            "other": ("OTHER", "Прочее"),
+        }
+        def _raw_str(v, max_len=200):
+            if v is None or (isinstance(v, float) and pd.isna(v)):
+                return ""
+            s = str(v).strip()
+            return s[:max_len] if len(s) > max_len else s
+
         created_count = 0
         updated_count = 0
         skipped_count = 0
@@ -2071,9 +2085,13 @@ async def import_price_list(
             "empty_or_invalid_unit": 0,
             "other": 0,
         }
+        import_errors: List[Dict[str, Any]] = []
         total_rows_read = len(df)
+        MAX_ERRORS_STORED = 2000
+        MAX_ERRORS_PREVIEW = 200
 
-        for _, row in df.iterrows():
+        for row_idx, row in df.iterrows():
+            row_number = int(row_idx) + 2  # 1-based, after header
             try:
                 row_dict = row.to_dict() if hasattr(row, 'to_dict') else dict(row)
                 col_name = mapping.get('productName')
@@ -2084,19 +2102,44 @@ async def import_price_list(
                 article_raw = str(row_dict.get(article_col, '')).strip() if (article_col and article_col in df_columns) else None
                 article = _normalize_supplier_code(article_raw) if article_raw and article_raw != 'nan' else None
 
+                def _append_err(reason_key: str):
+                    nonlocal import_errors
+                    code, text = REASON_CODES.get(reason_key, ("OTHER", "Прочее"))
+                    raw_name = _raw_str(row_dict.get(col_name, '')) if col_name else ''
+                    raw_price = _raw_str(price_raw)
+                    raw_unit = _raw_str(unit_str)
+                    pack_col = mapping.get('packQty')
+                    raw_pack = _raw_str(row_dict.get(pack_col, '')) if pack_col and pack_col in df_columns else ''
+                    raw_obj = {k: _raw_str(row_dict.get(mapping.get(k), ''), 100) for k in ['productName', 'price', 'unit'] if mapping.get(k)}
+                    err = {
+                        "row_number": row_number,
+                        "reason_code": code,
+                        "reason_text": text,
+                        "raw_name": raw_name,
+                        "raw_price": raw_price,
+                        "raw_unit": raw_unit,
+                        "raw_pack": raw_pack,
+                        "raw": raw_obj,
+                    }
+                    if len(import_errors) < MAX_ERRORS_STORED:
+                        import_errors.append(err)
+
                 if not product_name or product_name == 'nan':
                     skipped_count += 1
                     skipped_reasons["empty_name"] += 1
+                    _append_err("empty_name")
                     continue
 
                 price = _normalize_price_value(price_raw)
                 if price is None:
                     skipped_count += 1
                     skipped_reasons["price_parse_failed"] += 1
+                    _append_err("price_parse_failed")
                     continue
                 if price <= 0:
                     skipped_count += 1
                     skipped_reasons["price_le_zero"] += 1
+                    _append_err("price_le_zero")
                     continue
 
                 min_order_qty = 1
@@ -2158,6 +2201,21 @@ async def import_price_list(
                 logger.warning(f"Error importing row: {e}")
                 skipped_count += 1
                 skipped_reasons["other"] += 1
+                try:
+                    row_dict = row.to_dict() if hasattr(row, 'to_dict') else dict(row)
+                    _append_err("other")
+                except Exception:
+                    if len(import_errors) < MAX_ERRORS_STORED:
+                        import_errors.append({
+                            "row_number": int(row_idx) + 2,
+                            "reason_code": "OTHER",
+                            "reason_text": "Прочее",
+                            "raw_name": "",
+                            "raw_price": "",
+                            "raw_unit": "",
+                            "raw_pack": "",
+                            "raw": {},
+                        })
 
         # P0.2: Deactivate old items from this supplier (not in new pricelist)
         deactivate_result = await db.supplier_items.update_many(
@@ -2182,6 +2240,33 @@ async def import_price_list(
         await db.pricelists.insert_one(pricelist_meta)
 
         imported_count = created_count + updated_count
+        breakdown = {
+            "EMPTY_NAME": skipped_reasons.get("empty_name", 0),
+            "PRICE_PARSE": skipped_reasons.get("price_parse_failed", 0),
+            "PRICE_ZERO": skipped_reasons.get("price_le_zero", 0),
+            "EMPTY_OR_INVALID_UNIT": skipped_reasons.get("empty_or_invalid_unit", 0),
+            "OTHER": skipped_reasons.get("other", 0),
+        }
+        report_oid = ObjectId()
+        report_id = str(report_oid)
+        report_doc = {
+            "_id": report_oid,
+            "created_at": datetime.now(timezone.utc),
+            "company_id": supplier_id,
+            "user_id": current_user["id"],
+            "pricelist_id": new_pricelist_id,
+            "source_filename": file.filename or "",
+            "counters": {
+                "read": total_rows_read,
+                "imported": imported_count,
+                "errors": skipped_count,
+                "breakdown": breakdown,
+            },
+            "errors": import_errors,
+            "mapping": mapping,
+        }
+        await db.pricelist_import_reports.insert_one(report_doc)
+
         logger.info(
             "Price list import completed",
             extra={
@@ -2219,6 +2304,8 @@ async def import_price_list(
                     "skipped": skipped_count,
                     "correlation_id": correlation_id,
                     "columns": df_columns,
+                    "report_id": report_id,
+                    "errors_preview": import_errors[:MAX_ERRORS_PREVIEW],
                 }
             )
 
@@ -2226,22 +2313,102 @@ async def import_price_list(
         await _schedule_core_pipeline_after_import(supplier_id, new_pricelist_id)
 
         return {
+            "status": "OK",
             "message": f"Successfully imported {imported_count} products",
+            "read": total_rows_read,
+            "imported": imported_count,
             "importedCount": imported_count,
             "created": created_count,
             "updated": updated_count,
+            "errors": skipped_count,
             "skipped": skipped_count,
+            "breakdown": breakdown,
             "skipped_reasons": skipped_reasons,
             "total_rows_read": total_rows_read,
             "deactivated": deactivated_count,
             "pricelist_id": new_pricelist_id,
-            "errors": [],
+            "report_id": report_id,
+            "errors_preview": import_errors[:MAX_ERRORS_PREVIEW],
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.exception("Import failed", extra={"correlation_id": correlation_id, "supplier_id": supplier_id})
         raise HTTPException(status_code=400, detail={"error": "import_failed", "message": str(e), "correlation_id": correlation_id})
+
+
+@api_router.get("/supplier/pricelists/import-report/{report_id}")
+async def get_import_report(
+    report_id: str,
+    limit: int = 200,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user),
+):
+    """Return import report: counters + paginated errors. Supplier can only access own reports."""
+    if current_user.get("role") != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    company = await db.companies.find_one({"userId": current_user["id"]}, {"_id": 0, "id": 1})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    try:
+        oid = ObjectId(report_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid report_id")
+    report = await db.pricelist_import_reports.find_one({"_id": oid, "company_id": company["id"]})
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    errors = report.get("errors") or []
+    total_errors = len(errors)
+    page = errors[offset : offset + limit]
+    return {
+        "counters": report.get("counters", {}),
+        "source_filename": report.get("source_filename", ""),
+        "total_errors": total_errors,
+        "errors": page,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@api_router.get("/supplier/pricelists/import-report/{report_id}/errors.csv")
+async def get_import_report_csv(
+    report_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Return CSV of import errors. Supplier can only access own reports."""
+    if current_user.get("role") != UserRole.supplier:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    company = await db.companies.find_one({"userId": current_user["id"]}, {"_id": 0, "id": 1})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    try:
+        oid = ObjectId(report_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid report_id")
+    report = await db.pricelist_import_reports.find_one({"_id": oid, "company_id": company["id"]})
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    errors = report.get("errors") or []
+    import csv
+    from io import StringIO
+    buf = StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["row_number", "reason_code", "reason_text", "raw_name", "raw_price", "raw_unit", "raw_pack"])
+    for e in errors:
+        writer.writerow([
+            e.get("row_number", ""),
+            e.get("reason_code", ""),
+            e.get("reason_text", ""),
+            e.get("raw_name") or "",
+            e.get("raw_price") or "",
+            e.get("raw_unit") or "",
+            e.get("raw_pack") or "",
+        ])
+    return Response(
+        content=buf.getvalue().encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="import-errors-{report_id[:8]}.csv"'},
+    )
 
 
 # P0.6: Safe pricelist deactivation/deletion endpoints

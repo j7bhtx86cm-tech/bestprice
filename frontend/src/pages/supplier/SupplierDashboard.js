@@ -8,6 +8,7 @@ import { SupplierOrders } from './SupplierOrders';
 import { SupplierRating } from './SupplierRating';
 import { SupplierDocuments } from './SupplierDocuments';
 import { SupplierRestaurants } from './SupplierRestaurants';
+import { SupplierOrderDetail } from './SupplierOrderDetail';
 
 export const SupplierDashboard = () => {
   return (
@@ -19,6 +20,7 @@ export const SupplierDashboard = () => {
         <Route path="/price-list" element={<SupplierPriceList />} />
         <Route path="/restaurants" element={<SupplierRestaurants />} />
         <Route path="/orders" element={<SupplierOrders />} />
+        <Route path="/orders/:orderId" element={<SupplierOrderDetail />} />
         <Route path="/rating" element={<SupplierRating />} />
         <Route path="/documents" element={<SupplierDocuments />} />
       </Routes>

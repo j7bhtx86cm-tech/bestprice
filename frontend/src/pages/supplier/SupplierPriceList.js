@@ -10,10 +10,16 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, Plus, Pencil, Trash2, Check, X, Search, Loader2 } from 'lucide-react';
+import { Upload, Plus, Pencil, Trash2, Check, X, Search, Loader2, ChevronDown, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://127.0.0.1:8001';
 const API = `${BACKEND_URL}/api`;
 
 // Словарь текстов (RU)
@@ -148,6 +154,9 @@ export const SupplierPriceList = () => {
   const [showAdditionalMapping, setShowAdditionalMapping] = useState(false);
   const [needMapping, setNeedMapping] = useState(false);
   const [importResult, setImportResult] = useState(null);
+  const [importReportId, setImportReportId] = useState(null);
+  const [importErrorsPreview, setImportErrorsPreview] = useState([]);
+  const [showErrorsTable, setShowErrorsTable] = useState(false);
   const [uploadErrorDetail, setUploadErrorDetail] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [pausing, setPausing] = useState(false);
@@ -358,10 +367,13 @@ export const SupplierPriceList = () => {
       }
 
       const res = await axios.post(endpoint, formData, { headers });
-      const total = res.data?.total_rows_read ?? 0;
-      const imported = res.data?.importedCount ?? (res.data?.created ?? 0) + (res.data?.updated ?? 0);
-      const skipped = res.data?.skipped ?? 0;
-      setImportResult({ total, imported, errors: skipped, skipped_reasons: res.data?.skipped_reasons });
+      const total = res.data?.total_rows_read ?? res.data?.read ?? 0;
+      const imported = res.data?.importedCount ?? res.data?.imported ?? (res.data?.created ?? 0) + (res.data?.updated ?? 0);
+      const skipped = res.data?.skipped ?? res.data?.errors ?? 0;
+      setImportResult({ total, imported, errors: skipped, skipped_reasons: res.data?.skipped_reasons ?? res.data?.breakdown });
+      setImportReportId(res.data?.report_id ?? null);
+      setImportErrorsPreview(Array.isArray(res.data?.errors_preview) ? res.data.errors_preview : []);
+      setShowErrorsTable(false);
       const successMsg = T.successSummary.replace('{imported}', imported).replace('{errors}', skipped);
       setMessage(successMsg);
       toast.success(successMsg);
@@ -379,12 +391,16 @@ export const SupplierPriceList = () => {
         message: successMsg,
       });
 
-      setTimeout(() => {
-        setIsUploadDialogOpen(false);
-        setUploadFile(null);
-        setColumnMapping(null);
-        setImportResult(null);
-      }, 2000);
+      if (skipped === 0) {
+        setTimeout(() => {
+          setIsUploadDialogOpen(false);
+          setUploadFile(null);
+          setColumnMapping(null);
+          setImportResult(null);
+          setImportReportId(null);
+          setImportErrorsPreview([]);
+        }, 2000);
+      }
     } catch (error) {
       const status = error.response?.status;
       const detail = error.response?.data?.detail;
@@ -425,6 +441,9 @@ export const SupplierPriceList = () => {
             errors: d.skipped ?? 0,
             skipped_reasons: d.skipped_reasons,
           });
+          setImportReportId(d.report_id ?? null);
+          setImportErrorsPreview(Array.isArray(d.errors_preview) ? d.errors_preview : []);
+          setShowErrorsTable(false);
         }
       }
       const errs = typeof detail === 'object' ? (detail?.errors || []) : [];
@@ -454,6 +473,20 @@ export const SupplierPriceList = () => {
     }
     handleImportSubmit();
   };
+
+  useEffect(() => {
+    if (!showErrorsTable || importErrorsPreview.length > 0 || !importReportId) return;
+    const token = localStorage.getItem('token');
+    axios
+      .get(`${API}/supplier/pricelists/import-report/${importReportId}`, {
+        params: { limit: 200, offset: 0 },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      .then((r) => {
+        if (Array.isArray(r.data?.errors)) setImportErrorsPreview(r.data.errors);
+      })
+      .catch(() => {});
+  }, [showErrorsTable, importReportId, importErrorsPreview.length]);
 
   if (loading) {
     return <div className="text-center py-8">{T.loading}</div>;
@@ -490,6 +523,9 @@ export const SupplierPriceList = () => {
               setFilePreview(null);
               setUploadFile(null);
               setImportResult(null);
+              setImportReportId(null);
+              setImportErrorsPreview([]);
+              setShowErrorsTable(false);
               setUploadErrorDetail(null);
               setColumnMapping(null);
             }
@@ -559,17 +595,104 @@ export const SupplierPriceList = () => {
                     </Alert>
                   )}
                   {importResult && !importing && !uploadErrorDetail && (
-                    <div className="rounded-md bg-muted p-3 text-sm">
-                      <p className="font-medium">
-                        {T.progressStatus
-                          .replace('{total}', String(importResult.total))
-                          .replace('{imported}', String(importResult.imported))
-                          .replace('{errors}', String(importResult.errors ?? 0))}
-                      </p>
-                      {importResult.skipped_reasons && (importResult.imported === 0 || (importResult.errors ?? 0) > 0) && (
-                        <p className="mt-1 text-muted-foreground">
-                          Пустое название: {importResult.skipped_reasons.empty_name ?? 0}, не распарсилась цена: {importResult.skipped_reasons.price_parse_failed ?? 0}, цена ≤ 0: {importResult.skipped_reasons.price_le_zero ?? 0}, прочее: {importResult.skipped_reasons.other ?? 0}.
+                    <div className="space-y-3">
+                      <div className="rounded-md bg-muted p-3 text-sm">
+                        <p className="font-medium">
+                          {T.progressStatus
+                            .replace('{total}', String(importResult.total))
+                            .replace('{imported}', String(importResult.imported))
+                            .replace('{errors}', String(importResult.errors ?? 0))}
                         </p>
+                        {importResult.skipped_reasons && (importResult.imported === 0 || (importResult.errors ?? 0) > 0) && (
+                          <p className="mt-1 text-muted-foreground">
+                            Пустое название: {importResult.skipped_reasons.empty_name ?? importResult.skipped_reasons?.EMPTY_NAME ?? 0}, не распарсилась цена: {importResult.skipped_reasons.price_parse_failed ?? importResult.skipped_reasons?.PRICE_PARSE ?? 0}, цена ≤ 0: {importResult.skipped_reasons.price_le_zero ?? importResult.skipped_reasons?.PRICE_ZERO ?? 0}, прочее: {importResult.skipped_reasons.other ?? importResult.skipped_reasons?.OTHER ?? 0}.
+                          </p>
+                        )}
+                      </div>
+                      {(importResult.errors ?? 0) > 0 && (
+                        <>
+                          <div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowErrorsTable((v) => !v)}
+                              className="gap-1"
+                            >
+                              <ChevronDown className={`h-4 w-4 transition-transform ${showErrorsTable ? 'rotate-180' : ''}`} />
+                              Показать ошибки ({importResult.errors})
+                            </Button>
+                            {importReportId && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="ml-2"
+                                onClick={async () => {
+                                  try {
+                                    const token = localStorage.getItem('token');
+                                    const r = await fetch(`${API}/supplier/pricelists/import-report/${importReportId}/errors.csv`, {
+                                      headers: token ? { Authorization: `Bearer ${token}` } : {},
+                                    });
+                                    if (!r.ok) throw new Error(r.statusText);
+                                    const blob = await r.blob();
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `import-errors-${importReportId.slice(0, 8)}.csv`;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                    toast.success('CSV сохранён');
+                                  } catch (e) {
+                                    toast.error('Не удалось скачать CSV');
+                                  }
+                                }}
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                Скачать CSV ошибок
+                              </Button>
+                            )}
+                          </div>
+                          {showErrorsTable && (
+                            <div className="border rounded-md overflow-auto max-h-60">
+                              <table className="w-full text-xs">
+                                <thead className="bg-muted sticky top-0">
+                                  <tr>
+                                    <th className="text-left p-2">№</th>
+                                    <th className="text-left p-2">Название</th>
+                                    <th className="text-left p-2">Цена</th>
+                                    <th className="text-left p-2">Причина</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(importErrorsPreview.length ? importErrorsPreview : []).slice(0, 200).map((e, i) => (
+                                    <tr key={i} className="border-t">
+                                      <td className="p-2">{e.row_number}</td>
+                                      <td className="p-2 max-w-[120px] truncate" title={e.raw_name}>{e.raw_name || '—'}</td>
+                                      <td className="p-2">{e.raw_price || '—'}</td>
+                                      <td className="p-2">{e.reason_text || e.reason_code}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                              {importErrorsPreview.length >= 200 && (
+                                <p className="p-2 text-muted-foreground text-xs">Показаны первые 200. Полный список — в CSV.</p>
+                              )}
+                            </div>
+                          )}
+                          <Accordion type="single" collapsible className="border rounded-md">
+                            <AccordionItem value="howto">
+                              <AccordionTrigger className="px-3 py-2 text-sm">Как исправить ошибки</AccordionTrigger>
+                              <AccordionContent className="px-3 pb-3 text-sm text-muted-foreground space-y-2">
+                                <p><strong>Пустое название</strong> — проверьте колонку «Название/Номенклатура», уберите пустые строки, объединённые ячейки, лишние шапки.</p>
+                                <p><strong>Цена не распарсилась</strong> — формат числа 123.45 или 123,45; уберите ₽, пробелы, текст.</p>
+                                <p><strong>Цена ≤ 0</strong> — проверьте нули и прочерки.</p>
+                                <p><strong>Неверные колонки</strong> — откройте «Расширенные настройки (сопоставление колонок)» и выберите правильные колонки.</p>
+                                <p><strong>Лишние строки вверху</strong> — оставьте одну строку заголовков.</p>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </>
                       )}
                     </div>
                   )}

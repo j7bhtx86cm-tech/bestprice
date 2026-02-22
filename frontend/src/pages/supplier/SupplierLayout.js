@@ -1,19 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { User, Settings, FileText, ShoppingBag, Star, LogOut, FolderOpen, Building2 } from 'lucide-react';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://127.0.0.1:8001';
+const API = `${BACKEND_URL}/api`;
 
 export const SupplierLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const [pendingCount, setPendingCount] = useState(0);
+  const userId = user?.id;
+
+  useEffect(() => {
+    if (!userId) {
+      setPendingCount(0);
+      return;
+    }
+    const fetchCount = async () => {
+      try {
+        const res = await axios.get(`${API}/v12/supplier/orders/inbox-count`, {
+          params: { user_id: userId },
+          headers: localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {},
+        });
+        if (res.data?.status === 'ok' && typeof res.data.pending_count === 'number') {
+          setPendingCount(res.data.pending_count);
+        }
+      } catch (_) {
+        setPendingCount(0);
+      }
+    };
+    fetchCount();
+    const timer = setInterval(fetchCount, 12000);
+    return () => clearInterval(timer);
+  }, [userId]);
 
   const menuItems = [
     { path: '/supplier/profile', label: 'Профиль', icon: User },
     { path: '/supplier/price-list', label: 'Прайс-лист', icon: FileText },
     { path: '/supplier/restaurants', label: 'Мои рестораны', icon: Building2 },
-    { path: '/supplier/orders', label: 'История заказов', icon: ShoppingBag },
+    { path: '/supplier/orders', label: 'Входящие заказы', icon: ShoppingBag, badge: pendingCount },
     { path: '/supplier/settings', label: 'Настройки заказов', icon: Settings },
     { path: '/supplier/documents', label: 'Документы ресторанов', icon: FolderOpen },
     { path: '/supplier/rating', label: 'Рейтинг', icon: Star },
@@ -48,15 +78,22 @@ export const SupplierLayout = ({ children }) => {
                     <button
                       key={item.path}
                       onClick={() => navigate(item.path)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${
                         isActive
                           ? 'bg-blue-50 text-blue-600 font-medium'
                           : 'text-gray-700 hover:bg-gray-50'
                       }`}
                       data-testid={`nav-${item.path.split('/').pop()}`}
                     >
-                      <Icon className="h-5 w-5" />
-                      {item.label}
+                      <span className="flex items-center gap-3">
+                        <Icon className="h-5 w-5" />
+                        {item.label}
+                      </span>
+                      {typeof item.badge === 'number' && item.badge > 0 && (
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                          {item.badge}
+                        </Badge>
+                      )}
                     </button>
                   );
                 })}
